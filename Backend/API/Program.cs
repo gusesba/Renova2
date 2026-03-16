@@ -1,29 +1,12 @@
-using Microsoft.EntityFrameworkCore;
-using Renova.Persistence;
+using Renova.Api.Infrastructure.DependencyInjection;
+using Renova.Api.Infrastructure.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddDbContext<RenovaDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("RenovaDb")));
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddRenovaApi(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.UseRenovaApi();
 
 app.Run();

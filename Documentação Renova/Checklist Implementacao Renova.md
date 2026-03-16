@@ -20,43 +20,36 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 00. Fundação Técnica e Setup
 
-- [ ] Estruturar a solução backend para suportar domínio, persistência, serviços e API
-  - [ ] revisar referências entre projetos
-  - [ ] padronizar namespaces, pastas e convenções de nomes
-  - [ ] definir estratégia para DTOs, handlers, services e validators
-- [ ] Configurar PostgreSQL local e ambientes
-  - [ ] manter connection string vazia em produção
-  - [ ] manter connection string de desenvolvimento em `appsettings.Development.json`
-  - [ ] validar leitura da connection string em runtime
-- [ ] Configurar EF Core para PostgreSQL
-  - [ ] manter `RenovaDbContext` registrado na API
-  - [ ] manter provider Npgsql configurado
-  - [ ] manter pacotes de design e migrations instalados
-- [ ] Preparar o fluxo de migrations
-  - [ ] validar `dotnet ef migrations add`
-  - [ ] validar `dotnet ef database update`
-  - [ ] validar `dotnet ef database drop`
-  - [ ] manter documentação em `comandosDB.md`
-- [ ] Definir padrões transversais do backend
-  - [ ] tratamento de erro padronizado
-  - [ ] respostas HTTP consistentes
-  - [ ] logging estruturado
-  - [ ] ProblemDetails
-  - [ ] versionamento de API
-- [ ] Definir padrões transversais do frontend
-  - [ ] layout administrativo
-  - [ ] navegação por módulo
-  - [ ] controle de autenticação
-  - [ ] controle de permissões por tela/ação
-  - [ ] componentes reutilizáveis de filtros, tabelas e formulários
+- [x] Estruturar a solução backend para suportar domínio, persistência, serviços e API
+  - [x] revisar referências entre projetos
+  - [x] padronizar namespaces, pastas e convenções de nomes
+  - [x] definir estratégia para DTOs, handlers, services e validators
+- [x] Configurar PostgreSQL local e ambientes
+  - [x] manter connection string vazia em produção
+  - [x] manter connection string de desenvolvimento em `appsettings.Development.json`
+  - [x] validar leitura da connection string em runtime
+- [x] Configurar EF Core para PostgreSQL
+  - [x] manter `RenovaDbContext` registrado na API
+  - [x] manter provider Npgsql configurado
+  - [x] manter pacotes de design e migrations instalados
+- [x] Preparar o fluxo de migrations e comandos operacionais
+  - [x] manter manifesto local do `dotnet-ef`
+  - [x] documentar comandos em `comandosDB.md`
+  - [x] validar `database update` e `database drop`
+- [x] Definir padrões transversais do backend
+  - [x] tratamento de erro padronizado
+  - [x] respostas HTTP consistentes
+  - [x] logging estruturado
+  - [x] ProblemDetails
+  - [x] versionamento de API
 
 ## 01. Banco de Dados e Persistência
 
-- [ ] Consolidar o modelo relacional no banco
-  - [ ] revisar entidades do domínio geradas
-  - [ ] revisar mapeamentos do `OnModelCreating`
-  - [ ] revisar índices, chaves únicas e FKs
-  - [ ] revisar precisão monetária e concorrência
+- [x] Consolidar o modelo relacional no banco
+  - [x] revisar entidades do domínio geradas
+  - [x] revisar mapeamentos do `OnModelCreating`
+  - [x] revisar índices, chaves únicas e FKs
+  - [x] revisar precisão monetária e concorrência
 
 ## 02. Módulo 01 - Acesso, Usuários e Permissões
 
