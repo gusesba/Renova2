@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Renova.Persistence;
@@ -11,9 +12,11 @@ using Renova.Persistence;
 namespace Persistencia.Migrations
 {
     [DbContext(typeof(RenovaDbContext))]
-    partial class RenovaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260316181238_Modulo01Acesso")]
+    partial class Modulo01Acesso
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

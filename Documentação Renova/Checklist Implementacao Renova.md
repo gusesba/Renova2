@@ -53,40 +53,40 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 02. Módulo 01 - Acesso, Usuários e Permissões
 
-- [ ] Implementar cadastro de usuário
-  - [ ] criar contrato de entrada e saída
-  - [ ] validar unicidade de e-mail
-  - [ ] gerar hash de senha
-  - [ ] persistir em `usuario`
-  - [ ] registrar auditoria
-  - [ ] criar tela web de cadastro e edição
-- [ ] Implementar login
-  - [ ] validar credenciais
-  - [ ] registrar evento em `usuario_acesso_evento`
-  - [ ] retornar contexto inicial do usuário
-  - [ ] carregar lojas disponíveis
-  - [ ] carregar permissões do contexto
-- [ ] Implementar recuperação de acesso
-  - [ ] definir fluxo de reset de senha
-  - [ ] registrar expiração e uso do token
-  - [ ] registrar auditoria do processo
-- [ ] Implementar ativação, inativação e bloqueio de usuário
-  - [ ] atualizar `status_usuario`
-  - [ ] impedir login quando bloqueado/inativo
-  - [ ] registrar auditoria da mudança
-- [ ] Implementar cargos por loja
-  - [ ] CRUD de `cargo`
-  - [ ] CRUD de `cargo_permissao`
-  - [ ] tela web para matriz de permissões
-- [ ] Implementar vínculo usuário x loja
-  - [ ] CRUD de `usuario_loja`
-  - [ ] CRUD de `usuario_loja_cargo`
-  - [ ] definir loja ativa na sessão
-- [ ] Implementar autorização por função
-  - [ ] middleware/policy para autenticação
-  - [ ] verificação de `usuario_loja`
-  - [ ] verificação de `cargo_permissao`
-  - [ ] bloqueio de acesso por loja não autorizada
+- [x] Implementar cadastro de usuário
+  - [x] criar contrato de entrada e saída
+  - [x] validar unicidade de e-mail
+  - [x] gerar hash de senha
+  - [x] persistir em `usuario`
+  - [x] registrar auditoria
+  - [x] criar tela web de cadastro e edição
+- [x] Implementar login
+  - [x] validar credenciais
+  - [x] registrar evento em `usuario_acesso_evento`
+  - [x] retornar contexto inicial do usuário
+  - [x] carregar lojas disponíveis
+  - [x] carregar permissões do contexto
+- [x] Implementar recuperação de acesso
+  - [x] definir fluxo de reset de senha
+  - [x] registrar expiração e uso do token
+  - [x] registrar auditoria do processo
+- [x] Implementar ativação, inativação e bloqueio de usuário
+  - [x] atualizar `status_usuario`
+  - [x] impedir login quando bloqueado/inativo
+  - [x] registrar auditoria da mudança
+- [x] Implementar cargos por loja
+  - [x] CRUD de `cargo`
+  - [x] CRUD de `cargo_permissao`
+  - [x] tela web para matriz de permissões
+- [x] Implementar vínculo usuário x loja
+  - [x] CRUD de `usuario_loja`
+  - [x] CRUD de `usuario_loja_cargo`
+  - [x] definir loja ativa na sessão
+- [x] Implementar autorização por função
+  - [x] middleware/policy para autenticação
+  - [x] verificação de `usuario_loja`
+  - [x] verificação de `cargo_permissao`
+  - [x] bloqueio de acesso por loja não autorizada
 
 ## 03. Módulo 02 - Lojas e Estrutura Operacional
 

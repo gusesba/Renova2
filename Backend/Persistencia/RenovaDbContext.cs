@@ -4,14 +4,19 @@ using Renova.Domain.Models;
 
 namespace Renova.Persistence;
 
+// Representa o contexto EF Core com todas as entidades e mapeamentos do sistema.
 public class RenovaDbContext : DbContext
 {
+    /// <summary>
+    /// Inicializa o contexto com as opcoes configuradas pelo host.
+    /// </summary>
     public RenovaDbContext(DbContextOptions<RenovaDbContext> options) : base(options)
     {
     }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<UsuarioSessao> UsuarioSessoes => Set<UsuarioSessao>();
+    public DbSet<UsuarioRecuperacaoAcesso> UsuarioRecuperacoesAcesso => Set<UsuarioRecuperacaoAcesso>();
     public DbSet<Permissao> Permissoes => Set<Permissao>();
     public DbSet<Cargo> Cargos => Set<Cargo>();
     public DbSet<CargoPermissao> CargoPermissoes => Set<CargoPermissao>();
@@ -61,6 +66,9 @@ public class RenovaDbContext : DbContext
     public DbSet<FechamentoPessoaMovimento> FechamentoPessoaMovimentos => Set<FechamentoPessoaMovimento>();
     public DbSet<AlertaOperacional> AlertasOperacionais => Set<AlertaOperacional>();
 
+    /// <summary>
+    /// Aplica convencoes globais e os mapeamentos por dominio.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -81,6 +89,9 @@ public class RenovaDbContext : DbContext
         ConfigureAlertas(modelBuilder);
     }
 
+    /// <summary>
+    /// Converte nomes de entidades e colunas para snake_case.
+    /// </summary>
     private static void ApplyNamingConventions(ModelBuilder modelBuilder)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -101,6 +112,9 @@ public class RenovaDbContext : DbContext
         }
     }
 
+    /// <summary>
+    /// Configura regras compartilhadas como precisao decimal e concorrencia.
+    /// </summary>
     private static void ApplyCommonConventions(ModelBuilder modelBuilder)
     {
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -129,6 +143,9 @@ public class RenovaDbContext : DbContext
         }
     }
 
+    /// <summary>
+    /// Configura indices e relacionamentos das entidades de acesso.
+    /// </summary>
     private static void ConfigureAcesso(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Usuario>(entity =>
@@ -143,6 +160,19 @@ public class RenovaDbContext : DbContext
         });
 
         modelBuilder.Entity<UsuarioSessao>(entity =>
+        {
+            entity.HasOne<Usuario>()
+                .WithMany()
+                .HasForeignKey(x => x.UsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Loja>()
+                .WithMany()
+                .HasForeignKey(x => x.LojaAtivaId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UsuarioRecuperacaoAcesso>(entity =>
         {
             entity.HasOne<Usuario>()
                 .WithMany()
@@ -225,6 +255,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura indices e relacionamentos das entidades de loja.
+    /// </summary>
     private static void ConfigureLojas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Loja>(entity =>
@@ -248,6 +281,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura indices e relacionamentos das entidades de pessoas.
+    /// </summary>
     private static void ConfigurePessoas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Pessoa>(entity =>
@@ -279,6 +315,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura os catalogos compartilhados usados pelas lojas.
+    /// </summary>
     private static void ConfigureCatalogos(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProdutoNome>(entity =>
@@ -330,6 +369,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura regras comerciais e meios de pagamento.
+    /// </summary>
     private static void ConfigureRegrasComerciais(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<LojaRegraComercial>(entity =>
@@ -361,6 +403,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura estoque, pecas e historicos operacionais.
+    /// </summary>
     private static void ConfigureEstoque(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Peca>(entity =>
@@ -467,6 +512,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura vendas, itens e pagamentos.
+    /// </summary>
     private static void ConfigureVendas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Venda>(entity =>
@@ -529,6 +577,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura conta e movimentacao de credito por loja.
+    /// </summary>
     private static void ConfigureCredito(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ContaCreditoLoja>(entity =>
@@ -560,6 +611,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura obrigacoes e movimentacoes financeiras.
+    /// </summary>
     private static void ConfigureFinanceiro(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ObrigacaoFornecedor>(entity =>
@@ -641,6 +695,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura fechamento financeiro por pessoa.
+    /// </summary>
     private static void ConfigureFechamento(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<FechamentoPessoa>(entity =>
@@ -690,6 +747,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Configura alertas operacionais por loja.
+    /// </summary>
     private static void ConfigureAlertas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AlertaOperacional>(entity =>
@@ -703,6 +763,9 @@ public class RenovaDbContext : DbContext
         });
     }
 
+    /// <summary>
+    /// Converte um nome CLR para o formato snake_case.
+    /// </summary>
     private static string ToSnakeCase(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

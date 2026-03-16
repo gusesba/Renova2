@@ -75,7 +75,17 @@ Relações:
 - Carregar lojas acessíveis em `usuario_loja`.
 - Carregar cargos do contexto em `usuario_loja_cargo`.
 - Expandir permissões por meio de `cargo`, `cargo_permissao` e `permissao`.
-- Definir a loja ativa que servirá de filtro para todas as demais funções.
+- Definir a loja ativa em `usuario_sessao`, servindo de filtro para todas as demais funções.
+
+### Função: Recuperação de acesso
+
+Relações:
+- Validar o e-mail em `usuario`.
+- Gerar token de uso único em `usuario_recuperacao_acesso`.
+- Registrar expiração e uso do token.
+- Registrar evento em `usuario_acesso_evento`.
+- Registrar trilha em `auditoria_evento` quando a senha for redefinida.
+- Revogar `usuario_sessao` ativas após redefinição de senha.
 
 ### Função: Auditoria de ação crítica
 

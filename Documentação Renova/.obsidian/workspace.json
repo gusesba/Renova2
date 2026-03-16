@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Checklist Implementacao Renova.md",
+                "file": "Ideia Inicial.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Checklist Implementacao Renova"
+              "title": "Ideia Inicial"
             }
           }
         ]
@@ -185,8 +185,13 @@
   },
   "active": "9f877956e8684de2",
   "lastOpenFiles": [
-    "Ideia Inicial.md",
+    "BaseLayout/Sistema.png",
+    "BaseLayout/Auth.png",
     "Checklist Implementacao Renova.md",
+    "BaseLayout/image.png",
+    "BaseLayout",
+    "Nova pasta",
+    "Ideia Inicial.md",
     "Requisitos por Modulos.md",
     "Relacoes Funcoes App.md",
     "Modelagem Banco de Dados Renova.md",

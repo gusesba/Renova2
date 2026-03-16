@@ -18,6 +18,7 @@ out/
 
 ## Logs
 *.log
+API/App_Data/
 
 ## Test Results
 TestResults/

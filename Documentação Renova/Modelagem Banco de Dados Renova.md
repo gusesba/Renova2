@@ -62,9 +62,23 @@ Controle de sessão, refresh token e revogação.
 Campos principais:
 - `id`
 - `usuario_id`
+- `loja_ativa_id` nullable, para manter o contexto operacional atual da sessão
 - `token_hash`
 - `expira_em`
 - `revogado_em`
+- `ip`
+- `user_agent`
+
+#### `usuario_recuperacao_acesso`
+Controle de tokens de recuperação de senha.
+
+Campos principais:
+- `id`
+- `usuario_id`
+- `token_hash`
+- `solicitado_em`
+- `expira_em`
+- `utilizado_em` nullable
 - `ip`
 - `user_agent`
 
@@ -683,6 +697,7 @@ Campos principais:
 ## Relacionamentos Principais
 
 - `usuario` N:N `loja` via `usuario_loja`
+- `usuario` 1:N `usuario_recuperacao_acesso`
 - `usuario_loja` N:N `cargo` via `usuario_loja_cargo`
 - `cargo` N:N `permissao` via `cargo_permissao`
 - `loja` 1:1 `loja_configuracao`
@@ -717,6 +732,7 @@ erDiagram
   CONJUNTO_CATALOGO ||--o{ COLECAO : organiza
 
   USUARIO ||--o{ USUARIO_SESSAO : possui
+  USUARIO ||--o{ USUARIO_RECUPERACAO_ACESSO : recupera
   USUARIO ||--o{ USUARIO_LOJA : acessa
   LOJA ||--o{ USUARIO_LOJA : permite
   USUARIO_LOJA ||--o{ USUARIO_LOJA_CARGO : recebe
