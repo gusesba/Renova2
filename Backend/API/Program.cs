@@ -1,6 +1,12 @@
+using Microsoft.EntityFrameworkCore;
+using Renova.Persistence;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+builder.Services.AddDbContext<RenovaDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("RenovaDb")));
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
