@@ -1,2 +1,0 @@
-
-O certo não é se dizer que é uma rede de brexós. As lojas são independentes entre si, apenas compartilham o mesmo sistema. Sendo assim, podem compartilhar os usuários. Isso também deixa mais fácil para os clientes acessarem suas pendencias com as lojas.

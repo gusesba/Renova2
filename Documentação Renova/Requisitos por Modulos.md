@@ -3,42 +3,47 @@ tags:
   - renova
   - requisitos
   - backlog
-status: rascunho
-origem: "[[Ideia Inicial]]"
-last_update: 2026-03-14
+status: revisado
+origem:
+  - "[[Requisitos por Modulos]]"
+  - "[[Revisão Requisitos por Modulos]]"
+last_update: 2026-03-16
 ---
 
 # Requisitos do Sistema Renova
 
-Documento consolidado a partir de [[Ideia Inicial]] para servir como base de escopo, backlog e refinamento funcional do sistema.
+Documento consolidado a partir de [[Requisitos por Modulos]] e [[Revisão Requisitos por Modulos]] para servir como base de escopo, backlog e refinamento funcional do sistema.
 
 ## Escopo Geral
 
-- [ ] Centralizar a operação de uma rede de brechós em um único sistema.
+- [ ] Centralizar a operação de lojas independentes em um único sistema compartilhado.
 - [ ] Suportar peças consignadas, peças fixas e peças em lote.
 - [ ] Atender donos de loja, funcionários e clientes/fornecedores.
 - [ ] Disponibilizar operação principal no web, serviços no backend e consultas essenciais no mobile.
-- [ ] Permitir uso por múltiplas lojas com separação de dados e permissões por loja.
+- [ ] Permitir uso por múltiplas lojas independentes com separação de dados e permissões por loja.
+- [ ] Permitir compartilhamento de usuários entre lojas autorizadas, inclusive clientes/fornecedores com vínculo em mais de uma loja.
 
 ## Módulo 01 - Acesso, Usuários e Permissões
 
 - [ ] Permitir cadastro de usuários do sistema com nome, e-mail, telefone e senha.
 - [ ] Permitir login seguro e recuperação de acesso.
 - [ ] Permitir ativar, inativar e bloquear usuários.
-- [ ] Suportar perfis como dono da loja, gerente, funcionário e cliente.
+- [ ] Suportar perfis base como dono da loja, gerente, funcionário e cliente.
+- [ ] Permitir que o dono da loja crie cargos personalizados e defina as funcionalidades disponíveis em cada cargo.
+- [ ] Permitir atribuir cargos aos funcionários e demais usuários internos.
 - [ ] Permitir que um mesmo usuário tenha acesso a mais de uma loja.
 - [ ] Vincular um usuário a um cadastro de cliente/fornecedor quando aplicável.
-- [ ] Controlar permissões por ação, como cadastrar peças, vender, pagar fornecedor, ver caixa e fechar cliente.
+- [ ] Controlar permissões por ação, como cadastrar peças, vender, pagar fornecedor, consultar movimentação financeira e fechar cliente.
 - [ ] Registrar histórico de acessos e alterações críticas feitas pelos usuários.
 
-## Módulo 02 - Lojas e Estrutura da Rede
+## Módulo 02 - Lojas e Estrutura Operacional
 
 - [ ] Permitir cadastrar lojas com nome, razão social, documento, endereço, contatos e status.
-- [ ] Permitir configurar identidade visual e dados de impressão por loja.
+- [ ] Permitir configurar dados de identificação e impressão da loja dentro de um modelo padrão do sistema.
 - [ ] Permitir definir usuários responsáveis por cada loja.
-- [ ] Permitir que uma rede tenha uma ou mais lojas ativas.
-- [ ] Garantir separação de estoque, vendas, caixa e relatórios por loja.
-- [ ] Permitir consolidar visão gerencial por loja e por rede.
+- [ ] Permitir que o mesmo sistema atenda uma ou mais lojas independentes.
+- [ ] Garantir separação de estoque, vendas, movimentação financeira e relatórios por loja.
+- [ ] Permitir visão gerencial por loja e, quando aplicável, visão consolidada apenas das lojas às quais o usuário tenha acesso.
 
 ## Módulo 03 - Cadastro de Clientes e Fornecedores
 
@@ -71,7 +76,7 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 - [ ] Permitir configurar descontos progressivos nos últimos meses de exposição.
 - [ ] Permitir definir regras por loja e sobrescrever padrões por fornecedor ou por peça.
 - [ ] Permitir cadastrar meios de pagamento da loja com taxa, prazo de recebimento e status.
-- [ ] Permitir definir se o crédito da loja é controlado por loja ou compartilhado entre lojas da rede.
+- [ ] Garantir que o crédito da loja seja controlado por loja, sem compartilhamento automático entre lojas.
 
 ## Módulo 06 - Cadastro de Peças e Estoque
 
@@ -120,6 +125,7 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 - [ ] Atualizar estoque e status das peças imediatamente após a venda.
 - [ ] Gerar comprovante ou recibo da venda.
 - [ ] Permitir cancelamento de venda com controle de permissão e trilha de auditoria.
+- [ ] Registrar o vendedor para fins operacionais e de rastreabilidade, sem cálculo de comissão.
 
 ## Módulo 10 - Crédito da Loja
 
@@ -144,16 +150,15 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 - [ ] Permitir registrar data, valor, forma de pagamento, comprovante e observações.
 - [ ] Exibir situação do pagamento como pendente, parcial, pago, cancelado ou ajustado.
 
-## Módulo 12 - Caixa e Meios de Pagamento
+## Módulo 12 - Meios de Pagamento e Conciliação Financeira
 
-- [ ] Permitir abertura e fechamento de caixa por loja e por período.
 - [ ] Consolidar entradas e saídas financeiras por tipo de movimentação.
 - [ ] Permitir configurar meios de pagamento como dinheiro, PIX, cartão e outros.
 - [ ] Calcular taxa e valor líquido de cada meio de pagamento conforme configuração vigente.
-- [ ] Exibir saldo por meio de pagamento e saldo geral do caixa.
-- [ ] Permitir lançamentos avulsos de sangria, reforço, despesa e ajuste.
-- [ ] Permitir conciliação entre vendas, recebimentos e caixa.
-- [ ] Gerar resumo diário de caixa para conferência.
+- [ ] Exibir totais por meio de pagamento e saldo financeiro consolidado por período.
+- [ ] Permitir registrar despesas, ajustes e outras movimentações financeiras da loja.
+- [ ] Permitir conciliação entre vendas, recebimentos, pagamentos a fornecedores e movimentações financeiras.
+- [ ] Gerar resumo diário financeiro para conferência.
 
 ## Módulo 13 - Fechamento do Cliente/Fornecedor
 
@@ -170,7 +175,7 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 ## Módulo 14 - Dashboards e Indicadores
 
 - [ ] Exibir dashboard de vendas por dia, mês, loja, vendedor e período.
-- [ ] Exibir dashboard de caixa com entradas, saídas, saldo bruto e saldo líquido.
+- [ ] Exibir dashboard financeiro com entradas, saídas, saldo bruto e saldo líquido.
 - [ ] Exibir peças em consignação próximas do vencimento.
 - [ ] Exibir peças paradas por tempo em estoque.
 - [ ] Exibir valores a pagar para fornecedores e valores pendentes de recebimento.
@@ -184,15 +189,16 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 - [ ] Permitir emitir relatório de estoque atual.
 - [ ] Permitir emitir relatório de peças vendidas por período.
 - [ ] Permitir emitir relatório financeiro por cliente/fornecedor.
-- [ ] Permitir emitir relatório de caixa por período e loja.
+- [ ] Permitir emitir relatório financeiro por período e loja.
 - [ ] Permitir emitir relatório de peças devolvidas, doadas, perdidas ou descartadas.
 - [ ] Permitir salvar filtros frequentes para uso recorrente.
 
 ## Módulo 16 - Impressões e Documentos
 
 - [ ] Permitir imprimir etiquetas de peças com código de barras.
-- [ ] Permitir personalizar layout básico da etiqueta por loja.
+- [ ] Utilizar modelo único de etiqueta para todas as lojas.
 - [ ] Permitir imprimir recibo de venda.
+- [ ] Utilizar modelo único de recibo e comprovantes no sistema.
 - [ ] Permitir imprimir comprovante de pagamento ao fornecedor.
 - [ ] Permitir imprimir comprovante de devolução ou doação de peças.
 - [ ] Tornar o processo de impressão simples para o dono da loja, com poucos passos.
@@ -209,11 +215,12 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 
 ## Módulo 18 - Mobile React Native
 
-- [ ] Disponibilizar visualizações essenciais para donos de loja.
-- [ ] Disponibilizar visualizações essenciais para clientes/fornecedores.
+- [ ] Disponibilizar visualizações essenciais para donos de loja em modo consulta.
+- [ ] Disponibilizar visualizações essenciais para clientes/fornecedores em modo consulta.
 - [ ] Permitir consulta de dashboards resumidos no mobile.
 - [ ] Permitir consulta de peças, vendas e saldos no mobile.
 - [ ] Permitir consulta de pendências e fechamentos no mobile.
+- [ ] Não exigir operações de cadastro, edição ou venda no mobile nesta versão.
 - [ ] Garantir experiência de uso adequada em celulares Android e iOS.
 
 ## Módulo 19 - Backend .NET
@@ -254,10 +261,5 @@ Documento consolidado a partir de [[Ideia Inicial]] para servir como base de esc
 
 ## Pontos Para Validar no Refinamento
 
-- [ ] Definir se haverá transferência de peças entre lojas da mesma rede.
-- [ ] Definir se o crédito da loja poderá ser usado em qualquer loja da rede ou apenas na loja de origem.
 - [ ] Definir política de troca e devolução para compradores finais.
-- [ ] Definir necessidade de emissão fiscal ou integração com sistema fiscal.
-- [ ] Definir se haverá comissão por vendedor ou metas por funcionário.
-- [ ] Definir se o mobile terá apenas consulta ou também operações de cadastro e venda.
-- [ ] Definir se etiquetas e recibos terão modelo único da rede ou personalização por loja.
+- [ ] Avaliar necessidade futura de emissão fiscal ou integração com sistema fiscal.
