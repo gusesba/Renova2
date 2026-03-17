@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { SelectField, TextInput } from "@/components/ui/field";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { AccessUser } from "@/lib/services/renova-api";
+import type { AccessUser } from "@/lib/services/access";
 
 // Painel de usuarios: formulario e lista de selecao usando apenas props do container.
 export type UserFormState = {

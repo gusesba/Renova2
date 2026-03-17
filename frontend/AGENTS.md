@@ -15,13 +15,13 @@
 - `app`: rotas, layouts e componentes especificos de pagina.
 - `components`: componentes puros e reutilizaveis.
 - `lib/helpers`: helpers internos, formatacao e session storage.
-- `lib/services`: clientes de API e tipos de resposta.
+- `lib/services`: cliente HTTP base e services por modulo.
 
 ## Convencoes atuais
 
 - Componentes visuais compartilhados ficam em `components/ui`, `components/layout` e `components/brand`.
 - Componentes com logica de tela ficam em `app/<rota>/components`.
-- Chamadas HTTP para o backend devem passar por `lib/services/renova-api.ts`.
+- Chamadas HTTP para o backend devem passar por `lib/services/core` e pelos modulos em `lib/services/access` ou `lib/services/stores`.
 - Leitura e escrita de token local devem passar por `lib/helpers/session-storage.ts`.
 - Feedback de sucesso, erro e alerta deve usar `sonner`; evitar banners locais novos.
 

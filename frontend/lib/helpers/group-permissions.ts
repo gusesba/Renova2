@@ -1,4 +1,4 @@
-import type { AccessPermission } from "@/lib/services/renova-api";
+import type { AccessPermission } from "@/lib/services/access";
 
 // Agrupa e ordena permissoes por modulo para simplificar a renderizacao da tela.
 export function groupPermissionsByModule(permissions: AccessPermission[]) {

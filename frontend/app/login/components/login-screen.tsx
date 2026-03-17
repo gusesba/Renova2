@@ -28,7 +28,7 @@ import {
   login,
   register,
   requestPasswordReset,
-} from "@/lib/services/renova-api";
+} from "@/lib/services/access";
 
 // Orquestra os fluxos de login e recuperacao dentro do mesmo card visual.
 export function LoginScreen() {

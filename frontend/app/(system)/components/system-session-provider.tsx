@@ -11,7 +11,12 @@ import { useRouter } from "next/navigation";
 import { SystemLoadingScreen } from "@/components/layout/system-loading-screen";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import { clearSessionToken, readSessionToken } from "@/lib/helpers/session-storage";
-import { changeActiveStore, getMe, logout, type SessionContext } from "@/lib/services/renova-api";
+import {
+  changeActiveStore,
+  getMe,
+  logout,
+  type SessionContext,
+} from "@/lib/services/access";
 
 // Expõe a sessao autenticada para o grupo `/(system)` e centraliza mutacoes de sessao.
 type SystemSessionValue = {

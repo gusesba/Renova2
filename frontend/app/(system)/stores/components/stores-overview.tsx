@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/ui/metric-card";
-import type { StoreSummary } from "@/lib/services/renova-api";
+import type { StoreSummary } from "@/lib/services/stores";
 
 // Resumo superior do modulo com foco em lojas acessiveis e contexto ativo.
 type StoresOverviewProps = {

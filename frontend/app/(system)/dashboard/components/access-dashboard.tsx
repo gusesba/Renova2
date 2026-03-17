@@ -38,7 +38,7 @@ import {
   updateRole,
   updateRolePermissions,
   updateUser,
-} from "@/lib/services/renova-api";
+} from "@/lib/services/access";
 
 // Valores iniciais dos formularios para evitar estado parcial espalhado pela tela.
 const emptyUserForm: UserFormState = {

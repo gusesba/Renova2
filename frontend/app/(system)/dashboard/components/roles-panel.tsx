@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { TextArea, TextInput } from "@/components/ui/field";
 import { groupPermissionsByModule } from "@/lib/helpers/group-permissions";
-import type { AccessPermission, AccessRole } from "@/lib/services/renova-api";
+import type { AccessPermission, AccessRole } from "@/lib/services/access";
 
 // Painel de cargos com agrupamento visual de permissoes por modulo.
 export type RoleFormState = {

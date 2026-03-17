@@ -8,7 +8,7 @@ import type {
   AccessRole,
   AccessUser,
   StoreMembership,
-} from "@/lib/services/renova-api";
+} from "@/lib/services/access";
 
 // Painel de vinculos entre usuario, loja ativa e cargos atribuidos.
 export type MembershipFormState = {

@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { StoreSummary } from "@/lib/services/renova-api";
+import type { StoreSummary } from "@/lib/services/stores";
 
 // Lista consolidada das lojas acessiveis ao usuario com selecao rapida para edicao.
 type AccessibleStoresPanelProps = {

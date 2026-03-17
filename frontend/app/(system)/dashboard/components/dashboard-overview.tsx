@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/ui/metric-card";
-import type { SessionContext } from "@/lib/services/renova-api";
+import type { SessionContext } from "@/lib/services/access";
 
 // Resumo superior da tela para dar contexto rapido da loja e do modulo.
 type DashboardOverviewProps = {

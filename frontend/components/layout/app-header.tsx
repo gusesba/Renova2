@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/field";
 import { getInitials } from "@/lib/helpers/formatters";
-import type { SessionContext } from "@/lib/services/renova-api";
+import type { SessionContext } from "@/lib/services/access";
 
 // Header principal do shell com loja ativa, dados do usuario e acoes de sessao.
 type AppHeaderProps = {

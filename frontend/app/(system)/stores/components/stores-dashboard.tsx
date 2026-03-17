@@ -16,7 +16,7 @@ import { getZodErrorMessage } from "@/lib/helpers/access-schemas";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import { createStoreSchema, updateStoreSchema } from "@/lib/helpers/store-schemas";
-import { createStore, listAccessibleStores, updateStore } from "@/lib/services/renova-api";
+import { createStore, listAccessibleStores, updateStore } from "@/lib/services/stores";
 
 const storeManagerPermission = "lojas.gerenciar";
 
