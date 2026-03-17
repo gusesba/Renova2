@@ -25,6 +25,11 @@ import {
   membershipFormSchema,
   roleFormSchema,
 } from "@/lib/schemas/access";
+import {
+  accessPermissionCodes,
+  hasAnyPermission,
+  hasPermission,
+} from "@/lib/helpers/access-control";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import {
@@ -66,10 +71,23 @@ export function AccessDashboard() {
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
   const [membershipForm, setMembershipForm] =
     useState<MembershipFormState>(emptyMembershipForm);
+  const canViewUsers = hasAnyPermission(session, [
+    accessPermissionCodes.usersView,
+    accessPermissionCodes.usersManage,
+  ]);
+  const canManageUsers = hasPermission(session, accessPermissionCodes.usersManage);
+  const canManageRoles = hasPermission(session, accessPermissionCodes.rolesManage);
+  const canAccessAnyBlock = canViewUsers || canManageUsers || canManageRoles;
 
   const workspaceQuery = useQuery({
-    enabled: Boolean(session.lojaAtivaId && session.permissoes.length > 0),
-    queryFn: () => loadAccessWorkspace(token),
+    enabled: Boolean(session.lojaAtivaId && canAccessAnyBlock),
+    queryFn: () =>
+      loadAccessWorkspace(token, {
+        includeMemberships: canManageUsers,
+        includePermissions: canManageRoles,
+        includeRoles: canManageUsers || canManageRoles,
+        includeUsers: canViewUsers || canManageUsers,
+      }),
     queryKey: queryKeys.accessWorkspace(token, session.lojaAtivaId),
   });
 
@@ -209,7 +227,7 @@ export function AccessDashboard() {
     );
   }
 
-  if (session.permissoes.length === 0) {
+  if (!canAccessAnyBlock) {
     return (
       <Card>
         <CardBody className="section-stack">
@@ -248,38 +266,48 @@ export function AccessDashboard() {
           membershipsCount={memberships.length}
           rolesCount={roles.length}
           session={session}
+          showMemberships={canManageUsers}
+          showRoles={canManageRoles}
+          showUsers={canViewUsers}
           usersCount={users.length}
         />
       </div>
 
       <div className="dashboard-column">
-        <UsersPanel
-          busy={busy}
-          form={userForm}
-          onSubmit={handleUserSubmit}
-          setForm={setUserForm}
-          users={users}
-        />
-        <MembershipsPanel
-          busy={busy}
-          form={membershipForm}
-          memberships={memberships}
-          onSubmit={handleMembershipSubmit}
-          roles={roles}
-          setForm={setMembershipForm}
-          users={users}
-        />
+        {canViewUsers ? (
+          <UsersPanel
+            busy={busy}
+            canManage={canManageUsers}
+            form={userForm}
+            onSubmit={handleUserSubmit}
+            setForm={setUserForm}
+            users={users}
+          />
+        ) : null}
+        {canManageUsers ? (
+          <MembershipsPanel
+            busy={busy}
+            form={membershipForm}
+            memberships={memberships}
+            onSubmit={handleMembershipSubmit}
+            roles={roles}
+            setForm={setMembershipForm}
+            users={users}
+          />
+        ) : null}
       </div>
 
       <div className="dashboard-column">
-        <RolesPanel
-          busy={busy}
-          form={roleForm}
-          onSubmit={handleRoleSubmit}
-          permissions={permissions}
-          roles={roles}
-          setForm={setRoleForm}
-        />
+        {canManageRoles ? (
+          <RolesPanel
+            busy={busy}
+            form={roleForm}
+            onSubmit={handleRoleSubmit}
+            permissions={permissions}
+            roles={roles}
+            setForm={setRoleForm}
+          />
+        ) : null}
       </div>
     </div>
   );

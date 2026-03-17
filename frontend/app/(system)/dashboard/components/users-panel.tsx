@@ -16,6 +16,7 @@ export type UserFormState = {
 
 type UsersPanelProps = {
   busy: boolean;
+  canManage: boolean;
   form: UserFormState;
   users: AccessUser[];
   setForm: Dispatch<SetStateAction<UserFormState>>;
@@ -24,6 +25,7 @@ type UsersPanelProps = {
 
 export function UsersPanel({
   busy,
+  canManage,
   form,
   users,
   setForm,
@@ -33,52 +35,58 @@ export function UsersPanel({
     <Card>
       <CardBody className="section-stack">
         <CardHeading
-          subtitle="Crie novos usuarios da plataforma. A edicao do cadastro e feita apenas pelo proprio usuario."
+          subtitle={
+            canManage
+              ? "Crie novos usuarios da plataforma. A edicao do cadastro e feita apenas pelo proprio usuario."
+              : "Visualizacao dos usuarios da plataforma e dos cargos atuais na loja ativa."
+          }
           title="Usuarios da plataforma"
         />
 
-        <form className="form-grid" onSubmit={onSubmit}>
-          <div className="split-fields">
+        {canManage ? (
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="split-fields">
+              <TextInput
+                label="Nome"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, nome: event.target.value }))
+                }
+                value={form.nome}
+              />
+              <TextInput
+                label="Telefone"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    telefone: event.target.value,
+                  }))
+                }
+                value={form.telefone}
+              />
+            </div>
             <TextInput
-              label="Nome"
+              label="Email"
               onChange={(event) =>
-                setForm((current) => ({ ...current, nome: event.target.value }))
+                setForm((current) => ({ ...current, email: event.target.value }))
               }
-              value={form.nome}
+              value={form.email}
             />
             <TextInput
-              label="Telefone"
+              label="Senha inicial"
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
-                  telefone: event.target.value,
+                  senha: event.target.value,
                 }))
               }
-              value={form.telefone}
+              type="password"
+              value={form.senha}
             />
-          </div>
-          <TextInput
-            label="Email"
-            onChange={(event) =>
-              setForm((current) => ({ ...current, email: event.target.value }))
-            }
-            value={form.email}
-          />
-          <TextInput
-            label="Senha inicial"
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                senha: event.target.value,
-              }))
-            }
-            type="password"
-            value={form.senha}
-          />
-          <Button disabled={busy} type="submit">
-            {busy ? "Salvando..." : "Criar usuario"}
-          </Button>
-        </form>
+            <Button disabled={busy} type="submit">
+              {busy ? "Salvando..." : "Criar usuario"}
+            </Button>
+          </form>
+        ) : null}
 
         <div className="record-list">
           {users.length === 0 ? (

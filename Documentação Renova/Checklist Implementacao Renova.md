@@ -93,7 +93,7 @@ Documento mestre em formato todo list para orientar a implementação completa d
 - [x] Implementar cadastro de loja
   - [x] CRUD de `loja`
   - [x] tela web de listagem e edição
-- [ ] Implementar visão consolidada por usuário
+- [x] Implementar visão consolidada por usuário
   - [x] listar apenas lojas vinculadas
   - [x] permitir troca de loja ativa
   - [x] consolidar visão gerencial somente das lojas autorizadas

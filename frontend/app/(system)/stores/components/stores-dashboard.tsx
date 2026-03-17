@@ -11,14 +11,12 @@ import {
   type StoreFormState,
 } from "@/app/(system)/stores/components/store-form-panel";
 import { StoresOverview } from "@/app/(system)/stores/components/stores-overview";
-import { Card, CardBody, CardHeading } from "@/components/ui/card";
+import { accessPermissionCodes, hasPermission } from "@/lib/helpers/access-control";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import { getZodErrorMessage } from "@/lib/schemas/access";
 import { createStoreSchema, updateStoreSchema } from "@/lib/schemas/stores";
 import { createStore, listAccessibleStores, updateStore } from "@/lib/services/stores";
-
-const storeManagerPermission = "lojas.gerenciar";
 
 const emptyStoreForm: StoreFormState = {
   id: "",
@@ -51,7 +49,7 @@ export function StoresDashboard() {
 
   const canManageStores =
     session.lojas.length === 0 ||
-    session.permissoes.includes(storeManagerPermission);
+    hasPermission(session, accessPermissionCodes.storesManage);
 
   useEffect(() => {
     if (storesQuery.isError) {
@@ -175,21 +173,6 @@ export function StoresDashboard() {
           setSelectedStoreId={setSelectedStoreId}
           stores={stores}
         />
-
-        {!canManageStores ? (
-          <Card>
-            <CardBody className="section-stack">
-              <CardHeading
-                subtitle="A visao consolidada continua disponivel, mas a gestao da loja exige permissao especifica."
-                title="Gestao restrita"
-              />
-              <div className="empty-state">
-                Solicite a permissao de gerenciamento de lojas para editar o
-                cadastro da loja.
-              </div>
-            </CardBody>
-          </Card>
-        ) : null}
       </div>
     </div>
   );
