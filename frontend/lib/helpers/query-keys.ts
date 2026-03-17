@@ -4,4 +4,13 @@ export const queryKeys = {
   accessWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["access-workspace", token, lojaAtivaId ?? null] as const,
   accessibleStores: (token: string) => ["accessible-stores", token] as const,
+  people: (token: string, lojaAtivaId?: string | null) =>
+    ["people", token, lojaAtivaId ?? null] as const,
+  personDetail: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    pessoaId: string | null,
+  ) => ["people-detail", token, lojaAtivaId ?? null, pessoaId ?? null] as const,
+  peopleUsers: (token: string, lojaAtivaId?: string | null) =>
+    ["people-users", token, lojaAtivaId ?? null] as const,
 };

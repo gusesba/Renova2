@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Renova.Services.Features.Access.Abstractions;
 using Renova.Services.Features.Access.Services;
+using Renova.Services.Features.People.Abstractions;
+using Renova.Services.Features.People.Services;
 using Renova.Services.Features.Stores.Abstractions;
 using Renova.Services.Features.Stores.Services;
 
@@ -19,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccessRoleService, AccessRoleService>();
         services.AddScoped<IAccessStoreMembershipService, AccessStoreMembershipService>();
         services.AddScoped<IStoreService, StoreService>();
+        services.AddScoped<IPersonService, PersonService>();
 
         return services;
     }

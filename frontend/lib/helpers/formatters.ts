@@ -10,6 +10,14 @@ export function formatStatus(status: string) {
     return "Inativo";
   }
 
+  if (normalized === "entrada") {
+    return "Entrada";
+  }
+
+  if (normalized === "saida") {
+    return "Saida";
+  }
+
   if (normalized === "bloqueado") {
     return "Bloqueado";
   }
@@ -24,7 +32,15 @@ export function getStatusTone(status: string) {
     return "success";
   }
 
+  if (normalized === "entrada") {
+    return "success";
+  }
+
   if (normalized === "bloqueado") {
+    return "danger";
+  }
+
+  if (normalized === "saida") {
     return "danger";
   }
 
@@ -44,6 +60,26 @@ export function getInitials(name: string) {
     .slice(0, 2);
 
   return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+}
+
+// Formata valores monetarios em real para os paineis do sistema.
+export function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+// Formata data e hora da API para exibicao resumida.
+export function formatDateTime(value?: string | null) {
+  if (!value) {
+    return "Sem registro";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 export function getErrorMessage(error: unknown) {

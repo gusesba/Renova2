@@ -10,6 +10,7 @@ import { AccessStateCard } from "@/components/ui/access-state-card";
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import {
   canAccessDashboardModule,
+  canAccessPeopleModule,
   canAccessStoresModule,
 } from "@/lib/helpers/access-control";
 import type { SessionContext } from "@/lib/services/access";
@@ -61,6 +62,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "O modulo de lojas exige permissao especifica de gerenciamento.",
     deniedMessage:
       "Solicite a permissao de gerenciamento de lojas para acessar esta pagina.",
+  },
+  {
+    href: "/people",
+    label: "Pessoas",
+    meta: "Clientes",
+    title: "Clientes e Fornecedores",
+    subtitle: "Cadastro mestre, vinculos por loja e visao financeira",
+    canAccess: createAccessPredicate(canAccessPeopleModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de clientes e fornecedores.",
+    deniedMessage:
+      "Solicite um cargo com permissao para visualizar ou gerenciar pessoas na loja ativa.",
   },
 ];
 

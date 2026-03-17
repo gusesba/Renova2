@@ -100,27 +100,27 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 04. Módulo 03 - Cadastro de Clientes e Fornecedores
 
-- [ ] Implementar cadastro mestre de pessoa
-  - [ ] CRUD de `pessoa`
-  - [ ] validação de documento
-  - [ ] inativação lógica
-  - [ ] tela web de busca e edição
-- [ ] Implementar vínculo pessoa x loja
-  - [ ] CRUD de `pessoa_loja`
-  - [ ] marcar cliente, fornecedor ou ambos
-  - [ ] definir política padrão de fim de consignação
-  - [ ] exibir situação por loja
-- [ ] Implementar contas bancárias
-  - [ ] CRUD de `pessoa_conta_bancaria`
-  - [ ] suporte a PIX
-  - [ ] conta principal
-- [ ] Implementar vínculo pessoa x usuário
-  - [ ] permitir associar `usuario` a `pessoa`
-  - [ ] preparar acesso ao portal
-- [ ] Implementar visão financeira da pessoa
-  - [ ] consolidar saldo de crédito
-  - [ ] consolidar pendências
-  - [ ] consolidar histórico de transações
+- [x] Implementar cadastro mestre de pessoa
+  - [x] CRUD de `pessoa`
+  - [x] validação de documento
+  - [x] inativação lógica
+  - [x] tela web de busca e edição
+- [x] Implementar vínculo pessoa x loja
+  - [x] CRUD de `pessoa_loja`
+  - [x] marcar cliente, fornecedor ou ambos
+  - [x] definir política padrão de fim de consignação
+  - [x] exibir situação por loja
+- [x] Implementar contas bancárias
+  - [x] CRUD de `pessoa_conta_bancaria`
+  - [x] suporte a PIX
+  - [x] conta principal
+- [x] Implementar vínculo pessoa x usuário
+  - [x] permitir associar `usuario` a `pessoa`
+  - [x] preparar acesso ao portal
+- [x] Implementar visão financeira da pessoa
+  - [x] consolidar saldo de crédito
+  - [x] consolidar pendências
+  - [x] consolidar histórico de transações
 
 ## 05. Módulo 04 - Cadastros Auxiliares e Tabelas Base
 

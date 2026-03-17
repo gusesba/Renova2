@@ -6,6 +6,8 @@ export const accessPermissionCodes = {
   usersManage: "usuarios.gerenciar",
   rolesManage: "cargos.gerenciar",
   storesManage: "lojas.gerenciar",
+  peopleView: "pessoas.visualizar",
+  peopleManage: "pessoas.gerenciar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -44,4 +46,12 @@ export function canAccessStoresModule(session: SessionContext) {
     session.lojas.length === 0 ||
     hasPermission(session, accessPermissionCodes.storesManage)
   );
+}
+
+// Libera o modulo de pessoas para quem possui leitura ou gestao no contexto da loja ativa.
+export function canAccessPeopleModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.peopleView,
+    accessPermissionCodes.peopleManage,
+  ]);
 }
