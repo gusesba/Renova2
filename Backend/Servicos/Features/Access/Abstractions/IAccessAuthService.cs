@@ -39,4 +39,9 @@ public interface IAccessAuthService
     /// Redefine a senha a partir de um token valido.
     /// </summary>
     Task RedefinirSenhaAsync(ConfirmPasswordResetRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Altera a senha do usuario autenticado a partir da senha atual.
+    /// </summary>
+    Task AlterarSenhaAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default);
 }

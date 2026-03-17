@@ -47,6 +47,20 @@ export async function confirmPasswordReset(payload: {
   });
 }
 
+export async function changePassword(
+  token: string,
+  payload: { senhaAtual: string; novaSenha: string },
+) {
+  return callApi<void>(
+    "/access/auth/change-password",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
 export async function logout(token: string) {
   return callApi<void>("/access/auth/logout", { method: "POST" }, token);
 }

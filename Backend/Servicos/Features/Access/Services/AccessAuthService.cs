@@ -333,6 +333,54 @@ public sealed class AccessAuthService : IAccessAuthService
     }
 
     /// <summary>
+    /// Altera a senha do usuario autenticado validando a senha atual.
+    /// </summary>
+    public async Task AlterarSenhaAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var usuarioId = EnsureAuthenticatedUser();
+        var usuario = await _dbContext.Usuarios.FirstOrDefaultAsync(x => x.Id == usuarioId, cancellationToken)
+            ?? throw new InvalidOperationException("Usuario autenticado nao encontrado.");
+
+        if (!_passwordHasher.Verify(request.SenhaAtual, usuario.SenhaHash, usuario.SenhaSalt))
+        {
+            throw new InvalidOperationException("A senha atual informada esta incorreta.");
+        }
+
+        ValidatePassword(request.NovaSenha);
+
+        if (_passwordHasher.Verify(request.NovaSenha, usuario.SenhaHash, usuario.SenhaSalt))
+        {
+            throw new InvalidOperationException("A nova senha deve ser diferente da senha atual.");
+        }
+
+        var senha = _passwordHasher.Hash(request.NovaSenha);
+        usuario.SenhaHash = senha.Hash;
+        usuario.SenhaSalt = senha.Salt;
+        usuario.AtualizadoEm = DateTimeOffset.UtcNow;
+        usuario.AtualizadoPorUsuarioId = usuario.Id;
+
+        var sessoes = await _dbContext.UsuarioSessoes
+            .Where(x => x.UsuarioId == usuario.Id && x.RevogadoEm == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var sessao in sessoes.Where(x => x.Id != _currentRequestContext.SessaoId))
+        {
+            sessao.RevogadoEm = DateTimeOffset.UtcNow;
+            sessao.AtualizadoEm = DateTimeOffset.UtcNow;
+            sessao.AtualizadoPorUsuarioId = usuario.Id;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _auditService.RegistrarEventoAcessoAsync(usuario.Id, "senha_alterada", null, cancellationToken);
+        await RegistrarAuditoriaRecuperacaoAsync(
+            usuario,
+            "senha_alterada",
+            null,
+            new { alteradoEm = DateTimeOffset.UtcNow },
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Garante que existe um usuario autenticado no contexto.
     /// </summary>
     private Guid EnsureAuthenticatedUser()

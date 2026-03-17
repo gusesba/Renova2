@@ -107,4 +107,17 @@ public sealed class AuthController : RenovaControllerBase
         await _accessAuthService.RedefinirSenhaAsync(request, cancellationToken);
         return NoContent();
     }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    /// <summary>
+    /// Altera a senha do usuario autenticado usando a senha atual.
+    /// </summary>
+    public async Task<ActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _accessAuthService.AlterarSenhaAsync(request, cancellationToken);
+        return NoContent();
+    }
 }

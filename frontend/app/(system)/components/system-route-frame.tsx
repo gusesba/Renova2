@@ -29,14 +29,25 @@ const navigationItems = [
   },
 ];
 
+const routeItems = [
+  ...navigationItems,
+  {
+    href: "/profile",
+    label: "Perfil",
+    meta: "Conta",
+    title: "Meu Perfil",
+    subtitle: "Edicao dos dados do usuario autenticado",
+  },
+];
+
 // Monta o shell visual do grupo autenticado e controla o estado da sidebar.
 export function SystemRouteFrame({ children }: SystemRouteFrameProps) {
   const pathname = usePathname();
   const { session, changeStore, logoutCurrentUser } = useSystemSession();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const currentItem =
-    navigationItems.find((item) => pathname.startsWith(item.href)) ??
-    navigationItems[0];
+    routeItems.find((item) => pathname.startsWith(item.href)) ??
+    routeItems[0];
 
   return (
     <AppShell

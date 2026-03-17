@@ -92,18 +92,11 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 - [x] Implementar cadastro de loja
   - [x] CRUD de `loja`
-  - [ ] validação de documento único
-  - [ ] inativação lógica
-  - [ ] tela web de listagem e edição
-- [ ] Implementar configuração operacional da loja
-  - [x] CRUD de `loja_configuracao`
-  - [ ] dados de impressão
-  - [ ] nome de exibição
-  - [ ] fuso horário e moeda
+  - [x] tela web de listagem e edição
 - [ ] Implementar visão consolidada por usuário
   - [x] listar apenas lojas vinculadas
   - [x] permitir troca de loja ativa
-  - [ ] consolidar visão gerencial somente das lojas autorizadas
+  - [x] consolidar visão gerencial somente das lojas autorizadas
 
 ## 04. Módulo 03 - Cadastro de Clientes e Fornecedores
 

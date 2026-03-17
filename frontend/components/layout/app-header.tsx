@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { SelectField } from "@/components/ui/field";
 import { getInitials } from "@/lib/helpers/formatters";
@@ -65,13 +67,13 @@ export function AppHeader({
             </div>
           </div>
         )}
-        <div className="app-header-user">
+        <Link aria-label="Editar meu perfil" className="app-header-user app-header-user-link" href="/profile">
           <div>
             <div className="app-header-user-name">{session.usuario.nome}</div>
             <div className="app-nav-meta">{session.usuario.email}</div>
           </div>
           <span className="avatar-pill">{getInitials(session.usuario.nome)}</span>
-        </div>
+        </Link>
         <Button className="app-header-logout" onClick={onLogout} variant="ghost">
           Sair
         </Button>

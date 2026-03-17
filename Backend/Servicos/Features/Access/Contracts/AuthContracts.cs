@@ -49,3 +49,5 @@ public sealed record PasswordResetRequestResponse(
     DateTimeOffset? ExpiraEm);
 
 public sealed record ConfirmPasswordResetRequest(string Token, string NovaSenha);
+
+public sealed record ChangePasswordRequest(string SenhaAtual, string NovaSenha);

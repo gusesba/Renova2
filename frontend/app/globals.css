@@ -517,6 +517,16 @@ a {
   box-shadow: var(--shadow-md);
 }
 
+.app-header-user-link {
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.app-header-user-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(91, 93, 246, 0.35);
+}
+
 .app-header-user-name {
   font-weight: 700;
   font-size: 0.92rem;

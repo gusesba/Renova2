@@ -50,6 +50,29 @@ export const createUserFormSchema = z.object({
     .min(8, "A senha inicial deve ter ao menos 8 caracteres."),
 });
 
+export const profileUpdateSchema = z.object({
+  nome: z.string().trim().min(1, "Informe o seu nome."),
+  email: z.email("Informe um email valido."),
+  telefone: z.string().trim().min(1, "Informe o seu telefone."),
+});
+
+export const changePasswordSchema = z
+  .object({
+    senhaAtual: z
+      .string()
+      .trim()
+      .min(8, "Informe a sua senha atual (ao menos 8 caracteres)."),
+    novaSenha: z
+      .string()
+      .trim()
+      .min(8, "A nova senha deve ter ao menos 8 caracteres."),
+    confirmacaoNovaSenha: z.string().trim().min(8, "Confirme a nova senha."),
+  })
+  .refine((data) => data.novaSenha === data.confirmacaoNovaSenha, {
+    message: "A confirmacao da nova senha deve ser igual a nova senha.",
+    path: ["confirmacaoNovaSenha"],
+  });
+
 export const roleFormSchema = z.object({
   id: z.string(),
   nome: z.string().trim().min(1, "Informe o nome do cargo."),
