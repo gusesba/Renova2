@@ -118,20 +118,39 @@ async function callApi<T>(path: string, init: RequestInit, token?: string | null
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Servidor indisponivel. Tente novamente em instantes.");
+  }
 
   if (response.status === 204) {
     return undefined as T;
   }
 
-  const body = (await response.json()) as Envelope<T> & ErrorEnvelope;
+  const rawBody = await response.text();
+  const body = rawBody
+    ? ((JSON.parse(rawBody) as Envelope<T> & ErrorEnvelope))
+    : null;
 
   if (!response.ok) {
-    throw new Error(body.detail ?? body.title ?? "Falha ao consultar a API.");
+    throw new Error(
+      body?.detail ??
+        body?.title ??
+        (response.status === 401 || response.status === 403
+          ? "Voce nao tem acesso a esta funcionalidade."
+          : "Falha ao consultar a API."),
+    );
+  }
+
+  if (!body) {
+    throw new Error("Resposta invalida do servidor.");
   }
 
   return body.data;
