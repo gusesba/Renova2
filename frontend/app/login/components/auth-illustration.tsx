@@ -1,3 +1,4 @@
+// Ilustracao puramente decorativa da tela de autenticacao.
 export function AuthIllustration() {
   return (
     <div className="auth-illustration">

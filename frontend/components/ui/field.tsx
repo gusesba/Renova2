@@ -19,6 +19,7 @@ import {
 
 import { cx } from "@/lib/helpers/classnames";
 
+// Campos base da interface; concentra os estilos e o select customizado.
 type BaseFieldProps = {
   label: string;
   className?: string;
@@ -82,6 +83,7 @@ export function SelectField({
       return;
     }
 
+    // Fecha o dropdown ao clicar fora ou ao pressionar ESC.
     function handlePointerDown(event: MouseEvent) {
       if (!shellRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -129,7 +131,11 @@ export function SelectField({
     <label className="ui-field">
       <span className="ui-field-label">{label}</span>
       <div
-        className={cx("ui-select-shell", open && "is-open", disabled && "is-disabled")}
+        className={cx(
+          "ui-select-shell",
+          open && "is-open",
+          disabled && "is-disabled",
+        )}
         onBlur={handleBlur}
         ref={shellRef}
       >
@@ -166,7 +172,11 @@ export function SelectField({
         </button>
 
         {open ? (
-          <div className="ui-select-dropdown" id={`${fieldId}-listbox`} role="listbox">
+          <div
+            className="ui-select-dropdown"
+            id={`${fieldId}-listbox`}
+            role="listbox"
+          >
             {options.map((option) => (
               <button
                 aria-selected={option.value === selectedValue}
@@ -186,7 +196,7 @@ export function SelectField({
                 <span>{option.label}</span>
                 {option.value === selectedValue ? (
                   <span className="ui-select-option-check" aria-hidden="true">
-                    ✓
+                    OK
                   </span>
                 ) : null}
               </button>
@@ -199,6 +209,7 @@ export function SelectField({
 }
 
 function extractOptions(children: ReactNode) {
+  // O componente continua aceitando <option> para nao quebrar o uso atual das telas.
   return Children.toArray(children).flatMap((child) => {
     if (!isValidElement(child) || child.type !== "option") {
       return [];

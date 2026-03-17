@@ -2,6 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 import { cx } from "@/lib/helpers/classnames";
 
+// Bloco visual generico usado como base dos paineis e cards.
 type CardProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
 };

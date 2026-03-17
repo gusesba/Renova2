@@ -1,4 +1,4 @@
-import type { Dispatch, FormEvent, SetStateAction } from "react";
+import type { Dispatch, SubmitEvent, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { TextArea, TextInput } from "@/components/ui/field";
 import { groupPermissionsByModule } from "@/lib/helpers/group-permissions";
 import type { AccessPermission, AccessRole } from "@/lib/services/renova-api";
 
+// Painel de cargos com agrupamento visual de permissoes por modulo.
 export type RoleFormState = {
   id: string;
   nome: string;
@@ -19,7 +20,7 @@ type RolesPanelProps = {
   permissions: AccessPermission[];
   roles: AccessRole[];
   setForm: Dispatch<SetStateAction<RoleFormState>>;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
 };
 
 export function RolesPanel({
@@ -30,6 +31,7 @@ export function RolesPanel({
   setForm,
   onSubmit,
 }: RolesPanelProps) {
+  // O agrupamento evita repetir logica de ordenacao dentro do JSX.
   const permissionGroups = groupPermissionsByModule(permissions);
 
   return (

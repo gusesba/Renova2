@@ -34,6 +34,68 @@ public sealed class AccessAuthService : IAccessAuthService
     }
 
     /// <summary>
+    /// Permite que qualquer pessoa crie uma conta basica de acesso pela tela de autenticacao.
+    /// </summary>
+    public async Task<RegisterResponse> RegistrarAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Nome))
+        {
+            throw new InvalidOperationException("O nome do usuario e obrigatorio.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Telefone))
+        {
+            throw new InvalidOperationException("O telefone do usuario e obrigatorio.");
+        }
+
+        ValidatePassword(request.Senha);
+
+        var email = NormalizeEmail(request.Email);
+        var emailEmUso = await _dbContext.Usuarios.AnyAsync(
+            x => x.Email.ToLower() == email,
+            cancellationToken);
+
+        if (emailEmUso)
+        {
+            throw new InvalidOperationException("Ja existe um usuario com o e-mail informado.");
+        }
+
+        var senha = _passwordHasher.Hash(request.Senha);
+        var usuario = new Usuario
+        {
+            Id = Guid.NewGuid(),
+            Nome = request.Nome.Trim(),
+            Email = email,
+            Telefone = request.Telefone.Trim(),
+            SenhaHash = senha.Hash,
+            SenhaSalt = senha.Salt,
+            StatusUsuario = AccessStatusValues.Usuario.Ativo,
+            CriadoPorUsuarioId = null,
+        };
+
+        _dbContext.Usuarios.Add(usuario);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _auditService.RegistrarEventoAcessoAsync(
+            usuario.Id,
+            "cadastro_publico",
+            new { usuario.Email },
+            cancellationToken);
+
+        await RegistrarAuditoriaCadastroAsync(usuario, cancellationToken);
+
+        return new RegisterResponse(
+            "Conta criada com sucesso. Agora voce pode fazer login.",
+            new AuthenticatedUserResponse(
+                usuario.Id,
+                usuario.Nome,
+                usuario.Email,
+                usuario.Telefone,
+                usuario.StatusUsuario,
+                usuario.PessoaId));
+    }
+
+    /// <summary>
     /// Valida as credenciais e cria uma nova sessao autenticada.
     /// </summary>
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -433,6 +495,34 @@ public sealed class AccessAuthService : IAccessAuthService
             Acao = acao,
             AntesJson = antes is null ? null : JsonSerializer.Serialize(antes),
             DepoisJson = depois is null ? null : JsonSerializer.Serialize(depois),
+            OcorridoEm = DateTimeOffset.UtcNow,
+            CriadoPorUsuarioId = usuario.Id,
+        });
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Registra a criacao publica da conta para rastreabilidade administrativa.
+    /// </summary>
+    private async Task RegistrarAuditoriaCadastroAsync(Usuario usuario, CancellationToken cancellationToken)
+    {
+        _dbContext.AuditoriaEventos.Add(new AuditoriaEvento
+        {
+            Id = Guid.NewGuid(),
+            LojaId = null,
+            UsuarioId = usuario.Id,
+            Entidade = "usuario",
+            EntidadeId = usuario.Id,
+            Acao = "cadastro_publico",
+            AntesJson = null,
+            DepoisJson = JsonSerializer.Serialize(new
+            {
+                usuario.Nome,
+                usuario.Email,
+                usuario.Telefone,
+                usuario.StatusUsuario,
+            }),
             OcorridoEm = DateTimeOffset.UtcNow,
             CriadoPorUsuarioId = usuario.Id,
         });

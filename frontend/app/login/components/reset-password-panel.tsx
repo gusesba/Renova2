@@ -1,8 +1,9 @@
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/field";
 
+// Fluxo de recuperacao em duas etapas: gerar token e confirmar nova senha.
 type ResetPasswordPanelProps = {
   values: {
     email: string;
@@ -12,8 +13,8 @@ type ResetPasswordPanelProps = {
   busy: boolean;
   tokenIssued: boolean;
   onChange: (field: "email" | "token" | "novaSenha", value: string) => void;
-  onRequest: (event: FormEvent<HTMLFormElement>) => void;
-  onConfirm: (event: FormEvent<HTMLFormElement>) => void;
+  onRequest: (event: SubmitEvent<HTMLFormElement>) => void;
+  onConfirm: (event: SubmitEvent<HTMLFormElement>) => void;
   onBackToLogin: () => void;
 };
 
@@ -33,7 +34,8 @@ export function ResetPasswordPanel({
           Recuperar acesso
         </h2>
         <p className="auth-subtitle">
-          Gere o token e conclua a redefinicao no mesmo espaço onde o login aparece.
+          Gere o token e conclua a redefinicao no mesmo espaço onde o login
+          aparece.
         </p>
       </div>
 
@@ -67,10 +69,16 @@ export function ResetPasswordPanel({
             Fazer login
           </button>
           <span className="app-nav-meta">
-            {tokenIssued ? "Token gerado para a conta informada" : "Gere o token antes de confirmar"}
+            {tokenIssued
+              ? "Token gerado para a conta informada"
+              : "Gere o token antes de confirmar"}
           </span>
         </div>
-        <Button disabled={busy || !tokenIssued} type="submit" variant="secondary">
+        <Button
+          disabled={busy || !tokenIssued}
+          type="submit"
+          variant="secondary"
+        >
           Confirmar redefinicao
         </Button>
       </form>

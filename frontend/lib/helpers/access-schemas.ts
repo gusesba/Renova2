@@ -1,9 +1,23 @@
 import { z } from "zod";
 
+// Schemas centralizados para manter validacao coerente entre formularios e requests.
 export const loginSchema = z.object({
   email: z.email("Informe um email valido."),
   senha: z.string().trim().min(8, "A senha deve ter ao menos 8 caracteres."),
 });
+
+export const registerSchema = z
+  .object({
+    nome: z.string().trim().min(1, "Informe seu nome."),
+    email: z.email("Informe um email valido."),
+    telefone: z.string().trim().min(1, "Informe seu telefone."),
+    senha: z.string().trim().min(8, "A senha deve ter ao menos 8 caracteres."),
+    confirmacaoSenha: z.string().trim().min(8, "Confirme sua senha."),
+  })
+  .refine((data) => data.senha === data.confirmacaoSenha, {
+    message: "A confirmacao de senha deve ser igual a senha informada.",
+    path: ["confirmacaoSenha"],
+  });
 
 export const passwordResetRequestSchema = z.object({
   email: z.email("Informe um email valido."),

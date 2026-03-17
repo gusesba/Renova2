@@ -1,3 +1,4 @@
+// Marca simples reutilizada no login e no shell do sistema.
 type RenovaMarkProps = {
   subtitle?: string;
   compact?: boolean;

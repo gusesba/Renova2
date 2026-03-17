@@ -1,5 +1,6 @@
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 
+// Card resumido para indicadores no topo da dashboard.
 type MetricCardProps = {
   title: string;
   value: string;

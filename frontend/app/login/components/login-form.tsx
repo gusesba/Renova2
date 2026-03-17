@@ -1,8 +1,9 @@
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/field";
 
+// Formulario enxuto de login; toda regra de negocio fica no componente pai.
 type LoginFormProps = {
   values: {
     email: string;
@@ -10,7 +11,8 @@ type LoginFormProps = {
   };
   busy: boolean;
   onChange: (field: "email" | "senha", value: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
+  onCreateAccount: () => void;
   onToggleReset: () => void;
 };
 
@@ -18,6 +20,7 @@ export function LoginForm({
   values,
   busy,
   onChange,
+  onCreateAccount,
   onSubmit,
   onToggleReset,
 }: LoginFormProps) {
@@ -41,6 +44,9 @@ export function LoginForm({
       <div className="auth-actions">
         <button className="auth-link" onClick={onToggleReset} type="button">
           Esqueceu a senha?
+        </button>
+        <button className="auth-link" onClick={onCreateAccount} type="button">
+          Criar conta
         </button>
       </div>
       <Button disabled={busy} fullWidth type="submit">

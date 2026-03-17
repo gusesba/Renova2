@@ -13,6 +13,7 @@ import { queryKeys } from "@/lib/helpers/query-keys";
 import { clearSessionToken, readSessionToken } from "@/lib/helpers/session-storage";
 import { changeActiveStore, getMe, logout, type SessionContext } from "@/lib/services/renova-api";
 
+// Expõe a sessao autenticada para o grupo `/(system)` e centraliza mutacoes de sessao.
 type SystemSessionValue = {
   token: string;
   session: SessionContext;
@@ -67,6 +68,7 @@ export function SystemSessionProvider({ children }: SystemSessionProviderProps) 
   });
 
   useEffect(() => {
+    // Qualquer token ausente ou invalido devolve o usuario para a tela de login.
     if (!token) {
       router.replace("/login");
       return;

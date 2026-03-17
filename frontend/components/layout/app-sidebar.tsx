@@ -3,6 +3,7 @@ import Link from "next/link";
 import { RenovaMark } from "@/components/brand/renova-mark";
 import { cx } from "@/lib/helpers/classnames";
 
+// Sidebar do sistema; recebe a navegacao pronta para continuar componente puro.
 type SidebarItem = {
   href: string;
   label: string;

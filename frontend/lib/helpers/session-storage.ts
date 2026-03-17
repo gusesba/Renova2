@@ -1,5 +1,6 @@
 export const SESSION_TOKEN_KEY = "renova.module01.token";
 
+// Protege acessos a storage durante renderizacao no servidor.
 function canUseDom() {
   return typeof window !== "undefined";
 }

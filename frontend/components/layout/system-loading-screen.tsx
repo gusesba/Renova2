@@ -1,3 +1,4 @@
+// Estado visual usado enquanto a sessao autenticada ainda esta sendo hidratada.
 export function SystemLoadingScreen() {
   return (
     <div className="system-loading">

@@ -3,6 +3,7 @@ import { SelectField } from "@/components/ui/field";
 import { getInitials } from "@/lib/helpers/formatters";
 import type { SessionContext } from "@/lib/services/renova-api";
 
+// Header principal do shell com loja ativa, dados do usuario e acoes de sessao.
 type AppHeaderProps = {
   session: SessionContext;
   onChangeStore: (storeId: string) => void;
@@ -38,19 +39,28 @@ export function AppHeader({
         </div>
       </div>
       <div className="app-header-actions">
-        <div className="app-header-store">
-          <SelectField
-            label="Loja ativa"
-            onChange={(event) => onChangeStore(event.target.value)}
-            value={session.lojaAtivaId ?? ""}
-          >
-            {session.lojas.map((store) => (
-              <option key={store.id} value={store.id}>
-                {store.nome}
-              </option>
-            ))}
-          </SelectField>
-        </div>
+        {session.lojas.length > 0 ? (
+          <div className="app-header-store">
+            <SelectField
+              label="Loja ativa"
+              onChange={(event) => onChangeStore(event.target.value)}
+              value={session.lojaAtivaId ?? ""}
+            >
+              {session.lojas.map((store) => (
+                <option key={store.id} value={store.id}>
+                  {store.nome}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+        ) : (
+          <div className="app-header-user">
+            <div>
+              <div className="app-header-user-name">Sem loja vinculada</div>
+              <div className="app-nav-meta">Aguardando liberacao de acesso</div>
+            </div>
+          </div>
+        )}
         <div className="app-header-user">
           <div>
             <div className="app-header-user-name">{session.usuario.nome}</div>

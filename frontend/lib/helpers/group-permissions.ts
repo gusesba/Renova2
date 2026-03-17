@@ -1,5 +1,6 @@
 import type { AccessPermission } from "@/lib/services/renova-api";
 
+// Agrupa e ordena permissoes por modulo para simplificar a renderizacao da tela.
 export function groupPermissionsByModule(permissions: AccessPermission[]) {
   const groups = new Map<string, AccessPermission[]>();
 

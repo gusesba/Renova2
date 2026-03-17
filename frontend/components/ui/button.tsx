@@ -2,6 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cx } from "@/lib/helpers/classnames";
 
+// Botao base da interface com variantes visuais reaproveitaveis.
 type ButtonVariant = "primary" | "secondary" | "ghost" | "soft";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

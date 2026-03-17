@@ -3,10 +3,20 @@ namespace Renova.Services.Features.Access.Contracts;
 // Representa os contratos de request e response do fluxo de autenticacao.
 public sealed record LoginRequest(string Email, string Senha);
 
+public sealed record RegisterRequest(
+    string Nome,
+    string Email,
+    string Telefone,
+    string Senha);
+
 public sealed record LoginResponse(
     string Token,
     DateTimeOffset ExpiraEm,
     LoginContextResponse Contexto);
+
+public sealed record RegisterResponse(
+    string Mensagem,
+    AuthenticatedUserResponse Usuario);
 
 public sealed record LoginContextResponse(
     AuthenticatedUserResponse Usuario,

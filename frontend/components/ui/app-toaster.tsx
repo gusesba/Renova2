@@ -2,6 +2,7 @@
 
 import { Toaster } from "sonner";
 
+// Configuracao unica do Sonner para manter o mesmo padrao de notificacao no app.
 export function AppToaster() {
   return (
     <Toaster

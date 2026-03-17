@@ -1,5 +1,6 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5131/api/v1";
 
+// Cliente HTTP enxuto da aplicacao; centraliza endpoints, tipos e tratamento basico de erro.
 type Envelope<T> = {
   data: T;
 };
@@ -90,6 +91,11 @@ type LoginResponse = {
   contexto: SessionContext;
 };
 
+type RegisterResponse = {
+  mensagem: string;
+  usuario: AuthenticatedUser;
+};
+
 type PasswordResetRequestResponse = {
   mensagem: string;
   tokenRecuperacao?: string | null;
@@ -104,6 +110,7 @@ export type AccessWorkspace = {
 };
 
 async function callApi<T>(path: string, init: RequestInit, token?: string | null) {
+  // Todas as chamadas passam por aqui para reaproveitar headers e parsing do envelope.
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
 
@@ -134,6 +141,18 @@ export async function login(credentials: { email: string; senha: string }) {
   return callApi<LoginResponse>("/access/auth/login", {
     method: "POST",
     body: JSON.stringify(credentials),
+  });
+}
+
+export async function register(payload: {
+  nome: string;
+  email: string;
+  telefone: string;
+  senha: string;
+}) {
+  return callApi<RegisterResponse>("/access/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
@@ -309,6 +328,7 @@ export async function updateMembershipRoles(token: string, usuarioLojaId: string
 }
 
 export async function loadAccessWorkspace(token: string): Promise<AccessWorkspace> {
+  // O dashboard depende desses quatro blocos ao mesmo tempo, entao carrega tudo em paralelo.
   const [users, permissions, roles, memberships] = await Promise.all([
     listUsers(token),
     listPermissions(token),

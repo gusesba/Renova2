@@ -1,11 +1,16 @@
-import type { Dispatch, FormEvent, SetStateAction } from "react";
+import type { Dispatch, SubmitEvent, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { SelectField } from "@/components/ui/field";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { AccessRole, AccessUser, StoreMembership } from "@/lib/services/renova-api";
+import type {
+  AccessRole,
+  AccessUser,
+  StoreMembership,
+} from "@/lib/services/renova-api";
 
+// Painel de vinculos entre usuario, loja ativa e cargos atribuidos.
 export type MembershipFormState = {
   id: string;
   usuarioId: string;
@@ -19,7 +24,7 @@ type MembershipsPanelProps = {
   roles: AccessRole[];
   memberships: StoreMembership[];
   setForm: Dispatch<SetStateAction<MembershipFormState>>;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
 };
 
 export function MembershipsPanel({
@@ -42,7 +47,12 @@ export function MembershipsPanel({
         <form className="form-grid" onSubmit={onSubmit}>
           <SelectField
             label="Usuario"
-            onChange={(event) => setForm((current) => ({ ...current, usuarioId: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                usuarioId: event.target.value,
+              }))
+            }
             value={form.usuarioId}
           >
             <option value="">Selecione um usuario</option>
@@ -77,13 +87,19 @@ export function MembershipsPanel({
           </div>
 
           <Button disabled={busy} type="submit">
-            {busy ? "Salvando..." : form.id ? "Atualizar vinculo" : "Criar vinculo"}
+            {busy
+              ? "Salvando..."
+              : form.id
+                ? "Atualizar vinculo"
+                : "Criar vinculo"}
           </Button>
         </form>
 
         <div className="record-list">
           {memberships.length === 0 ? (
-            <div className="empty-state">Nenhum vinculo encontrado para a loja ativa.</div>
+            <div className="empty-state">
+              Nenhum vinculo encontrado para a loja ativa.
+            </div>
           ) : (
             memberships.map((membership) => (
               <button
@@ -98,10 +114,20 @@ export function MembershipsPanel({
                 }
                 type="button"
               >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "1rem",
+                  }}
+                >
                   <div>
-                    <div className="selection-item-title">{membership.usuarioNome}</div>
-                    <div className="record-item-copy">{membership.usuarioEmail}</div>
+                    <div className="selection-item-title">
+                      {membership.usuarioNome}
+                    </div>
+                    <div className="record-item-copy">
+                      {membership.usuarioEmail}
+                    </div>
                   </div>
                   <StatusBadge value={membership.statusVinculo} />
                 </div>

@@ -1,11 +1,7 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useEffect, useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
@@ -14,8 +10,15 @@ import {
   MembershipsPanel,
   type MembershipFormState,
 } from "@/app/(system)/dashboard/components/memberships-panel";
-import { RolesPanel, type RoleFormState } from "@/app/(system)/dashboard/components/roles-panel";
-import { UsersPanel, type UserFormState } from "@/app/(system)/dashboard/components/users-panel";
+import {
+  RolesPanel,
+  type RoleFormState,
+} from "@/app/(system)/dashboard/components/roles-panel";
+import {
+  UsersPanel,
+  type UserFormState,
+} from "@/app/(system)/dashboard/components/users-panel";
+import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import {
   createUserFormSchema,
   getZodErrorMessage,
@@ -37,6 +40,7 @@ import {
   updateUser,
 } from "@/lib/services/renova-api";
 
+// Valores iniciais dos formularios para evitar estado parcial espalhado pela tela.
 const emptyUserForm: UserFormState = {
   id: "",
   nome: "",
@@ -59,18 +63,22 @@ const emptyMembershipForm: MembershipFormState = {
   cargoIds: [],
 };
 
+// Coordena a dashboard de acesso: leitura do workspace e mutacoes dos tres paineis.
 export function AccessDashboard() {
   const { token, session } = useSystemSession();
   const queryClient = useQueryClient();
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
-  const [membershipForm, setMembershipForm] = useState<MembershipFormState>(emptyMembershipForm);
+  const [membershipForm, setMembershipForm] =
+    useState<MembershipFormState>(emptyMembershipForm);
 
   const workspaceQuery = useQuery({
+    enabled: Boolean(session.lojaAtivaId && session.permissoes.length > 0),
     queryFn: () => loadAccessWorkspace(token),
     queryKey: queryKeys.accessWorkspace(token, session.lojaAtivaId),
   });
 
+  // Sempre invalida pelo token + loja ativa para manter o cache coerente com a sessao.
   const refreshWorkspace = () =>
     queryClient.invalidateQueries({
       queryKey: queryKeys.accessWorkspace(token, session.lojaAtivaId),
@@ -78,6 +86,7 @@ export function AccessDashboard() {
 
   const userMutation = useMutation({
     mutationFn: async () => {
+      // Atualizacao e criacao compartilham o mesmo formulario, mas com schemas distintos.
       if (userForm.id) {
         const parsed = userFormSchema.safeParse(userForm);
         if (!parsed.success) {
@@ -151,7 +160,11 @@ export function AccessDashboard() {
           ativo: true,
         });
 
-        return updateRolePermissions(token, parsed.data.id, parsed.data.permissaoIds);
+        return updateRolePermissions(
+          token,
+          parsed.data.id,
+          parsed.data.permissaoIds,
+        );
       }
 
       return createRole(token, {
@@ -178,7 +191,11 @@ export function AccessDashboard() {
       }
 
       if (parsed.data.id) {
-        return updateMembershipRoles(token, parsed.data.id, parsed.data.cargoIds);
+        return updateMembershipRoles(
+          token,
+          parsed.data.id,
+          parsed.data.cargoIds,
+        );
       }
 
       return createMembership(token, {
@@ -218,7 +235,41 @@ export function AccessDashboard() {
     }
   }, [workspaceQuery.error, workspaceQuery.isError]);
 
-  async function handleUserSubmit(event: FormEvent<HTMLFormElement>) {
+  if (session.lojas.length === 0) {
+    return (
+      <Card>
+        <CardBody className="section-stack">
+          <CardHeading
+            subtitle="Sua conta ja foi criada, mas ainda nao existe vinculo com nenhuma loja."
+            title="Acesso aguardando liberacao"
+          />
+          <div className="empty-state">
+            Um responsavel precisa vincular sua conta a uma loja e atribuir os
+            cargos necessarios antes de liberar o uso do sistema.
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (session.permissoes.length === 0) {
+    return (
+      <Card>
+        <CardBody className="section-stack">
+          <CardHeading
+            subtitle="Sua conta esta autenticada, mas nao possui permissao para este modulo."
+            title="Modulo sem permissao"
+          />
+          <div className="empty-state">
+            Solicite a atribuicao de um cargo na loja ativa para acessar as
+            funcionalidades administrativas.
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  async function handleUserSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     await userMutation.mutateAsync();
   }
@@ -227,12 +278,12 @@ export function AccessDashboard() {
     await userStatusMutation.mutateAsync();
   }
 
-  async function handleRoleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleRoleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     await roleMutation.mutateAsync();
   }
 
-  async function handleMembershipSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleMembershipSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     await membershipMutation.mutateAsync();
   }

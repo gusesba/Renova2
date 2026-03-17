@@ -24,6 +24,19 @@ public sealed class AuthController : RenovaControllerBase
     }
 
     [AllowAnonymous]
+    [HttpPost("register")]
+    /// <summary>
+    /// Cria publicamente uma nova conta de acesso.
+    /// </summary>
+    public async Task<ActionResult<ApiEnvelope<RegisterResponse>>> Register(
+        [FromBody] RegisterRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _accessAuthService.RegistrarAsync(request, cancellationToken);
+        return OkEnvelope(response);
+    }
+
+    [AllowAnonymous]
     [HttpPost("login")]
     /// <summary>
     /// Autentica o usuario e cria uma sessao de acesso.

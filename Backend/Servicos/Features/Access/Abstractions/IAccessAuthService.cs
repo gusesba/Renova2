@@ -6,6 +6,11 @@ namespace Renova.Services.Features.Access.Abstractions;
 public interface IAccessAuthService
 {
     /// <summary>
+    /// Permite o cadastro publico de uma nova conta de acesso.
+    /// </summary>
+    Task<RegisterResponse> RegistrarAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Autentica um usuario e retorna token com contexto.
     /// </summary>
     Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);

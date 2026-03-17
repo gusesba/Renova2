@@ -16,6 +16,7 @@ const navigationItems = [
   { href: "/dashboard", label: "Dashboard", meta: "Acesso" },
 ];
 
+// Monta o shell visual do grupo autenticado e controla o estado da sidebar.
 export function SystemRouteFrame({ children }: SystemRouteFrameProps) {
   const pathname = usePathname();
   const { session, changeStore, logoutCurrentUser } = useSystemSession();

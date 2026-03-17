@@ -1,3 +1,4 @@
+// Traduz valores tecnicos de status para textos e tons usados pela interface.
 export function formatStatus(status: string) {
   const normalized = status.trim().toLowerCase();
 
@@ -35,6 +36,7 @@ export function getStatusTone(status: string) {
 }
 
 export function getInitials(name: string) {
+  // Limita a duas iniciais para manter o avatar compacto no header.
   const parts = name
     .split(" ")
     .map((part) => part.trim())

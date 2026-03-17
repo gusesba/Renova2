@@ -1,36 +1,52 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useEffectEvent, useState, type FormEvent } from "react";
+import { useEffect, useEffectEvent, useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AuthIllustration } from "@/app/login/components/auth-illustration";
 import { LoginForm } from "@/app/login/components/login-form";
+import { RegisterForm } from "@/app/login/components/register-form";
 import { ResetPasswordPanel } from "@/app/login/components/reset-password-panel";
 import { RenovaMark } from "@/components/brand/renova-mark";
 import {
   getZodErrorMessage,
   loginSchema,
+  registerSchema,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
 } from "@/lib/helpers/access-schemas";
 import { getErrorMessage } from "@/lib/helpers/formatters";
-import { readSessionToken, writeSessionToken } from "@/lib/helpers/session-storage";
+import {
+  readSessionToken,
+  writeSessionToken,
+} from "@/lib/helpers/session-storage";
 import {
   confirmPasswordReset,
   getMe,
   login,
+  register,
   requestPasswordReset,
 } from "@/lib/services/renova-api";
 
+// Orquestra os fluxos de login e recuperacao dentro do mesmo card visual.
 export function LoginScreen() {
   const router = useRouter();
-  const [showReset, setShowReset] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register" | "reset">(
+    "login",
+  );
   const [tokenIssued, setTokenIssued] = useState(false);
   const [loginValues, setLoginValues] = useState({
     email: "admin@renova.local",
     senha: "Renova123!",
+  });
+  const [registerValues, setRegisterValues] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    senha: "",
+    confirmacaoSenha: "",
   });
   const [resetValues, setResetValues] = useState({
     email: "admin@renova.local",
@@ -44,6 +60,25 @@ export function LoginScreen() {
       writeSessionToken(response.token);
       toast.success("Sessao iniciada com sucesso.");
       router.replace("/dashboard");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: register,
+    onSuccess: (response, variables) => {
+      setAuthMode("login");
+      setLoginValues({
+        email: variables.email,
+        senha: variables.senha,
+      });
+      setResetValues((current) => ({
+        ...current,
+        email: variables.email,
+      }));
+      toast.success(response.mensagem);
     },
     onError: (error) => {
       toast.error(getErrorMessage(error));
@@ -68,7 +103,7 @@ export function LoginScreen() {
   const confirmResetMutation = useMutation({
     mutationFn: confirmPasswordReset,
     onSuccess: () => {
-      setShowReset(false);
+      setAuthMode("login");
       toast.success("Senha redefinida com sucesso.");
     },
     onError: (error) => {
@@ -76,6 +111,7 @@ export function LoginScreen() {
     },
   });
 
+  // Se o token salvo ainda for valido, evita mostrar a tela de login novamente.
   const tryAutoRedirect = useEffectEvent(async () => {
     const storedToken = readSessionToken();
 
@@ -95,7 +131,7 @@ export function LoginScreen() {
     void tryAutoRedirect();
   }, []);
 
-  async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleLoginSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const parsed = loginSchema.safeParse(loginValues);
@@ -107,10 +143,29 @@ export function LoginScreen() {
     await loginMutation.mutateAsync(parsed.data);
   }
 
-  async function handleResetRequest(event: FormEvent<HTMLFormElement>) {
+  async function handleRegisterSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const parsed = passwordResetRequestSchema.safeParse({ email: resetValues.email });
+    const parsed = registerSchema.safeParse(registerValues);
+    if (!parsed.success) {
+      toast.error(getZodErrorMessage(parsed.error));
+      return;
+    }
+
+    await registerMutation.mutateAsync({
+      nome: parsed.data.nome,
+      email: parsed.data.email,
+      telefone: parsed.data.telefone,
+      senha: parsed.data.senha,
+    });
+  }
+
+  async function handleResetRequest(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const parsed = passwordResetRequestSchema.safeParse({
+      email: resetValues.email,
+    });
     if (!parsed.success) {
       toast.error(getZodErrorMessage(parsed.error));
       return;
@@ -119,7 +174,7 @@ export function LoginScreen() {
     await requestResetMutation.mutateAsync(parsed.data.email);
   }
 
-  async function handleResetConfirm(event: FormEvent<HTMLFormElement>) {
+  async function handleResetConfirm(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const parsed = passwordResetConfirmSchema.safeParse({
@@ -136,6 +191,7 @@ export function LoginScreen() {
 
   const busy =
     loginMutation.isPending ||
+    registerMutation.isPending ||
     requestResetMutation.isPending ||
     confirmResetMutation.isPending;
 
@@ -149,7 +205,7 @@ export function LoginScreen() {
           </section>
 
           <section className="auth-form-panel">
-            {!showReset ? (
+            {authMode === "login" ? (
               <div style={{ marginBottom: "1.5rem" }}>
                 <h1 className="auth-title">Bem vindo ao Renova!</h1>
                 <p className="auth-subtitle">Digite seus dados para acessar.</p>
@@ -157,10 +213,11 @@ export function LoginScreen() {
             ) : null}
 
             <div className="section-stack">
-              {showReset ? (
+              {/* A area central alterna entre login e recuperacao sem trocar de pagina. */}
+              {authMode === "reset" ? (
                 <ResetPasswordPanel
                   busy={busy}
-                  onBackToLogin={() => setShowReset(false)}
+                  onBackToLogin={() => setAuthMode("login")}
                   onChange={(field, value) =>
                     setResetValues((current) => ({
                       ...current,
@@ -172,9 +229,23 @@ export function LoginScreen() {
                   tokenIssued={tokenIssued}
                   values={resetValues}
                 />
+              ) : authMode === "register" ? (
+                <RegisterForm
+                  busy={busy}
+                  onBackToLogin={() => setAuthMode("login")}
+                  onChange={(field, value) =>
+                    setRegisterValues((current) => ({
+                      ...current,
+                      [field]: value,
+                    }))
+                  }
+                  onSubmit={handleRegisterSubmit}
+                  values={registerValues}
+                />
               ) : (
                 <LoginForm
                   busy={busy}
+                  onCreateAccount={() => setAuthMode("register")}
                   onChange={(field, value) =>
                     setLoginValues((current) => ({
                       ...current,
@@ -182,7 +253,7 @@ export function LoginScreen() {
                     }))
                   }
                   onSubmit={handleLoginSubmit}
-                  onToggleReset={() => setShowReset(true)}
+                  onToggleReset={() => setAuthMode("reset")}
                   values={loginValues}
                 />
               )}
