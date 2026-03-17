@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Schemas dos formularios do modulo de lojas.
+// Centraliza os schemas do modulo de lojas.
 export const createStoreSchema = z.object({
   nomeFantasia: z.string().trim().min(1, "Informe o nome fantasia."),
   razaoSocial: z.string().trim().min(1, "Informe a razao social."),

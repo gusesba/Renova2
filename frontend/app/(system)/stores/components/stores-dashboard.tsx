@@ -12,10 +12,10 @@ import {
 } from "@/app/(system)/stores/components/store-form-panel";
 import { StoresOverview } from "@/app/(system)/stores/components/stores-overview";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
-import { getZodErrorMessage } from "@/lib/helpers/access-schemas";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
-import { createStoreSchema, updateStoreSchema } from "@/lib/helpers/store-schemas";
+import { getZodErrorMessage } from "@/lib/schemas/access";
+import { createStoreSchema, updateStoreSchema } from "@/lib/schemas/stores";
 import { createStore, listAccessibleStores, updateStore } from "@/lib/services/stores";
 
 const storeManagerPermission = "lojas.gerenciar";

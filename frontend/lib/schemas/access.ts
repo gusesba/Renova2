@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Schemas centralizados para manter validacao coerente entre formularios e requests.
+// Centraliza os schemas do modulo de acesso.
 export const loginSchema = z.object({
   email: z.email("Informe um email valido."),
   senha: z.string().trim().min(8, "A senha deve ter ao menos 8 caracteres."),
@@ -25,7 +25,10 @@ export const passwordResetRequestSchema = z.object({
 
 export const passwordResetConfirmSchema = z.object({
   token: z.string().trim().min(1, "Informe o token de recuperacao."),
-  novaSenha: z.string().trim().min(8, "A nova senha deve ter ao menos 8 caracteres."),
+  novaSenha: z
+    .string()
+    .trim()
+    .min(8, "A nova senha deve ter ao menos 8 caracteres."),
 });
 
 export const userFormSchema = z.object({
@@ -38,20 +41,27 @@ export const userFormSchema = z.object({
 });
 
 export const createUserFormSchema = userFormSchema.extend({
-  senha: z.string().trim().min(8, "A senha inicial deve ter ao menos 8 caracteres."),
+  senha: z
+    .string()
+    .trim()
+    .min(8, "A senha inicial deve ter ao menos 8 caracteres."),
 });
 
 export const roleFormSchema = z.object({
   id: z.string(),
   nome: z.string().trim().min(1, "Informe o nome do cargo."),
   descricao: z.string().trim().min(1, "Informe a descricao do cargo."),
-  permissaoIds: z.array(z.string().trim().min(1)).min(1, "Selecione ao menos uma permissao."),
+  permissaoIds: z
+    .array(z.string().trim().min(1))
+    .min(1, "Selecione ao menos uma permissao."),
 });
 
 export const membershipFormSchema = z.object({
   id: z.string(),
   usuarioId: z.string().trim().min(1, "Selecione um usuario."),
-  cargoIds: z.array(z.string().trim().min(1)).min(1, "Selecione ao menos um cargo."),
+  cargoIds: z
+    .array(z.string().trim().min(1))
+    .min(1, "Selecione ao menos um cargo."),
 });
 
 export function getZodErrorMessage(error: z.ZodError) {

@@ -16,7 +16,7 @@ import {
   registerSchema,
   passwordResetConfirmSchema,
   passwordResetRequestSchema,
-} from "@/lib/helpers/access-schemas";
+} from "@/lib/schemas/access";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import {
   readSessionToken,

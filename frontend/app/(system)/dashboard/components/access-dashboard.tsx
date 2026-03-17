@@ -25,7 +25,7 @@ import {
   membershipFormSchema,
   roleFormSchema,
   userFormSchema,
-} from "@/lib/helpers/access-schemas";
+} from "@/lib/schemas/access";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import {
