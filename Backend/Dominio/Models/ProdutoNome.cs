@@ -1,8 +1,7 @@
 namespace Renova.Domain.Models;
 
-public class ProdutoNome : AtivavelEntityBase
+public class ProdutoNome : AuditEntityBase
 {
-    public Guid ConjuntoCatalogoId { get; set; }
+    public Guid LojaId { get; set; }
     public string Nome { get; set; } = string.Empty;
-    public string Descricao { get; set; } = string.Empty;
 }

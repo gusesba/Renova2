@@ -8,6 +8,7 @@ export const accessPermissionCodes = {
   storesManage: "lojas.gerenciar",
   peopleView: "pessoas.visualizar",
   peopleManage: "pessoas.gerenciar",
+  catalogManage: "catalogo.gerenciar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -54,4 +55,9 @@ export function canAccessPeopleModule(session: SessionContext) {
     accessPermissionCodes.peopleView,
     accessPermissionCodes.peopleManage,
   ]);
+}
+
+// Libera o modulo de catalogos para quem possui a permissao especifica do cadastro base.
+export function canAccessCatalogsModule(session: SessionContext) {
+  return hasPermission(session, accessPermissionCodes.catalogManage);
 }

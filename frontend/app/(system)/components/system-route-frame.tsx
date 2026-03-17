@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AccessStateCard } from "@/components/ui/access-state-card";
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import {
+  canAccessCatalogsModule,
   canAccessDashboardModule,
   canAccessPeopleModule,
   canAccessStoresModule,
@@ -62,6 +63,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "O modulo de lojas exige permissao especifica de gerenciamento.",
     deniedMessage:
       "Solicite a permissao de gerenciamento de lojas para acessar esta pagina.",
+  },
+  {
+    href: "/catalogs",
+    label: "Catalogos",
+    meta: "Base",
+    title: "Cadastros Auxiliares",
+    subtitle: "Conjuntos compartilhados, tabelas base e reutilizacao entre lojas",
+    canAccess: createAccessPredicate(canAccessCatalogsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de catalogos auxiliares.",
+    deniedMessage:
+      "Solicite a permissao de gerenciamento de catalogo para visualizar esta pagina.",
   },
   {
     href: "/people",

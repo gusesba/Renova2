@@ -15,5 +15,4 @@ public class Loja : AtivavelEntityBase
     public string Uf { get; set; } = string.Empty;
     public string Cep { get; set; } = string.Empty;
     public string StatusLoja { get; set; } = string.Empty;
-    public Guid ConjuntoCatalogoId { get; set; }
 }

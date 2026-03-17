@@ -990,6 +990,227 @@ a {
   text-align: center;
 }
 
+.catalogs-page-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalogs-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalogs-hero-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.catalogs-hero-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogs-hero-title {
+  margin: 0;
+  font-size: 1.55rem;
+  letter-spacing: -0.05em;
+}
+
+.catalogs-hero-subtitle {
+  margin: 0;
+  max-width: 640px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.catalogs-summary-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.catalogs-summary-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.catalogs-summary-card {
+  height: 100%;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.catalogs-summary-button:hover .catalogs-summary-card {
+  transform: translateY(-1px);
+  border-color: rgba(91, 93, 246, 0.28);
+  box-shadow: 0 16px 26px rgba(91, 93, 246, 0.12);
+}
+
+.catalogs-summary-button-active .catalogs-summary-card {
+  border-color: rgba(91, 93, 246, 0.4);
+  background: linear-gradient(180deg, rgba(91, 93, 246, 0.06), white 55%);
+  box-shadow: 0 20px 30px rgba(91, 93, 246, 0.16);
+}
+
+.catalogs-summary-card-body {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 150px;
+}
+
+.catalogs-summary-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.catalogs-summary-value {
+  font-size: 2.15rem;
+  line-height: 1;
+  letter-spacing: -0.08em;
+}
+
+.catalogs-summary-description {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.catalogs-workspace-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+}
+
+.catalogs-browser-card,
+.catalogs-form-card {
+  min-height: 100%;
+}
+
+.catalogs-browser-body,
+.catalogs-form-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalogs-browser-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.catalogs-browser-eyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogs-browser-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.catalogs-browser-subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.catalogs-type-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.catalogs-type-chip {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.85rem 0.9rem;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.catalogs-type-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(91, 93, 246, 0.3);
+}
+
+.catalogs-type-chip-active {
+  border-color: rgba(91, 93, 246, 0.42);
+  background: rgba(91, 93, 246, 0.06);
+  box-shadow: 0 14px 24px rgba(91, 93, 246, 0.08);
+}
+
+.catalogs-type-chip-label {
+  font-weight: 700;
+}
+
+.catalogs-entry-list {
+  display: grid;
+  gap: 0.7rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.catalogs-entry-row {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.catalogs-entry-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(91, 93, 246, 0.3);
+}
+
+.catalogs-entry-row-active {
+  border-color: rgba(91, 93, 246, 0.42);
+  background: linear-gradient(180deg, rgba(91, 93, 246, 0.05), white 65%);
+  box-shadow: 0 14px 24px rgba(91, 93, 246, 0.1);
+}
+
+.catalogs-entry-name {
+  font-weight: 700;
+}
+
+@media (max-width: 1080px) {
+  .catalogs-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .catalogs-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalogs-summary-grid,
+  .catalogs-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogs-browser-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
+
 .system-loading {
   display: grid;
   min-height: 100vh;

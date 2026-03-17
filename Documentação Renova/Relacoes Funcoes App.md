@@ -137,8 +137,6 @@ Relações:
 
 Relações:
 - Grava dados principais em `loja`.
-- Vincula a loja a um `conjunto_catalogo`.
-- Prepara configuração operacional em `loja_configuracao`.
 - Permite posterior vínculo de usuários, pessoas, regras comerciais, meios de pagamento e peças.
 - Deve registrar a criação em `auditoria_evento`.
 
@@ -179,11 +177,11 @@ Relações:
 ### Função: Manter cadastros auxiliares
 
 Relações:
-- Atualiza `produto_nome`, `marca`, `tamanho`, `cor`, `categoria` e `colecao`.
-- Todos os registros pertencem a um `conjunto_catalogo`.
+- Atualiza `produto_nome`, `marca`, `tamanho` e `cor`.
+- Todos os registros pertencem diretamente à `loja` ativa.
 - São consumidos diretamente no cadastro de peças.
 - Impactam filtros, dashboards e relatórios.
-- Devem ser auditados quando houver criação, alteração ou inativação.
+- Devem ser auditados quando houver criação ou alteração.
 
 ### Função: Configurar regra comercial da loja
 
@@ -215,7 +213,7 @@ Relações:
 
 Relações:
 - Exige usuário autenticado, vínculo com a loja e permissão de cadastro.
-- Consome `produto_nome`, `marca`, `tamanho`, `cor`, `categoria`, `colecao`.
+- Consome `produto_nome`, `marca`, `tamanho` e `cor`.
 - Consome `pessoa` e `pessoa_loja` quando houver fornecedor.
 - Grava a peça em `peca`.
 - Congela a condição comercial efetiva em `peca_condicao_comercial`.
@@ -254,7 +252,7 @@ Relações:
 ### Função: Consultar estoque
 
 Relações:
-- Lê `peca`, `movimentacao_estoque`, `produto_nome`, `marca`, `categoria`, `pessoa` e demais cadastros auxiliares.
+- Lê `peca`, `movimentacao_estoque`, `produto_nome`, `marca`, `tamanho`, `cor`, `pessoa` e demais cadastros auxiliares.
 - Depende da loja ativa e das permissões do usuário.
 - Alimenta telas operacionais, dashboards, relatórios e portal interno.
 
@@ -378,7 +376,7 @@ Relações:
 
 Relações:
 - Lê as mesmas bases transacionais dos dashboards.
-- Pode aplicar filtros por loja, período, fornecedor, categoria, marca, status e tipo de peça.
+- Pode aplicar filtros por loja, período, fornecedor, marca, status e tipo de peça.
 - Pode reutilizar dados de `fechamento_pessoa` para relatórios financeiros consolidados.
 - Não exige tabelas próprias no banco no primeiro corte.
 

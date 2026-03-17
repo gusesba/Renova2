@@ -26,7 +26,6 @@ public class RenovaDbContext : DbContext
     public DbSet<AuditoriaEvento> AuditoriaEventos => Set<AuditoriaEvento>();
 
     public DbSet<Loja> Lojas => Set<Loja>();
-    public DbSet<ConjuntoCatalogo> ConjuntoCatalogos => Set<ConjuntoCatalogo>();
 
     public DbSet<Pessoa> Pessoas => Set<Pessoa>();
     public DbSet<PessoaLoja> PessoaLojas => Set<PessoaLoja>();
@@ -36,8 +35,6 @@ public class RenovaDbContext : DbContext
     public DbSet<Marca> Marcas => Set<Marca>();
     public DbSet<Tamanho> Tamanhos => Set<Tamanho>();
     public DbSet<Cor> Cores => Set<Cor>();
-    public DbSet<Categoria> Categorias => Set<Categoria>();
-    public DbSet<Colecao> Colecoes => Set<Colecao>();
 
     public DbSet<LojaRegraComercial> LojaRegrasComerciais => Set<LojaRegraComercial>();
     public DbSet<FornecedorRegraComercial> FornecedorRegrasComerciais => Set<FornecedorRegraComercial>();
@@ -262,13 +259,7 @@ public class RenovaDbContext : DbContext
         modelBuilder.Entity<Loja>(entity =>
         {
             entity.HasIndex(x => x.Documento).IsUnique();
-
-            entity.HasOne<ConjuntoCatalogo>()
-                .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
-
     }
 
     /// <summary>
@@ -306,55 +297,47 @@ public class RenovaDbContext : DbContext
     }
 
     /// <summary>
-    /// Configura os catalogos compartilhados usados pelas lojas.
+    /// Configura os cadastros auxiliares vinculados diretamente a loja.
     /// </summary>
     private static void ConfigureCatalogos(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProdutoNome>(entity =>
         {
-            entity.HasOne<ConjuntoCatalogo>()
+            entity.HasIndex(x => new { x.LojaId, x.Nome }).IsUnique();
+
+            entity.HasOne<Loja>()
                 .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
+                .HasForeignKey(x => x.LojaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Marca>(entity =>
         {
-            entity.HasOne<ConjuntoCatalogo>()
+            entity.HasIndex(x => new { x.LojaId, x.Nome }).IsUnique();
+
+            entity.HasOne<Loja>()
                 .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
+                .HasForeignKey(x => x.LojaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Tamanho>(entity =>
         {
-            entity.HasOne<ConjuntoCatalogo>()
+            entity.HasIndex(x => new { x.LojaId, x.Nome }).IsUnique();
+
+            entity.HasOne<Loja>()
                 .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
+                .HasForeignKey(x => x.LojaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Cor>(entity =>
         {
-            entity.HasOne<ConjuntoCatalogo>()
-                .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+            entity.HasIndex(x => new { x.LojaId, x.Nome }).IsUnique();
 
-        modelBuilder.Entity<Categoria>(entity =>
-        {
-            entity.HasOne<ConjuntoCatalogo>()
+            entity.HasOne<Loja>()
                 .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<Colecao>(entity =>
-        {
-            entity.HasOne<ConjuntoCatalogo>()
-                .WithMany()
-                .HasForeignKey(x => x.ConjuntoCatalogoId)
+                .HasForeignKey(x => x.LojaId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
@@ -432,16 +415,6 @@ public class RenovaDbContext : DbContext
             entity.HasOne<Cor>()
                 .WithMany()
                 .HasForeignKey(x => x.CorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne<Categoria>()
-                .WithMany()
-                .HasForeignKey(x => x.CategoriaId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne<Colecao>()
-                .WithMany()
-                .HasForeignKey(x => x.ColecaoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne<Usuario>()

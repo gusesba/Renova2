@@ -124,29 +124,23 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 05. Módulo 04 - Cadastros Auxiliares e Tabelas Base
 
-- [ ] Implementar cadastro de nomes de produto
-  - [ ] CRUD de `produto_nome`
-  - [ ] associação ao `conjunto_catalogo`
-  - [ ] inativação lógica
-- [ ] Implementar cadastro de marcas
-  - [ ] CRUD de `marca`
-  - [ ] associação ao `conjunto_catalogo`
-- [ ] Implementar cadastro de tamanhos
-  - [ ] CRUD de `tamanho`
-  - [ ] ordenação de exibição
-- [ ] Implementar cadastro de cores
-  - [ ] CRUD de `cor`
-  - [ ] suporte a código hexadecimal quando útil
-- [ ] Implementar cadastro de categorias
-  - [ ] CRUD de `categoria`
-  - [ ] filtros e agrupamentos
-- [ ] Implementar cadastro de coleções
-  - [ ] CRUD de `colecao`
-  - [ ] ano de referência
-- [ ] Implementar compartilhamento via conjunto de catálogo
-  - [ ] CRUD de `conjunto_catalogo`
-  - [ ] vincular lojas ao conjunto
-  - [ ] garantir reutilização apenas entre lojas autorizadas
+- [x] Implementar cadastro de nomes de produto
+  - [x] CRUD de `produto_nome`
+  - [x] associação direta à `loja`
+  - [x] manter somente `nome` como dado de negócio
+- [x] Implementar cadastro de marcas
+  - [x] CRUD de `marca`
+  - [x] associação direta à `loja`
+  - [x] manter somente `nome` como dado de negócio
+- [x] Implementar cadastro de tamanhos
+  - [x] CRUD de `tamanho`
+  - [x] manter somente `nome` como dado de negócio
+- [x] Implementar cadastro de cores
+  - [x] CRUD de `cor`
+  - [x] manter somente `nome` como dado de negócio
+- [x] Garantir segregação dos cadastros auxiliares por loja
+  - [x] vincular registros diretamente à `loja`
+  - [x] impedir compartilhamento automático entre lojas
 
 ## 06. Módulo 05 - Configurações Comerciais e Regras de Negócio
 
@@ -378,7 +372,7 @@ Documento mestre em formato todo list para orientar a implementação completa d
   - [ ] Excel
   - [ ] PDF
 - [ ] Implementar relatório de estoque atual
-  - [ ] filtros por loja, status e categoria
+  - [ ] filtros por loja, status, marca e fornecedor
 - [ ] Implementar relatório de peças vendidas
   - [ ] filtros por período, fornecedor e vendedor
 - [ ] Implementar relatório financeiro

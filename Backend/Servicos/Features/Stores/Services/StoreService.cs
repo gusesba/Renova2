@@ -96,15 +96,6 @@ public sealed class StoreService : IStoreService
             throw new InvalidOperationException("Ja existe uma loja com o documento informado.");
         }
 
-        var conjunto = new ConjuntoCatalogo
-        {
-            Id = Guid.NewGuid(),
-            Nome = request.NomeFantasia.Trim(),
-            Descricao = $"Catalogo base da loja {request.NomeFantasia.Trim()}",
-            Ativo = true,
-            CriadoPorUsuarioId = usuarioId,
-        };
-
         var loja = new Loja
         {
             Id = Guid.NewGuid(),
@@ -121,12 +112,10 @@ public sealed class StoreService : IStoreService
             Uf = request.Uf.Trim().ToUpperInvariant(),
             Cep = request.Cep.Trim(),
             StatusLoja = "ativa",
-            ConjuntoCatalogoId = conjunto.Id,
             Ativo = true,
             CriadoPorUsuarioId = usuarioId,
         };
 
-        _dbContext.ConjuntoCatalogos.Add(conjunto);
         _dbContext.Lojas.Add(loja);
 
         var cargoDonoId = await CriarCargosBaseAsync(loja.Id, usuarioId, cancellationToken);
@@ -160,7 +149,7 @@ public sealed class StoreService : IStoreService
             loja.Id,
             "criada",
             null,
-            new { loja.NomeFantasia, loja.Documento, loja.StatusLoja, loja.ConjuntoCatalogoId },
+            new { loja.NomeFantasia, loja.Documento, loja.StatusLoja },
             cancellationToken);
 
         return MapStore(loja, true, true, _currentRequestContext.LojaAtivaId == loja.Id || _currentRequestContext.LojaAtivaId is null);
@@ -444,7 +433,6 @@ public sealed class StoreService : IStoreService
             loja.Cep,
             loja.StatusLoja,
             loja.Ativo,
-            loja.ConjuntoCatalogoId,
             ehLojaAtiva,
             ehResponsavel,
             podeGerenciar);

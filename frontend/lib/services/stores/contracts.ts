@@ -15,7 +15,6 @@ export type StoreSummary = {
   cep: string;
   statusLoja: string;
   ativo: boolean;
-  conjuntoCatalogoId: string;
   ehLojaAtiva: boolean;
   ehResponsavel: boolean;
   podeGerenciar: boolean;

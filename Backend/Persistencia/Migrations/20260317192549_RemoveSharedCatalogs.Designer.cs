@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Renova.Persistence;
@@ -11,9 +12,11 @@ using Renova.Persistence;
 namespace Persistencia.Migrations
 {
     [DbContext(typeof(RenovaDbContext))]
-    partial class RenovaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260317192549_RemoveSharedCatalogs")]
+    partial class RemoveSharedCatalogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -277,6 +280,121 @@ namespace Persistencia.Migrations
                     b.ToTable("cargo_permissao", (string)null);
                 });
 
+            modelBuilder.Entity("Renova.Domain.Models.Categoria", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTimeOffset?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<Guid?>("AtualizadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("atualizado_por_usuario_id");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid?>("CriadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
+
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
+
+                    b.Property<Guid>("LojaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("loja_id");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bytea")
+                        .HasColumnName("row_version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LojaId", "Nome")
+                        .IsUnique();
+
+                    b.ToTable("categoria", (string)null);
+                });
+
+            modelBuilder.Entity("Renova.Domain.Models.Colecao", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("AnoReferencia")
+                        .HasColumnType("integer")
+                        .HasColumnName("ano_referencia");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTimeOffset?>("AtualizadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("atualizado_em");
+
+                    b.Property<Guid?>("AtualizadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("atualizado_por_usuario_id");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<Guid?>("CriadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
+
+                    b.Property<Guid>("LojaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("loja_id");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("nome");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bytea")
+                        .HasColumnName("row_version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LojaId", "Nome")
+                        .IsUnique();
+
+                    b.ToTable("colecao", (string)null);
+                });
+
             modelBuilder.Entity("Renova.Domain.Models.ContaCreditoLoja", b =>
                 {
                     b.Property<Guid>("Id")
@@ -345,6 +463,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("atualizado_em");
@@ -360,6 +482,14 @@ namespace Persistencia.Migrations
                     b.Property<Guid?>("CriadoPorUsuarioId")
                         .HasColumnType("uuid")
                         .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<string>("Hexadecimal")
+                        .HasColumnType("text")
+                        .HasColumnName("hexadecimal");
+
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
 
                     b.Property<Guid>("LojaId")
                         .HasColumnType("uuid")
@@ -966,6 +1096,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("atualizado_em");
@@ -981,6 +1115,10 @@ namespace Persistencia.Migrations
                     b.Property<Guid?>("CriadoPorUsuarioId")
                         .HasColumnType("uuid")
                         .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
 
                     b.Property<Guid>("LojaId")
                         .HasColumnType("uuid")
@@ -1445,6 +1583,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("atualizado_por_usuario_id");
 
+                    b.Property<Guid>("CategoriaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("categoria_id");
+
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1454,6 +1596,10 @@ namespace Persistencia.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("codigo_interno");
+
+                    b.Property<Guid?>("ColecaoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("colecao_id");
 
                     b.Property<Guid>("CorId")
                         .HasColumnType("uuid")
@@ -1545,7 +1691,11 @@ namespace Persistencia.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoriaId");
+
                     b.HasIndex("CodigoBarras");
+
+                    b.HasIndex("ColecaoId");
 
                     b.HasIndex("CorId");
 
@@ -2100,6 +2250,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("atualizado_em");
@@ -2115,6 +2269,15 @@ namespace Persistencia.Migrations
                     b.Property<Guid?>("CriadoPorUsuarioId")
                         .HasColumnType("uuid")
                         .HasColumnName("criado_por_usuario_id");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("descricao");
+
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
 
                     b.Property<Guid>("LojaId")
                         .HasColumnType("uuid")
@@ -2145,6 +2308,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ativo");
+
                     b.Property<DateTimeOffset?>("AtualizadoEm")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("atualizado_em");
@@ -2161,6 +2328,10 @@ namespace Persistencia.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("criado_por_usuario_id");
 
+                    b.Property<DateTimeOffset?>("InativadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inativado_em");
+
                     b.Property<Guid>("LojaId")
                         .HasColumnType("uuid")
                         .HasColumnName("loja_id");
@@ -2169,6 +2340,10 @@ namespace Persistencia.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("nome");
+
+                    b.Property<int>("OrdemExibicao")
+                        .HasColumnType("integer")
+                        .HasColumnName("ordem_exibicao");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -2886,6 +3061,24 @@ namespace Persistencia.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Renova.Domain.Models.Categoria", b =>
+                {
+                    b.HasOne("Renova.Domain.Models.Loja", null)
+                        .WithMany()
+                        .HasForeignKey("LojaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Renova.Domain.Models.Colecao", b =>
+                {
+                    b.HasOne("Renova.Domain.Models.Loja", null)
+                        .WithMany()
+                        .HasForeignKey("LojaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Renova.Domain.Models.ContaCreditoLoja", b =>
                 {
                     b.HasOne("Renova.Domain.Models.Loja", null)
@@ -3114,6 +3307,17 @@ namespace Persistencia.Migrations
 
             modelBuilder.Entity("Renova.Domain.Models.Peca", b =>
                 {
+                    b.HasOne("Renova.Domain.Models.Categoria", null)
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Renova.Domain.Models.Colecao", null)
+                        .WithMany()
+                        .HasForeignKey("ColecaoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Renova.Domain.Models.Cor", null)
                         .WithMany()
                         .HasForeignKey("CorId")

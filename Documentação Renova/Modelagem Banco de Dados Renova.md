@@ -191,7 +191,6 @@ Campos principais:
 - `uf`
 - `cep`
 - `status_loja`
-- `conjunto_catalogo_id`
 
 Restrições:
 - `documento` único
@@ -212,18 +211,6 @@ Campos principais:
 
 Restrições:
 - único por `loja_id`
-
-#### `conjunto_catalogo`
-Agrupa lojas que reutilizam os mesmos cadastros auxiliares.
-
-Campos principais:
-- `id`
-- `nome`
-- `descricao`
-- `ativo`
-
-Observação:
-- Resolve a necessidade de compartilhar tabelas base entre lojas autorizadas sem criar uma "rede de lojas".
 
 ### 3. Pessoas, Clientes e Fornecedores
 
@@ -286,48 +273,27 @@ Campos principais:
 
 ### 4. Cadastros Auxiliares
 
-Todos os cadastros auxiliares abaixo pertencem a um `conjunto_catalogo`.
+Todos os cadastros auxiliares abaixo pertencem diretamente a uma `loja`.
 
 #### `produto_nome`
 - `id`
-- `conjunto_catalogo_id`
+- `loja_id`
 - `nome`
-- `descricao`
-- `ativo`
 
 #### `marca`
 - `id`
-- `conjunto_catalogo_id`
+- `loja_id`
 - `nome`
-- `ativo`
 
 #### `tamanho`
 - `id`
-- `conjunto_catalogo_id`
+- `loja_id`
 - `nome`
-- `ordem_exibicao`
-- `ativo`
 
 #### `cor`
 - `id`
-- `conjunto_catalogo_id`
+- `loja_id`
 - `nome`
-- `hexadecimal` nullable
-- `ativo`
-
-#### `categoria`
-- `id`
-- `conjunto_catalogo_id`
-- `nome`
-- `descricao`
-- `ativo`
-
-#### `colecao`
-- `id`
-- `conjunto_catalogo_id`
-- `nome`
-- `ano_referencia`
-- `ativo`
 
 ### 5. Configurações Comerciais
 
@@ -394,8 +360,6 @@ Campos principais:
 - `marca_id`
 - `tamanho_id`
 - `cor_id`
-- `categoria_id`
-- `colecao_id` nullable
 - `descricao`
 - `observacoes`
 - `data_entrada`
@@ -701,9 +665,8 @@ Campos principais:
 - `usuario_loja` N:N `cargo` via `usuario_loja_cargo`
 - `cargo` N:N `permissao` via `cargo_permissao`
 - `loja` 1:1 `loja_configuracao`
-- `conjunto_catalogo` 1:N `loja`
 - `pessoa` N:N `loja` via `pessoa_loja`
-- `conjunto_catalogo` 1:N `produto_nome`, `marca`, `tamanho`, `cor`, `categoria`, `colecao`
+- `loja` 1:N `produto_nome`, `marca`, `tamanho`, `cor`
 - `loja` 1:1 `loja_regra_comercial`
 - `pessoa_loja` 1:0..1 `fornecedor_regra_comercial`
 - `loja` 1:N `meio_pagamento`
@@ -835,7 +798,7 @@ erDiagram
 
 ## Ordem Sugerida de Implementação
 
-1. `loja`, `conjunto_catalogo`, `usuario`, `usuario_loja`, `cargo`, `permissao`
+1. `loja`, `usuario`, `usuario_loja`, `cargo`, `permissao`
 2. `pessoa`, `pessoa_loja`, `pessoa_conta_bancaria`
 3. cadastros auxiliares
 4. `loja_regra_comercial`, `fornecedor_regra_comercial`, `meio_pagamento`

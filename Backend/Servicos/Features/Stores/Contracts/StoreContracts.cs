@@ -46,7 +46,6 @@ public sealed record StoreResponse(
     string Cep,
     string StatusLoja,
     bool Ativo,
-    Guid ConjuntoCatalogoId,
     bool EhLojaAtiva,
     bool EhResponsavel,
     bool PodeGerenciar);

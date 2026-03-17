@@ -11,8 +11,6 @@ public class Peca : AuditEntityBase
     public Guid MarcaId { get; set; }
     public Guid TamanhoId { get; set; }
     public Guid CorId { get; set; }
-    public Guid CategoriaId { get; set; }
-    public Guid? ColecaoId { get; set; }
     public string Descricao { get; set; } = string.Empty;
     public string Observacoes { get; set; } = string.Empty;
     public DateTimeOffset DataEntrada { get; set; } = DateTimeOffset.UtcNow;

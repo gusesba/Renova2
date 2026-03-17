@@ -62,9 +62,9 @@ Documento consolidado a partir de [[Requisitos por Modulos]] e [[Revisão Requis
 - [ ] Manter cadastro de marcas em tabela separada.
 - [ ] Manter cadastro de tamanhos em tabela separada.
 - [ ] Manter cadastro de cores em tabela separada.
-- [ ] Permitir cadastrar categorias, coleções ou departamentos, se necessário.
-- [ ] Permitir ativar e inativar registros auxiliares sem apagar histórico.
-- [ ] Permitir reutilizar os cadastros auxiliares em todas as lojas autorizadas.
+- [ ] Manter cada cadastro auxiliar com apenas identificação e nome.
+- [ ] Vincular os cadastros auxiliares diretamente à loja.
+- [ ] Impedir compartilhamento automático dos cadastros auxiliares entre lojas.
 
 ## Módulo 05 - Configurações Comerciais e Regras de Negócio
 
@@ -179,7 +179,7 @@ Documento consolidado a partir de [[Requisitos por Modulos]] e [[Revisão Requis
 - [ ] Exibir peças em consignação próximas do vencimento.
 - [ ] Exibir peças paradas por tempo em estoque.
 - [ ] Exibir valores a pagar para fornecedores e valores pendentes de recebimento.
-- [ ] Exibir indicadores por tipo de peça, marca, categoria e fornecedor.
+- [ ] Exibir indicadores por tipo de peça, marca e fornecedor.
 - [ ] Permitir filtros rápidos e detalhados nos painéis.
 
 ## Módulo 15 - Relatórios e Exportações
