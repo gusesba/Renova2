@@ -23,7 +23,7 @@ export function StoresOverview({ stores }: StoresOverviewProps) {
         value={String(activeCount)}
       />
       <MetricCard
-        meta={activeStore ? activeStore.configuracao.nomeExibicao : "nenhuma loja ativa"}
+        meta={activeStore ? `${activeStore.cidade} / ${activeStore.uf}` : "nenhuma loja ativa"}
         title="Loja ativa"
         value={activeStore?.nomeFantasia ?? "Pendente"}
       />

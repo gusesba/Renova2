@@ -8,7 +8,7 @@ using Renova.Services.Features.Stores.Contracts;
 
 namespace Renova.Services.Features.Stores.Services;
 
-// Servico principal do modulo de lojas, configuracao operacional e visao consolidada.
+// Servico principal do modulo de lojas e visao consolidada.
 public sealed class StoreService : IStoreService
 {
     private static readonly string[] AllowedStatuses = ["ativa", "inativa"];
@@ -31,7 +31,7 @@ public sealed class StoreService : IStoreService
     }
 
     /// <summary>
-    /// Lista as lojas acessiveis ao usuario autenticado com configuracao e permissao de gestao.
+    /// Lista as lojas acessiveis ao usuario autenticado.
     /// </summary>
     public async Task<IReadOnlyList<StoreResponse>> ListarAcessiveisAsync(CancellationToken cancellationToken = default)
     {
@@ -40,7 +40,6 @@ public sealed class StoreService : IStoreService
         var vinculos = await (
                 from usuarioLoja in _dbContext.UsuarioLojas
                 join loja in _dbContext.Lojas on usuarioLoja.LojaId equals loja.Id
-                join configuracao in _dbContext.LojaConfiguracoes on loja.Id equals configuracao.LojaId
                 where usuarioLoja.UsuarioId == usuarioId
                 where usuarioLoja.StatusVinculo == AccessStatusValues.VinculoLoja.Ativo
                 where usuarioLoja.DataFim == null || usuarioLoja.DataFim >= DateTimeOffset.UtcNow
@@ -49,7 +48,6 @@ public sealed class StoreService : IStoreService
                 {
                     UsuarioLoja = usuarioLoja,
                     Loja = loja,
-                    Configuracao = configuracao,
                 })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -65,7 +63,6 @@ public sealed class StoreService : IStoreService
         return vinculos
             .Select(item => MapStore(
                 item.Loja,
-                item.Configuracao,
                 item.UsuarioLoja.EhResponsavel,
                 lojasGerenciaveis.Contains(item.Loja.Id),
                 _currentRequestContext.LojaAtivaId == item.Loja.Id))
@@ -73,7 +70,7 @@ public sealed class StoreService : IStoreService
     }
 
     /// <summary>
-    /// Cria uma nova loja, uma configuracao inicial e vincula o criador como responsavel.
+    /// Cria uma nova loja e vincula o criador como responsavel.
     /// </summary>
     public async Task<StoreResponse> CriarAsync(CreateStoreRequest request, CancellationToken cancellationToken = default)
     {
@@ -91,7 +88,6 @@ public sealed class StoreService : IStoreService
             request.Cidade,
             request.Uf,
             request.Cep);
-        ValidateConfigurationInput(request.Configuracao);
 
         var documento = NormalizeDocument(request.Documento);
         var documentoEmUso = await _dbContext.Lojas.AnyAsync(x => x.Documento == documento, cancellationToken);
@@ -130,23 +126,8 @@ public sealed class StoreService : IStoreService
             CriadoPorUsuarioId = usuarioId,
         };
 
-        var configuracao = new LojaConfiguracao
-        {
-            Id = Guid.NewGuid(),
-            LojaId = loja.Id,
-            NomeExibicao = request.Configuracao.NomeExibicao.Trim(),
-            CabecalhoImpressao = request.Configuracao.CabecalhoImpressao.Trim(),
-            RodapeImpressao = request.Configuracao.RodapeImpressao.Trim(),
-            UsaModeloUnicoEtiqueta = request.Configuracao.UsaModeloUnicoEtiqueta,
-            UsaModeloUnicoRecibo = request.Configuracao.UsaModeloUnicoRecibo,
-            FusoHorario = request.Configuracao.FusoHorario.Trim(),
-            Moeda = request.Configuracao.Moeda.Trim().ToUpperInvariant(),
-            CriadoPorUsuarioId = usuarioId,
-        };
-
         _dbContext.ConjuntoCatalogos.Add(conjunto);
         _dbContext.Lojas.Add(loja);
-        _dbContext.LojaConfiguracoes.Add(configuracao);
 
         var cargoDonoId = await CriarCargosBaseAsync(loja.Id, usuarioId, cancellationToken);
 
@@ -182,23 +163,7 @@ public sealed class StoreService : IStoreService
             new { loja.NomeFantasia, loja.Documento, loja.StatusLoja, loja.ConjuntoCatalogoId },
             cancellationToken);
 
-        await _auditService.RegistrarAuditoriaAsync(
-            loja.Id,
-            "loja_configuracao",
-            configuracao.Id,
-            "criada",
-            null,
-            new
-            {
-                configuracao.NomeExibicao,
-                configuracao.CabecalhoImpressao,
-                configuracao.RodapeImpressao,
-                configuracao.FusoHorario,
-                configuracao.Moeda,
-            },
-            cancellationToken);
-
-        return MapStore(loja, configuracao, true, true, _currentRequestContext.LojaAtivaId == loja.Id || _currentRequestContext.LojaAtivaId is null);
+        return MapStore(loja, true, true, _currentRequestContext.LojaAtivaId == loja.Id || _currentRequestContext.LojaAtivaId is null);
     }
 
     /// <summary>
@@ -284,70 +249,8 @@ public sealed class StoreService : IStoreService
             },
             cancellationToken);
 
-        var configuracao = await _dbContext.LojaConfiguracoes.AsNoTracking().FirstAsync(x => x.LojaId == loja.Id, cancellationToken);
         var responsavel = await IsResponsibleAsync(usuarioId, loja.Id, cancellationToken);
-        return MapStore(loja, configuracao, responsavel, true, _currentRequestContext.LojaAtivaId == loja.Id);
-    }
-
-    /// <summary>
-    /// Atualiza a configuracao operacional de uma loja gerenciavel pelo usuario.
-    /// </summary>
-    public async Task<StoreResponse> AtualizarConfiguracaoAsync(Guid lojaId, UpdateStoreConfigurationRequest request, CancellationToken cancellationToken = default)
-    {
-        var usuarioId = EnsureAuthenticatedUser();
-        await EnsureCanManageStoreAsync(usuarioId, lojaId, cancellationToken);
-        ValidateConfigurationInput(new StoreConfigurationRequest(
-            request.NomeExibicao,
-            request.CabecalhoImpressao,
-            request.RodapeImpressao,
-            request.UsaModeloUnicoEtiqueta,
-            request.UsaModeloUnicoRecibo,
-            request.FusoHorario,
-            request.Moeda));
-
-        var configuracao = await _dbContext.LojaConfiguracoes.FirstOrDefaultAsync(x => x.LojaId == lojaId, cancellationToken)
-            ?? throw new InvalidOperationException("Configuracao da loja nao encontrada.");
-
-        var antes = new
-        {
-            configuracao.NomeExibicao,
-            configuracao.CabecalhoImpressao,
-            configuracao.RodapeImpressao,
-            configuracao.FusoHorario,
-            configuracao.Moeda,
-        };
-
-        configuracao.NomeExibicao = request.NomeExibicao.Trim();
-        configuracao.CabecalhoImpressao = request.CabecalhoImpressao.Trim();
-        configuracao.RodapeImpressao = request.RodapeImpressao.Trim();
-        configuracao.UsaModeloUnicoEtiqueta = request.UsaModeloUnicoEtiqueta;
-        configuracao.UsaModeloUnicoRecibo = request.UsaModeloUnicoRecibo;
-        configuracao.FusoHorario = request.FusoHorario.Trim();
-        configuracao.Moeda = request.Moeda.Trim().ToUpperInvariant();
-        configuracao.AtualizadoEm = DateTimeOffset.UtcNow;
-        configuracao.AtualizadoPorUsuarioId = usuarioId;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _auditService.RegistrarAuditoriaAsync(
-            lojaId,
-            "loja_configuracao",
-            configuracao.Id,
-            "atualizada",
-            antes,
-            new
-            {
-                configuracao.NomeExibicao,
-                configuracao.CabecalhoImpressao,
-                configuracao.RodapeImpressao,
-                configuracao.FusoHorario,
-                configuracao.Moeda,
-            },
-            cancellationToken);
-
-        var loja = await _dbContext.Lojas.AsNoTracking().FirstAsync(x => x.Id == lojaId, cancellationToken);
-        var responsavel = await IsResponsibleAsync(usuarioId, loja.Id, cancellationToken);
-        return MapStore(loja, configuracao, responsavel, true, _currentRequestContext.LojaAtivaId == loja.Id);
+        return MapStore(loja, responsavel, true, _currentRequestContext.LojaAtivaId == loja.Id);
     }
 
     /// <summary>
@@ -360,7 +263,7 @@ public sealed class StoreService : IStoreService
     }
 
     /// <summary>
-    /// Permite criar a primeira loja sem permissao previa; depois disso exige gestao de lojas na loja ativa.
+    /// Permite criar a primeira loja sem permissao previa.
     /// </summary>
     private async Task EnsureCanCreateStoreAsync(Guid usuarioId, CancellationToken cancellationToken)
     {
@@ -394,7 +297,7 @@ public sealed class StoreService : IStoreService
     }
 
     /// <summary>
-    /// Carrega as lojas em que o usuario possui a permissao `lojas.gerenciar`.
+    /// Carrega as lojas em que o usuario possui a permissao de gestao.
     /// </summary>
     private async Task<HashSet<Guid>> CarregarLojasGerenciaveisAsync(
         Guid usuarioId,
@@ -517,11 +420,10 @@ public sealed class StoreService : IStoreService
     }
 
     /// <summary>
-    /// Mapeia loja e configuracao para o contrato retornado ao frontend.
+    /// Mapeia a loja para o contrato retornado ao frontend.
     /// </summary>
     private static StoreResponse MapStore(
         Loja loja,
-        LojaConfiguracao configuracao,
         bool ehResponsavel,
         bool podeGerenciar,
         bool ehLojaAtiva)
@@ -545,17 +447,7 @@ public sealed class StoreService : IStoreService
             loja.ConjuntoCatalogoId,
             ehLojaAtiva,
             ehResponsavel,
-            podeGerenciar,
-            new StoreConfigurationResponse(
-                configuracao.Id,
-                configuracao.LojaId,
-                configuracao.NomeExibicao,
-                configuracao.CabecalhoImpressao,
-                configuracao.RodapeImpressao,
-                configuracao.UsaModeloUnicoEtiqueta,
-                configuracao.UsaModeloUnicoRecibo,
-                configuracao.FusoHorario,
-                configuracao.Moeda));
+            podeGerenciar);
     }
 
     /// <summary>
@@ -601,27 +493,6 @@ public sealed class StoreService : IStoreService
 
         _ = NormalizeDocument(documento);
         _ = NormalizeEmail(email);
-    }
-
-    /// <summary>
-    /// Valida os parametros operacionais e de impressao da loja.
-    /// </summary>
-    private static void ValidateConfigurationInput(StoreConfigurationRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.NomeExibicao))
-        {
-            throw new InvalidOperationException("O nome de exibicao da loja e obrigatorio.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.FusoHorario))
-        {
-            throw new InvalidOperationException("O fuso horario da loja e obrigatorio.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Moeda))
-        {
-            throw new InvalidOperationException("A moeda da loja e obrigatoria.");
-        }
     }
 
     /// <summary>

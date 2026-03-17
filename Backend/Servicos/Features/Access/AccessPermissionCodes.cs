@@ -32,7 +32,7 @@ public static class AccessPermissionCodes
         new(UsuariosVisualizar, "Visualizar usuarios", "Consulta usuarios e vinculos da loja.", "acesso"),
         new(UsuariosGerenciar, "Gerenciar usuarios", "Cria usuarios, altera status e mantem vinculos.", "acesso"),
         new(CargosGerenciar, "Gerenciar cargos", "Mantem cargos e matriz de permissoes por loja.", "acesso"),
-        new(LojasGerenciar, "Gerenciar lojas", "Mantem cadastro e configuracao operacional da loja.", "lojas"),
+        new(LojasGerenciar, "Gerenciar lojas", "Mantem cadastro e status da loja.", "lojas"),
         new(PessoasVisualizar, "Visualizar pessoas", "Consulta clientes e fornecedores.", "pessoas"),
         new(PessoasGerenciar, "Gerenciar pessoas", "Mantem cadastros de clientes e fornecedores.", "pessoas"),
         new(CatalogoGerenciar, "Gerenciar catalogo", "Mantem tabelas base compartilhadas.", "catalogo"),

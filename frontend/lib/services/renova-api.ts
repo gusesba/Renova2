@@ -109,18 +109,6 @@ export type AccessWorkspace = {
   memberships: StoreMembership[];
 };
 
-export type StoreConfiguration = {
-  id: string;
-  lojaId: string;
-  nomeExibicao: string;
-  cabecalhoImpressao: string;
-  rodapeImpressao: string;
-  usaModeloUnicoEtiqueta: boolean;
-  usaModeloUnicoRecibo: boolean;
-  fusoHorario: string;
-  moeda: string;
-};
-
 export type StoreSummary = {
   id: string;
   nomeFantasia: string;
@@ -141,7 +129,6 @@ export type StoreSummary = {
   ehLojaAtiva: boolean;
   ehResponsavel: boolean;
   podeGerenciar: boolean;
-  configuracao: StoreConfiguration;
 };
 
 async function callApi<T>(path: string, init: RequestInit, token?: string | null) {
@@ -412,15 +399,6 @@ export async function createStore(
     cidade: string;
     uf: string;
     cep: string;
-    configuracao: {
-      nomeExibicao: string;
-      cabecalhoImpressao: string;
-      rodapeImpressao: string;
-      usaModeloUnicoEtiqueta: boolean;
-      usaModeloUnicoRecibo: boolean;
-      fusoHorario: string;
-      moeda: string;
-    };
   },
 ) {
   return callApi<StoreSummary>(
@@ -454,29 +432,6 @@ export async function updateStore(
 ) {
   return callApi<StoreSummary>(
     `/stores/${lojaId}`,
-    {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    },
-    token,
-  );
-}
-
-export async function updateStoreConfiguration(
-  token: string,
-  lojaId: string,
-  payload: {
-    nomeExibicao: string;
-    cabecalhoImpressao: string;
-    rodapeImpressao: string;
-    usaModeloUnicoEtiqueta: boolean;
-    usaModeloUnicoRecibo: boolean;
-    fusoHorario: string;
-    moeda: string;
-  },
-) {
-  return callApi<StoreSummary>(
-    `/stores/${lojaId}/configuration`,
     {
       method: "PUT",
       body: JSON.stringify(payload),

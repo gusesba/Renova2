@@ -50,7 +50,7 @@ export function AccessibleStoresPanel({
                       {store.nomeFantasia}
                     </div>
                     <div className="record-item-copy">
-                      {store.configuracao.nomeExibicao}
+                      {store.cidade} / {store.uf}
                     </div>
                   </div>
                   <StatusBadge value={store.statusLoja} />

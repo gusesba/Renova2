@@ -8,7 +8,7 @@ using Renova.Services.Features.Stores.Contracts;
 
 namespace Renova.Api.Features.Stores.V1;
 
-// Controller HTTP do modulo de lojas e configuracao operacional.
+// Controller HTTP do modulo de lojas.
 [ApiVersion("1.0")]
 [Authorize]
 [Route("api/v{version:apiVersion}/stores")]
@@ -17,7 +17,7 @@ public sealed class StoresController : RenovaControllerBase
     private readonly IStoreService _storeService;
 
     /// <summary>
-    /// Inicializa o controller com os servicos do modulo de lojas.
+    /// Inicializa o controller com os servicos do modulo.
     /// </summary>
     public StoresController(IStoreService storeService)
     {
@@ -36,7 +36,7 @@ public sealed class StoresController : RenovaControllerBase
 
     [HttpPost]
     /// <summary>
-    /// Cria uma nova loja com sua configuracao inicial.
+    /// Cria uma nova loja.
     /// </summary>
     public async Task<ActionResult<ApiEnvelope<StoreResponse>>> Create(
         [FromBody] CreateStoreRequest request,
@@ -56,19 +56,6 @@ public sealed class StoresController : RenovaControllerBase
         CancellationToken cancellationToken)
     {
         var response = await _storeService.AtualizarAsync(lojaId, request, cancellationToken);
-        return OkEnvelope(response);
-    }
-
-    [HttpPut("{lojaId:guid}/configuration")]
-    /// <summary>
-    /// Atualiza a configuracao operacional e de impressao de uma loja.
-    /// </summary>
-    public async Task<ActionResult<ApiEnvelope<StoreResponse>>> UpdateConfiguration(
-        Guid lojaId,
-        [FromBody] UpdateStoreConfigurationRequest request,
-        CancellationToken cancellationToken)
-    {
-        var response = await _storeService.AtualizarConfiguracaoAsync(lojaId, request, cancellationToken);
         return OkEnvelope(response);
     }
 }

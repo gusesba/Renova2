@@ -1070,79 +1070,6 @@ namespace Persistencia.Migrations
                     b.ToTable("loja", (string)null);
                 });
 
-            modelBuilder.Entity("Renova.Domain.Models.LojaConfiguracao", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset?>("AtualizadoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("atualizado_em");
-
-                    b.Property<Guid?>("AtualizadoPorUsuarioId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("atualizado_por_usuario_id");
-
-                    b.Property<string>("CabecalhoImpressao")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("cabecalho_impressao");
-
-                    b.Property<DateTimeOffset>("CriadoEm")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("criado_em");
-
-                    b.Property<Guid?>("CriadoPorUsuarioId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("criado_por_usuario_id");
-
-                    b.Property<string>("FusoHorario")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("fuso_horario");
-
-                    b.Property<Guid>("LojaId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("loja_id");
-
-                    b.Property<string>("Moeda")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("moeda");
-
-                    b.Property<string>("NomeExibicao")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("nome_exibicao");
-
-                    b.Property<string>("RodapeImpressao")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("rodape_impressao");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bytea")
-                        .HasColumnName("row_version");
-
-                    b.Property<bool>("UsaModeloUnicoEtiqueta")
-                        .HasColumnType("boolean")
-                        .HasColumnName("usa_modelo_unico_etiqueta");
-
-                    b.Property<bool>("UsaModeloUnicoRecibo")
-                        .HasColumnType("boolean")
-                        .HasColumnName("usa_modelo_unico_recibo");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LojaId")
-                        .IsUnique();
-
-                    b.ToTable("loja_configuracao", (string)null);
-                });
-
             modelBuilder.Entity("Renova.Domain.Models.LojaRegraComercial", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3313,15 +3240,6 @@ namespace Persistencia.Migrations
                     b.HasOne("Renova.Domain.Models.ConjuntoCatalogo", null)
                         .WithMany()
                         .HasForeignKey("ConjuntoCatalogoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Renova.Domain.Models.LojaConfiguracao", b =>
-                {
-                    b.HasOne("Renova.Domain.Models.Loja", null)
-                        .WithOne()
-                        .HasForeignKey("Renova.Domain.Models.LojaConfiguracao", "LojaId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

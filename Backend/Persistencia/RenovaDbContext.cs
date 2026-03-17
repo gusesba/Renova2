@@ -26,7 +26,6 @@ public class RenovaDbContext : DbContext
     public DbSet<AuditoriaEvento> AuditoriaEventos => Set<AuditoriaEvento>();
 
     public DbSet<Loja> Lojas => Set<Loja>();
-    public DbSet<LojaConfiguracao> LojaConfiguracoes => Set<LojaConfiguracao>();
     public DbSet<ConjuntoCatalogo> ConjuntoCatalogos => Set<ConjuntoCatalogo>();
 
     public DbSet<Pessoa> Pessoas => Set<Pessoa>();
@@ -270,15 +269,6 @@ public class RenovaDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<LojaConfiguracao>(entity =>
-        {
-            entity.HasIndex(x => x.LojaId).IsUnique();
-
-            entity.HasOne<Loja>()
-                .WithOne()
-                .HasForeignKey<LojaConfiguracao>(x => x.LojaId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
     }
 
     /// <summary>

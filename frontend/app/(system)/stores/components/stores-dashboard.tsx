@@ -5,13 +5,7 @@ import { startTransition, useEffect, useState, type SubmitEvent } from "react";
 import { toast } from "sonner";
 
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
-import {
-  AccessibleStoresPanel,
-} from "@/app/(system)/stores/components/accessible-stores-panel";
-import {
-  StoreConfigurationPanel,
-  type StoreConfigurationFormState,
-} from "@/app/(system)/stores/components/store-configuration-panel";
+import { AccessibleStoresPanel } from "@/app/(system)/stores/components/accessible-stores-panel";
 import {
   StoreFormPanel,
   type StoreFormState,
@@ -21,17 +15,8 @@ import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { getZodErrorMessage } from "@/lib/helpers/access-schemas";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
-import {
-  createStoreSchema,
-  storeConfigurationSchema,
-  updateStoreSchema,
-} from "@/lib/helpers/store-schemas";
-import {
-  createStore,
-  listAccessibleStores,
-  updateStore,
-  updateStoreConfiguration,
-} from "@/lib/services/renova-api";
+import { createStoreSchema, updateStoreSchema } from "@/lib/helpers/store-schemas";
+import { createStore, listAccessibleStores, updateStore } from "@/lib/services/renova-api";
 
 const storeManagerPermission = "lojas.gerenciar";
 
@@ -52,24 +37,12 @@ const emptyStoreForm: StoreFormState = {
   statusLoja: "ativa",
 };
 
-const emptyStoreConfigurationForm: StoreConfigurationFormState = {
-  nomeExibicao: "",
-  cabecalhoImpressao: "",
-  rodapeImpressao: "",
-  usaModeloUnicoEtiqueta: true,
-  usaModeloUnicoRecibo: true,
-  fusoHorario: "America/Sao_Paulo",
-  moeda: "BRL",
-};
-
-// Coordena o modulo 02: lista consolidada, cadastro da loja e configuracao operacional.
+// Coordena o modulo 02 com cadastro e listagem de lojas acessiveis.
 export function StoresDashboard() {
   const { token, session } = useSystemSession();
   const queryClient = useQueryClient();
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [storeForm, setStoreForm] = useState<StoreFormState>(emptyStoreForm);
-  const [configurationForm, setConfigurationForm] =
-    useState<StoreConfigurationFormState>(emptyStoreConfigurationForm);
 
   const storesQuery = useQuery({
     queryFn: () => listAccessibleStores(token),
@@ -92,7 +65,6 @@ export function StoresDashboard() {
       startTransition(() => {
         setSelectedStoreId("");
         setStoreForm(emptyStoreForm);
-        setConfigurationForm(emptyStoreConfigurationForm);
       });
       return;
     }
@@ -125,15 +97,6 @@ export function StoresDashboard() {
         cep: selectedStore.cep,
         statusLoja: selectedStore.statusLoja as "ativa" | "inativa",
       });
-      setConfigurationForm({
-        nomeExibicao: selectedStore.configuracao.nomeExibicao,
-        cabecalhoImpressao: selectedStore.configuracao.cabecalhoImpressao,
-        rodapeImpressao: selectedStore.configuracao.rodapeImpressao,
-        usaModeloUnicoEtiqueta: selectedStore.configuracao.usaModeloUnicoEtiqueta,
-        usaModeloUnicoRecibo: selectedStore.configuracao.usaModeloUnicoRecibo,
-        fusoHorario: selectedStore.configuracao.fusoHorario,
-        moeda: selectedStore.configuracao.moeda,
-      });
     });
   }, [selectedStoreId, storesQuery.data]);
 
@@ -155,19 +118,7 @@ export function StoresDashboard() {
         return updateStore(token, storeForm.id, parsed.data);
       }
 
-      const initialConfiguration = {
-        ...configurationForm,
-        nomeExibicao:
-          configurationForm.nomeExibicao.trim() || storeForm.nomeFantasia.trim(),
-        cabecalhoImpressao:
-          configurationForm.cabecalhoImpressao.trim() ||
-          storeForm.nomeFantasia.trim(),
-      };
-
-      const parsed = createStoreSchema.safeParse({
-        ...storeForm,
-        configuracao: initialConfiguration,
-      });
+      const parsed = createStoreSchema.safeParse(storeForm);
       if (!parsed.success) {
         throw new Error(getZodErrorMessage(parsed.error));
       }
@@ -188,48 +139,17 @@ export function StoresDashboard() {
     },
   });
 
-  const configurationMutation = useMutation({
-    mutationFn: async () => {
-      if (!storeForm.id) {
-        throw new Error("Crie ou selecione uma loja antes de salvar a configuracao.");
-      }
-
-      const parsed = storeConfigurationSchema.safeParse(configurationForm);
-      if (!parsed.success) {
-        throw new Error(getZodErrorMessage(parsed.error));
-      }
-
-      return updateStoreConfiguration(token, storeForm.id, parsed.data);
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error));
-    },
-    onSuccess: async () => {
-      toast.success("Configuracao da loja atualizada com sucesso.");
-      await refreshStores();
-    },
-  });
-
   const stores = storesQuery.data ?? [];
-  const busy =
-    storesQuery.isLoading ||
-    storeMutation.isPending ||
-    configurationMutation.isPending;
+  const busy = storesQuery.isLoading || storeMutation.isPending;
 
   async function handleStoreSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     await storeMutation.mutateAsync();
   }
 
-  async function handleConfigurationSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await configurationMutation.mutateAsync();
-  }
-
   function handleNewStore() {
     setSelectedStoreId("");
     setStoreForm(emptyStoreForm);
-    setConfigurationForm(emptyStoreConfigurationForm);
   }
 
   return (
@@ -246,14 +166,6 @@ export function StoresDashboard() {
           onNewStore={handleNewStore}
           onSubmit={handleStoreSubmit}
           setForm={setStoreForm}
-        />
-        <StoreConfigurationPanel
-          busy={busy}
-          canManage={canManageStores}
-          form={configurationForm}
-          hasSelectedStore={Boolean(storeForm.id)}
-          onSubmit={handleConfigurationSubmit}
-          setForm={setConfigurationForm}
         />
       </div>
 
@@ -273,7 +185,7 @@ export function StoresDashboard() {
               />
               <div className="empty-state">
                 Solicite a permissao de gerenciamento de lojas para editar o
-                cadastro ou a configuracao operacional.
+                cadastro da loja.
               </div>
             </CardBody>
           </Card>

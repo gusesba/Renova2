@@ -1,16 +1,6 @@
 import { z } from "zod";
 
-// Schemas dos formularios do modulo de lojas e configuracao operacional.
-export const storeConfigurationSchema = z.object({
-  nomeExibicao: z.string().trim().min(1, "Informe o nome de exibicao."),
-  cabecalhoImpressao: z.string().trim(),
-  rodapeImpressao: z.string().trim(),
-  usaModeloUnicoEtiqueta: z.boolean(),
-  usaModeloUnicoRecibo: z.boolean(),
-  fusoHorario: z.string().trim().min(1, "Informe o fuso horario."),
-  moeda: z.string().trim().min(1, "Informe a moeda."),
-});
-
+// Schemas dos formularios do modulo de lojas.
 export const createStoreSchema = z.object({
   nomeFantasia: z.string().trim().min(1, "Informe o nome fantasia."),
   razaoSocial: z.string().trim().min(1, "Informe a razao social."),
@@ -24,7 +14,6 @@ export const createStoreSchema = z.object({
   cidade: z.string().trim().min(1, "Informe a cidade."),
   uf: z.string().trim().min(2, "Informe a UF."),
   cep: z.string().trim().min(1, "Informe o CEP."),
-  configuracao: storeConfigurationSchema,
 });
 
 export const updateStoreSchema = z.object({

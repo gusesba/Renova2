@@ -1,15 +1,6 @@
 namespace Renova.Services.Features.Stores.Contracts;
 
-// Contratos HTTP e de aplicacao do modulo de lojas e estrutura operacional.
-public sealed record StoreConfigurationRequest(
-    string NomeExibicao,
-    string CabecalhoImpressao,
-    string RodapeImpressao,
-    bool UsaModeloUnicoEtiqueta,
-    bool UsaModeloUnicoRecibo,
-    string FusoHorario,
-    string Moeda);
-
+// Contratos HTTP e de aplicacao do modulo de lojas.
 public sealed record CreateStoreRequest(
     string NomeFantasia,
     string RazaoSocial,
@@ -22,8 +13,7 @@ public sealed record CreateStoreRequest(
     string Bairro,
     string Cidade,
     string Uf,
-    string Cep,
-    StoreConfigurationRequest Configuracao);
+    string Cep);
 
 public sealed record UpdateStoreRequest(
     string NomeFantasia,
@@ -39,26 +29,6 @@ public sealed record UpdateStoreRequest(
     string Uf,
     string Cep,
     string StatusLoja);
-
-public sealed record UpdateStoreConfigurationRequest(
-    string NomeExibicao,
-    string CabecalhoImpressao,
-    string RodapeImpressao,
-    bool UsaModeloUnicoEtiqueta,
-    bool UsaModeloUnicoRecibo,
-    string FusoHorario,
-    string Moeda);
-
-public sealed record StoreConfigurationResponse(
-    Guid Id,
-    Guid LojaId,
-    string NomeExibicao,
-    string CabecalhoImpressao,
-    string RodapeImpressao,
-    bool UsaModeloUnicoEtiqueta,
-    bool UsaModeloUnicoRecibo,
-    string FusoHorario,
-    string Moeda);
 
 public sealed record StoreResponse(
     Guid Id,
@@ -79,5 +49,4 @@ public sealed record StoreResponse(
     Guid ConjuntoCatalogoId,
     bool EhLojaAtiva,
     bool EhResponsavel,
-    bool PodeGerenciar,
-    StoreConfigurationResponse Configuracao);
+    bool PodeGerenciar);
