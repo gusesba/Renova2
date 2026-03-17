@@ -1,24 +1,22 @@
 "use client";
 
-import {
-  startTransition,
-  useEffect,
-  useEffectEvent,
-  useState,
-  type FormEvent,
-} from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useEffect, useEffectEvent, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { AuthIllustration } from "@/app/login/components/auth-illustration";
 import { LoginForm } from "@/app/login/components/login-form";
 import { ResetPasswordPanel } from "@/app/login/components/reset-password-panel";
 import { RenovaMark } from "@/components/brand/renova-mark";
-import { FeedbackBanner } from "@/components/ui/feedback-banner";
-import { getErrorMessage } from "@/lib/helpers/formatters";
 import {
-  readSessionToken,
-  writeSessionToken,
-} from "@/lib/helpers/session-storage";
+  getZodErrorMessage,
+  loginSchema,
+  passwordResetConfirmSchema,
+  passwordResetRequestSchema,
+} from "@/lib/helpers/access-schemas";
+import { getErrorMessage } from "@/lib/helpers/formatters";
+import { readSessionToken, writeSessionToken } from "@/lib/helpers/session-storage";
 import {
   confirmPasswordReset,
   getMe,
@@ -28,9 +26,7 @@ import {
 
 export function LoginScreen() {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
   const [showReset, setShowReset] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [tokenIssued, setTokenIssued] = useState(false);
   const [loginValues, setLoginValues] = useState({
     email: "admin@renova.local",
@@ -40,6 +36,44 @@ export function LoginScreen() {
     email: "admin@renova.local",
     token: "",
     novaSenha: "Renova123!",
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: login,
+    onSuccess: (response) => {
+      writeSessionToken(response.token);
+      toast.success("Sessao iniciada com sucesso.");
+      router.replace("/dashboard");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const requestResetMutation = useMutation({
+    mutationFn: (email: string) => requestPasswordReset(email),
+    onSuccess: (response) => {
+      setTokenIssued(true);
+      setResetValues((current) => ({
+        ...current,
+        token: response.tokenRecuperacao ?? current.token,
+      }));
+      toast.success(response.mensagem);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  const confirmResetMutation = useMutation({
+    mutationFn: confirmPasswordReset,
+    onSuccess: () => {
+      setShowReset(false);
+      toast.success("Senha redefinida com sucesso.");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
   });
 
   const tryAutoRedirect = useEffectEvent(async () => {
@@ -53,9 +87,7 @@ export function LoginScreen() {
       await getMe(storedToken);
       router.replace("/dashboard");
     } catch {
-      startTransition(() => {
-        setFeedback(null);
-      });
+      return;
     }
   });
 
@@ -65,75 +97,54 @@ export function LoginScreen() {
 
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
 
-    try {
-      const response = await login(loginValues);
-      writeSessionToken(response.token);
-      startTransition(() => {
-        setFeedback("Sessao iniciada com sucesso.");
-      });
-      router.replace("/dashboard");
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
+    const parsed = loginSchema.safeParse(loginValues);
+    if (!parsed.success) {
+      toast.error(getZodErrorMessage(parsed.error));
+      return;
     }
+
+    await loginMutation.mutateAsync(parsed.data);
   }
 
   async function handleResetRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
 
-    try {
-      const response = await requestPasswordReset(resetValues.email);
-      startTransition(() => {
-        setTokenIssued(true);
-        setResetValues((current) => ({
-          ...current,
-          token: response.tokenRecuperacao ?? current.token,
-        }));
-        setFeedback(response.mensagem);
-      });
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
+    const parsed = passwordResetRequestSchema.safeParse({ email: resetValues.email });
+    if (!parsed.success) {
+      toast.error(getZodErrorMessage(parsed.error));
+      return;
     }
+
+    await requestResetMutation.mutateAsync(parsed.data.email);
   }
 
   async function handleResetConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
 
-    try {
-      await confirmPasswordReset({
-        token: resetValues.token,
-        novaSenha: resetValues.novaSenha,
-      });
-      startTransition(() => {
-        setFeedback("Senha redefinida com sucesso.");
-        setShowReset(false);
-      });
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
+    const parsed = passwordResetConfirmSchema.safeParse({
+      token: resetValues.token,
+      novaSenha: resetValues.novaSenha,
+    });
+    if (!parsed.success) {
+      toast.error(getZodErrorMessage(parsed.error));
+      return;
     }
+
+    await confirmResetMutation.mutateAsync(parsed.data);
   }
+
+  const busy =
+    loginMutation.isPending ||
+    requestResetMutation.isPending ||
+    confirmResetMutation.isPending;
 
   return (
     <div className="auth-page">
       <div className="auth-shell">
         <div className="auth-card">
           <section className="auth-visual">
-            <RenovaMark subtitle="A melhor rede de brechós do Brasil" />
+            <RenovaMark subtitle="A melhor rede de brechos do Brasil" />
             <AuthIllustration />
           </section>
 
@@ -145,12 +156,7 @@ export function LoginScreen() {
               </div>
             ) : null}
 
-            {feedback ? <FeedbackBanner message={feedback} /> : null}
-
-            <div
-              className="section-stack"
-              style={{ marginTop: feedback ? "1rem" : 0 }}
-            >
+            <div className="section-stack">
               {showReset ? (
                 <ResetPasswordPanel
                   busy={busy}

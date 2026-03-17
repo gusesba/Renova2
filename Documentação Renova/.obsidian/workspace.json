@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "a2f4566a3eda6458",
+        "id": "60667202ea1329af",
         "type": "tabs",
         "children": [
           {
-            "id": "9f877956e8684de2",
+            "id": "f8ba67cc2a97a96e",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Ideia Inicial.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Ideia Inicial"
+              "title": "Nova aba"
             }
           }
         ]
@@ -183,15 +179,15 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "9f877956e8684de2",
+  "active": "d0f5e182f6f81d44",
   "lastOpenFiles": [
+    "Ideia Inicial.md",
     "BaseLayout/Sistema.png",
     "BaseLayout/Auth.png",
     "Checklist Implementacao Renova.md",
     "BaseLayout/image.png",
     "BaseLayout",
     "Nova pasta",
-    "Ideia Inicial.md",
     "Requisitos por Modulos.md",
     "Relacoes Funcoes App.md",
     "Modelagem Banco de Dados Renova.md",

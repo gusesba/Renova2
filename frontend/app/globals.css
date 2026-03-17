@@ -629,6 +629,15 @@ a {
   gap: 0.45rem;
 }
 
+.ui-select-shell {
+  position: relative;
+  display: block;
+}
+
+.ui-select-shell.is-disabled {
+  opacity: 0.7;
+}
+
 .ui-field-label {
   font-size: 0.8rem;
   font-weight: 700;
@@ -653,6 +662,102 @@ a {
 .ui-textarea:focus {
   border-color: rgba(91, 93, 246, 0.55);
   box-shadow: 0 0 0 4px rgba(91, 93, 246, 0.12);
+}
+
+.ui-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-select-shell.is-open .ui-select,
+.ui-select:hover {
+  border-color: rgba(91, 93, 246, 0.35);
+}
+
+.ui-select-shell:has(.ui-select:focus-visible) .ui-select-icon,
+.ui-select-shell.is-open .ui-select-icon {
+  color: var(--accent);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.ui-select-value {
+  min-width: 0;
+  flex: 1;
+}
+
+.ui-select-value.is-placeholder {
+  color: var(--muted);
+}
+
+.ui-select-icon {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.ui-select-dropdown {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 0.35rem;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 0.45rem;
+  box-shadow: 0 18px 44px rgba(87, 91, 190, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.ui-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  border: 0;
+  border-radius: 0.8rem;
+  background: transparent;
+  padding: 0.72rem 0.8rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.ui-select-option:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ui-select-option.is-selected {
+  background: rgba(91, 93, 246, 0.12);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ui-select-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ui-select-option-check {
+  font-size: 0.82rem;
 }
 
 .ui-textarea {

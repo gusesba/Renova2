@@ -1,19 +1,17 @@
 "use client";
 
 import {
-  createContext,
-  startTransition,
-  useContext,
-  useEffect,
-  useEffectEvent,
-  useState,
-  type ReactNode,
-} from "react";
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { SystemLoadingScreen } from "@/components/layout/system-loading-screen";
-import { changeActiveStore, getMe, logout, type SessionContext } from "@/lib/services/renova-api";
+import { queryKeys } from "@/lib/helpers/query-keys";
 import { clearSessionToken, readSessionToken } from "@/lib/helpers/session-storage";
+import { changeActiveStore, getMe, logout, type SessionContext } from "@/lib/services/renova-api";
 
 type SystemSessionValue = {
   token: string;
@@ -30,66 +28,69 @@ type SystemSessionProviderProps = {
 
 export function SystemSessionProvider({ children }: SystemSessionProviderProps) {
   const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
-  const [session, setSession] = useState<SessionContext | null>(null);
+  const queryClient = useQueryClient();
+  const [token, setToken] = useState<string | null>(() => readSessionToken());
 
-  const hydrateSession = useEffectEvent(async (storedToken: string) => {
-    try {
-      const nextSession = await getMe(storedToken);
-      startTransition(() => {
-        setToken(storedToken);
-        setSession(nextSession);
-      });
-    } catch {
+  const sessionQuery = useQuery({
+    enabled: !!token,
+    queryFn: () => getMe(token!),
+    queryKey: queryKeys.session(token),
+    retry: false,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const changeStoreMutation = useMutation({
+    mutationFn: (storeId: string) => changeActiveStore(token!, storeId),
+    onSuccess: (nextSession) => {
+      queryClient.setQueryData(queryKeys.session(token), nextSession);
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      if (!token) {
+        return;
+      }
+
+      try {
+        await logout(token);
+      } catch {
+        return;
+      }
+    },
+    onSettled: () => {
       clearSessionToken();
-      startTransition(() => {
-        setToken(null);
-        setSession(null);
-      });
+      setToken(null);
+      queryClient.removeQueries({ queryKey: ["session"] });
       router.replace("/login");
-    }
+    },
   });
 
   useEffect(() => {
-    const storedToken = readSessionToken();
-
-    if (!storedToken) {
+    if (!token) {
       router.replace("/login");
       return;
     }
 
-    void hydrateSession(storedToken);
-  }, [router]);
+    if (sessionQuery.isError) {
+      clearSessionToken();
+      router.replace("/login");
+    }
+  }, [router, sessionQuery.isError, token]);
 
   async function handleChangeStore(storeId: string) {
     if (!token) {
       return;
     }
 
-    const nextSession = await changeActiveStore(token, storeId);
-    startTransition(() => {
-      setSession(nextSession);
-    });
+    await changeStoreMutation.mutateAsync(storeId);
   }
 
   async function handleLogout() {
-    if (token) {
-      try {
-        await logout(token);
-      } catch {
-        // nao bloqueia a limpeza local quando a API de logout falhar
-      }
-    }
-
-    clearSessionToken();
-    startTransition(() => {
-      setToken(null);
-      setSession(null);
-    });
-    router.replace("/login");
+    await logoutMutation.mutateAsync();
   }
 
-  if (!token || !session) {
+  if (!token || sessionQuery.isLoading || !sessionQuery.data) {
     return <SystemLoadingScreen />;
   }
 
@@ -97,7 +98,7 @@ export function SystemSessionProvider({ children }: SystemSessionProviderProps) 
     <SystemSessionContext.Provider
       value={{
         token,
-        session,
+        session: sessionQuery.data,
         changeStore: handleChangeStore,
         logoutCurrentUser: handleLogout,
       }}

@@ -1,6 +1,12 @@
 "use client";
 
-import { startTransition, useEffect, useEffectEvent, useState, type FormEvent } from "react";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import { DashboardOverview } from "@/app/(system)/dashboard/components/dashboard-overview";
@@ -10,8 +16,15 @@ import {
 } from "@/app/(system)/dashboard/components/memberships-panel";
 import { RolesPanel, type RoleFormState } from "@/app/(system)/dashboard/components/roles-panel";
 import { UsersPanel, type UserFormState } from "@/app/(system)/dashboard/components/users-panel";
-import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import {
+  createUserFormSchema,
+  getZodErrorMessage,
+  membershipFormSchema,
+  roleFormSchema,
+  userFormSchema,
+} from "@/lib/helpers/access-schemas";
 import { getErrorMessage } from "@/lib/helpers/formatters";
+import { queryKeys } from "@/lib/helpers/query-keys";
 import {
   changeUserStatus,
   createMembership,
@@ -22,10 +35,6 @@ import {
   updateRole,
   updateRolePermissions,
   updateUser,
-  type AccessPermission,
-  type AccessRole,
-  type AccessUser,
-  type StoreMembership,
 } from "@/lib/services/renova-api";
 
 const emptyUserForm: UserFormState = {
@@ -52,171 +61,185 @@ const emptyMembershipForm: MembershipFormState = {
 
 export function AccessDashboard() {
   const { token, session } = useSystemSession();
-  const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [users, setUsers] = useState<AccessUser[]>([]);
-  const [permissions, setPermissions] = useState<AccessPermission[]>([]);
-  const [roles, setRoles] = useState<AccessRole[]>([]);
-  const [memberships, setMemberships] = useState<StoreMembership[]>([]);
+  const queryClient = useQueryClient();
   const [userForm, setUserForm] = useState<UserFormState>(emptyUserForm);
   const [roleForm, setRoleForm] = useState<RoleFormState>(emptyRoleForm);
   const [membershipForm, setMembershipForm] = useState<MembershipFormState>(emptyMembershipForm);
 
-  async function reloadWorkspace() {
-    setBusy(true);
-
-    try {
-      const workspace = await loadAccessWorkspace(token);
-      startTransition(() => {
-        setUsers(workspace.users);
-        setPermissions(workspace.permissions);
-        setRoles(workspace.roles);
-        setMemberships(workspace.memberships);
-      });
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const hydrateWorkspace = useEffectEvent(async () => {
-    await reloadWorkspace();
+  const workspaceQuery = useQuery({
+    queryFn: () => loadAccessWorkspace(token),
+    queryKey: queryKeys.accessWorkspace(token, session.lojaAtivaId),
   });
 
-  useEffect(() => {
-    void hydrateWorkspace();
-  }, [session.lojaAtivaId, token]);
+  const refreshWorkspace = () =>
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.accessWorkspace(token, session.lojaAtivaId),
+    });
 
-  async function handleUserSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-
-    try {
+  const userMutation = useMutation({
+    mutationFn: async () => {
       if (userForm.id) {
-        await updateUser(token, userForm.id, {
-          nome: userForm.nome,
-          email: userForm.email,
-          telefone: userForm.telefone,
-          pessoaId: null,
-        });
-      } else {
-        await createUser(token, {
-          nome: userForm.nome,
-          email: userForm.email,
-          telefone: userForm.telefone,
-          senha: userForm.senha,
+        const parsed = userFormSchema.safeParse(userForm);
+        if (!parsed.success) {
+          throw new Error(getZodErrorMessage(parsed.error));
+        }
+
+        return updateUser(token, userForm.id, {
+          nome: parsed.data.nome,
+          email: parsed.data.email,
+          telefone: parsed.data.telefone,
           pessoaId: null,
         });
       }
 
-      startTransition(() => {
-        setFeedback("Usuario salvo com sucesso.");
-        setUserForm(emptyUserForm);
+      const parsed = createUserFormSchema.safeParse(userForm);
+      if (!parsed.success) {
+        throw new Error(getZodErrorMessage(parsed.error));
+      }
+
+      return createUser(token, {
+        nome: parsed.data.nome,
+        email: parsed.data.email,
+        telefone: parsed.data.telefone,
+        senha: parsed.data.senha,
+        pessoaId: null,
       });
-      await reloadWorkspace();
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+    onSuccess: async () => {
+      setUserForm(emptyUserForm);
+      toast.success("Usuario salvo com sucesso.");
+      await refreshWorkspace();
+    },
+  });
+
+  const userStatusMutation = useMutation({
+    mutationFn: async () => {
+      const parsed = userFormSchema.safeParse(userForm);
+      if (!parsed.success) {
+        throw new Error(getZodErrorMessage(parsed.error));
+      }
+
+      if (!parsed.data.id) {
+        throw new Error("Selecione um usuario antes de alterar o status.");
+      }
+
+      return changeUserStatus(token, parsed.data.id, parsed.data.statusUsuario);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+    onSuccess: async () => {
+      toast.success("Status do usuario atualizado.");
+      await refreshWorkspace();
+    },
+  });
+
+  const roleMutation = useMutation({
+    mutationFn: async () => {
+      const parsed = roleFormSchema.safeParse(roleForm);
+      if (!parsed.success) {
+        throw new Error(getZodErrorMessage(parsed.error));
+      }
+
+      if (parsed.data.id) {
+        await updateRole(token, parsed.data.id, {
+          nome: parsed.data.nome,
+          descricao: parsed.data.descricao,
+          ativo: true,
+        });
+
+        return updateRolePermissions(token, parsed.data.id, parsed.data.permissaoIds);
+      }
+
+      return createRole(token, {
+        nome: parsed.data.nome,
+        descricao: parsed.data.descricao,
+        permissaoIds: parsed.data.permissaoIds,
       });
-    } finally {
-      setBusy(false);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+    onSuccess: async () => {
+      setRoleForm(emptyRoleForm);
+      toast.success("Cargo salvo com sucesso.");
+      await refreshWorkspace();
+    },
+  });
+
+  const membershipMutation = useMutation({
+    mutationFn: async () => {
+      const parsed = membershipFormSchema.safeParse(membershipForm);
+      if (!parsed.success) {
+        throw new Error(getZodErrorMessage(parsed.error));
+      }
+
+      if (parsed.data.id) {
+        return updateMembershipRoles(token, parsed.data.id, parsed.data.cargoIds);
+      }
+
+      return createMembership(token, {
+        usuarioId: parsed.data.usuarioId,
+        statusVinculo: "ativo",
+        ehResponsavel: false,
+        dataFim: null,
+        cargoIds: parsed.data.cargoIds,
+      });
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+    onSuccess: async () => {
+      setMembershipForm(emptyMembershipForm);
+      toast.success("Vinculo salvo com sucesso.");
+      await refreshWorkspace();
+    },
+  });
+
+  const workspace = workspaceQuery.data;
+  const users = workspace?.users ?? [];
+  const permissions = workspace?.permissions ?? [];
+  const roles = workspace?.roles ?? [];
+  const memberships = workspace?.memberships ?? [];
+
+  const busy =
+    workspaceQuery.isLoading ||
+    userMutation.isPending ||
+    userStatusMutation.isPending ||
+    roleMutation.isPending ||
+    membershipMutation.isPending;
+
+  useEffect(() => {
+    if (workspaceQuery.isError) {
+      toast.error(getErrorMessage(workspaceQuery.error));
     }
+  }, [workspaceQuery.error, workspaceQuery.isError]);
+
+  async function handleUserSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await userMutation.mutateAsync();
   }
 
   async function handleUserStatusChange() {
-    if (!userForm.id) {
-      return;
-    }
-
-    setBusy(true);
-
-    try {
-      await changeUserStatus(token, userForm.id, userForm.statusUsuario);
-      startTransition(() => {
-        setFeedback("Status do usuario atualizado.");
-      });
-      await reloadWorkspace();
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
-    }
+    await userStatusMutation.mutateAsync();
   }
 
   async function handleRoleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-
-    try {
-      if (roleForm.id) {
-        await updateRole(token, roleForm.id, {
-          nome: roleForm.nome,
-          descricao: roleForm.descricao,
-          ativo: true,
-        });
-        await updateRolePermissions(token, roleForm.id, roleForm.permissaoIds);
-      } else {
-        await createRole(token, {
-          nome: roleForm.nome,
-          descricao: roleForm.descricao,
-          permissaoIds: roleForm.permissaoIds,
-        });
-      }
-
-      startTransition(() => {
-        setFeedback("Cargo salvo com sucesso.");
-        setRoleForm(emptyRoleForm);
-      });
-      await reloadWorkspace();
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
-    }
+    await roleMutation.mutateAsync();
   }
 
   async function handleMembershipSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-
-    try {
-      if (membershipForm.id) {
-        await updateMembershipRoles(token, membershipForm.id, membershipForm.cargoIds);
-      } else {
-        await createMembership(token, {
-          usuarioId: membershipForm.usuarioId,
-          statusVinculo: "ativo",
-          ehResponsavel: false,
-          dataFim: null,
-          cargoIds: membershipForm.cargoIds,
-        });
-      }
-
-      startTransition(() => {
-        setFeedback("Vinculo salvo com sucesso.");
-        setMembershipForm(emptyMembershipForm);
-      });
-      await reloadWorkspace();
-    } catch (error) {
-      startTransition(() => {
-        setFeedback(getErrorMessage(error));
-      });
-    } finally {
-      setBusy(false);
-    }
+    await membershipMutation.mutateAsync();
   }
 
   return (
     <div className="dashboard-grid">
       <div className="dashboard-column" style={{ gridColumn: "1 / -1" }}>
-        {feedback ? <FeedbackBanner message={feedback} /> : null}
         <DashboardOverview
           membershipsCount={memberships.length}
           rolesCount={roles.length}
