@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Checklist Implementacao Renova.md",
+                "file": "comandosDB.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Checklist Implementacao Renova"
+              "title": "comandosDB"
             }
           }
         ]
@@ -183,13 +183,13 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "d0f5e182f6f81d44",
+  "active": "f8ba67cc2a97a96e",
   "lastOpenFiles": [
+    "Checklist Implementacao Renova.md",
     "Cadastro Publico Auth.md",
     "Ideia Inicial.md",
     "BaseLayout/Sistema.png",
     "BaseLayout/Auth.png",
-    "Checklist Implementacao Renova.md",
     "BaseLayout/image.png",
     "BaseLayout",
     "Nova pasta",

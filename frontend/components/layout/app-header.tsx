@@ -6,6 +6,8 @@ import type { SessionContext } from "@/lib/services/renova-api";
 // Header principal do shell com loja ativa, dados do usuario e acoes de sessao.
 type AppHeaderProps = {
   session: SessionContext;
+  title: string;
+  subtitle: string;
   onChangeStore: (storeId: string) => void;
   onLogout: () => void;
   onToggleSidebar: () => void;
@@ -14,6 +16,8 @@ type AppHeaderProps = {
 
 export function AppHeader({
   session,
+  title,
+  subtitle,
   onChangeStore,
   onLogout,
   onToggleSidebar,
@@ -34,8 +38,8 @@ export function AppHeader({
           <span />
         </button>
         <div className="app-header-intro">
-          <h1 className="app-header-title">Access Control</h1>
-          <p className="app-header-subtitle">Usuarios, cargos e permissoes</p>
+          <h1 className="app-header-title">{title}</h1>
+          <p className="app-header-subtitle">{subtitle}</p>
         </div>
       </div>
       <div className="app-header-actions">

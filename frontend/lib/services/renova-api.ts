@@ -109,6 +109,41 @@ export type AccessWorkspace = {
   memberships: StoreMembership[];
 };
 
+export type StoreConfiguration = {
+  id: string;
+  lojaId: string;
+  nomeExibicao: string;
+  cabecalhoImpressao: string;
+  rodapeImpressao: string;
+  usaModeloUnicoEtiqueta: boolean;
+  usaModeloUnicoRecibo: boolean;
+  fusoHorario: string;
+  moeda: string;
+};
+
+export type StoreSummary = {
+  id: string;
+  nomeFantasia: string;
+  razaoSocial: string;
+  documento: string;
+  telefone: string;
+  email: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  statusLoja: string;
+  ativo: boolean;
+  conjuntoCatalogoId: string;
+  ehLojaAtiva: boolean;
+  ehResponsavel: boolean;
+  podeGerenciar: boolean;
+  configuracao: StoreConfiguration;
+};
+
 async function callApi<T>(path: string, init: RequestInit, token?: string | null) {
   // Todas as chamadas passam por aqui para reaproveitar headers e parsing do envelope.
   const headers = new Headers(init.headers);
@@ -356,4 +391,96 @@ export async function loadAccessWorkspace(token: string): Promise<AccessWorkspac
   ]);
 
   return { users, permissions, roles, memberships };
+}
+
+export async function listAccessibleStores(token: string) {
+  return callApi<StoreSummary[]>("/stores/accessible", { method: "GET" }, token);
+}
+
+export async function createStore(
+  token: string,
+  payload: {
+    nomeFantasia: string;
+    razaoSocial: string;
+    documento: string;
+    telefone: string;
+    email: string;
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+    configuracao: {
+      nomeExibicao: string;
+      cabecalhoImpressao: string;
+      rodapeImpressao: string;
+      usaModeloUnicoEtiqueta: boolean;
+      usaModeloUnicoRecibo: boolean;
+      fusoHorario: string;
+      moeda: string;
+    };
+  },
+) {
+  return callApi<StoreSummary>(
+    "/stores",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+export async function updateStore(
+  token: string,
+  lojaId: string,
+  payload: {
+    nomeFantasia: string;
+    razaoSocial: string;
+    documento: string;
+    telefone: string;
+    email: string;
+    logradouro: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    uf: string;
+    cep: string;
+    statusLoja: string;
+  },
+) {
+  return callApi<StoreSummary>(
+    `/stores/${lojaId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+export async function updateStoreConfiguration(
+  token: string,
+  lojaId: string,
+  payload: {
+    nomeExibicao: string;
+    cabecalhoImpressao: string;
+    rodapeImpressao: string;
+    usaModeloUnicoEtiqueta: boolean;
+    usaModeloUnicoRecibo: boolean;
+    fusoHorario: string;
+    moeda: string;
+  },
+) {
+  return callApi<StoreSummary>(
+    `/stores/${lojaId}/configuration`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
 }

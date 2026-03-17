@@ -90,19 +90,19 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 03. Módulo 02 - Lojas e Estrutura Operacional
 
-- [ ] Implementar cadastro de loja
-  - [ ] CRUD de `loja`
+- [x] Implementar cadastro de loja
+  - [x] CRUD de `loja`
   - [ ] validação de documento único
   - [ ] inativação lógica
   - [ ] tela web de listagem e edição
 - [ ] Implementar configuração operacional da loja
-  - [ ] CRUD de `loja_configuracao`
+  - [x] CRUD de `loja_configuracao`
   - [ ] dados de impressão
   - [ ] nome de exibição
   - [ ] fuso horário e moeda
 - [ ] Implementar visão consolidada por usuário
-  - [ ] listar apenas lojas vinculadas
-  - [ ] permitir troca de loja ativa
+  - [x] listar apenas lojas vinculadas
+  - [x] permitir troca de loja ativa
   - [ ] consolidar visão gerencial somente das lojas autorizadas
 
 ## 04. Módulo 03 - Cadastro de Clientes e Fornecedores
