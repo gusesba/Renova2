@@ -1,6 +1,6 @@
 namespace Renova.Services.Features.Access;
 
-// Representa o catalogo central de permissoes e papeis base do sistema.
+// Centraliza o catalogo de permissoes e o unico cargo base automatico do sistema.
 public static class AccessPermissionCodes
 {
     public const string UsuariosVisualizar = "usuarios.visualizar";
@@ -29,26 +29,26 @@ public static class AccessPermissionCodes
 
     public static readonly IReadOnlyList<PermissionDefinition> Catalog =
     [
-        new(UsuariosVisualizar, "Visualizar usuários", "Consulta usuários e vínculos da loja.", "acesso"),
-        new(UsuariosGerenciar, "Gerenciar usuários", "Cria usuários, altera status e mantém vínculos.", "acesso"),
-        new(CargosGerenciar, "Gerenciar cargos", "Mantém cargos e matriz de permissões por loja.", "acesso"),
-        new(LojasGerenciar, "Gerenciar lojas", "Mantém cadastro e configuração operacional da loja.", "lojas"),
+        new(UsuariosVisualizar, "Visualizar usuarios", "Consulta usuarios e vinculos da loja.", "acesso"),
+        new(UsuariosGerenciar, "Gerenciar usuarios", "Cria usuarios, altera status e mantem vinculos.", "acesso"),
+        new(CargosGerenciar, "Gerenciar cargos", "Mantem cargos e matriz de permissoes por loja.", "acesso"),
+        new(LojasGerenciar, "Gerenciar lojas", "Mantem cadastro e configuracao operacional da loja.", "lojas"),
         new(PessoasVisualizar, "Visualizar pessoas", "Consulta clientes e fornecedores.", "pessoas"),
-        new(PessoasGerenciar, "Gerenciar pessoas", "Mantém cadastros de clientes e fornecedores.", "pessoas"),
-        new(CatalogoGerenciar, "Gerenciar catálogo", "Mantém tabelas base compartilhadas.", "catalogo"),
-        new(RegrasGerenciar, "Gerenciar regras comerciais", "Mantém regras comerciais e meios de pagamento.", "regras"),
-        new(PecasVisualizar, "Visualizar peças", "Consulta peças, estoque e imagens.", "estoque"),
-        new(PecasCadastrar, "Cadastrar peças", "Cadastra e altera peças do estoque.", "estoque"),
+        new(PessoasGerenciar, "Gerenciar pessoas", "Mantem cadastros de clientes e fornecedores.", "pessoas"),
+        new(CatalogoGerenciar, "Gerenciar catalogo", "Mantem tabelas base compartilhadas.", "catalogo"),
+        new(RegrasGerenciar, "Gerenciar regras comerciais", "Mantem regras comerciais e meios de pagamento.", "regras"),
+        new(PecasVisualizar, "Visualizar pecas", "Consulta pecas, estoque e imagens.", "estoque"),
+        new(PecasCadastrar, "Cadastrar pecas", "Cadastra e altera pecas do estoque.", "estoque"),
         new(PecasAjustar, "Ajustar estoque", "Realiza ajustes manuais de estoque.", "estoque"),
         new(VendasRegistrar, "Registrar vendas", "Abre e conclui vendas.", "vendas"),
         new(VendasCancelar, "Cancelar vendas", "Cancela vendas e executa estornos.", "vendas"),
-        new(CreditoVisualizar, "Visualizar crédito", "Consulta saldo e extrato de crédito.", "credito"),
-        new(CreditoGerenciar, "Gerenciar crédito", "Lança crédito manual e ajustes.", "credito"),
+        new(CreditoVisualizar, "Visualizar credito", "Consulta saldo e extrato de credito.", "credito"),
+        new(CreditoGerenciar, "Gerenciar credito", "Lanca credito manual e ajustes.", "credito"),
         new(FinanceiroVisualizar, "Visualizar financeiro", "Consulta movimentos financeiros.", "financeiro"),
-        new(FinanceiroConciliar, "Conciliar financeiro", "Executa conciliação e lançamentos financeiros.", "financeiro"),
+        new(FinanceiroConciliar, "Conciliar financeiro", "Executa conciliacao e lancamentos financeiros.", "financeiro"),
         new(FechamentoGerar, "Gerar fechamento", "Gera fechamento financeiro por pessoa.", "fechamento"),
         new(FechamentoConferir, "Conferir fechamento", "Confere e liquida fechamentos.", "fechamento"),
-        new(RelatoriosExportar, "Exportar relatórios", "Exporta consultas em PDF e Excel.", "relatorios"),
+        new(RelatoriosExportar, "Exportar relatorios", "Exporta consultas em PDF e Excel.", "relatorios"),
         new(AlertasVisualizar, "Visualizar alertas", "Consulta alertas operacionais.", "alertas"),
         new(PortalConsultar, "Consultar portal", "Permite acesso ao portal do cliente/fornecedor.", "portal"),
         new(MobileConsultar, "Consultar mobile", "Permite acesso a consultas no mobile.", "mobile"),
@@ -61,58 +61,13 @@ public static class AccessPermissionCodes
             "Dono da Loja",
             "Perfil base com acesso administrativo completo da loja.",
             Catalog.Select(x => x.Codigo).ToArray()),
-        new(
-            "gerente",
-            "Gerente",
-            "Perfil base para gestão operacional com pouca restrição.",
-            [
-                UsuariosVisualizar,
-                PessoasVisualizar,
-                PessoasGerenciar,
-                CatalogoGerenciar,
-                RegrasGerenciar,
-                PecasVisualizar,
-                PecasCadastrar,
-                PecasAjustar,
-                VendasRegistrar,
-                VendasCancelar,
-                CreditoVisualizar,
-                CreditoGerenciar,
-                FinanceiroVisualizar,
-                FinanceiroConciliar,
-                FechamentoGerar,
-                FechamentoConferir,
-                RelatoriosExportar,
-                AlertasVisualizar,
-            ]),
-        new(
-            "funcionario",
-            "Funcionário",
-            "Perfil base para operação diária da loja.",
-            [
-                UsuariosVisualizar,
-                PessoasVisualizar,
-                PecasVisualizar,
-                PecasCadastrar,
-                VendasRegistrar,
-                CreditoVisualizar,
-                AlertasVisualizar,
-            ]),
-        new(
-            "cliente",
-            "Cliente",
-            "Perfil base para portal e consultas próprias.",
-            [
-                PortalConsultar,
-                MobileConsultar,
-            ]),
     ];
 }
 
 // Representa uma permissao cadastravel no catalogo base.
 public sealed record PermissionDefinition(string Codigo, string Nome, string Descricao, string Modulo);
 
-// Representa a definicao de um cargo padrao para bootstrap de lojas.
+// Representa a definicao de um cargo padrao criado automaticamente para a loja.
 public sealed record RoleTemplateDefinition(
     string CodigoInterno,
     string Nome,

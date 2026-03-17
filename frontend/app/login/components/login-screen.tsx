@@ -38,8 +38,8 @@ export function LoginScreen() {
   );
   const [tokenIssued, setTokenIssued] = useState(false);
   const [loginValues, setLoginValues] = useState({
-    email: "admin@renova.local",
-    senha: "Renova123!",
+    email: "",
+    senha: "",
   });
   const [registerValues, setRegisterValues] = useState({
     nome: "",
@@ -49,9 +49,9 @@ export function LoginScreen() {
     confirmacaoSenha: "",
   });
   const [resetValues, setResetValues] = useState({
-    email: "admin@renova.local",
+    email: "",
     token: "",
-    novaSenha: "Renova123!",
+    novaSenha: "",
   });
 
   const loginMutation = useMutation({
