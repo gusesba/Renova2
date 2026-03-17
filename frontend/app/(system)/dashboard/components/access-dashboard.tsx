@@ -24,12 +24,10 @@ import {
   getZodErrorMessage,
   membershipFormSchema,
   roleFormSchema,
-  userFormSchema,
 } from "@/lib/schemas/access";
 import { getErrorMessage } from "@/lib/helpers/formatters";
 import { queryKeys } from "@/lib/helpers/query-keys";
 import {
-  changeUserStatus,
   createMembership,
   createRole,
   createUser,
@@ -37,17 +35,14 @@ import {
   updateMembershipRoles,
   updateRole,
   updateRolePermissions,
-  updateUser,
 } from "@/lib/services/access";
 
 // Valores iniciais dos formularios para evitar estado parcial espalhado pela tela.
 const emptyUserForm: UserFormState = {
-  id: "",
   nome: "",
   email: "",
   telefone: "",
   senha: "",
-  statusUsuario: "ativo",
 };
 
 const emptyRoleForm: RoleFormState = {
@@ -86,21 +81,6 @@ export function AccessDashboard() {
 
   const userMutation = useMutation({
     mutationFn: async () => {
-      // Atualizacao e criacao compartilham o mesmo formulario, mas com schemas distintos.
-      if (userForm.id) {
-        const parsed = userFormSchema.safeParse(userForm);
-        if (!parsed.success) {
-          throw new Error(getZodErrorMessage(parsed.error));
-        }
-
-        return updateUser(token, userForm.id, {
-          nome: parsed.data.nome,
-          email: parsed.data.email,
-          telefone: parsed.data.telefone,
-          pessoaId: null,
-        });
-      }
-
       const parsed = createUserFormSchema.safeParse(userForm);
       if (!parsed.success) {
         throw new Error(getZodErrorMessage(parsed.error));
@@ -119,29 +99,7 @@ export function AccessDashboard() {
     },
     onSuccess: async () => {
       setUserForm(emptyUserForm);
-      toast.success("Usuario salvo com sucesso.");
-      await refreshWorkspace();
-    },
-  });
-
-  const userStatusMutation = useMutation({
-    mutationFn: async () => {
-      const parsed = userFormSchema.safeParse(userForm);
-      if (!parsed.success) {
-        throw new Error(getZodErrorMessage(parsed.error));
-      }
-
-      if (!parsed.data.id) {
-        throw new Error("Selecione um usuario antes de alterar o status.");
-      }
-
-      return changeUserStatus(token, parsed.data.id, parsed.data.statusUsuario);
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error));
-    },
-    onSuccess: async () => {
-      toast.success("Status do usuario atualizado.");
+      toast.success("Usuario criado com sucesso.");
       await refreshWorkspace();
     },
   });
@@ -225,7 +183,6 @@ export function AccessDashboard() {
   const busy =
     workspaceQuery.isLoading ||
     userMutation.isPending ||
-    userStatusMutation.isPending ||
     roleMutation.isPending ||
     membershipMutation.isPending;
 
@@ -274,10 +231,6 @@ export function AccessDashboard() {
     await userMutation.mutateAsync();
   }
 
-  async function handleUserStatusChange() {
-    await userStatusMutation.mutateAsync();
-  }
-
   async function handleRoleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     await roleMutation.mutateAsync();
@@ -303,7 +256,6 @@ export function AccessDashboard() {
         <UsersPanel
           busy={busy}
           form={userForm}
-          onStatusChange={handleUserStatusChange}
           onSubmit={handleUserSubmit}
           setForm={setUserForm}
           users={users}

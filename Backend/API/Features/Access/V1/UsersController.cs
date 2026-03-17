@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Renova.Api.Common.Controllers;
 using Renova.Api.Common.Responses;
@@ -47,9 +48,9 @@ public sealed class UsersController : RenovaControllerBase
     }
 
     [HttpPut("{usuarioId:guid}")]
-    [RequirePermission(AccessPermissionCodes.UsuariosGerenciar)]
+    [Authorize]
     /// <summary>
-    /// Atualiza os dados cadastrais de um usuario.
+    /// Atualiza os dados cadastrais do proprio usuario autenticado.
     /// </summary>
     public async Task<ActionResult<ApiEnvelope<UserSummaryResponse>>> Update(
         Guid usuarioId,

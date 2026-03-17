@@ -40,7 +40,10 @@ export const userFormSchema = z.object({
   statusUsuario: z.enum(["ativo", "inativo", "bloqueado"]),
 });
 
-export const createUserFormSchema = userFormSchema.extend({
+export const createUserFormSchema = z.object({
+  nome: z.string().trim().min(1, "Informe o nome do usuario."),
+  email: z.email("Informe um email valido."),
+  telefone: z.string().trim().min(1, "Informe o telefone do usuario."),
   senha: z
     .string()
     .trim()

@@ -96,10 +96,11 @@ public sealed class AccessUserService : IAccessUserService
     }
 
     /// <summary>
-    /// Atualiza os dados cadastrais de um usuario existente.
+    /// Atualiza os dados cadastrais do proprio usuario autenticado.
     /// </summary>
     public async Task<UserSummaryResponse> AtualizarAsync(Guid usuarioId, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
+        EnsureCurrentUserCanEditSelf(usuarioId);
         ValidateUserInput(request.Nome, request.Email, request.Telefone);
 
         var usuario = await _dbContext.Usuarios.FirstOrDefaultAsync(x => x.Id == usuarioId, cancellationToken)
@@ -206,6 +207,20 @@ public sealed class AccessUserService : IAccessUserService
     {
         return _currentRequestContext.LojaAtivaId
             ?? throw new InvalidOperationException("Nenhuma loja ativa foi definida na sessão.");
+    }
+
+    /// <summary>
+    /// Garante que apenas o proprio usuario edite seu cadastro.
+    /// </summary>
+    private void EnsureCurrentUserCanEditSelf(Guid usuarioId)
+    {
+        var currentUserId = _currentRequestContext.UsuarioId
+            ?? throw new InvalidOperationException("Usuario autenticado nao encontrado.");
+
+        if (currentUserId != usuarioId)
+        {
+            throw new InvalidOperationException("Voce so pode editar o seu proprio usuario.");
+        }
     }
 
     /// <summary>

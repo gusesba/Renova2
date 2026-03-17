@@ -2,18 +2,16 @@ import type { Dispatch, SubmitEvent, SetStateAction } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
-import { SelectField, TextInput } from "@/components/ui/field";
+import { TextInput } from "@/components/ui/field";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { AccessUser } from "@/lib/services/access";
 
 // Painel de usuarios: formulario e lista de selecao usando apenas props do container.
 export type UserFormState = {
-  id: string;
   nome: string;
   email: string;
   telefone: string;
   senha: string;
-  statusUsuario: string;
 };
 
 type UsersPanelProps = {
@@ -22,7 +20,6 @@ type UsersPanelProps = {
   users: AccessUser[];
   setForm: Dispatch<SetStateAction<UserFormState>>;
   onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
-  onStatusChange: () => void;
 };
 
 export function UsersPanel({
@@ -31,13 +28,12 @@ export function UsersPanel({
   users,
   setForm,
   onSubmit,
-  onStatusChange,
 }: UsersPanelProps) {
   return (
     <Card>
       <CardBody className="section-stack">
         <CardHeading
-          subtitle="Cadastro e manutencao de usuarios com selecao rapida por registro."
+          subtitle="Crie novos usuarios da plataforma. A edicao do cadastro e feita apenas pelo proprio usuario."
           title="Usuarios da plataforma"
         />
 
@@ -68,50 +64,19 @@ export function UsersPanel({
             }
             value={form.email}
           />
-          {!form.id ? (
-            <TextInput
-              label="Senha inicial"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  senha: event.target.value,
-                }))
-              }
-              type="password"
-              value={form.senha}
-            />
-          ) : null}
-          <div className="split-fields">
-            <SelectField
-              label="Status"
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  statusUsuario: event.target.value,
-                }))
-              }
-              value={form.statusUsuario}
-            >
-              <option value="ativo">Ativo</option>
-              <option value="inativo">Inativo</option>
-              <option value="bloqueado">Bloqueado</option>
-            </SelectField>
-            <div style={{ display: "grid", alignItems: "end" }}>
-              <Button
-                disabled={busy || !form.id}
-                onClick={onStatusChange}
-                variant="soft"
-              >
-                Atualizar status
-              </Button>
-            </div>
-          </div>
+          <TextInput
+            label="Senha inicial"
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                senha: event.target.value,
+              }))
+            }
+            type="password"
+            value={form.senha}
+          />
           <Button disabled={busy} type="submit">
-            {busy
-              ? "Salvando..."
-              : form.id
-                ? "Salvar usuario"
-                : "Criar usuario"}
+            {busy ? "Salvando..." : "Criar usuario"}
           </Button>
         </form>
 
@@ -122,21 +87,7 @@ export function UsersPanel({
             </div>
           ) : (
             users.map((user) => (
-              <button
-                className="record-item"
-                key={user.id}
-                onClick={() =>
-                  setForm({
-                    id: user.id,
-                    nome: user.nome,
-                    email: user.email,
-                    telefone: user.telefone,
-                    senha: "",
-                    statusUsuario: user.statusUsuario,
-                  })
-                }
-                type="button"
-              >
+              <div className="record-item" key={user.id}>
                 <div
                   style={{
                     display: "flex",
@@ -157,7 +108,7 @@ export function UsersPanel({
                     </span>
                   ))}
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
