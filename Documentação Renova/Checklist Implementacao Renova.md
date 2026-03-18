@@ -367,20 +367,20 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 16. Módulo 15 - Relatórios e Exportações
 
-- [ ] Implementar exportação genérica com filtros
-  - [ ] Excel
-  - [ ] PDF
-- [ ] Implementar relatório de estoque atual
-  - [ ] filtros por loja, status, marca e fornecedor
-- [ ] Implementar relatório de peças vendidas
-  - [ ] filtros por período, fornecedor e vendedor
-- [ ] Implementar relatório financeiro
-  - [ ] por cliente/fornecedor
-  - [ ] por período e loja
-- [ ] Implementar relatório de peças devolvidas, doadas, perdidas e descartadas
-  - [ ] filtros por período e motivo
-- [ ] Implementar filtros salvos
-  - [ ] persistir configuração de filtro frequente
+- [x] Implementar exportação genérica com filtros
+  - [x] Excel
+  - [x] PDF
+- [x] Implementar relatório de estoque atual
+  - [x] filtros por loja, status, marca e fornecedor
+- [x] Implementar relatório de peças vendidas
+  - [x] filtros por período, fornecedor e vendedor
+- [x] Implementar relatório financeiro
+  - [x] por cliente/fornecedor
+  - [x] por período e loja
+- [x] Implementar relatório de peças devolvidas, doadas, perdidas e descartadas
+  - [x] filtros por período e motivo
+- [x] Implementar filtros salvos
+  - [x] persistir configuração de filtro frequente
 
 ## 17. Módulo 16 - Impressões e Documentos
 

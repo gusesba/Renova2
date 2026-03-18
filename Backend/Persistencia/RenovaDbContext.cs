@@ -61,6 +61,7 @@ public class RenovaDbContext : DbContext
     public DbSet<FechamentoPessoaItem> FechamentoPessoaItens => Set<FechamentoPessoaItem>();
     public DbSet<FechamentoPessoaMovimento> FechamentoPessoaMovimentos => Set<FechamentoPessoaMovimento>();
     public DbSet<AlertaOperacional> AlertasOperacionais => Set<AlertaOperacional>();
+    public DbSet<RelatorioFiltroSalvo> RelatorioFiltrosSalvos => Set<RelatorioFiltroSalvo>();
 
     /// <summary>
     /// Aplica convencoes globais e os mapeamentos por dominio.
@@ -83,6 +84,7 @@ public class RenovaDbContext : DbContext
         ConfigureFinanceiro(modelBuilder);
         ConfigureFechamento(modelBuilder);
         ConfigureAlertas(modelBuilder);
+        ConfigureRelatorios(modelBuilder);
     }
 
     /// <summary>
@@ -722,6 +724,27 @@ public class RenovaDbContext : DbContext
             entity.HasOne<Loja>()
                 .WithMany()
                 .HasForeignKey(x => x.LojaId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    /// <summary>
+    /// Configura os filtros salvos do modulo de relatorios.
+    /// </summary>
+    private static void ConfigureRelatorios(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<RelatorioFiltroSalvo>(entity =>
+        {
+            entity.HasIndex(x => new { x.LojaId, x.UsuarioId, x.TipoRelatorio, x.Nome }).IsUnique();
+
+            entity.HasOne<Loja>()
+                .WithMany()
+                .HasForeignKey(x => x.LojaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<Usuario>()
+                .WithMany()
+                .HasForeignKey(x => x.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

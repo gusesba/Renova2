@@ -19,6 +19,7 @@ import {
   canAccessFinancialModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
+  canAccessReportsModule,
   canAccessSalesModule,
   canAccessStockMovementsModule,
   canAccessStoresModule,
@@ -169,6 +170,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de dashboards e indicadores.",
     deniedMessage:
       "Solicite permissao comercial, financeira, de estoque ou fechamento para acessar esta pagina.",
+  },
+  {
+    href: "/reports",
+    label: "Relatorios",
+    meta: "Exportacao",
+    title: "Relatorios e Exportacoes",
+    subtitle: "Estoque, vendas, financeiro, baixas e filtros salvos da loja",
+    canAccess: createAccessPredicate(canAccessReportsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de relatorios e exportacoes.",
+    deniedMessage:
+      "Solicite a permissao de exportar relatorios para acessar esta pagina.",
   },
   {
     href: "/closings",

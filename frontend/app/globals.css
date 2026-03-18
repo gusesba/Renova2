@@ -1367,6 +1367,44 @@ a {
   line-height: 1.55;
 }
 
+.report-table-shell {
+  max-height: 540px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.report-table th,
+.report-table td {
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.report-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--copy-soft);
+  background: #f8fafc;
+}
+
+.report-table td {
+  font-size: 0.92rem;
+  color: var(--copy);
+}
+
 @media (max-width: 1080px) {
   .catalogs-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

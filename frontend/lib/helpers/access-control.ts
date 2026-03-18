@@ -21,6 +21,7 @@ export const accessPermissionCodes = {
   financeManage: "financeiro.conciliar",
   closingGenerate: "fechamento.gerar",
   closingReview: "fechamento.conferir",
+  reportsExport: "relatorios.exportar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -159,4 +160,9 @@ export function canAccessIndicatorsModule(session: SessionContext) {
     accessPermissionCodes.closingGenerate,
     accessPermissionCodes.closingReview,
   ]);
+}
+
+// Libera o modulo de relatorios para quem possui a permissao especifica de exportacao.
+export function canAccessReportsModule(session: SessionContext) {
+  return hasPermission(session, accessPermissionCodes.reportsExport);
 }

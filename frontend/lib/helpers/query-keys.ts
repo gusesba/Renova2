@@ -52,6 +52,8 @@ export const queryKeys = {
     ["financial-workspace", token, lojaAtivaId ?? null] as const,
   dashboardsWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["dashboards-workspace", token, lojaAtivaId ?? null] as const,
+  reportsWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["reports-workspace", token, lojaAtivaId ?? null] as const,
   closingsWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["closings-workspace", token, lojaAtivaId ?? null] as const,
   supplierPaymentsWorkspace: (token: string, lojaAtivaId?: string | null) =>
@@ -86,6 +88,11 @@ export const queryKeys = {
     lojaAtivaId: string | null | undefined,
     filters: string,
   ) => ["dashboard-overview", token, lojaAtivaId ?? null, filters] as const,
+  reportResult: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    filters: string,
+  ) => ["report-result", token, lojaAtivaId ?? null, filters] as const,
   closings: (
     token: string,
     lojaAtivaId: string | null | undefined,
