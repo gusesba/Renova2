@@ -50,6 +50,8 @@ export const queryKeys = {
     ["credits-workspace", token, lojaAtivaId ?? null] as const,
   financialWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["financial-workspace", token, lojaAtivaId ?? null] as const,
+  dashboardsWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["dashboards-workspace", token, lojaAtivaId ?? null] as const,
   closingsWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["closings-workspace", token, lojaAtivaId ?? null] as const,
   supplierPaymentsWorkspace: (token: string, lojaAtivaId?: string | null) =>
@@ -79,6 +81,11 @@ export const queryKeys = {
     lojaAtivaId: string | null | undefined,
     filters: string,
   ) => ["financial-reconciliation", token, lojaAtivaId ?? null, filters] as const,
+  dashboardOverview: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    filters: string,
+  ) => ["dashboard-overview", token, lojaAtivaId ?? null, filters] as const,
   closings: (
     token: string,
     lojaAtivaId: string | null | undefined,

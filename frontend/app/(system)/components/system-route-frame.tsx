@@ -15,6 +15,7 @@ import {
   canAccessCommercialRulesModule,
   canAccessCreditsModule,
   canAccessDashboardModule,
+  canAccessIndicatorsModule,
   canAccessFinancialModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
@@ -156,6 +157,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo financeiro da loja ativa.",
     deniedMessage:
       "Solicite permissao financeira para consultar ou conciliar o livro razao da loja.",
+  },
+  {
+    href: "/indicators",
+    label: "Indicadores",
+    meta: "Analitico",
+    title: "Dashboards e Indicadores",
+    subtitle: "Vendas, financeiro, consignacao, pendencias e rankings da loja",
+    canAccess: createAccessPredicate(canAccessIndicatorsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de dashboards e indicadores.",
+    deniedMessage:
+      "Solicite permissao comercial, financeira, de estoque ou fechamento para acessar esta pagina.",
   },
   {
     href: "/closings",

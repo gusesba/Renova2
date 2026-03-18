@@ -346,24 +346,24 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 15. Módulo 14 - Dashboards e Indicadores
 
-- [ ] Implementar dashboard de vendas
-  - [ ] por dia
-  - [ ] por mês
-  - [ ] por loja
-  - [ ] por vendedor
-  - [ ] por período
-- [ ] Implementar dashboard financeiro
-  - [ ] entradas
-  - [ ] saídas
+- [x] Implementar dashboard de vendas
+  - [x] por dia
+  - [x] por mês
+  - [x] por loja
+  - [x] por vendedor
+  - [x] por período
+- [x] Implementar dashboard financeiro
+  - [x] entradas
+  - [x] saídas
   - [x] saldo bruto
   - [x] saldo líquido
-- [ ] Implementar dashboard de consignação
-  - [ ] peças próximas do vencimento
-  - [ ] peças paradas em estoque
-- [ ] Implementar dashboard de pendências
-  - [ ] valores a pagar
-  - [ ] valores pendentes de recebimento
-  - [ ] inconsistências operacionais
+- [x] Implementar dashboard de consignação
+  - [x] peças próximas do vencimento
+  - [x] peças paradas em estoque
+- [x] Implementar dashboard de pendências
+  - [x] valores a pagar
+  - [x] valores pendentes de recebimento
+  - [x] inconsistências operacionais
 
 ## 16. Módulo 15 - Relatórios e Exportações
 

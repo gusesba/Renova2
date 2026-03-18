@@ -145,3 +145,18 @@ export function canAccessClosingsModule(session: SessionContext) {
     accessPermissionCodes.closingReview,
   ]);
 }
+
+// Libera o modulo de indicadores para quem atua em vendas, estoque, financeiro ou fechamento.
+export function canAccessIndicatorsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.salesCreate,
+    accessPermissionCodes.salesCancel,
+    accessPermissionCodes.financeView,
+    accessPermissionCodes.financeManage,
+    accessPermissionCodes.piecesView,
+    accessPermissionCodes.piecesCreate,
+    accessPermissionCodes.piecesAdjust,
+    accessPermissionCodes.closingGenerate,
+    accessPermissionCodes.closingReview,
+  ]);
+}
