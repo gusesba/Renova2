@@ -127,3 +127,11 @@ export function canAccessSupplierPaymentsModule(session: SessionContext) {
     accessPermissionCodes.financeManage,
   ]);
 }
+
+// Libera o modulo financeiro para quem consulta ou concilia a loja ativa.
+export function canAccessFinancialModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.financeView,
+    accessPermissionCodes.financeManage,
+  ]);
+}

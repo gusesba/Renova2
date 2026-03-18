@@ -13,6 +13,7 @@ export function formatStatus(status: string) {
     credito_repasse: "Credito por repasse",
     credito_loja: "Credito da loja",
     debito_venda: "Debito de venda",
+    despesa: "Despesa",
     descartada: "Descartada",
     devolucao: "Devolucao",
     devolvida: "Devolvida",
@@ -29,10 +30,15 @@ export function formatStatus(status: string) {
     parcial: "Parcial",
     pendente: "Pendente",
     perdida: "Perdida",
+    receita_avulsa: "Receita avulsa",
     repasse_venda_consignada: "Repasse de venda consignada",
     repasse_fornecedor: "Repasse de fornecedor",
     reservado: "Reservado",
     reservada: "Reservada",
+    obrigacao_fornecedor: "Obrigacao do fornecedor",
+    avulso: "Avulso",
+    estorno: "Estorno",
+    estorno_venda: "Estorno de venda",
     venda: "Venda",
     vendida: "Vendida",
   };
@@ -112,6 +118,10 @@ export function getStatusTone(status: string) {
   }
 
   if (normalized === "parcial") {
+    return "warning";
+  }
+
+  if (normalized === "estorno") {
     return "warning";
   }
 

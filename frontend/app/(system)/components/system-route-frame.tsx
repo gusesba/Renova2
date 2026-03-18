@@ -14,6 +14,7 @@ import {
   canAccessCommercialRulesModule,
   canAccessCreditsModule,
   canAccessDashboardModule,
+  canAccessFinancialModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
   canAccessSalesModule,
@@ -142,6 +143,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de credito.",
     deniedMessage:
       "Solicite permissao para consultar ou gerenciar credito na loja ativa.",
+  },
+  {
+    href: "/financial",
+    label: "Financeiro",
+    meta: "Financeiro",
+    title: "Meios de Pagamento e Conciliacao Financeira",
+    subtitle: "Livro razao, lancamentos avulsos, taxas e resumo diario",
+    canAccess: createAccessPredicate(canAccessFinancialModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo financeiro da loja ativa.",
+    deniedMessage:
+      "Solicite permissao financeira para consultar ou conciliar o livro razao da loja.",
   },
   {
     href: "/supplier-payments",
