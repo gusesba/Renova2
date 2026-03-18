@@ -6,6 +6,8 @@ export const queryKeys = {
   accessibleStores: (token: string) => ["accessible-stores", token] as const,
   catalogsWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["catalogs-workspace", token, lojaAtivaId ?? null] as const,
+  commercialRulesWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["commercial-rules-workspace", token, lojaAtivaId ?? null] as const,
   people: (token: string, lojaAtivaId?: string | null) =>
     ["people", token, lojaAtivaId ?? null] as const,
   personDetail: (

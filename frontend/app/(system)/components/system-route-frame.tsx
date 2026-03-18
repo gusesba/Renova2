@@ -10,6 +10,7 @@ import { AccessStateCard } from "@/components/ui/access-state-card";
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import {
   canAccessCatalogsModule,
+  canAccessCommercialRulesModule,
   canAccessDashboardModule,
   canAccessPeopleModule,
   canAccessStoresModule,
@@ -69,12 +70,24 @@ const navigationItems: RouteItem[] = [
     label: "Catalogos",
     meta: "Base",
     title: "Cadastros Auxiliares",
-    subtitle: "Conjuntos compartilhados, tabelas base e reutilizacao entre lojas",
+    subtitle: "Produtos, marcas, cores e tamanhos da loja ativa",
     canAccess: createAccessPredicate(canAccessCatalogsModule),
     deniedTitle: "Modulo sem permissao",
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de catalogos auxiliares.",
     deniedMessage:
       "Solicite a permissao de gerenciamento de catalogo para visualizar esta pagina.",
+  },
+  {
+    href: "/commercial-rules",
+    label: "Comercial",
+    meta: "Regras",
+    title: "Regras Comerciais",
+    subtitle: "Repasse, desconto, pagamento misto e meios de pagamento",
+    canAccess: createAccessPredicate(canAccessCommercialRulesModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de regras comerciais.",
+    deniedMessage:
+      "Solicite a permissao de gerenciamento comercial para visualizar esta pagina.",
   },
   {
     href: "/people",

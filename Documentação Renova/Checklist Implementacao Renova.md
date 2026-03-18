@@ -144,26 +144,26 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 06. Módulo 05 - Configurações Comerciais e Regras de Negócio
 
-- [ ] Implementar regra comercial padrão da loja
-  - [ ] CRUD de `loja_regra_comercial`
-  - [ ] percentuais para dinheiro
-  - [ ] percentuais para crédito
-  - [ ] pagamento misto
-  - [ ] prazo máximo de exposição
-  - [ ] política de desconto em JSON ou estrutura equivalente
-- [ ] Implementar regra comercial por fornecedor
-  - [ ] CRUD de `fornecedor_regra_comercial`
-  - [ ] vínculo com `pessoa_loja`
-  - [ ] sobrescrita da regra padrão
-- [ ] Implementar configuração de meios de pagamento
-  - [ ] CRUD de `meio_pagamento`
-  - [ ] taxa
-  - [ ] prazo de recebimento
-  - [ ] status ativo/inativo
-- [ ] Implementar serviço de resolução da regra efetiva
-  - [ ] priorizar regra manual da peça
-  - [ ] depois regra do fornecedor
-  - [ ] depois regra da loja
+- [x] Implementar regra comercial padrão da loja
+  - [x] CRUD de `loja_regra_comercial`
+  - [x] percentuais para dinheiro
+  - [x] percentuais para crédito
+  - [x] pagamento misto
+  - [x] prazo máximo de exposição
+  - [x] política de desconto em JSON ou estrutura equivalente
+- [x] Implementar regra comercial por fornecedor
+  - [x] CRUD de `fornecedor_regra_comercial`
+  - [x] vínculo com `pessoa_loja`
+  - [x] sobrescrita da regra padrão
+- [x] Implementar configuração de meios de pagamento
+  - [x] CRUD de `meio_pagamento`
+  - [x] taxa
+  - [x] prazo de recebimento
+  - [x] status ativo/inativo
+- [x] Implementar serviço de resolução da regra efetiva
+  - [x] priorizar regra manual da peça
+  - [x] depois regra do fornecedor
+  - [x] depois regra da loja
 
 ## 07. Módulo 06 - Cadastro de Peças e Estoque
 

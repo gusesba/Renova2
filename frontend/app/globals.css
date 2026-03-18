@@ -1202,6 +1202,118 @@ a {
   font-weight: 700;
 }
 
+.rule-overview-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.rule-overview-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.rule-overview-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rule-overview-title {
+  margin: 0;
+  font-size: 1.55rem;
+  letter-spacing: -0.05em;
+}
+
+.rule-overview-subtitle {
+  margin: 0;
+  max-width: 720px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.rule-overview-grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.rule-overview-card-body {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 148px;
+}
+
+.rule-overview-card-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rule-overview-card-value {
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -0.08em;
+}
+
+.rule-overview-card-description {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.rule-inline-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rule-toggle-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.rule-toggle-card {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.9rem;
+}
+
+.rule-toggle-card input {
+  margin-top: 0.25rem;
+}
+
+.rule-policy-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rule-policy-row {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.9rem;
+}
+
+.rule-supplier-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(260px, 0.92fr) minmax(0, 1.08fr);
+  align-items: start;
+}
+
 @media (max-width: 1080px) {
   .catalogs-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1209,6 +1321,18 @@ a {
 
   .catalogs-workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rule-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rule-supplier-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rule-toggle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1218,7 +1342,17 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .rule-overview-grid,
+  .rule-policy-row {
+    grid-template-columns: 1fr;
+  }
+
   .catalogs-browser-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .rule-inline-header {
     display: grid;
     grid-template-columns: 1fr;
   }
