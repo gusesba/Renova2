@@ -3,8 +3,11 @@ export function formatStatus(status: string) {
   const normalized = status.trim().toLowerCase();
   const labels: Record<string, string> = {
     ajuste: "Ajuste",
+    cancelada: "Cancelada",
     cancelamento_venda: "Cancelamento de venda",
+    concluida: "Concluida",
     consignada: "Consignada",
+    credito_loja: "Credito da loja",
     descartada: "Descartada",
     devolucao: "Devolucao",
     devolvida: "Devolvida",
@@ -15,6 +18,7 @@ export function formatStatus(status: string) {
     fixa: "Fixa",
     inativa: "Inativa",
     lote: "Lote",
+    meio_pagamento: "Meio de pagamento",
     perdida: "Perdida",
     reservado: "Reservado",
     reservada: "Reservada",
@@ -64,7 +68,15 @@ export function getStatusTone(status: string) {
     return "success";
   }
 
+  if (normalized === "concluida") {
+    return "success";
+  }
+
   if (normalized === "vendida") {
+    return "danger";
+  }
+
+  if (normalized === "cancelada") {
     return "danger";
   }
 

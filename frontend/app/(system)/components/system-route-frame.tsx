@@ -15,6 +15,7 @@ import {
   canAccessDashboardModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
+  canAccessSalesModule,
   canAccessStockMovementsModule,
   canAccessStoresModule,
 } from "@/lib/helpers/access-control";
@@ -115,6 +116,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de consignacao.",
     deniedMessage:
       "Solicite permissao de visualizacao ou ajuste de pecas para acessar esta pagina.",
+  },
+  {
+    href: "/sales",
+    label: "Vendas",
+    meta: "Comercial",
+    title: "Vendas",
+    subtitle: "Conclusao de venda, pagamentos, recibo e cancelamento",
+    canAccess: createAccessPredicate(canAccessSalesModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de vendas.",
+    deniedMessage:
+      "Solicite permissao para registrar ou cancelar vendas na loja ativa.",
   },
   {
     href: "/stock-movements",

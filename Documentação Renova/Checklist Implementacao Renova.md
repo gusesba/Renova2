@@ -233,31 +233,30 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 10. Módulo 09 - Vendas
 
-- [ ] Implementar abertura e conclusão de venda
-  - [ ] criar `venda`
-  - [ ] adicionar `venda_item`
-  - [ ] validar disponibilidade das peças
-  - [ ] calcular subtotal, desconto, taxa e total líquido
-- [ ] Implementar composição de pagamento
-  - [ ] registrar `venda_pagamento`
-  - [ ] permitir múltiplos meios de pagamento
-  - [ ] permitir pagamento misto com crédito
-- [ ] Implementar atualização transacional pós-venda
-  - [ ] baixar estoque
-  - [ ] alterar status da peça
-  - [ ] gerar obrigação do fornecedor quando aplicável
-  - [ ] gerar movimentação financeira
-  - [ ] gerar movimentação de crédito quando houver uso de crédito
-- [ ] Implementar cancelamento de venda
-  - [ ] mudar `status_venda`
-  - [ ] estornar estoque
-  - [ ] estornar financeiro
-  - [ ] estornar crédito quando necessário
-  - [ ] registrar auditoria
-- [ ] Implementar emissão de recibo
-  - [ ] modelo único
-  - [ ] dados de venda e pagamento
-
+- [x] Implementar abertura e conclusão de venda
+  - [x] criar `venda`
+  - [x] adicionar `venda_item`
+  - [x] validar disponibilidade das peças
+  - [x] calcular subtotal, desconto, taxa e total líquido
+- [x] Implementar composição de pagamento
+  - [x] registrar `venda_pagamento`
+  - [x] permitir múltiplos meios de pagamento
+  - [x] permitir pagamento misto com crédito
+- [x] Implementar atualização transacional pós-venda
+  - [x] baixar estoque
+  - [x] alterar status da peça
+  - [x] gerar obrigação do fornecedor quando aplicável
+  - [x] gerar movimentação financeira
+  - [x] gerar movimentação de crédito quando houver uso de crédito
+- [x] Implementar cancelamento de venda
+  - [x] mudar `status_venda`
+  - [x] estornar estoque
+  - [x] estornar financeiro
+  - [x] estornar crédito quando necessário
+  - [x] registrar auditoria
+- [x] Implementar emissão de recibo
+  - [x] modelo único
+  - [x] dados de venda e pagamento
 ## 11. Módulo 10 - Crédito da Loja
 
 - [ ] Implementar conta de crédito por loja e pessoa

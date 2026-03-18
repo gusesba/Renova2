@@ -11,6 +11,8 @@ using Renova.Services.Features.People.Abstractions;
 using Renova.Services.Features.People.Services;
 using Renova.Services.Features.Pieces.Abstractions;
 using Renova.Services.Features.Pieces.Services;
+using Renova.Services.Features.Sales.Abstractions;
+using Renova.Services.Features.Sales.Services;
 using Renova.Services.Features.StockMovements.Abstractions;
 using Renova.Services.Features.StockMovements.Services;
 using Renova.Services.Features.Stores.Abstractions;
@@ -37,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IConsignmentService, ConsignmentService>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IPieceService, PieceService>();
+        services.AddScoped<ISaleService, SaleService>();
         services.AddScoped<IStockAvailabilityService, StockAvailabilityService>();
         services.AddScoped<IStockMovementService, StockMovementService>();
 

@@ -13,6 +13,8 @@ export const accessPermissionCodes = {
   piecesView: "pecas.visualizar",
   piecesCreate: "pecas.cadastrar",
   piecesAdjust: "pecas.ajustar",
+  salesCreate: "vendas.registrar",
+  salesCancel: "vendas.cancelar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -95,5 +97,13 @@ export function canAccessStockMovementsModule(session: SessionContext) {
     accessPermissionCodes.piecesView,
     accessPermissionCodes.piecesCreate,
     accessPermissionCodes.piecesAdjust,
+  ]);
+}
+
+// Libera o modulo de vendas para quem registra ou cancela vendas.
+export function canAccessSalesModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.salesCreate,
+    accessPermissionCodes.salesCancel,
   ]);
 }
