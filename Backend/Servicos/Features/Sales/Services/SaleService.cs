@@ -9,6 +9,7 @@ using Renova.Services.Features.Sales.Abstractions;
 using Renova.Services.Features.Sales.Contracts;
 using Renova.Services.Features.StockMovements.Abstractions;
 using Renova.Services.Features.StockMovements.Contracts;
+using Renova.Services.Features.SupplierPayments;
 
 namespace Renova.Services.Features.Sales.Services;
 
@@ -449,12 +450,12 @@ public sealed partial class SaleService : ISaleService
                     PessoaId = piece.FornecedorPessoaId.Value,
                     VendaItemId = itemEntity.Id,
                     PecaId = piece.Id,
-                    TipoObrigacao = SaleValues.SupplierObligationTypes.RepasseVendaConsignada,
+                    TipoObrigacao = SupplierPaymentValues.ObligationTypes.RepasseVendaConsignada,
                     DataGeracao = now,
                     DataVencimento = now,
                     ValorOriginal = saleItem.ValorRepassePrevisto,
                     ValorEmAberto = saleItem.ValorRepassePrevisto,
-                    StatusObrigacao = SaleValues.SupplierObligationStatuses.Aberta,
+                    StatusObrigacao = SupplierPaymentValues.ObligationStatuses.Pendente,
                     Observacoes = $"Obrigacao gerada automaticamente pela venda {sale.NumeroVenda}.",
                     CriadoPorUsuarioId = context.UsuarioId,
                 });

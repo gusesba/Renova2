@@ -8,6 +8,7 @@ using Renova.Services.Features.CommercialRules.Abstractions;
 using Renova.Services.Features.CommercialRules.Contracts;
 using Renova.Services.Features.Pieces.Abstractions;
 using Renova.Services.Features.Pieces.Contracts;
+using Renova.Services.Features.SupplierPayments;
 
 namespace Renova.Services.Features.Pieces.Services;
 
@@ -303,11 +304,23 @@ public sealed class PieceService : IPieceService
             CriadoPorUsuarioId = context.UsuarioId,
         };
 
+        var compraObrigacao = BuildPurchaseObligation(
+            peca,
+            supplier?.Pessoa,
+            context.LojaId,
+            request.QuantidadeInicial,
+            request.CustoUnitario,
+            context.UsuarioId);
+
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         _dbContext.Pecas.Add(peca);
         _dbContext.PecaCondicoesComerciais.Add(condicao);
         _dbContext.MovimentacoesEstoque.Add(entrada);
+        if (compraObrigacao is not null)
+        {
+            _dbContext.ObrigacoesFornecedor.Add(compraObrigacao);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -337,6 +350,28 @@ public sealed class PieceService : IPieceService
             null,
             SnapshotStockMovement(entrada),
             cancellationToken);
+
+        if (compraObrigacao is not null)
+        {
+            await _auditService.RegistrarAuditoriaAsync(
+                context.LojaId,
+                "obrigacao_fornecedor",
+                compraObrigacao.Id,
+                "criada",
+                null,
+                new
+                {
+                    compraObrigacao.Id,
+                    compraObrigacao.PessoaId,
+                    compraObrigacao.PecaId,
+                    compraObrigacao.TipoObrigacao,
+                    compraObrigacao.StatusObrigacao,
+                    compraObrigacao.ValorOriginal,
+                    compraObrigacao.ValorEmAberto,
+                    compraObrigacao.DataGeracao,
+                },
+                cancellationToken);
+        }
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -958,6 +993,52 @@ public sealed class PieceService : IPieceService
     {
         entity.AtualizadoEm = DateTimeOffset.UtcNow;
         entity.AtualizadoPorUsuarioId = usuarioId;
+    }
+
+    /// <summary>
+    /// Gera a obrigacao imediata de compra para pecas fixas ou em lote quando houver custo e fornecedor.
+    /// </summary>
+    private static ObrigacaoFornecedor? BuildPurchaseObligation(
+        Peca peca,
+        Pessoa? fornecedor,
+        Guid lojaId,
+        int quantidadeInicial,
+        decimal? custoUnitario,
+        Guid usuarioId)
+    {
+        if (fornecedor is null || !custoUnitario.HasValue || custoUnitario.Value <= 0m)
+        {
+            return null;
+        }
+
+        string? tipoObrigacao = peca.TipoPeca switch
+        {
+            PieceValues.PieceTypes.Fixa => SupplierPaymentValues.ObligationTypes.CompraPecaFixa,
+            PieceValues.PieceTypes.Lote => SupplierPaymentValues.ObligationTypes.CompraPecaLote,
+            _ => null,
+        };
+
+        if (tipoObrigacao is null)
+        {
+            return null;
+        }
+
+        var total = Math.Round(custoUnitario.Value * quantidadeInicial, 2, MidpointRounding.AwayFromZero);
+        return new ObrigacaoFornecedor
+        {
+            Id = Guid.NewGuid(),
+            LojaId = lojaId,
+            PessoaId = fornecedor.Id,
+            PecaId = peca.Id,
+            TipoObrigacao = tipoObrigacao,
+            DataGeracao = peca.DataEntrada,
+            DataVencimento = peca.DataEntrada,
+            ValorOriginal = total,
+            ValorEmAberto = total,
+            StatusObrigacao = SupplierPaymentValues.ObligationStatuses.Pendente,
+            Observacoes = $"Obrigacao gerada automaticamente pela entrada da peca {peca.CodigoInterno}.",
+            CriadoPorUsuarioId = usuarioId,
+        };
     }
 
     /// <summary>

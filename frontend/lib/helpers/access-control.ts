@@ -17,6 +17,8 @@ export const accessPermissionCodes = {
   salesCancel: "vendas.cancelar",
   creditView: "credito.visualizar",
   creditManage: "credito.gerenciar",
+  financeView: "financeiro.visualizar",
+  financeManage: "financeiro.conciliar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -115,5 +117,13 @@ export function canAccessCreditsModule(session: SessionContext) {
   return hasAnyPermission(session, [
     accessPermissionCodes.creditView,
     accessPermissionCodes.creditManage,
+  ]);
+}
+
+// Libera o modulo de pagamentos e repasses para quem consulta ou concilia financeiro.
+export function canAccessSupplierPaymentsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.financeView,
+    accessPermissionCodes.financeManage,
   ]);
 }

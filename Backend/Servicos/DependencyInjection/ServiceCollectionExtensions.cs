@@ -19,6 +19,8 @@ using Renova.Services.Features.StockMovements.Abstractions;
 using Renova.Services.Features.StockMovements.Services;
 using Renova.Services.Features.Stores.Abstractions;
 using Renova.Services.Features.Stores.Services;
+using Renova.Services.Features.SupplierPayments.Abstractions;
+using Renova.Services.Features.SupplierPayments.Services;
 
 namespace Renova.Services;
 
@@ -45,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISaleService, SaleService>();
         services.AddScoped<IStockAvailabilityService, StockAvailabilityService>();
         services.AddScoped<IStockMovementService, StockMovementService>();
+        services.AddScoped<ISupplierPaymentService, SupplierPaymentService>();
 
         return services;
     }

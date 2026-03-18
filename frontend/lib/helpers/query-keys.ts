@@ -48,6 +48,8 @@ export const queryKeys = {
     ["sales-workspace", token, lojaAtivaId ?? null] as const,
   creditsWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["credits-workspace", token, lojaAtivaId ?? null] as const,
+  supplierPaymentsWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["supplier-payments-workspace", token, lojaAtivaId ?? null] as const,
   sales: (
     token: string,
     lojaAtivaId: string | null | undefined,
@@ -63,6 +65,16 @@ export const queryKeys = {
     lojaAtivaId: string | null | undefined,
     pessoaId: string | null,
   ) => ["credit-detail", token, lojaAtivaId ?? null, pessoaId ?? null] as const,
+  supplierPayments: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    filters: string,
+  ) => ["supplier-payments", token, lojaAtivaId ?? null, filters] as const,
+  supplierPaymentDetail: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    obligationId: string | null,
+  ) => ["supplier-payment-detail", token, lojaAtivaId ?? null, obligationId ?? null] as const,
   people: (token: string, lojaAtivaId?: string | null) =>
     ["people", token, lojaAtivaId ?? null] as const,
   personDetail: (

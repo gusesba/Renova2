@@ -19,6 +19,7 @@ import {
   canAccessSalesModule,
   canAccessStockMovementsModule,
   canAccessStoresModule,
+  canAccessSupplierPaymentsModule,
 } from "@/lib/helpers/access-control";
 import type { SessionContext } from "@/lib/services/access";
 
@@ -141,6 +142,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de credito.",
     deniedMessage:
       "Solicite permissao para consultar ou gerenciar credito na loja ativa.",
+  },
+  {
+    href: "/supplier-payments",
+    label: "Repasses",
+    meta: "Financeiro",
+    title: "Pagamentos e Repasses",
+    subtitle: "Obrigacoes do fornecedor, liquidacoes e comprovante de pagamento",
+    canAccess: createAccessPredicate(canAccessSupplierPaymentsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de pagamentos ao fornecedor.",
+    deniedMessage:
+      "Solicite permissao financeira para consultar ou liquidar repasses na loja ativa.",
   },
   {
     href: "/stock-movements",

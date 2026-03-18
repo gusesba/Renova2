@@ -4,6 +4,7 @@ using Renova.Services.Features.Access;
 using Renova.Services.Features.People;
 using Renova.Services.Features.Pieces;
 using Renova.Services.Features.Sales.Contracts;
+using Renova.Services.Features.SupplierPayments;
 
 namespace Renova.Services.Features.Sales.Services;
 
@@ -145,7 +146,7 @@ public sealed partial class SaleService
 
         foreach (var obligation in obligations)
         {
-            obligation.StatusObrigacao = SaleValues.SupplierObligationStatuses.Cancelada;
+            obligation.StatusObrigacao = SupplierPaymentValues.ObligationStatuses.Cancelada;
             obligation.ValorEmAberto = 0m;
             obligation.Observacoes = string.IsNullOrWhiteSpace(obligation.Observacoes)
                 ? $"Obrigacao cancelada pelo estorno da venda {aggregate.Venda.NumeroVenda}."

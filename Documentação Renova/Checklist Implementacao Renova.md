@@ -282,22 +282,22 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 12. Módulo 11 - Pagamentos e Repasses
 
-- [ ] Implementar geração de obrigação do fornecedor
-  - [ ] criar `obrigacao_fornecedor` para peça consignada vendida
-  - [ ] criar `obrigacao_fornecedor` para peça fixa/lote comprada
-  - [ ] definir tipo, saldo em aberto e status
-- [ ] Implementar liquidação da obrigação
-  - [ ] registrar `liquidacao_obrigacao_fornecedor`
-  - [ ] permitir dinheiro, crédito ou misto
-  - [ ] atualizar saldo em aberto
-  - [ ] atualizar status
-- [ ] Implementar comprovante de pagamento ao fornecedor
-  - [ ] modelo único
-  - [ ] dados da liquidação
-- [ ] Implementar listagem de pendências
-  - [ ] por fornecedor
-  - [ ] por loja
-  - [ ] por status
+- [x] Implementar geração de obrigação do fornecedor
+  - [x] criar `obrigacao_fornecedor` para peça consignada vendida
+  - [x] criar `obrigacao_fornecedor` para peça fixa/lote comprada
+  - [x] definir tipo, saldo em aberto e status
+- [x] Implementar liquidação da obrigação
+  - [x] registrar `liquidacao_obrigacao_fornecedor`
+  - [x] permitir dinheiro, crédito ou misto
+  - [x] atualizar saldo em aberto
+  - [x] atualizar status
+- [x] Implementar comprovante de pagamento ao fornecedor
+  - [x] modelo único
+  - [x] dados da liquidação
+- [x] Implementar listagem de pendências
+  - [x] por fornecedor
+  - [x] por loja
+  - [x] por status
 
 ## 13. Módulo 12 - Meios de Pagamento e Conciliação Financeira
 
