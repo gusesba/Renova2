@@ -15,6 +15,7 @@ import {
   canAccessCommercialRulesModule,
   canAccessCreditsModule,
   canAccessDashboardModule,
+  canAccessDocumentsModule,
   canAccessIndicatorsModule,
   canAccessFinancialModule,
   canAccessPeopleModule,
@@ -182,6 +183,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de relatorios e exportacoes.",
     deniedMessage:
       "Solicite a permissao de exportar relatorios para acessar esta pagina.",
+  },
+  {
+    href: "/documents",
+    label: "Documentos",
+    meta: "Impressao",
+    title: "Impressoes e Documentos",
+    subtitle: "Etiquetas, recibos e comprovantes padronizados da loja ativa",
+    canAccess: createAccessPredicate(canAccessDocumentsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de impressoes e documentos.",
+    deniedMessage:
+      "Solicite permissao de pecas, vendas ou financeiro para acessar esta pagina.",
   },
   {
     href: "/closings",

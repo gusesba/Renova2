@@ -166,3 +166,16 @@ export function canAccessIndicatorsModule(session: SessionContext) {
 export function canAccessReportsModule(session: SessionContext) {
   return hasPermission(session, accessPermissionCodes.reportsExport);
 }
+
+// Libera o modulo de documentos para quem atua em pecas, vendas ou financeiro.
+export function canAccessDocumentsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.piecesView,
+    accessPermissionCodes.piecesCreate,
+    accessPermissionCodes.piecesAdjust,
+    accessPermissionCodes.salesCreate,
+    accessPermissionCodes.salesCancel,
+    accessPermissionCodes.financeView,
+    accessPermissionCodes.financeManage,
+  ]);
+}
