@@ -1,4 +1,4 @@
-﻿---
+---
 tags:
   - renova
   - checklist
@@ -14,18 +14,18 @@ origem:
 last_update: 2026-03-16
 ---
 
-# Checklist de ImplementaÃ§Ã£o Renova
+# Checklist de Implementação Renova
 
-Documento mestre em formato todo list para orientar a implementaÃ§Ã£o completa do sistema. A Ã¡rvore abaixo consolida os requisitos funcionais, tÃ©cnicos e operacionais levantados na pasta `DocumentaÃ§Ã£o Renova` e expande cada item em passos de implementaÃ§Ã£o.
+Documento mestre em formato todo list para orientar a implementação completa do sistema. A árvore abaixo consolida os requisitos funcionais, técnicos e operacionais levantados na pasta `Documentação Renova` e expande cada item em passos de implementação.
 
-## 00. FundaÃ§Ã£o TÃ©cnica e Setup
+## 00. Fundação Técnica e Setup
 
-- [x] Estruturar a soluÃ§Ã£o backend para suportar domÃ­nio, persistÃªncia, serviÃ§os e API
-  - [x] revisar referÃªncias entre projetos
-  - [x] padronizar namespaces, pastas e convenÃ§Ãµes de nomes
-  - [x] definir estratÃ©gia para DTOs, handlers, services e validators
+- [x] Estruturar a solução backend para suportar domínio, persistência, serviços e API
+  - [x] revisar referências entre projetos
+  - [x] padronizar namespaces, pastas e convenções de nomes
+  - [x] definir estratégia para DTOs, handlers, services e validators
 - [x] Configurar PostgreSQL local e ambientes
-  - [x] manter connection string vazia em produÃ§Ã£o
+  - [x] manter connection string vazia em produção
   - [x] manter connection string de desenvolvimento em `appsettings.Development.json`
   - [x] validar leitura da connection string em runtime
 - [x] Configurar EF Core para PostgreSQL
@@ -36,459 +36,459 @@ Documento mestre em formato todo list para orientar a implementaÃ§Ã£o comple
   - [x] manter manifesto local do `dotnet-ef`
   - [x] documentar comandos em `comandosDB.md`
   - [x] validar `database update` e `database drop`
-- [x] Definir padrÃµes transversais do backend
+- [x] Definir padrões transversais do backend
   - [x] tratamento de erro padronizado
   - [x] respostas HTTP consistentes
   - [x] logging estruturado
   - [x] ProblemDetails
   - [x] versionamento de API
 
-## 01. Banco de Dados e PersistÃªncia
+## 01. Banco de Dados e Persistência
 
 - [x] Consolidar o modelo relacional no banco
-  - [x] revisar entidades do domÃ­nio geradas
+  - [x] revisar entidades do domínio geradas
   - [x] revisar mapeamentos do `OnModelCreating`
-  - [x] revisar Ã­ndices, chaves Ãºnicas e FKs
-  - [x] revisar precisÃ£o monetÃ¡ria e concorrÃªncia
+  - [x] revisar índices, chaves únicas e FKs
+  - [x] revisar precisão monetária e concorrência
 
-## 02. MÃ³dulo 01 - Acesso, UsuÃ¡rios e PermissÃµes
+## 02. Módulo 01 - Acesso, Usuários e Permissões
 
-- [x] Implementar cadastro de usuÃ¡rio
-  - [x] criar contrato de entrada e saÃ­da
+- [x] Implementar cadastro de usuário
+  - [x] criar contrato de entrada e saída
   - [x] validar unicidade de e-mail
   - [x] gerar hash de senha
   - [x] persistir em `usuario`
   - [x] registrar auditoria
-  - [x] criar tela web de cadastro e ediÃ§Ã£o
+  - [x] criar tela web de cadastro e edição
 - [x] Implementar login
   - [x] validar credenciais
   - [x] registrar evento em `usuario_acesso_evento`
-  - [x] retornar contexto inicial do usuÃ¡rio
-  - [x] carregar lojas disponÃ­veis
-  - [x] carregar permissÃµes do contexto
-- [x] Implementar recuperaÃ§Ã£o de acesso
+  - [x] retornar contexto inicial do usuário
+  - [x] carregar lojas disponíveis
+  - [x] carregar permissões do contexto
+- [x] Implementar recuperação de acesso
   - [x] definir fluxo de reset de senha
-  - [x] registrar expiraÃ§Ã£o e uso do token
+  - [x] registrar expiração e uso do token
   - [x] registrar auditoria do processo
-- [x] Implementar ativaÃ§Ã£o, inativaÃ§Ã£o e bloqueio de usuÃ¡rio
+- [x] Implementar ativação, inativação e bloqueio de usuário
   - [x] atualizar `status_usuario`
   - [x] impedir login quando bloqueado/inativo
-  - [x] registrar auditoria da mudanÃ§a
+  - [x] registrar auditoria da mudança
 - [x] Implementar cargos por loja
   - [x] CRUD de `cargo`
   - [x] CRUD de `cargo_permissao`
-  - [x] tela web para matriz de permissÃµes
-- [x] Implementar vÃ­nculo usuÃ¡rio x loja
+  - [x] tela web para matriz de permissões
+- [x] Implementar vínculo usuário x loja
   - [x] CRUD de `usuario_loja`
   - [x] CRUD de `usuario_loja_cargo`
-  - [x] definir loja ativa na sessÃ£o
-- [x] Implementar autorizaÃ§Ã£o por funÃ§Ã£o
-  - [x] middleware/policy para autenticaÃ§Ã£o
-  - [x] verificaÃ§Ã£o de `usuario_loja`
-  - [x] verificaÃ§Ã£o de `cargo_permissao`
-  - [x] bloqueio de acesso por loja nÃ£o autorizada
+  - [x] definir loja ativa na sessão
+- [x] Implementar autorização por função
+  - [x] middleware/policy para autenticação
+  - [x] verificação de `usuario_loja`
+  - [x] verificação de `cargo_permissao`
+  - [x] bloqueio de acesso por loja não autorizada
 
-## 03. MÃ³dulo 02 - Lojas e Estrutura Operacional
+## 03. Módulo 02 - Lojas e Estrutura Operacional
 
 - [x] Implementar cadastro de loja
   - [x] CRUD de `loja`
-  - [x] tela web de listagem e ediÃ§Ã£o
-- [x] Implementar visÃ£o consolidada por usuÃ¡rio
+  - [x] tela web de listagem e edição
+- [x] Implementar visão consolidada por usuário
   - [x] listar apenas lojas vinculadas
   - [x] permitir troca de loja ativa
-  - [x] consolidar visÃ£o gerencial somente das lojas autorizadas
+  - [x] consolidar visão gerencial somente das lojas autorizadas
 
-## 04. MÃ³dulo 03 - Cadastro de Clientes e Fornecedores
+## 04. Módulo 03 - Cadastro de Clientes e Fornecedores
 
 - [x] Implementar cadastro mestre de pessoa
   - [x] CRUD de `pessoa`
-  - [x] validaÃ§Ã£o de documento
-  - [x] inativaÃ§Ã£o lÃ³gica
-  - [x] tela web de busca e ediÃ§Ã£o
-- [x] Implementar vÃ­nculo pessoa x loja
+  - [x] validação de documento
+  - [x] inativação lógica
+  - [x] tela web de busca e edição
+- [x] Implementar vínculo pessoa x loja
   - [x] CRUD de `pessoa_loja`
   - [x] marcar cliente, fornecedor ou ambos
-  - [x] definir polÃ­tica padrÃ£o de fim de consignaÃ§Ã£o
-  - [x] exibir situaÃ§Ã£o por loja
-- [x] Implementar contas bancÃ¡rias
+  - [x] definir política padrão de fim de consignação
+  - [x] exibir situação por loja
+- [x] Implementar contas bancárias
   - [x] CRUD de `pessoa_conta_bancaria`
   - [x] suporte a PIX
   - [x] conta principal
-- [x] Implementar vÃ­nculo pessoa x usuÃ¡rio
+- [x] Implementar vínculo pessoa x usuário
   - [x] permitir associar `usuario` a `pessoa`
   - [x] preparar acesso ao portal
-- [x] Implementar visÃ£o financeira da pessoa
-  - [x] consolidar saldo de crÃ©dito
-  - [x] consolidar pendÃªncias
-  - [x] consolidar histÃ³rico de transaÃ§Ãµes
+- [x] Implementar visão financeira da pessoa
+  - [x] consolidar saldo de crédito
+  - [x] consolidar pendências
+  - [x] consolidar histórico de transações
 
-## 05. MÃ³dulo 04 - Cadastros Auxiliares e Tabelas Base
+## 05. Módulo 04 - Cadastros Auxiliares e Tabelas Base
 
 - [x] Implementar cadastro de nomes de produto
   - [x] CRUD de `produto_nome`
-  - [x] associaÃ§Ã£o direta Ã  `loja`
-  - [x] manter somente `nome` como dado de negÃ³cio
+  - [x] associação direta à `loja`
+  - [x] manter somente `nome` como dado de negócio
 - [x] Implementar cadastro de marcas
   - [x] CRUD de `marca`
-  - [x] associaÃ§Ã£o direta Ã  `loja`
-  - [x] manter somente `nome` como dado de negÃ³cio
+  - [x] associação direta à `loja`
+  - [x] manter somente `nome` como dado de negócio
 - [x] Implementar cadastro de tamanhos
   - [x] CRUD de `tamanho`
-  - [x] manter somente `nome` como dado de negÃ³cio
+  - [x] manter somente `nome` como dado de negócio
 - [x] Implementar cadastro de cores
   - [x] CRUD de `cor`
-  - [x] manter somente `nome` como dado de negÃ³cio
-- [x] Garantir segregaÃ§Ã£o dos cadastros auxiliares por loja
-  - [x] vincular registros diretamente Ã  `loja`
-  - [x] impedir compartilhamento automÃ¡tico entre lojas
+  - [x] manter somente `nome` como dado de negócio
+- [x] Garantir segregação dos cadastros auxiliares por loja
+  - [x] vincular registros diretamente à `loja`
+  - [x] impedir compartilhamento automático entre lojas
 
-## 06. MÃ³dulo 05 - ConfiguraÃ§Ãµes Comerciais e Regras de NegÃ³cio
+## 06. Módulo 05 - Configurações Comerciais e Regras de Negócio
 
-- [x] Implementar regra comercial padrÃ£o da loja
+- [x] Implementar regra comercial padrão da loja
   - [x] CRUD de `loja_regra_comercial`
   - [x] percentuais para dinheiro
-  - [x] percentuais para crÃ©dito
+  - [x] percentuais para crédito
   - [x] pagamento misto
-  - [x] prazo mÃ¡ximo de exposiÃ§Ã£o
-  - [x] polÃ­tica de desconto em JSON ou estrutura equivalente
+  - [x] prazo máximo de exposição
+  - [x] política de desconto em JSON ou estrutura equivalente
 - [x] Implementar regra comercial por fornecedor
   - [x] CRUD de `fornecedor_regra_comercial`
-  - [x] vÃ­nculo com `pessoa_loja`
-  - [x] sobrescrita da regra padrÃ£o
-- [x] Implementar configuraÃ§Ã£o de meios de pagamento
+  - [x] vínculo com `pessoa_loja`
+  - [x] sobrescrita da regra padrão
+- [x] Implementar configuração de meios de pagamento
   - [x] CRUD de `meio_pagamento`
   - [x] taxa
   - [x] prazo de recebimento
   - [x] status ativo/inativo
-- [x] Implementar serviÃ§o de resoluÃ§Ã£o da regra efetiva
-  - [x] priorizar regra manual da peÃ§a
+- [x] Implementar serviço de resolução da regra efetiva
+  - [x] priorizar regra manual da peça
   - [x] depois regra do fornecedor
   - [x] depois regra da loja
 
-## 07. MÃ³dulo 06 - Cadastro de PeÃ§as e Estoque
+## 07. Módulo 06 - Cadastro de Peças e Estoque
 
-- [x] Implementar cadastro de peÃ§a
+- [x] Implementar cadastro de peça
   - [x] contrato de entrada
-  - [x] validaÃ§Ã£o de loja, fornecedor e tabelas auxiliares
-  - [x] geraÃ§Ã£o de cÃ³digo interno
-  - [x] suporte a cÃ³digo de barras
-  - [x] gravaÃ§Ã£o em `peca`
-- [x] Implementar snapshot da condiÃ§Ã£o comercial da peÃ§a
+  - [x] validação de loja, fornecedor e tabelas auxiliares
+  - [x] geração de código interno
+  - [x] suporte a código de barras
+  - [x] gravação em `peca`
+- [x] Implementar snapshot da condição comercial da peça
   - [x] resolver regra efetiva no momento da entrada
   - [x] gravar em `peca_condicao_comercial`
-- [x] Implementar upload e vÃ­nculo de imagens
-  - [x] armazenamento fÃ­sico/lÃ³gico do arquivo
-  - [x] gravaÃ§Ã£o em `peca_imagem`
+- [x] Implementar upload e vínculo de imagens
+  - [x] armazenamento físico/lógico do arquivo
+  - [x] gravação em `peca_imagem`
   - [x] visibilidade interna/externa
 - [x] Implementar entrada inicial de estoque
   - [x] gravar `movimentacao_estoque` do tipo entrada
   - [x] atualizar saldo inicial
-- [x] Implementar telas web de cadastro, ediÃ§Ã£o e consulta de peÃ§a
-  - [x] filtros rÃ¡pidos
-  - [x] busca por cÃ³digo de barras
-  - [x] exibiÃ§Ã£o de status e localizaÃ§Ã£o
+- [x] Implementar telas web de cadastro, edição e consulta de peça
+  - [x] filtros rápidos
+  - [x] busca por código de barras
+  - [x] exibição de status e localização
 
-## 08. MÃ³dulo 07 - Ciclo de Vida da ConsignaÃ§Ã£o
+## 08. Módulo 07 - Ciclo de Vida da Consignação
 
-- [x] Implementar cÃ¡lculo de prazo de consignaÃ§Ã£o
+- [x] Implementar cálculo de prazo de consignação
   - [x] usar `peca_condicao_comercial`
-  - [x] calcular data de inÃ­cio e fim
+  - [x] calcular data de início e fim
   - [x] exibir dias restantes
 - [x] Implementar desconto por tempo de loja
-  - [x] aplicar polÃ­tica configurada
-  - [x] atualizar preÃ§o da peÃ§a quando necessÃ¡rio
-  - [x] registrar histÃ³rico em `peca_historico_preco`
-- [x] Implementar devoluÃ§Ã£o ao fornecedor
-  - [x] alterar status da peÃ§a
+  - [x] aplicar política configurada
+  - [x] atualizar preço da peça quando necessário
+  - [x] registrar histórico em `peca_historico_preco`
+- [x] Implementar devolução ao fornecedor
+  - [x] alterar status da peça
   - [x] registrar `movimentacao_estoque`
   - [x] gerar comprovante
-  - [x] auditar aÃ§Ã£o
-- [x] Implementar doaÃ§Ã£o da peÃ§a
-  - [x] alterar status da peÃ§a
+  - [x] auditar ação
+- [x] Implementar doação da peça
+  - [x] alterar status da peça
   - [x] registrar `movimentacao_estoque`
   - [x] gerar comprovante
-  - [x] auditar aÃ§Ã£o
+  - [x] auditar ação
 - [x] Implementar perda e descarte
   - [x] alterar status
-  - [x] registrar motivo e responsÃ¡vel
-  - [x] auditar aÃ§Ã£o
+  - [x] registrar motivo e responsável
+  - [x] auditar ação
 
-## 09. MÃ³dulo 08 - MovimentaÃ§Ãµes de Estoque
+## 09. Módulo 08 - Movimentações de Estoque
 
-- [x] Implementar listagem completa de movimentaÃ§Ãµes
-  - [x] consulta por peÃ§a
+- [x] Implementar listagem completa de movimentações
+  - [x] consulta por peça
   - [x] consulta por loja
-  - [x] consulta por perÃ­odo
+  - [x] consulta por período
 - [x] Implementar ajustes manuais
-  - [x] permissÃµes especÃ­ficas
-  - [x] atualizaÃ§Ã£o de saldo
-  - [x] gravaÃ§Ã£o em `movimentacao_estoque`
+  - [x] permissões específicas
+  - [x] atualização de saldo
+  - [x] gravação em `movimentacao_estoque`
 - [x] Impedir venda sem saldo
   - [x] validar `quantidade_atual`
-  - [x] bloquear transaÃ§Ã£o antes da conclusÃ£o
-- [x] Implementar busca operacional de peÃ§as
-  - [x] por cÃ³digo de barras
+  - [x] bloquear transação antes da conclusão
+- [x] Implementar busca operacional de peças
+  - [x] por código de barras
   - [x] por nome, marca, fornecedor e status
   - [x] por tempo em loja
 
-## 10. MÃ³dulo 09 - Vendas
+## 10. Módulo 09 - Vendas
 
-- [x] Implementar abertura e conclusÃ£o de venda
+- [x] Implementar abertura e conclusão de venda
   - [x] criar `venda`
   - [x] adicionar `venda_item`
-  - [x] validar disponibilidade das peÃ§as
-  - [x] calcular subtotal, desconto, taxa e total lÃ­quido
-- [x] Implementar composiÃ§Ã£o de pagamento
+  - [x] validar disponibilidade das peças
+  - [x] calcular subtotal, desconto, taxa e total líquido
+- [x] Implementar composição de pagamento
   - [x] registrar `venda_pagamento`
-  - [x] permitir mÃºltiplos meios de pagamento
-  - [x] permitir pagamento misto com crÃ©dito
-- [x] Implementar atualizaÃ§Ã£o transacional pÃ³s-venda
+  - [x] permitir múltiplos meios de pagamento
+  - [x] permitir pagamento misto com crédito
+- [x] Implementar atualização transacional pós-venda
   - [x] baixar estoque
-  - [x] alterar status da peÃ§a
-  - [x] gerar obrigaÃ§Ã£o do fornecedor quando aplicÃ¡vel
-  - [x] gerar movimentaÃ§Ã£o financeira
-  - [x] gerar movimentaÃ§Ã£o de crÃ©dito quando houver uso de crÃ©dito
+  - [x] alterar status da peça
+  - [x] gerar obrigação do fornecedor quando aplicável
+  - [x] gerar movimentação financeira
+  - [x] gerar movimentação de crédito quando houver uso de crédito
 - [x] Implementar cancelamento de venda
   - [x] mudar `status_venda`
   - [x] estornar estoque
   - [x] estornar financeiro
-  - [x] estornar crÃ©dito quando necessÃ¡rio
+  - [x] estornar crédito quando necessário
   - [x] registrar auditoria
-- [x] Implementar emissÃ£o de recibo
-  - [x] modelo Ãºnico
+- [x] Implementar emissão de recibo
+  - [x] modelo único
   - [x] dados de venda e pagamento
-## 11. MÃ³dulo 10 - CrÃ©dito da Loja
+## 11. Módulo 10 - Crédito da Loja
 
-- [x] Implementar conta de crÃ©dito por loja e pessoa
+- [x] Implementar conta de crédito por loja e pessoa
   - [x] criar e manter `conta_credito_loja`
   - [x] garantir unicidade por loja + pessoa
-- [x] Implementar livro razÃ£o do crÃ©dito
+- [x] Implementar livro razão do crédito
   - [x] registrar em `movimentacao_credito_loja`
   - [x] manter saldo anterior e posterior
-- [x] Implementar crÃ©dito manual
+- [x] Implementar crédito manual
   - [x] exigir justificativa
-  - [x] exigir responsÃ¡vel
-  - [x] auditar aÃ§Ã£o
-- [x] Implementar crÃ©dito por repasse
-  - [x] gerar crÃ©dito durante pagamento ao fornecedor quando aplicÃ¡vel
-- [x] Implementar uso de crÃ©dito em compra
+  - [x] exigir responsável
+  - [x] auditar ação
+- [x] Implementar crédito por repasse
+  - [x] gerar crédito durante pagamento ao fornecedor quando aplicável
+- [x] Implementar uso de crédito em compra
   - [x] validar saldo
-  - [x] registrar dÃ©bito
-  - [x] relacionar Ã  venda
+  - [x] registrar débito
+  - [x] relacionar à venda
 - [x] Implementar consultas de extrato e saldo
   - [x] frontend web
   - [x] portal
   - [x] mobile consulta
 
-## 12. MÃ³dulo 11 - Pagamentos e Repasses
+## 12. Módulo 11 - Pagamentos e Repasses
 
-- [x] Implementar geraÃ§Ã£o de obrigaÃ§Ã£o do fornecedor
-  - [x] criar `obrigacao_fornecedor` para peÃ§a consignada vendida
-  - [x] criar `obrigacao_fornecedor` para peÃ§a fixa/lote comprada
+- [x] Implementar geração de obrigação do fornecedor
+  - [x] criar `obrigacao_fornecedor` para peça consignada vendida
+  - [x] criar `obrigacao_fornecedor` para peça fixa/lote comprada
   - [x] definir tipo, saldo em aberto e status
-- [x] Implementar liquidaÃ§Ã£o da obrigaÃ§Ã£o
+- [x] Implementar liquidação da obrigação
   - [x] registrar `liquidacao_obrigacao_fornecedor`
-  - [x] permitir dinheiro, crÃ©dito ou misto
+  - [x] permitir dinheiro, crédito ou misto
   - [x] atualizar saldo em aberto
   - [x] atualizar status
 - [x] Implementar comprovante de pagamento ao fornecedor
-  - [x] modelo Ãºnico
-  - [x] dados da liquidaÃ§Ã£o
-- [x] Implementar listagem de pendÃªncias
+  - [x] modelo único
+  - [x] dados da liquidação
+- [x] Implementar listagem de pendências
   - [x] por fornecedor
   - [x] por loja
   - [x] por status
 
-## 13. MÃ³dulo 12 - Meios de Pagamento e ConciliaÃ§Ã£o Financeira
+## 13. Módulo 12 - Meios de Pagamento e Conciliação Financeira
 
-- [x] Implementar livro razÃ£o financeiro
-  - [x] registrar entradas e saÃ­das em `movimentacao_financeira`
+- [x] Implementar livro razão financeiro
+  - [x] registrar entradas e saídas em `movimentacao_financeira`
   - [x] relacionar com `venda_pagamento` quando houver
   - [x] relacionar com `liquidacao_obrigacao_fornecedor` quando houver
-- [x] Implementar lanÃ§amentos financeiros avulsos
+- [x] Implementar lançamentos financeiros avulsos
   - [x] despesas
   - [x] receitas avulsas
   - [x] ajustes
   - [x] estornos
-- [x] Implementar conciliaÃ§Ã£o financeira
-  - [x] consolidar por perÃ­odo
+- [x] Implementar conciliação financeira
+  - [x] consolidar por período
   - [x] consolidar por meio de pagamento
-  - [x] evidenciar taxas e valores lÃ­quidos
-- [x] Implementar resumo diÃ¡rio financeiro
+  - [x] evidenciar taxas e valores líquidos
+- [x] Implementar resumo diário financeiro
   - [x] total de entradas
-  - [x] total de saÃ­das
+  - [x] total de saídas
   - [x] saldo bruto
-  - [x] saldo lÃ­quido
+  - [x] saldo líquido
 
-## 14. MÃ³dulo 13 - Fechamento do Cliente/Fornecedor
+## 14. Módulo 13 - Fechamento do Cliente/Fornecedor
 
-- [ ] Implementar geraÃ§Ã£o de fechamento
-  - [ ] consolidar peÃ§as atuais
-  - [ ] consolidar peÃ§as vendidas
-  - [ ] consolidar valores vendidos e a receber
-  - [ ] consolidar compras feitas na loja
-  - [ ] consolidar pagamentos e saldo final
-  - [ ] gravar `fechamento_pessoa`
-  - [ ] gravar `fechamento_pessoa_item`
-  - [ ] gravar `fechamento_pessoa_movimento`
-- [ ] Implementar conferÃªncia e liquidaÃ§Ã£o do fechamento
-  - [ ] permitir marcar como conferido
-  - [ ] permitir marcar como liquidado
-  - [ ] impedir alteraÃ§Ã£o indevida apÃ³s liquidaÃ§Ã£o
-- [ ] Implementar exportaÃ§Ã£o do fechamento
-  - [ ] PDF
-  - [ ] Excel
-  - [ ] texto formatado para WhatsApp
-- [ ] Implementar histÃ³rico de fechamentos
-  - [ ] filtro por pessoa
-  - [ ] filtro por loja
-  - [ ] filtro por perÃ­odo
+- [x] Implementar geração de fechamento
+  - [x] consolidar peças atuais
+  - [x] consolidar peças vendidas
+  - [x] consolidar valores vendidos e a receber
+  - [x] consolidar compras feitas na loja
+  - [x] consolidar pagamentos e saldo final
+  - [x] gravar `fechamento_pessoa`
+  - [x] gravar `fechamento_pessoa_item`
+  - [x] gravar `fechamento_pessoa_movimento`
+- [x] Implementar conferência e liquidação do fechamento
+  - [x] permitir marcar como conferido
+  - [x] permitir marcar como liquidado
+  - [x] impedir alteração indevida após liquidação
+- [x] Implementar exportação do fechamento
+  - [x] PDF
+  - [x] Excel
+  - [x] texto formatado para WhatsApp
+- [x] Implementar histórico de fechamentos
+  - [x] filtro por pessoa
+  - [x] filtro por loja
+  - [x] filtro por período
 
-## 15. MÃ³dulo 14 - Dashboards e Indicadores
+## 15. Módulo 14 - Dashboards e Indicadores
 
 - [ ] Implementar dashboard de vendas
   - [ ] por dia
-  - [ ] por mÃªs
+  - [ ] por mês
   - [ ] por loja
   - [ ] por vendedor
-  - [ ] por perÃ­odo
+  - [ ] por período
 - [ ] Implementar dashboard financeiro
   - [ ] entradas
-  - [ ] saÃ­das
+  - [ ] saídas
   - [x] saldo bruto
-  - [x] saldo lÃ­quido
-- [ ] Implementar dashboard de consignaÃ§Ã£o
-  - [ ] peÃ§as prÃ³ximas do vencimento
-  - [ ] peÃ§as paradas em estoque
-- [ ] Implementar dashboard de pendÃªncias
+  - [x] saldo líquido
+- [ ] Implementar dashboard de consignação
+  - [ ] peças próximas do vencimento
+  - [ ] peças paradas em estoque
+- [ ] Implementar dashboard de pendências
   - [ ] valores a pagar
   - [ ] valores pendentes de recebimento
-  - [ ] inconsistÃªncias operacionais
+  - [ ] inconsistências operacionais
 
-## 16. MÃ³dulo 15 - RelatÃ³rios e ExportaÃ§Ãµes
+## 16. Módulo 15 - Relatórios e Exportações
 
-- [ ] Implementar exportaÃ§Ã£o genÃ©rica com filtros
+- [ ] Implementar exportação genérica com filtros
   - [ ] Excel
   - [ ] PDF
-- [ ] Implementar relatÃ³rio de estoque atual
+- [ ] Implementar relatório de estoque atual
   - [ ] filtros por loja, status, marca e fornecedor
-- [ ] Implementar relatÃ³rio de peÃ§as vendidas
-  - [ ] filtros por perÃ­odo, fornecedor e vendedor
-- [ ] Implementar relatÃ³rio financeiro
+- [ ] Implementar relatório de peças vendidas
+  - [ ] filtros por período, fornecedor e vendedor
+- [ ] Implementar relatório financeiro
   - [ ] por cliente/fornecedor
-  - [ ] por perÃ­odo e loja
-- [ ] Implementar relatÃ³rio de peÃ§as devolvidas, doadas, perdidas e descartadas
-  - [ ] filtros por perÃ­odo e motivo
+  - [ ] por período e loja
+- [ ] Implementar relatório de peças devolvidas, doadas, perdidas e descartadas
+  - [ ] filtros por período e motivo
 - [ ] Implementar filtros salvos
-  - [ ] persistir configuraÃ§Ã£o de filtro frequente
+  - [ ] persistir configuração de filtro frequente
 
-## 17. MÃ³dulo 16 - ImpressÃµes e Documentos
+## 17. Módulo 16 - Impressões e Documentos
 
-- [ ] Implementar impressÃ£o de etiqueta
-  - [ ] gerar layout Ãºnico
-  - [ ] incluir cÃ³digo de barras
-  - [ ] integrar com dados da peÃ§a
-- [ ] Implementar impressÃ£o de recibo de venda
-  - [ ] layout Ãºnico
+- [ ] Implementar impressão de etiqueta
+  - [ ] gerar layout único
+  - [ ] incluir código de barras
+  - [ ] integrar com dados da peça
+- [ ] Implementar impressão de recibo de venda
+  - [ ] layout único
   - [ ] dados de loja, venda e pagamento
 - [ ] Implementar comprovantes de pagamento ao fornecedor
-  - [ ] layout Ãºnico
-  - [ ] dados da liquidaÃ§Ã£o
-- [ ] Implementar comprovantes de devoluÃ§Ã£o/doaÃ§Ã£o
-  - [ ] dados da peÃ§a
-  - [ ] responsÃ¡vel
+  - [ ] layout único
+  - [ ] dados da liquidação
+- [ ] Implementar comprovantes de devolução/doação
+  - [ ] dados da peça
+  - [ ] responsável
   - [ ] data e motivo
 
-## 18. MÃ³dulo 17 - Portal Web do Cliente/Fornecedor
+## 18. Módulo 17 - Portal Web do Cliente/Fornecedor
 
-- [ ] Implementar autenticaÃ§Ã£o do portal
-  - [ ] login de usuÃ¡rio vinculado a `pessoa`
-  - [ ] restriÃ§Ã£o Ã s prÃ³prias informaÃ§Ãµes
-- [ ] Implementar visÃ£o das lojas vinculadas
+- [ ] Implementar autenticação do portal
+  - [ ] login de usuário vinculado a `pessoa`
+  - [ ] restrição às próprias informações
+- [ ] Implementar visão das lojas vinculadas
   - [ ] listar lojas de `pessoa_loja`
-- [ ] Implementar consulta de peÃ§as
+- [ ] Implementar consulta de peças
   - [ ] atuais
   - [ ] vendidas
   - [ ] valores relacionados
-- [ ] Implementar consulta de saldo e pendÃªncias
-  - [ ] crÃ©dito
+- [ ] Implementar consulta de saldo e pendências
+  - [ ] crédito
   - [ ] pagamentos
-  - [ ] obrigaÃ§Ãµes
+  - [ ] obrigações
 - [ ] Implementar consulta de fechamento
-  - [ ] lista histÃ³rica
-  - [ ] resumo por perÃ­odo
+  - [ ] lista histórica
+  - [ ] resumo por período
 
-## 19. MÃ³dulo 18 - Mobile React Native
+## 19. Módulo 18 - Mobile React Native
 
 - [ ] Definir o escopo do mobile como leitura apenas
-  - [ ] bloquear funÃ§Ãµes transacionais
-- [ ] Implementar autenticaÃ§Ã£o do mobile
-  - [ ] reaproveitar API e permissÃµes
+  - [ ] bloquear funções transacionais
+- [ ] Implementar autenticação do mobile
+  - [ ] reaproveitar API e permissões
 - [ ] Implementar dashboards resumidos
   - [ ] vendas
   - [ ] financeiro
   - [ ] alertas
 - [ ] Implementar consultas operacionais
-  - [ ] peÃ§as
+  - [ ] peças
   - [ ] vendas
   - [ ] saldos
-  - [ ] pendÃªncias
+  - [ ] pendências
   - [ ] fechamentos
 
-## 20. MÃ³dulo 19 - Backend .NET
+## 20. Módulo 19 - Backend .NET
 
-- [ ] Estruturar a API por mÃ³dulos ou feature slices
+- [ ] Estruturar a API por módulos ou feature slices
   - [ ] acesso
   - [ ] lojas
   - [ ] pessoas
-  - [ ] catÃ¡logo
+  - [ ] catálogo
   - [ ] estoque
   - [ ] vendas
-  - [ ] crÃ©dito
+  - [ ] crédito
   - [ ] financeiro
   - [ ] fechamento
-  - [ ] dashboards e relatÃ³rios
-- [ ] Garantir transaÃ§Ãµes nas operaÃ§Ãµes crÃ­ticas
+  - [ ] dashboards e relatórios
+- [ ] Garantir transações nas operações críticas
   - [ ] venda
   - [ ] cancelamento de venda
   - [ ] pagamento ao fornecedor
-  - [ ] geraÃ§Ã£o de fechamento
-- [ ] Implementar logs e monitoramento tÃ©cnico
+  - [ ] geração de fechamento
+- [ ] Implementar logs e monitoramento técnico
   - [ ] logs estruturados
-  - [ ] correlaÃ§Ã£o por request
+  - [ ] correlação por request
   - [ ] rastreabilidade de erros
-- [ ] Preparar API para evoluÃ§Ã£o
+- [ ] Preparar API para evolução
   - [ ] versionamento
-  - [ ] documentaÃ§Ã£o OpenAPI
-  - [ ] contratos estÃ¡veis
+  - [ ] documentação OpenAPI
+  - [ ] contratos estáveis
 
-## 21. MÃ³dulo 20 - Frontend Web React
+## 21. Módulo 20 - Frontend Web React
 
 - [ ] Implementar shell administrativo
-  - [ ] autenticaÃ§Ã£o
+  - [ ] autenticação
   - [ ] layout principal
-  - [ ] navegaÃ§Ã£o por mÃ³dulo
+  - [ ] navegação por módulo
   - [ ] troca de loja ativa
-- [ ] Implementar telas administrativas por mÃ³dulo
-  - [ ] usuÃ¡rios e permissÃµes
+- [ ] Implementar telas administrativas por módulo
+  - [ ] usuários e permissões
   - [ ] lojas
   - [ ] pessoas
-  - [ ] catÃ¡logos
+  - [ ] catálogos
   - [ ] regras comerciais
-  - [ ] peÃ§as
+  - [ ] peças
   - [ ] vendas
-  - [ ] crÃ©dito
+  - [ ] crédito
   - [ ] financeiro
   - [ ] fechamento
-  - [ ] dashboards e relatÃ³rios
-- [ ] Implementar experiÃªncia de operaÃ§Ã£o
-  - [ ] busca rÃ¡pida
+  - [ ] dashboards e relatórios
+- [ ] Implementar experiência de operação
+  - [ ] busca rápida
   - [ ] filtros
-  - [ ] impressÃ£o
-  - [ ] exportaÃ§Ã£o
+  - [ ] impressão
+  - [ ] exportação
   - [ ] alertas visuais
 
-## 22. MÃ³dulo 21 - SeguranÃ§a, Auditoria e Qualidade Operacional
+## 22. Módulo 21 - Segurança, Auditoria e Qualidade Operacional
 
 - [ ] Implementar auditoria funcional
   - [ ] cadastros
@@ -497,95 +497,94 @@ Documento mestre em formato todo list para orientar a implementaÃ§Ã£o comple
   - [ ] pagamentos
   - [x] ajustes
   - [ ] fechamentos
-- [ ] Implementar proteÃ§Ã£o de dados e acesso
-  - [ ] autenticaÃ§Ã£o
-  - [ ] autorizaÃ§Ã£o por cargo
-  - [ ] segregaÃ§Ã£o por loja
-  - [ ] restriÃ§Ã£o de dados pessoais
-- [ ] Implementar polÃ­tica de backup e restauraÃ§Ã£o
+- [ ] Implementar proteção de dados e acesso
+  - [ ] autenticação
+  - [ ] autorização por cargo
+  - [ ] segregação por loja
+  - [ ] restrição de dados pessoais
+- [ ] Implementar política de backup e restauração
   - [ ] rotina
-  - [ ] validaÃ§Ã£o de restore
-- [ ] Implementar estratÃ©gia segura de exclusÃ£o
-  - [ ] inativaÃ§Ã£o
-  - [ ] exclusÃ£o lÃ³gica quando necessÃ¡rio
+  - [ ] validação de restore
+- [ ] Implementar estratégia segura de exclusão
+  - [ ] inativação
+  - [ ] exclusão lógica quando necessário
 - [ ] Validar desempenho operacional
-  - [ ] busca de peÃ§as
+  - [ ] busca de peças
   - [ ] venda
   - [ ] fechamento
   - [ ] dashboards
 
-## 23. MÃ³dulo 22 - Alertas e Acompanhamento Operacional
+## 23. Módulo 22 - Alertas e Acompanhamento Operacional
 
-- [ ] Implementar alertas de consignaÃ§Ã£o
-  - [ ] peÃ§as prÃ³ximas do fim
+- [ ] Implementar alertas de consignação
+  - [ ] peças próximas do fim
   - [ ] regra de corte por dias
 - [ ] Implementar alertas de pagamentos pendentes
-  - [ ] fornecedor com obrigaÃ§Ã£o vencida ou aberta
-- [ ] Implementar alertas de crÃ©dito inconsistente
+  - [ ] fornecedor com obrigação vencida ou aberta
+- [ ] Implementar alertas de crédito inconsistente
   - [ ] saldo negativo
   - [ ] saldo divergente
 - [ ] Implementar alertas de cancelamento e ajuste
   - [ ] venda cancelada
   - [ ] ajuste financeiro relevante
-- [ ] Implementar painel inicial de pendÃªncias
-  - [ ] visÃ£o por loja
-  - [ ] priorizaÃ§Ã£o por severidade
+- [ ] Implementar painel inicial de pendências
+  - [ ] visão por loja
+  - [ ] priorização por severidade
 
 ## 24. Testes e Qualidade
 
-- [ ] Implementar testes unitÃ¡rios de regras de negÃ³cio
+- [ ] Implementar testes unitários de regras de negócio
   - [ ] venda
-  - [ ] crÃ©dito
-  - [ ] obrigaÃ§Ã£o do fornecedor
-  - [ ] consignaÃ§Ã£o
+  - [ ] crédito
+  - [ ] obrigação do fornecedor
+  - [ ] consignação
   - [ ] fechamento
-- [ ] Implementar testes de integraÃ§Ã£o
+- [ ] Implementar testes de integração
   - [ ] API + banco
-  - [ ] transaÃ§Ãµes crÃ­ticas
-  - [ ] autorizaÃ§Ã£o por loja
-- [ ] Implementar testes de interface mais crÃ­ticos
+  - [ ] transações críticas
+  - [ ] autorização por loja
+- [ ] Implementar testes de interface mais críticos
   - [ ] login
-  - [ ] cadastro de peÃ§a
+  - [ ] cadastro de peça
   - [ ] venda
   - [ ] pagamento a fornecedor
   - [ ] fechamento
-- [ ] Implementar critÃ©rios de aceite por mÃ³dulo
+- [ ] Implementar critérios de aceite por módulo
   - [ ] fluxo feliz
-  - [ ] fluxo invÃ¡lido
-  - [ ] seguranÃ§a
+  - [ ] fluxo inválido
+  - [ ] segurança
   - [ ] rastreabilidade
 
-## 25. PendÃªncias de DefiniÃ§Ã£o Antes da ImplementaÃ§Ã£o Completa
+## 25. Pendências de Definição Antes da Implementação Completa
 
-- [ ] Definir polÃ­tica de troca e devoluÃ§Ã£o para compradores finais
+- [ ] Definir política de troca e devolução para compradores finais
   - [ ] identificar impacto em venda
   - [ ] identificar impacto em estoque
   - [ ] identificar impacto em financeiro
-- [ ] Avaliar necessidade futura de emissÃ£o fiscal
+- [ ] Avaliar necessidade futura de emissão fiscal
   - [ ] identificar impacto em venda
   - [ ] identificar impacto em documentos
-  - [ ] identificar impacto em integraÃ§Ãµes externas
+  - [ ] identificar impacto em integrações externas
 
-## 26. Ordem Recomendada de ExecuÃ§Ã£o
+## 26. Ordem Recomendada de Execução
 
 - [ ] Fase 1
-  - [ ] FundaÃ§Ã£o tÃ©cnica e banco
-  - [ ] acesso e permissÃµes
+  - [ ] Fundação técnica e banco
+  - [ ] acesso e permissões
   - [ ] lojas e pessoas
-  - [ ] catÃ¡logos e regras comerciais
+  - [ ] catálogos e regras comerciais
 - [ ] Fase 2
-  - [ ] peÃ§as e estoque
+  - [ ] peças e estoque
   - [ ] vendas
-  - [ ] crÃ©dito da loja
-  - [ ] obrigaÃ§Ãµes e pagamentos do fornecedor
+  - [ ] crédito da loja
+  - [ ] obrigações e pagamentos do fornecedor
 - [ ] Fase 3
-  - [ ] movimentaÃ§Ã£o financeira
+  - [ ] movimentação financeira
   - [ ] fechamento
-  - [ ] dashboards e relatÃ³rios
-  - [ ] impressÃµes
+  - [ ] dashboards e relatórios
+  - [ ] impressões
 - [ ] Fase 4
   - [ ] portal do cliente/fornecedor
   - [ ] mobile de consulta
   - [ ] alertas operacionais
-  - [ ] refinamentos de seguranÃ§a, performance e testes
-
+  - [ ] refinamentos de segurança, performance e testes

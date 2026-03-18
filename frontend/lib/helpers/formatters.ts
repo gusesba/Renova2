@@ -5,10 +5,13 @@ export function formatStatus(status: string) {
     ajuste: "Ajuste",
     cancelada: "Cancelada",
     cancelamento_venda: "Cancelamento de venda",
+    compra_loja: "Compra na loja",
     compra_peca_fixa: "Compra de peca fixa",
     compra_peca_lote: "Compra de peca em lote",
     concluida: "Concluida",
+    conferido: "Conferido",
     consignada: "Consignada",
+    credito: "Credito",
     credito_manual: "Credito manual",
     credito_repasse: "Credito por repasse",
     credito_loja: "Credito da loja",
@@ -24,7 +27,9 @@ export function formatStatus(status: string) {
     fixa: "Fixa",
     inativa: "Inativa",
     lote: "Lote",
+    liquidado: "Liquidado",
     meio_pagamento: "Meio de pagamento",
+    pagamento: "Pagamento",
     pagamento_fornecedor: "Pagamento ao fornecedor",
     paga: "Paga",
     parcial: "Parcial",
@@ -105,6 +110,10 @@ export function getStatusTone(status: string) {
     return "success";
   }
 
+  if (normalized === "liquidado") {
+    return "success";
+  }
+
   if (normalized === "paga") {
     return "success";
   }
@@ -119,6 +128,10 @@ export function getStatusTone(status: string) {
 
   if (normalized === "parcial") {
     return "warning";
+  }
+
+  if (normalized === "conferido") {
+    return "neutral";
   }
 
   if (normalized === "estorno") {

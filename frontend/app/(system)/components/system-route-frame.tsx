@@ -10,6 +10,7 @@ import { AccessStateCard } from "@/components/ui/access-state-card";
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import {
   canAccessCatalogsModule,
+  canAccessClosingsModule,
   canAccessConsignmentsModule,
   canAccessCommercialRulesModule,
   canAccessCreditsModule,
@@ -155,6 +156,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo financeiro da loja ativa.",
     deniedMessage:
       "Solicite permissao financeira para consultar ou conciliar o livro razao da loja.",
+  },
+  {
+    href: "/closings",
+    label: "Fechamentos",
+    meta: "Resumo",
+    title: "Fechamento do Cliente e Fornecedor",
+    subtitle: "Geracao de snapshot, conferencia, liquidacao e exportacao",
+    canAccess: createAccessPredicate(canAccessClosingsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de fechamento.",
+    deniedMessage:
+      "Solicite permissao para gerar ou conferir fechamentos na loja ativa.",
   },
   {
     href: "/supplier-payments",

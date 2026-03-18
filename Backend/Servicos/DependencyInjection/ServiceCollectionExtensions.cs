@@ -5,6 +5,8 @@ using Renova.Services.Features.Catalogs.Abstractions;
 using Renova.Services.Features.Catalogs.Services;
 using Renova.Services.Features.CommercialRules.Abstractions;
 using Renova.Services.Features.CommercialRules.Services;
+using Renova.Services.Features.Closings.Abstractions;
+using Renova.Services.Features.Closings.Services;
 using Renova.Services.Features.Consignments.Abstractions;
 using Renova.Services.Features.Consignments.Services;
 using Renova.Services.Features.Credits.Abstractions;
@@ -40,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAccessStoreMembershipService, AccessStoreMembershipService>();
         services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<ICatalogService, CatalogService>();
+        services.AddScoped<IClosingService, ClosingService>();
         services.AddScoped<ICommercialRuleResolverService, CommercialRuleResolverService>();
         services.AddScoped<ICommercialRuleService, CommercialRuleService>();
         services.AddScoped<IConsignmentService, ConsignmentService>();

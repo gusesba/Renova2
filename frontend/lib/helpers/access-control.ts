@@ -19,6 +19,8 @@ export const accessPermissionCodes = {
   creditManage: "credito.gerenciar",
   financeView: "financeiro.visualizar",
   financeManage: "financeiro.conciliar",
+  closingGenerate: "fechamento.gerar",
+  closingReview: "fechamento.conferir",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -133,5 +135,13 @@ export function canAccessFinancialModule(session: SessionContext) {
   return hasAnyPermission(session, [
     accessPermissionCodes.financeView,
     accessPermissionCodes.financeManage,
+  ]);
+}
+
+// Libera o modulo de fechamento para quem gera ou confere snapshots da loja ativa.
+export function canAccessClosingsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.closingGenerate,
+    accessPermissionCodes.closingReview,
   ]);
 }
