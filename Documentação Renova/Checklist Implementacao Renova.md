@@ -215,21 +215,21 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 09. Módulo 08 - Movimentações de Estoque
 
-- [ ] Implementar listagem completa de movimentações
-  - [ ] consulta por peça
-  - [ ] consulta por loja
-  - [ ] consulta por período
-- [ ] Implementar ajustes manuais
-  - [ ] permissões específicas
-  - [ ] atualização de saldo
-  - [ ] gravação em `movimentacao_estoque`
-- [ ] Impedir venda sem saldo
-  - [ ] validar `quantidade_atual`
-  - [ ] bloquear transação antes da conclusão
-- [ ] Implementar busca operacional de peças
-  - [ ] por código de barras
-  - [ ] por nome, marca, fornecedor e status
-  - [ ] por tempo em loja
+- [x] Implementar listagem completa de movimentações
+  - [x] consulta por peça
+  - [x] consulta por loja
+  - [x] consulta por período
+- [x] Implementar ajustes manuais
+  - [x] permissões específicas
+  - [x] atualização de saldo
+  - [x] gravação em `movimentacao_estoque`
+- [x] Impedir venda sem saldo
+  - [x] validar `quantidade_atual`
+  - [x] bloquear transação antes da conclusão
+- [x] Implementar busca operacional de peças
+  - [x] por código de barras
+  - [x] por nome, marca, fornecedor e status
+  - [x] por tempo em loja
 
 ## 10. Módulo 09 - Vendas
 

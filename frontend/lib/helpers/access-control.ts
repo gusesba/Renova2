@@ -88,3 +88,12 @@ export function canAccessConsignmentsModule(session: SessionContext) {
     accessPermissionCodes.piecesAdjust,
   ]);
 }
+
+// Libera o modulo de movimentacoes para quem consulta ou ajusta pecas.
+export function canAccessStockMovementsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.piecesView,
+    accessPermissionCodes.piecesCreate,
+    accessPermissionCodes.piecesAdjust,
+  ]);
+}

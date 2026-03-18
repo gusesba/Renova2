@@ -53,6 +53,20 @@ public static class PieceValues
         ];
     }
 
+    /// <summary>
+    /// Normaliza e valida o status operacional da peca.
+    /// </summary>
+    public static string NormalizePieceStatus(string value)
+    {
+        var normalized = value.Trim().ToLowerInvariant();
+        if (!PieceStatuses.Todos.Contains(normalized))
+        {
+            throw new InvalidOperationException("Status de peca invalido.");
+        }
+
+        return normalized;
+    }
+
     public static class StockMovementTypes
     {
         public const string Entrada = "entrada";

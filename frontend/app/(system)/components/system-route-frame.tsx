@@ -15,6 +15,7 @@ import {
   canAccessDashboardModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
+  canAccessStockMovementsModule,
   canAccessStoresModule,
 } from "@/lib/helpers/access-control";
 import type { SessionContext } from "@/lib/services/access";
@@ -112,6 +113,19 @@ const navigationItems: RouteItem[] = [
     canAccess: createAccessPredicate(canAccessConsignmentsModule),
     deniedTitle: "Modulo sem permissao",
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de consignacao.",
+    deniedMessage:
+      "Solicite permissao de visualizacao ou ajuste de pecas para acessar esta pagina.",
+  },
+  {
+    href: "/stock-movements",
+    label: "Movimentos",
+    meta: "Estoque",
+    title: "Movimentacoes de Estoque",
+    subtitle: "Historico operacional, busca de pecas e ajustes manuais",
+    canAccess: createAccessPredicate(canAccessStockMovementsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle:
+      "Sua conta nao possui acesso ao modulo de movimentacoes de estoque.",
     deniedMessage:
       "Solicite permissao de visualizacao ou ajuste de pecas para acessar esta pagina.",
   },

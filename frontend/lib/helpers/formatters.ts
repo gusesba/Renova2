@@ -1,6 +1,30 @@
 // Traduz valores tecnicos de status para textos e tons usados pela interface.
 export function formatStatus(status: string) {
   const normalized = status.trim().toLowerCase();
+  const labels: Record<string, string> = {
+    ajuste: "Ajuste",
+    cancelamento_venda: "Cancelamento de venda",
+    consignada: "Consignada",
+    descartada: "Descartada",
+    devolucao: "Devolucao",
+    devolvida: "Devolvida",
+    disponivel: "Disponivel",
+    doacao: "Doacao",
+    doada: "Doada",
+    entrada: "Entrada",
+    fixa: "Fixa",
+    inativa: "Inativa",
+    lote: "Lote",
+    perdida: "Perdida",
+    reservado: "Reservado",
+    reservada: "Reservada",
+    venda: "Venda",
+    vendida: "Vendida",
+  };
+
+  if (labels[normalized]) {
+    return labels[normalized];
+  }
 
   if (normalized === "ativo") {
     return "Ativo";
@@ -34,6 +58,34 @@ export function getStatusTone(status: string) {
 
   if (normalized === "entrada") {
     return "success";
+  }
+
+  if (normalized === "disponivel") {
+    return "success";
+  }
+
+  if (normalized === "vendida") {
+    return "danger";
+  }
+
+  if (normalized === "devolvida") {
+    return "warning";
+  }
+
+  if (normalized === "doada" || normalized === "descartada") {
+    return "warning";
+  }
+
+  if (normalized === "perdida") {
+    return "danger";
+  }
+
+  if (normalized === "reservada" || normalized === "ajuste") {
+    return "neutral";
+  }
+
+  if (normalized === "cancelamento_venda") {
+    return "warning";
   }
 
   if (normalized === "bloqueado") {
