@@ -12,6 +12,7 @@ export const accessPermissionCodes = {
   rulesManage: "regras.gerenciar",
   piecesView: "pecas.visualizar",
   piecesCreate: "pecas.cadastrar",
+  piecesAdjust: "pecas.ajustar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -75,5 +76,15 @@ export function canAccessPiecesModule(session: SessionContext) {
   return hasAnyPermission(session, [
     accessPermissionCodes.piecesView,
     accessPermissionCodes.piecesCreate,
+    accessPermissionCodes.piecesAdjust,
+  ]);
+}
+
+// Libera o modulo de consignacao para quem consulta ou ajusta pecas.
+export function canAccessConsignmentsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.piecesView,
+    accessPermissionCodes.piecesCreate,
+    accessPermissionCodes.piecesAdjust,
   ]);
 }

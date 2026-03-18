@@ -5,6 +5,8 @@ using Renova.Services.Features.Catalogs.Abstractions;
 using Renova.Services.Features.Catalogs.Services;
 using Renova.Services.Features.CommercialRules.Abstractions;
 using Renova.Services.Features.CommercialRules.Services;
+using Renova.Services.Features.Consignments.Abstractions;
+using Renova.Services.Features.Consignments.Services;
 using Renova.Services.Features.People.Abstractions;
 using Renova.Services.Features.People.Services;
 using Renova.Services.Features.Pieces.Abstractions;
@@ -30,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatalogService, CatalogService>();
         services.AddScoped<ICommercialRuleResolverService, CommercialRuleResolverService>();
         services.AddScoped<ICommercialRuleService, CommercialRuleService>();
+        services.AddScoped<IConsignmentService, ConsignmentService>();
         services.AddScoped<IPersonService, PersonService>();
         services.AddScoped<IPieceService, PieceService>();
 

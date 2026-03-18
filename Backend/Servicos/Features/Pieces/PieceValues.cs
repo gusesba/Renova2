@@ -56,11 +56,21 @@ public static class PieceValues
     public static class StockMovementTypes
     {
         public const string Entrada = "entrada";
+        public const string Venda = "venda";
+        public const string Devolucao = "devolucao";
+        public const string Doacao = "doacao";
+        public const string Perda = "perda";
+        public const string Descarte = "descarte";
+        public const string Ajuste = "ajuste";
+        public const string CancelamentoVenda = "cancelamento_venda";
     }
 
     public static class StockOrigins
     {
         public const string Peca = "peca";
+        public const string Venda = "venda";
+        public const string Consignacao = "consignacao";
+        public const string AjusteManual = "ajuste_manual";
     }
 
     /// <summary>

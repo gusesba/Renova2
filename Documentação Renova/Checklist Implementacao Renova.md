@@ -190,28 +190,28 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 08. Módulo 07 - Ciclo de Vida da Consignação
 
-- [ ] Implementar cálculo de prazo de consignação
-  - [ ] usar `peca_condicao_comercial`
-  - [ ] calcular data de início e fim
-  - [ ] exibir dias restantes
-- [ ] Implementar desconto por tempo de loja
-  - [ ] aplicar política configurada
-  - [ ] atualizar preço da peça quando necessário
-  - [ ] registrar histórico em `peca_historico_preco`
-- [ ] Implementar devolução ao fornecedor
-  - [ ] alterar status da peça
-  - [ ] registrar `movimentacao_estoque`
-  - [ ] gerar comprovante
-  - [ ] auditar ação
-- [ ] Implementar doação da peça
-  - [ ] alterar status da peça
-  - [ ] registrar `movimentacao_estoque`
-  - [ ] gerar comprovante
-  - [ ] auditar ação
-- [ ] Implementar perda e descarte
-  - [ ] alterar status
-  - [ ] registrar motivo e responsável
-  - [ ] auditar ação
+- [x] Implementar cálculo de prazo de consignação
+  - [x] usar `peca_condicao_comercial`
+  - [x] calcular data de início e fim
+  - [x] exibir dias restantes
+- [x] Implementar desconto por tempo de loja
+  - [x] aplicar política configurada
+  - [x] atualizar preço da peça quando necessário
+  - [x] registrar histórico em `peca_historico_preco`
+- [x] Implementar devolução ao fornecedor
+  - [x] alterar status da peça
+  - [x] registrar `movimentacao_estoque`
+  - [x] gerar comprovante
+  - [x] auditar ação
+- [x] Implementar doação da peça
+  - [x] alterar status da peça
+  - [x] registrar `movimentacao_estoque`
+  - [x] gerar comprovante
+  - [x] auditar ação
+- [x] Implementar perda e descarte
+  - [x] alterar status
+  - [x] registrar motivo e responsável
+  - [x] auditar ação
 
 ## 09. Módulo 08 - Movimentações de Estoque
 

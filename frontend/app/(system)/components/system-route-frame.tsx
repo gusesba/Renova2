@@ -10,6 +10,7 @@ import { AccessStateCard } from "@/components/ui/access-state-card";
 import { useSystemSession } from "@/app/(system)/components/system-session-provider";
 import {
   canAccessCatalogsModule,
+  canAccessConsignmentsModule,
   canAccessCommercialRulesModule,
   canAccessDashboardModule,
   canAccessPeopleModule,
@@ -101,6 +102,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de clientes e fornecedores.",
     deniedMessage:
       "Solicite um cargo com permissao para visualizar ou gerenciar pessoas na loja ativa.",
+  },
+  {
+    href: "/consignments",
+    label: "Consignacao",
+    meta: "Ciclo",
+    title: "Ciclo de Vida da Consignacao",
+    subtitle: "Prazo, desconto automatico, alertas e encerramento operacional",
+    canAccess: createAccessPredicate(canAccessConsignmentsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de consignacao.",
+    deniedMessage:
+      "Solicite permissao de visualizacao ou ajuste de pecas para acessar esta pagina.",
   },
   {
     href: "/pieces",
