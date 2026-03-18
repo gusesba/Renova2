@@ -8,6 +8,18 @@ export const queryKeys = {
     ["catalogs-workspace", token, lojaAtivaId ?? null] as const,
   commercialRulesWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["commercial-rules-workspace", token, lojaAtivaId ?? null] as const,
+  piecesWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["pieces-workspace", token, lojaAtivaId ?? null] as const,
+  pieces: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    filters: string,
+  ) => ["pieces", token, lojaAtivaId ?? null, filters] as const,
+  pieceDetail: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    pecaId: string | null,
+  ) => ["piece-detail", token, lojaAtivaId ?? null, pecaId ?? null] as const,
   people: (token: string, lojaAtivaId?: string | null) =>
     ["people", token, lojaAtivaId ?? null] as const,
   personDetail: (

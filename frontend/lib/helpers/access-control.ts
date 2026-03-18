@@ -10,6 +10,8 @@ export const accessPermissionCodes = {
   peopleManage: "pessoas.gerenciar",
   catalogManage: "catalogo.gerenciar",
   rulesManage: "regras.gerenciar",
+  piecesView: "pecas.visualizar",
+  piecesCreate: "pecas.cadastrar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -66,4 +68,12 @@ export function canAccessCatalogsModule(session: SessionContext) {
 // Libera o modulo de regras comerciais para quem possui a permissao especifica.
 export function canAccessCommercialRulesModule(session: SessionContext) {
   return hasPermission(session, accessPermissionCodes.rulesManage);
+}
+
+// Libera o modulo de pecas para quem possui visualizacao ou cadastro.
+export function canAccessPiecesModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.piecesView,
+    accessPermissionCodes.piecesCreate,
+  ]);
 }

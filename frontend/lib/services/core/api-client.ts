@@ -17,7 +17,9 @@ export async function callApi<T>(
   token?: string | null,
 ) {
   const headers = new Headers(init.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(init.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -59,4 +61,22 @@ export async function callApi<T>(
   }
 
   return body.data;
+}
+
+// Resolve uma URL de asset retornada pela API para uso direto no navegador.
+export function resolveApiAssetUrl(path: string) {
+  if (!path) {
+    return path;
+  }
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  try {
+    const apiUrl = new URL(API_BASE_URL);
+    return path.startsWith("/") ? `${apiUrl.origin}${path}` : path;
+  } catch {
+    return path;
+  }
 }

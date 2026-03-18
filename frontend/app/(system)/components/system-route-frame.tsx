@@ -13,6 +13,7 @@ import {
   canAccessCommercialRulesModule,
   canAccessDashboardModule,
   canAccessPeopleModule,
+  canAccessPiecesModule,
   canAccessStoresModule,
 } from "@/lib/helpers/access-control";
 import type { SessionContext } from "@/lib/services/access";
@@ -100,6 +101,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de clientes e fornecedores.",
     deniedMessage:
       "Solicite um cargo com permissao para visualizar ou gerenciar pessoas na loja ativa.",
+  },
+  {
+    href: "/pieces",
+    label: "Pecas",
+    meta: "Estoque",
+    title: "Pecas e Estoque",
+    subtitle: "Cadastro, consulta, imagens e entrada inicial de estoque",
+    canAccess: createAccessPredicate(canAccessPiecesModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de pecas e estoque.",
+    deniedMessage:
+      "Solicite permissao de visualizacao ou cadastro de pecas para acessar esta pagina.",
   },
 ];
 

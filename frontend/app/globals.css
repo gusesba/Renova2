@@ -1314,6 +1314,28 @@ a {
   align-items: start;
 }
 
+.piece-image-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.piece-image-card {
+  display: grid;
+  gap: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+  padding: 0.9rem;
+}
+
+.piece-image-preview {
+  width: 100%;
+  height: 220px;
+  border-radius: 0.95rem;
+  object-fit: cover;
+  background: var(--panel-soft);
+}
+
 @media (max-width: 1080px) {
   .catalogs-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1333,6 +1355,10 @@ a {
 
   .rule-toggle-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .piece-image-preview {
+    height: 180px;
   }
 }
 

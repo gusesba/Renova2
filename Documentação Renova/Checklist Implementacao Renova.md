@@ -167,26 +167,26 @@ Documento mestre em formato todo list para orientar a implementação completa d
 
 ## 07. Módulo 06 - Cadastro de Peças e Estoque
 
-- [ ] Implementar cadastro de peça
-  - [ ] contrato de entrada
-  - [ ] validação de loja, fornecedor e tabelas auxiliares
-  - [ ] geração de código interno
-  - [ ] suporte a código de barras
-  - [ ] gravação em `peca`
-- [ ] Implementar snapshot da condição comercial da peça
-  - [ ] resolver regra efetiva no momento da entrada
-  - [ ] gravar em `peca_condicao_comercial`
-- [ ] Implementar upload e vínculo de imagens
-  - [ ] armazenamento físico/lógico do arquivo
-  - [ ] gravação em `peca_imagem`
-  - [ ] visibilidade interna/externa
-- [ ] Implementar entrada inicial de estoque
-  - [ ] gravar `movimentacao_estoque` do tipo entrada
-  - [ ] atualizar saldo inicial
-- [ ] Implementar telas web de cadastro, edição e consulta de peça
-  - [ ] filtros rápidos
-  - [ ] busca por código de barras
-  - [ ] exibição de status e localização
+- [x] Implementar cadastro de peça
+  - [x] contrato de entrada
+  - [x] validação de loja, fornecedor e tabelas auxiliares
+  - [x] geração de código interno
+  - [x] suporte a código de barras
+  - [x] gravação em `peca`
+- [x] Implementar snapshot da condição comercial da peça
+  - [x] resolver regra efetiva no momento da entrada
+  - [x] gravar em `peca_condicao_comercial`
+- [x] Implementar upload e vínculo de imagens
+  - [x] armazenamento físico/lógico do arquivo
+  - [x] gravação em `peca_imagem`
+  - [x] visibilidade interna/externa
+- [x] Implementar entrada inicial de estoque
+  - [x] gravar `movimentacao_estoque` do tipo entrada
+  - [x] atualizar saldo inicial
+- [x] Implementar telas web de cadastro, edição e consulta de peça
+  - [x] filtros rápidos
+  - [x] busca por código de barras
+  - [x] exibição de status e localização
 
 ## 08. Módulo 07 - Ciclo de Vida da Consignação
 

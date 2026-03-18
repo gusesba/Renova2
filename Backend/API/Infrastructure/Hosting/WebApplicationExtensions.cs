@@ -16,6 +16,7 @@ public static class WebApplicationExtensions
             app.UseHttpsRedirection();
         }
 
+        app.UseStaticFiles();
         app.UseCors("renova-dev");
         app.UseMiddleware<RequestLoggingMiddleware>();
         app.UseAuthentication();
