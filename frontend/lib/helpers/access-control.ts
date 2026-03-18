@@ -15,6 +15,8 @@ export const accessPermissionCodes = {
   piecesAdjust: "pecas.ajustar",
   salesCreate: "vendas.registrar",
   salesCancel: "vendas.cancelar",
+  creditView: "credito.visualizar",
+  creditManage: "credito.gerenciar",
 } as const;
 
 // Verifica uma permissao unica dentro da sessao autenticada.
@@ -105,5 +107,13 @@ export function canAccessSalesModule(session: SessionContext) {
   return hasAnyPermission(session, [
     accessPermissionCodes.salesCreate,
     accessPermissionCodes.salesCancel,
+  ]);
+}
+
+// Libera o modulo de credito para quem consulta ou gerencia contas da loja.
+export function canAccessCreditsModule(session: SessionContext) {
+  return hasAnyPermission(session, [
+    accessPermissionCodes.creditView,
+    accessPermissionCodes.creditManage,
   ]);
 }

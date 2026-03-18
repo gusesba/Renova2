@@ -259,26 +259,26 @@ Documento mestre em formato todo list para orientar a implementação completa d
   - [x] dados de venda e pagamento
 ## 11. Módulo 10 - Crédito da Loja
 
-- [ ] Implementar conta de crédito por loja e pessoa
-  - [ ] criar e manter `conta_credito_loja`
-  - [ ] garantir unicidade por loja + pessoa
-- [ ] Implementar livro razão do crédito
-  - [ ] registrar em `movimentacao_credito_loja`
-  - [ ] manter saldo anterior e posterior
-- [ ] Implementar crédito manual
-  - [ ] exigir justificativa
-  - [ ] exigir responsável
-  - [ ] auditar ação
-- [ ] Implementar crédito por repasse
-  - [ ] gerar crédito durante pagamento ao fornecedor quando aplicável
-- [ ] Implementar uso de crédito em compra
-  - [ ] validar saldo
-  - [ ] registrar débito
-  - [ ] relacionar à venda
-- [ ] Implementar consultas de extrato e saldo
-  - [ ] frontend web
-  - [ ] portal
-  - [ ] mobile consulta
+- [x] Implementar conta de crédito por loja e pessoa
+  - [x] criar e manter `conta_credito_loja`
+  - [x] garantir unicidade por loja + pessoa
+- [x] Implementar livro razão do crédito
+  - [x] registrar em `movimentacao_credito_loja`
+  - [x] manter saldo anterior e posterior
+- [x] Implementar crédito manual
+  - [x] exigir justificativa
+  - [x] exigir responsável
+  - [x] auditar ação
+- [x] Implementar crédito por repasse
+  - [x] gerar crédito durante pagamento ao fornecedor quando aplicável
+- [x] Implementar uso de crédito em compra
+  - [x] validar saldo
+  - [x] registrar débito
+  - [x] relacionar à venda
+- [x] Implementar consultas de extrato e saldo
+  - [x] frontend web
+  - [x] portal
+  - [x] mobile consulta
 
 ## 12. Módulo 11 - Pagamentos e Repasses
 

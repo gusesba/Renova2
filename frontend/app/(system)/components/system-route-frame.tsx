@@ -12,6 +12,7 @@ import {
   canAccessCatalogsModule,
   canAccessConsignmentsModule,
   canAccessCommercialRulesModule,
+  canAccessCreditsModule,
   canAccessDashboardModule,
   canAccessPeopleModule,
   canAccessPiecesModule,
@@ -128,6 +129,18 @@ const navigationItems: RouteItem[] = [
     deniedSubtitle: "Sua conta nao possui acesso ao modulo de vendas.",
     deniedMessage:
       "Solicite permissao para registrar ou cancelar vendas na loja ativa.",
+  },
+  {
+    href: "/credits",
+    label: "Credito",
+    meta: "Loja",
+    title: "Credito da Loja",
+    subtitle: "Contas por pessoa, saldo, extrato e lancamentos manuais",
+    canAccess: createAccessPredicate(canAccessCreditsModule),
+    deniedTitle: "Modulo sem permissao",
+    deniedSubtitle: "Sua conta nao possui acesso ao modulo de credito.",
+    deniedMessage:
+      "Solicite permissao para consultar ou gerenciar credito na loja ativa.",
   },
   {
     href: "/stock-movements",

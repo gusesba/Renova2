@@ -7,7 +7,10 @@ export function formatStatus(status: string) {
     cancelamento_venda: "Cancelamento de venda",
     concluida: "Concluida",
     consignada: "Consignada",
+    credito_manual: "Credito manual",
+    credito_repasse: "Credito por repasse",
     credito_loja: "Credito da loja",
+    debito_venda: "Debito de venda",
     descartada: "Descartada",
     devolucao: "Devolucao",
     devolvida: "Devolvida",
@@ -20,6 +23,7 @@ export function formatStatus(status: string) {
     lote: "Lote",
     meio_pagamento: "Meio de pagamento",
     perdida: "Perdida",
+    repasse_fornecedor: "Repasse de fornecedor",
     reservado: "Reservado",
     reservada: "Reservada",
     venda: "Venda",
@@ -32,6 +36,10 @@ export function formatStatus(status: string) {
 
   if (normalized === "ativo") {
     return "Ativo";
+  }
+
+  if (normalized === "ativa") {
+    return "Ativa";
   }
 
   if (normalized === "inativo") {
@@ -50,6 +58,10 @@ export function formatStatus(status: string) {
     return "Bloqueado";
   }
 
+  if (normalized === "bloqueada") {
+    return "Bloqueada";
+  }
+
   return status;
 }
 
@@ -57,6 +69,10 @@ export function getStatusTone(status: string) {
   const normalized = status.trim().toLowerCase();
 
   if (normalized === "ativo") {
+    return "success";
+  }
+
+  if (normalized === "ativa") {
     return "success";
   }
 
@@ -101,6 +117,10 @@ export function getStatusTone(status: string) {
   }
 
   if (normalized === "bloqueado") {
+    return "danger";
+  }
+
+  if (normalized === "bloqueada") {
     return "danger";
   }
 

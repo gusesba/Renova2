@@ -46,6 +46,8 @@ export const queryKeys = {
   ) => ["stock-movement-pieces", token, lojaAtivaId ?? null, filters] as const,
   salesWorkspace: (token: string, lojaAtivaId?: string | null) =>
     ["sales-workspace", token, lojaAtivaId ?? null] as const,
+  creditsWorkspace: (token: string, lojaAtivaId?: string | null) =>
+    ["credits-workspace", token, lojaAtivaId ?? null] as const,
   sales: (
     token: string,
     lojaAtivaId: string | null | undefined,
@@ -56,6 +58,11 @@ export const queryKeys = {
     lojaAtivaId: string | null | undefined,
     saleId: string | null,
   ) => ["sale-detail", token, lojaAtivaId ?? null, saleId ?? null] as const,
+  creditDetail: (
+    token: string,
+    lojaAtivaId: string | null | undefined,
+    pessoaId: string | null,
+  ) => ["credit-detail", token, lojaAtivaId ?? null, pessoaId ?? null] as const,
   people: (token: string, lojaAtivaId?: string | null) =>
     ["people", token, lojaAtivaId ?? null] as const,
   personDetail: (
