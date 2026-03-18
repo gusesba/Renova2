@@ -16,7 +16,11 @@ type AppSidebarProps = {
   collapsed?: boolean;
 };
 
-export function AppSidebar({ items, activeHref, collapsed = false }: AppSidebarProps) {
+export function AppSidebar({
+  items,
+  activeHref,
+  collapsed = false,
+}: AppSidebarProps) {
   return (
     <>
       <RenovaMark compact={collapsed} subtitle="Plataforma operacional" />
@@ -25,28 +29,20 @@ export function AppSidebar({ items, activeHref, collapsed = false }: AppSidebarP
         {items.map((item) => (
           <Link
             key={item.href}
-            className={cx("app-nav-link", activeHref === item.href && "is-active")}
+            className={cx(
+              "app-nav-link",
+              activeHref === item.href && "is-active",
+            )}
             href={item.href}
             title={item.label}
           >
             <span>{collapsed ? item.label.slice(0, 1) : item.label}</span>
-            {!collapsed ? <span className="app-nav-meta">{item.meta}</span> : null}
+            {!collapsed ? (
+              <span className="app-nav-meta">{item.meta}</span>
+            ) : null}
           </Link>
         ))}
       </div>
-      {!collapsed ? (
-        <div className="app-sidebar-section">
-          <div className="app-sidebar-label">Contexto</div>
-          <div className="ui-card">
-            <div className="ui-card-body">
-              <div className="ui-card-title">Modulo 01</div>
-              <p className="ui-card-subtitle">
-                Usuarios, cargos, autenticacao e permissoes dentro do shell principal do sistema.
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
