@@ -320,6 +320,8 @@ public sealed class StoreService : IStoreService
             .Distinct()
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        await GarantirPermissoesBaseAsync(permissionCodes, usuarioId, cancellationToken);
+
         var permissions = await _dbContext.Permissoes
             .Where(x => permissionCodes.Contains(x.Codigo) && x.Ativo)
             .ToDictionaryAsync(x => x.Codigo, x => x.Id, cancellationToken);
@@ -368,6 +370,55 @@ public sealed class StoreService : IStoreService
         }
 
         return cargoDonoId;
+    }
+
+    /// <summary>
+    /// Garante que o catalogo minimo de permissoes exista antes de montar os cargos base da loja.
+    /// </summary>
+    private async Task GarantirPermissoesBaseAsync(
+        IReadOnlyCollection<string> permissionCodes,
+        Guid usuarioId,
+        CancellationToken cancellationToken)
+    {
+        var requiredDefinitions = AccessPermissionCodes.Catalog
+            .Where(definition => permissionCodes.Contains(definition.Codigo))
+            .ToArray();
+
+        var existentes = await _dbContext.Permissoes
+            .Where(x => permissionCodes.Contains(x.Codigo))
+            .ToDictionaryAsync(x => x.Codigo, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        var houveAlteracao = false;
+        foreach (var definition in requiredDefinitions)
+        {
+            if (existentes.TryGetValue(definition.Codigo, out var permissao))
+            {
+                permissao.Nome = definition.Nome;
+                permissao.Descricao = definition.Descricao;
+                permissao.Modulo = definition.Modulo;
+                permissao.Ativo = true;
+                permissao.InativadoEm = null;
+                continue;
+            }
+
+            _dbContext.Permissoes.Add(new Permissao
+            {
+                Id = Guid.NewGuid(),
+                Codigo = definition.Codigo,
+                Nome = definition.Nome,
+                Descricao = definition.Descricao,
+                Modulo = definition.Modulo,
+                Ativo = true,
+                CriadoPorUsuarioId = usuarioId,
+            });
+
+            houveAlteracao = true;
+        }
+
+        if (houveAlteracao)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 
     /// <summary>

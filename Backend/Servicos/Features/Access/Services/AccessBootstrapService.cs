@@ -133,9 +133,51 @@ public sealed class AccessBootstrapService : IAccessBootstrapService
                         PermissaoId = permissionId,
                     });
                 }
+
+                if (string.Equals(template.CodigoInterno, "dono_loja", StringComparison.OrdinalIgnoreCase))
+                {
+                    await GarantirCargoDonoParaResponsaveisAsync(loja.Id, cargo.Id, cancellationToken);
+                }
             }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Repara vinculos responsaveis garantindo que o cargo de dono esteja associado.
+    /// </summary>
+    private async Task GarantirCargoDonoParaResponsaveisAsync(
+        Guid lojaId,
+        Guid cargoDonoId,
+        CancellationToken cancellationToken)
+    {
+        var vinculosResponsaveis = await _dbContext.UsuarioLojas
+            .Where(x => x.LojaId == lojaId)
+            .Where(x => x.EhResponsavel)
+            .Where(x => x.StatusVinculo == AccessStatusValues.VinculoLoja.Ativo)
+            .Where(x => x.DataFim == null || x.DataFim >= DateTimeOffset.UtcNow)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        if (vinculosResponsaveis.Count == 0)
+        {
+            return;
+        }
+
+        var vinculosComCargoDono = await _dbContext.UsuarioLojaCargos
+            .Where(x => vinculosResponsaveis.Contains(x.UsuarioLojaId) && x.CargoId == cargoDonoId)
+            .Select(x => x.UsuarioLojaId)
+            .ToHashSetAsync(cancellationToken);
+
+        foreach (var usuarioLojaId in vinculosResponsaveis.Where(id => !vinculosComCargoDono.Contains(id)))
+        {
+            _dbContext.UsuarioLojaCargos.Add(new UsuarioLojaCargo
+            {
+                Id = Guid.NewGuid(),
+                UsuarioLojaId = usuarioLojaId,
+                CargoId = cargoDonoId,
+            });
+        }
     }
 }

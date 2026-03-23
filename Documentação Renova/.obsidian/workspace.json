@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Cadastro Publico Auth.md",
+                "file": "TODO.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Cadastro Publico Auth"
+              "title": "TODO"
             }
           }
         ]
@@ -185,13 +185,14 @@
   },
   "active": "f8ba67cc2a97a96e",
   "lastOpenFiles": [
+    "comandosDB.md",
+    "TODO.md",
+    "Cadastro Publico Auth.md",
     "PLANEJAMENTO_REFATORACAO_CODIGO.md",
     "PLANEJAMENTO_REVISAO_SISTEMA.md",
     "Modelagem Banco de Dados Renova.md",
     "Checklist Implementacao Renova.md",
     "Ideia Inicial.md",
-    "comandosDB.md",
-    "Cadastro Publico Auth.md",
     "BaseLayout/Sistema.png",
     "BaseLayout/Auth.png",
     "BaseLayout/image.png",
