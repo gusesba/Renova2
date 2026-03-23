@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Renova.Domain.Models;
 using Renova.Services.Features.Access;
+using Renova.Services.Features.Consignments;
 using Renova.Services.Features.People;
 using Renova.Services.Features.Pieces;
 using Renova.Services.Features.Sales.Contracts;
@@ -308,7 +309,7 @@ public sealed partial class SaleService
         IReadOnlyCollection<Guid> pieceIds,
         CancellationToken cancellationToken)
     {
-        return await (
+        var items = await (
                 from peca in _dbContext.Pecas
                 join produto in _dbContext.ProdutoNomes on peca.ProdutoNomeId equals produto.Id
                 join marca in _dbContext.Marcas on peca.MarcaId equals marca.Id
@@ -327,8 +328,66 @@ public sealed partial class SaleService
                     tamanho.Nome,
                     cor.Nome,
                     fornecedor != null ? fornecedor.Nome : null,
-                    condicao))
+                    condicao,
+                    peca.PrecoVendaAtual,
+                    peca.PrecoVendaAtual,
+                    0m,
+                    false))
             .ToListAsync(cancellationToken);
+
+        var basePriceMap = await LoadBasePriceMapAsync(pieceIds, cancellationToken);
+
+        return items
+            .Select(item =>
+            {
+                var basePrice = basePriceMap.TryGetValue(item.Peca.Id, out var loadedBasePrice)
+                    ? loadedBasePrice
+                    : item.Peca.PrecoVendaAtual;
+                var lifecycle = ConsignmentLifecycleCalculator.Calculate(item.Peca, item.CondicaoComercial, basePrice);
+
+                return item with
+                {
+                    PrecoBase = lifecycle.PrecoBase,
+                    PrecoEfetivoVenda = lifecycle.PrecoEfetivoVenda,
+                    PercentualDescontoAutomatico = lifecycle.PercentualDescontoEsperado,
+                    DescontoAutomaticoAtivo = lifecycle.DescontoAutomaticoAtivo,
+                };
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Carrega o preco base de referencia das pecas para evitar desconto cumulativo persistido em consignacao.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, decimal>> LoadBasePriceMapAsync(
+        IReadOnlyCollection<Guid> pieceIds,
+        CancellationToken cancellationToken)
+    {
+        if (pieceIds.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        var currentPrices = await _dbContext.Pecas
+            .AsNoTracking()
+            .Where(x => pieceIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.PrecoVendaAtual })
+            .ToListAsync(cancellationToken);
+
+        var historyItems = await _dbContext.PecaHistoricosPreco
+            .AsNoTracking()
+            .Where(x => pieceIds.Contains(x.PecaId))
+            .OrderBy(x => x.AlteradoEm)
+            .ThenBy(x => x.CriadoEm)
+            .ToListAsync(cancellationToken);
+
+        var result = currentPrices.ToDictionary(x => x.Id, x => x.PrecoVendaAtual);
+        foreach (var group in historyItems.GroupBy(x => x.PecaId))
+        {
+            result[group.Key] = group.First().PrecoAnterior;
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -369,12 +428,12 @@ public sealed partial class SaleService
                 throw new InvalidOperationException("O desconto do item nao pode ser negativo.");
             }
 
-            if (discountUnit > piece.Peca.PrecoVendaAtual)
+            if (discountUnit > piece.PrecoEfetivoVenda)
             {
                 throw new InvalidOperationException($"O desconto da peca {piece.Peca.CodigoInterno} nao pode superar o preco.");
             }
 
-            var finalUnitPrice = RoundMoney(piece.Peca.PrecoVendaAtual - discountUnit);
+            var finalUnitPrice = RoundMoney(piece.PrecoEfetivoVenda - discountUnit);
             var itemTotal = RoundMoney(finalUnitPrice * request.Quantidade);
             var percentualDinheiro = piece.CondicaoComercial?.PercentualRepasseDinheiro ?? 0m;
             var percentualCreditoItem = piece.CondicaoComercial?.PercentualRepasseCredito ?? 0m;
@@ -385,7 +444,7 @@ public sealed partial class SaleService
                 piece.Peca.Id,
                 piece.Peca.CodigoInterno,
                 request.Quantidade,
-                piece.Peca.PrecoVendaAtual,
+                piece.PrecoEfetivoVenda,
                 discountUnit,
                 finalUnitPrice,
                 percentualDinheiro,
@@ -780,7 +839,11 @@ public sealed partial class SaleService
         string Tamanho,
         string Cor,
         string? FornecedorNome,
-        PecaCondicaoComercial? CondicaoComercial);
+        PecaCondicaoComercial? CondicaoComercial,
+        decimal PrecoBase,
+        decimal PrecoEfetivoVenda,
+        decimal PercentualDescontoAutomatico,
+        bool DescontoAutomaticoAtivo);
 
     // Modela o pagamento ja normalizado e pronto para validacao.
     private sealed record NormalizedPaymentInput(

@@ -193,9 +193,19 @@ export function SaleFormPanel({
                           <span className="record-tag">
                             Estoque {piece.quantidadeAtual}
                           </span>
+                          {piece.descontoAutomaticoAtivo ? (
+                            <span className="record-tag">
+                              Base {formatCurrency(piece.precoBase)}
+                            </span>
+                          ) : null}
                           <span className="record-tag">
                             {formatCurrency(piece.precoVendaAtual)}
                           </span>
+                          {piece.descontoAutomaticoAtivo ? (
+                            <span className="record-tag">
+                              Desc. auto {piece.percentualDescontoAutomatico}%
+                            </span>
+                          ) : null}
                           <StatusBadge value={piece.tipoPeca} />
                         </div>
                       ) : item.identificadorPeca.trim() ? (

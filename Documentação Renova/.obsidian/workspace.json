@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PLANEJAMENTO_REVISAO_SISTEMA.md",
+                "file": "Cadastro Publico Auth.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "PLANEJAMENTO_REVISAO_SISTEMA"
+              "title": "Cadastro Publico Auth"
             }
           }
         ]
@@ -185,11 +185,13 @@
   },
   "active": "f8ba67cc2a97a96e",
   "lastOpenFiles": [
-    "Checklist Implementacao Renova.md",
+    "PLANEJAMENTO_REFATORACAO_CODIGO.md",
     "PLANEJAMENTO_REVISAO_SISTEMA.md",
+    "Modelagem Banco de Dados Renova.md",
+    "Checklist Implementacao Renova.md",
+    "Ideia Inicial.md",
     "comandosDB.md",
     "Cadastro Publico Auth.md",
-    "Ideia Inicial.md",
     "BaseLayout/Sistema.png",
     "BaseLayout/Auth.png",
     "BaseLayout/image.png",
@@ -197,7 +199,6 @@
     "Nova pasta",
     "Requisitos por Modulos.md",
     "Relacoes Funcoes App.md",
-    "Modelagem Banco de Dados Renova.md",
     "Revisão Requisitos por Modulos.md",
     "Requisitos por Modulos V2.md",
     "Bem-vindo.md"

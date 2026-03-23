@@ -80,14 +80,6 @@ public sealed record ConsignmentDetailResponse(
     IReadOnlyList<CommercialDiscountBandResponse> PoliticaDesconto,
     IReadOnlyList<ConsignmentPriceHistoryResponse> HistoricoPreco);
 
-public sealed record ApplyConsignmentDiscountResponse(
-    Guid PecaId,
-    decimal PrecoAnterior,
-    decimal PrecoNovo,
-    decimal PercentualDescontoAplicado,
-    int DiasEmLoja,
-    string Motivo);
-
 public sealed record CloseConsignmentResponse(
     Guid PecaId,
     string CodigoInterno,

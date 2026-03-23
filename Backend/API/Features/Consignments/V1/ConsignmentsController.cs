@@ -60,19 +60,6 @@ public sealed class ConsignmentsController : RenovaControllerBase
         return OkEnvelope(response);
     }
 
-    [HttpPost("{pecaId:guid}/apply-discount")]
-    [RequirePermission(AccessPermissionCodes.PecasAjustar)]
-    /// <summary>
-    /// Aplica o desconto automatico devido pela permanencia da peca na loja.
-    /// </summary>
-    public async Task<ActionResult<ApiEnvelope<ApplyConsignmentDiscountResponse>>> ApplyDiscount(
-        Guid pecaId,
-        CancellationToken cancellationToken)
-    {
-        var response = await _consignmentService.AplicarDescontoAsync(pecaId, cancellationToken);
-        return OkEnvelope(response);
-    }
-
     [HttpPost("{pecaId:guid}/close")]
     [RequirePermission(AccessPermissionCodes.PecasAjustar)]
     /// <summary>

@@ -25,7 +25,10 @@ export type SalePieceOption = {
   fornecedorPessoaId?: string | null;
   fornecedorNome?: string | null;
   quantidadeAtual: number;
+  precoBase: number;
   precoVendaAtual: number;
+  percentualDescontoAutomatico: number;
+  descontoAutomaticoAtivo: boolean;
   percentualRepasseDinheiro: number;
   percentualRepasseCredito: number;
   permitePagamentoMisto: boolean;

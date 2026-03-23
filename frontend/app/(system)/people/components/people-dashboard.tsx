@@ -32,10 +32,13 @@ import { personFormSchema } from "@/lib/schemas/people";
 import {
   createPerson,
   getPersonById,
+  getLinkedPersonDraftByUser,
   listLinkablePeopleUsers,
   listPeople,
   updatePerson,
+  type PersonBankAccount,
   type PersonDetail,
+  type PersonReuseDraft,
 } from "@/lib/services/people";
 
 // Converte o detalhe vindo da API para o estado editavel da tela.
@@ -80,6 +83,46 @@ function mapPersonDetailToForm(detail: PersonDetail): PersonFormState {
       favorecidoDocumento: account.favorecidoDocumento,
       principal: account.principal,
     })),
+  };
+}
+
+function mapBankAccountToForm(account: PersonBankAccount) {
+  return {
+    id: account.id,
+    banco: account.banco,
+    agencia: account.agencia,
+    conta: account.conta,
+    tipoConta: account.tipoConta,
+    pixTipo: account.pixTipo,
+    pixChave: account.pixChave,
+    favorecidoNome: account.favorecidoNome,
+    favorecidoDocumento: account.favorecidoDocumento,
+    principal: account.principal,
+  };
+}
+
+function applyReuseDraftToForm(
+  current: PersonFormState,
+  draft: PersonReuseDraft,
+): PersonFormState {
+  return {
+    ...current,
+    tipoPessoa: draft.tipoPessoa as "fisica" | "juridica",
+    nome: draft.nome,
+    nomeSocial: draft.nomeSocial,
+    documento: draft.documento,
+    telefone: draft.telefone,
+    email: draft.email,
+    logradouro: draft.logradouro,
+    numero: draft.numero,
+    complemento: draft.complemento,
+    bairro: draft.bairro,
+    cidade: draft.cidade,
+    uf: draft.uf,
+    cep: draft.cep,
+    observacoes: draft.observacoes,
+    ativo: draft.ativo,
+    contasBancarias: draft.contasBancarias.map(mapBankAccountToForm),
   };
 }
 
@@ -204,6 +247,19 @@ export function PeopleDashboard() {
     },
   });
 
+  const reuseLinkedPersonMutation = useMutation({
+    mutationFn: async (usuarioId: string) => {
+      if (!usuarioId) {
+        return null;
+      }
+
+      return getLinkedPersonDraftByUser(token, usuarioId);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
   useEffect(() => {
     if (peopleQuery.isError) {
       toast.error(getErrorMessage(peopleQuery.error));
@@ -257,7 +313,8 @@ export function PeopleDashboard() {
     peopleQuery.isLoading ||
     personDetailQuery.isLoading ||
     userOptionsQuery.isLoading ||
-    peopleMutation.isPending;
+    peopleMutation.isPending ||
+    reuseLinkedPersonMutation.isPending;
 
   function setForm(value: SetStateAction<PersonFormState>) {
     setDraftForm((current) => {
@@ -276,6 +333,34 @@ export function PeopleDashboard() {
   function handleNewPerson() {
     setSelectedPersonId("");
     setDraftForm(emptyPersonForm());
+  }
+
+  async function handleLinkedUserChange(usuarioId: string) {
+    if (!usuarioId) {
+      return;
+    }
+
+    const draft = await reuseLinkedPersonMutation.mutateAsync(usuarioId);
+    if (!draft) {
+      return;
+    }
+
+    if (draft.jaVinculadaNaLojaAtiva) {
+      setDraftForm(null);
+      setSelectedPersonId(draft.pessoaId);
+      toast.error("O usuario selecionado ja possui cadastro na loja ativa.");
+      return;
+    }
+
+    setDraftForm((current) => {
+      if (!current || current.id || current.usuarioId !== usuarioId) {
+        return current;
+      }
+
+      return applyReuseDraftToForm(current, draft);
+    });
+
+    toast.success("Dados cadastrais reaproveitados a partir do usuario selecionado.");
   }
 
   function handleSelectPerson(personId: string) {
@@ -306,6 +391,7 @@ export function PeopleDashboard() {
           busy={busy}
           canManage={canManagePeople}
           form={form}
+          onLinkedUserChange={handleLinkedUserChange}
           onSubmit={handleSubmit}
           setForm={setForm}
           userOptions={userOptionsQuery.data ?? []}

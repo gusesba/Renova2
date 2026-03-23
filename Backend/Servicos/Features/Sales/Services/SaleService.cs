@@ -5,6 +5,7 @@ using Renova.Services.Features.Access;
 using Renova.Services.Features.Access.Abstractions;
 using Renova.Services.Features.People;
 using Renova.Services.Features.Pieces;
+using Renova.Services.Features.Consignments;
 using Renova.Services.Features.Sales.Abstractions;
 using Renova.Services.Features.Sales.Contracts;
 using Renova.Services.Features.StockMovements.Abstractions;
@@ -82,7 +83,7 @@ public sealed partial class SaleService : ISaleService
             })
             .ToArray();
 
-        var pieces = await (
+        var pieceRows = await (
                 from peca in _dbContext.Pecas.AsNoTracking()
                 join produto in _dbContext.ProdutoNomes.AsNoTracking() on peca.ProdutoNomeId equals produto.Id
                 join marca in _dbContext.Marcas.AsNoTracking() on peca.MarcaId equals marca.Id
@@ -97,24 +98,51 @@ public sealed partial class SaleService : ISaleService
                 where peca.StatusPeca == PieceValues.PieceStatuses.Disponivel ||
                       peca.StatusPeca == PieceValues.PieceStatuses.Reservada
                 orderby peca.CodigoInterno
-                select new SalePieceOptionResponse(
-                    peca.Id,
-                    peca.CodigoInterno,
-                    peca.CodigoBarras,
-                    peca.TipoPeca,
-                    peca.StatusPeca,
-                    produto.Nome,
-                    marca.Nome,
-                    tamanho.Nome,
-                    cor.Nome,
-                    peca.FornecedorPessoaId,
-                    fornecedor != null ? fornecedor.Nome : null,
-                    peca.QuantidadeAtual,
-                    peca.PrecoVendaAtual,
-                    condicao != null ? condicao.PercentualRepasseDinheiro : 0m,
-                    condicao != null ? condicao.PercentualRepasseCredito : 0m,
-                    condicao != null && condicao.PermitePagamentoMisto))
+                select new
+                {
+                    Peca = peca,
+                    ProdutoNome = produto.Nome,
+                    Marca = marca.Nome,
+                    Tamanho = tamanho.Nome,
+                    Cor = cor.Nome,
+                    FornecedorNome = fornecedor != null ? fornecedor.Nome : null,
+                    Condicao = condicao,
+                })
             .ToListAsync(cancellationToken);
+
+        var pieceIds = pieceRows.Select(x => x.Peca.Id).ToArray();
+        var basePriceMap = await LoadBasePriceMapAsync(pieceIds, cancellationToken);
+
+        var pieces = pieceRows
+            .Select(item =>
+            {
+                var basePrice = basePriceMap.TryGetValue(item.Peca.Id, out var loadedBasePrice)
+                    ? loadedBasePrice
+                    : item.Peca.PrecoVendaAtual;
+                var lifecycle = ConsignmentLifecycleCalculator.Calculate(item.Peca, item.Condicao, basePrice);
+
+                return new SalePieceOptionResponse(
+                    item.Peca.Id,
+                    item.Peca.CodigoInterno,
+                    item.Peca.CodigoBarras,
+                    item.Peca.TipoPeca,
+                    item.Peca.StatusPeca,
+                    item.ProdutoNome,
+                    item.Marca,
+                    item.Tamanho,
+                    item.Cor,
+                    item.Peca.FornecedorPessoaId,
+                    item.FornecedorNome,
+                    item.Peca.QuantidadeAtual,
+                    lifecycle.PrecoBase,
+                    lifecycle.PrecoEfetivoVenda,
+                    lifecycle.PercentualDescontoEsperado,
+                    lifecycle.DescontoAutomaticoAtivo,
+                    item.Condicao != null ? item.Condicao.PercentualRepasseDinheiro : 0m,
+                    item.Condicao != null ? item.Condicao.PercentualRepasseCredito : 0m,
+                    item.Condicao != null && item.Condicao.PermitePagamentoMisto);
+            })
+            .ToList();
 
         var paymentMethods = await _dbContext.MeiosPagamento
             .AsNoTracking()

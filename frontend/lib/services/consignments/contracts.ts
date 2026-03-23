@@ -78,15 +78,6 @@ export type ConsignmentDetail = {
   historicoPreco: ConsignmentPriceHistory[];
 };
 
-export type ApplyConsignmentDiscountResult = {
-  pecaId: string;
-  precoAnterior: number;
-  precoNovo: number;
-  percentualDescontoAplicado: number;
-  diasEmLoja: number;
-  motivo: string;
-};
-
 export type CloseConsignmentResult = {
   pecaId: string;
   codigoInterno: string;

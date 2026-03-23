@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { SelectField, TextInput } from "@/components/ui/field";
 import { cx } from "@/lib/helpers/classnames";
+import { formatCurrency } from "@/lib/helpers/formatters";
 import type {
   PieceCatalogOption,
   PieceSummary,
@@ -196,6 +197,23 @@ export function PiecesListPanel({
                   <span className="record-tag">{piece.tipoPeca}</span>
                   <span className="record-tag">{piece.statusPeca}</span>
                   <span className="record-tag">Qtd. {piece.quantidadeAtual}</span>
+                  {piece.descontoAutomaticoAtivo ? (
+                    <>
+                      <span className="record-tag">
+                        Base {formatCurrency(piece.precoBase)}
+                      </span>
+                      <span className="record-tag">
+                        Efetivo {formatCurrency(piece.precoEfetivoVenda)}
+                      </span>
+                      <span className="record-tag">
+                        Desc. auto {piece.percentualDescontoAutomatico}%
+                      </span>
+                    </>
+                  ) : (
+                    <span className="record-tag">
+                      Preco {formatCurrency(piece.precoVendaAtual)}
+                    </span>
+                  )}
                 </div>
               </button>
             ))

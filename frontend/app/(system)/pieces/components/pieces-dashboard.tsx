@@ -358,6 +358,7 @@ export function PiecesDashboard() {
           brands={workspaceQuery.data?.marcas ?? []}
           busy={busy || !canManagePieces}
           colors={workspaceQuery.data?.cores ?? []}
+          detail={detail}
           form={form}
           onAddManualBand={() =>
             setForm((current) => ({

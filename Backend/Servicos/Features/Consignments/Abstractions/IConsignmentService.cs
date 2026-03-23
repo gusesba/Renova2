@@ -23,11 +23,6 @@ public interface IConsignmentService
     Task<ConsignmentDetailResponse> ObterDetalheAsync(Guid pecaId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Aplica o desconto automatico devido pela permanencia da peca na loja.
-    /// </summary>
-    Task<ApplyConsignmentDiscountResponse> AplicarDescontoAsync(Guid pecaId, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Encerra a consignacao com devolucao, doacao, perda ou descarte.
     /// </summary>
     Task<CloseConsignmentResponse> EncerrarAsync(

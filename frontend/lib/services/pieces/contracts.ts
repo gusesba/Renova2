@@ -72,7 +72,11 @@ export type PieceSummary = {
   fornecedorNome?: string | null;
   dataEntrada: string;
   quantidadeAtual: number;
+  precoBase: number;
   precoVendaAtual: number;
+  precoEfetivoVenda: number;
+  percentualDescontoAutomatico: number;
+  descontoAutomaticoAtivo: boolean;
   localizacaoFisica: string;
   dataFimConsignacao?: string | null;
 };
@@ -99,7 +103,11 @@ export type PieceDetail = {
   dataEntrada: string;
   quantidadeInicial: number;
   quantidadeAtual: number;
+  precoBase: number;
   precoVendaAtual: number;
+  precoEfetivoVenda: number;
+  percentualDescontoAutomatico: number;
+  descontoAutomaticoAtivo: boolean;
   custoUnitario?: number | null;
   localizacaoFisica: string;
   responsavelCadastroUsuarioId: string;

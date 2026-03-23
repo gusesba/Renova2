@@ -130,7 +130,28 @@ public sealed record PersonUserOptionResponse(
     string Nome,
     string Email,
     string StatusUsuario,
-    Guid? PessoaId);
+    Guid? PessoaId,
+    Guid? PessoaIdLojaAtiva);
+
+public sealed record PersonReuseDraftResponse(
+    Guid PessoaId,
+    string TipoPessoa,
+    string Nome,
+    string NomeSocial,
+    string Documento,
+    string Telefone,
+    string Email,
+    string Logradouro,
+    string Numero,
+    string Complemento,
+    string Bairro,
+    string Cidade,
+    string Uf,
+    string Cep,
+    string Observacoes,
+    bool Ativo,
+    IReadOnlyList<PersonBankAccountResponse> ContasBancarias,
+    bool JaVinculadaNaLojaAtiva);
 
 public sealed record PersonFinancialSummaryResponse(
     decimal SaldoCreditoAtual,

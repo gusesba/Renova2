@@ -1,7 +1,6 @@
 import { callApi } from "@/lib/services/core/api-client";
 
 import type {
-  ApplyConsignmentDiscountResult,
   CloseConsignmentResult,
   ConsignmentDetail,
   ConsignmentPieceSummary,
@@ -54,14 +53,6 @@ export async function listConsignments(
 
 export async function getConsignmentById(token: string, pecaId: string) {
   return callApi<ConsignmentDetail>(`/consignments/${pecaId}`, { method: "GET" }, token);
-}
-
-export async function applyConsignmentDiscount(token: string, pecaId: string) {
-  return callApi<ApplyConsignmentDiscountResult>(
-    `/consignments/${pecaId}/apply-discount`,
-    { method: "POST" },
-    token,
-  );
 }
 
 export async function closeConsignment(

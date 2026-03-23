@@ -40,7 +40,7 @@ export function ConsignmentsListPanel({
     <Card>
       <CardBody className="section-stack">
         <CardHeading
-          subtitle="Filtre por fornecedor, status do ciclo e pendencias automaticas."
+          subtitle="Filtre por fornecedor, status do ciclo e descontos automaticos ativos."
           title="Pecas consignadas"
         />
 
@@ -132,9 +132,9 @@ export function ConsignmentsListPanel({
                 type="checkbox"
               />
               <div>
-                <div className="selection-item-title">Somente desconto pendente</div>
+                <div className="selection-item-title">Somente desconto automatico</div>
                 <div className="selection-item-copy">
-                  Exibe itens com faixa vencida e preco ainda nao ajustado.
+                  Exibe itens cujo desconto da consignacao ja deve ser considerado na venda.
                 </div>
               </div>
             </label>
@@ -174,7 +174,7 @@ export function ConsignmentsListPanel({
                       : `${item.diasRestantes} dia(s)`}
                   </span>
                   {item.descontoPendente ? (
-                    <span className="record-tag">desconto pendente</span>
+                    <span className="record-tag">desconto automatico</span>
                   ) : null}
                 </div>
               </button>

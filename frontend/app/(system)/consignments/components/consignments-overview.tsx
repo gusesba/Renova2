@@ -24,9 +24,9 @@ export function ConsignmentsOverview({ workspace }: ConsignmentsOverviewProps) {
       description: "Pecas que ultrapassaram o prazo congelado na entrada.",
     },
     {
-      label: "Desconto pendente",
+      label: "Desconto automatico",
       value: workspace?.resumo.comDescontoPendente ?? 0,
-      description: "Itens com faixa de desconto vencida e ainda nao refletida.",
+      description: "Itens em que a faixa de desconto ja deve ser considerada na venda.",
     },
   ];
 
@@ -36,7 +36,7 @@ export function ConsignmentsOverview({ workspace }: ConsignmentsOverviewProps) {
         <p className="rule-overview-eyebrow">Modulo 07</p>
         <h2 className="rule-overview-title">Ciclo de vida da consignacao</h2>
         <p className="rule-overview-subtitle">
-          Acompanhe prazo, alertas, desconto automatico e encerramento das pecas
+          Acompanhe prazo, alertas, desconto automatico derivado e encerramento das pecas
           consignadas da loja ativa.
         </p>
       </div>

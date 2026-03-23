@@ -2,7 +2,6 @@
 bin/
 obj/
 out/
-
 ## Visual Studio
 .vs/
 *.user
@@ -49,3 +48,6 @@ _ReSharper*/
 ## OS files
 .DS_Store
 Thumbs.db
+
+## Images
+wwwroot/

@@ -17,7 +17,6 @@ type ConsignmentActionsPanelProps = {
   canManage: boolean;
   closeForm: ConsignmentCloseFormState;
   detail?: ConsignmentDetail;
-  onApplyDiscount: () => void;
   onClose: (event: FormEvent<HTMLFormElement>) => void;
   receiptText: string;
   setCloseForm: Dispatch<SetStateAction<ConsignmentCloseFormState>>;
@@ -29,7 +28,6 @@ export function ConsignmentActionsPanel({
   canManage,
   closeForm,
   detail,
-  onApplyDiscount,
   onClose,
   receiptText,
   setCloseForm,
@@ -41,7 +39,7 @@ export function ConsignmentActionsPanel({
     <Card>
       <CardBody className="section-stack">
         <CardHeading
-          subtitle="Ajuste preco quando a faixa vencer e conclua o destino final da peca."
+          subtitle="Acompanhe o desconto derivado na venda e conclua manualmente o destino final da peca."
           title="Acoes da consignacao"
         />
 
@@ -53,21 +51,12 @@ export function ConsignmentActionsPanel({
           <>
             <div className="split-fields">
               <div className="ui-banner">
-                <strong>Preco atual:</strong> {formatCurrency(summary.precoVendaAtual)}
+                <strong>Preco efetivo na venda:</strong> {formatCurrency(summary.precoVendaAtual)}
               </div>
               <div className="ui-banner">
-                <strong>Desconto esperado:</strong> {summary.percentualDescontoEsperado}%
+                <strong>Desconto automatico:</strong> {summary.percentualDescontoEsperado}%
               </div>
             </div>
-
-            <Button
-              disabled={busy || !canManage || !summary.descontoPendente}
-              onClick={onApplyDiscount}
-              type="button"
-              variant="ghost"
-            >
-              Aplicar desconto automatico
-            </Button>
 
             <form className="form-grid" onSubmit={onClose}>
               <SelectField

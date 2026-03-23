@@ -124,7 +124,11 @@ public sealed record PieceSummaryResponse(
     string? FornecedorNome,
     DateTimeOffset DataEntrada,
     int QuantidadeAtual,
+    decimal PrecoBase,
     decimal PrecoVendaAtual,
+    decimal PrecoEfetivoVenda,
+    decimal PercentualDescontoAutomatico,
+    bool DescontoAutomaticoAtivo,
     string LocalizacaoFisica,
     DateTimeOffset? DataFimConsignacao);
 
@@ -150,7 +154,11 @@ public sealed record PieceDetailResponse(
     DateTimeOffset DataEntrada,
     int QuantidadeInicial,
     int QuantidadeAtual,
+    decimal PrecoBase,
     decimal PrecoVendaAtual,
+    decimal PrecoEfetivoVenda,
+    decimal PercentualDescontoAutomatico,
+    bool DescontoAutomaticoAtivo,
     decimal? CustoUnitario,
     string LocalizacaoFisica,
     Guid ResponsavelCadastroUsuarioId,

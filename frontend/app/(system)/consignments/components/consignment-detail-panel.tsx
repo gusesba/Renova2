@@ -30,7 +30,7 @@ export function ConsignmentDetailPanel({ detail }: ConsignmentDetailPanelProps) 
 
         <div className="split-fields">
           <div className="ui-banner">
-            <strong>Preco atual:</strong> {formatCurrency(summary.precoVendaAtual)}
+            <strong>Preco efetivo na venda:</strong> {formatCurrency(summary.precoVendaAtual)}
           </div>
           <div className="ui-banner">
             <strong>Preco base:</strong> {formatCurrency(summary.precoBase)}
@@ -60,10 +60,10 @@ export function ConsignmentDetailPanel({ detail }: ConsignmentDetailPanelProps) 
             <div>
               <div className="selection-item-title">Regra aplicada</div>
               <div className="selection-item-copy">
-                Desconto esperado: {summary.percentualDescontoEsperado}%
+                Desconto automatico previsto: {summary.percentualDescontoEsperado}%
               </div>
               <div className="selection-item-copy">
-                Desconto aplicado: {summary.percentualDescontoAplicado}%
+                Desconto efetivo na venda: {summary.percentualDescontoAplicado}%
               </div>
               <div className="selection-item-copy">
                 Destino padrao no fim: {summary.destinoPadraoFimConsignacao ?? "Nao informado"}
@@ -87,7 +87,7 @@ export function ConsignmentDetailPanel({ detail }: ConsignmentDetailPanelProps) 
                     A partir de {band.diasMinimos} dia(s)
                   </div>
                   <div className="record-item-copy">
-                    Desconto previsto de {band.percentualDesconto}% sobre o preco base.
+                    Desconto previsto de {band.percentualDesconto}% sobre o preco base, aplicado apenas no momento da venda.
                   </div>
                 </div>
               ))

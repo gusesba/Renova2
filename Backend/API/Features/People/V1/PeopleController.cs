@@ -57,6 +57,19 @@ public sealed class PeopleController : RenovaControllerBase
         return OkEnvelope(response);
     }
 
+    [HttpGet("users/{usuarioId:guid}/linked-person")]
+    [RequirePermission(AccessPermissionCodes.PessoasGerenciar)]
+    /// <summary>
+    /// Recupera os dados mestre da pessoa ja vinculada ao usuario para reaproveitamento no cadastro da loja ativa.
+    /// </summary>
+    public async Task<ActionResult<ApiEnvelope<PersonReuseDraftResponse?>>> GetLinkedPersonDraft(
+        Guid usuarioId,
+        CancellationToken cancellationToken)
+    {
+        var response = await _personService.ObterRascunhoUsuarioVinculadoAsync(usuarioId, cancellationToken);
+        return OkEnvelope(response);
+    }
+
     [HttpPost]
     [RequirePermission(AccessPermissionCodes.PessoasGerenciar)]
     /// <summary>

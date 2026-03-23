@@ -92,4 +92,26 @@ export type PersonUserOption = {
   email: string;
   statusUsuario: string;
   pessoaId?: string | null;
+  pessoaIdLojaAtiva?: string | null;
+};
+
+export type PersonReuseDraft = {
+  pessoaId: string;
+  tipoPessoa: string;
+  nome: string;
+  nomeSocial: string;
+  documento: string;
+  telefone: string;
+  email: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  observacoes: string;
+  ativo: boolean;
+  contasBancarias: PersonBankAccount[];
+  jaVinculadaNaLojaAtiva: boolean;
 };

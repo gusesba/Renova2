@@ -13,6 +13,7 @@ type PersonFormPanelProps = {
   busy: boolean;
   canManage: boolean;
   form: PersonFormState;
+  onLinkedUserChange?: (usuarioId: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   setForm: (value: SetStateAction<PersonFormState>) => void;
   userOptions: PersonUserOption[];
@@ -35,6 +36,7 @@ export function PersonFormPanel({
   busy,
   canManage,
   form,
+  onLinkedUserChange,
   onSubmit,
   setForm,
   userOptions,
@@ -44,7 +46,7 @@ export function PersonFormPanel({
   }
 
   const availableUsers = userOptions.filter(
-    (user) => !user.pessoaId || user.pessoaId === form.id,
+    (user) => !user.pessoaIdLojaAtiva || user.pessoaIdLojaAtiva === form.id,
   );
 
   return (
@@ -268,10 +270,14 @@ export function PersonFormPanel({
             <SelectField
               label="Usuario vinculado"
               onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  usuarioId: event.target.value,
-                }))
+                {
+                  const usuarioId = event.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    usuarioId,
+                  }));
+                  onLinkedUserChange?.(usuarioId);
+                }
               }
               value={form.usuarioId}
             >
@@ -283,6 +289,14 @@ export function PersonFormPanel({
               ))}
             </SelectField>
           </div>
+
+          {!form.id ? (
+            <div className="record-item-copy">
+              Ao selecionar um usuario ja vinculado a pessoa em outra loja, os
+              dados mestres e as contas bancarias podem ser recuperados
+              automaticamente para este novo vinculo.
+            </div>
+          ) : null}
 
           <TextArea
             label="Observacoes internas da relacao"

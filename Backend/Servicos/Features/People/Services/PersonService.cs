@@ -96,16 +96,87 @@ public sealed partial class PersonService : IPersonService
         var context = await EnsureStoreContextAsync(cancellationToken);
         await EnsureCanManagePeopleAsync(context.UsuarioId, context.LojaId, cancellationToken);
 
-        return await _dbContext.Usuarios
+        var activeStorePeopleIds = (await _dbContext.PessoaLojas
+            .AsNoTracking()
+            .Where(x => x.LojaId == context.LojaId)
+            .Select(x => x.PessoaId)
+            .Distinct()
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var users = await _dbContext.Usuarios
             .AsNoTracking()
             .OrderBy(x => x.Nome)
+            .ToListAsync(cancellationToken);
+
+        return users
             .Select(x => new PersonUserOptionResponse(
                 x.Id,
                 x.Nome,
                 x.Email,
                 x.StatusUsuario,
-                x.PessoaId))
+                x.PessoaId,
+                x.PessoaId.HasValue && activeStorePeopleIds.Contains(x.PessoaId.Value)
+                    ? x.PessoaId
+                    : null))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Recupera os dados mestre da pessoa vinculada ao usuario para reaproveitamento no cadastro em outra loja.
+    /// </summary>
+    public async Task<PersonReuseDraftResponse?> ObterRascunhoUsuarioVinculadoAsync(Guid usuarioId, CancellationToken cancellationToken = default)
+    {
+        var context = await EnsureStoreContextAsync(cancellationToken);
+        await EnsureCanManagePeopleAsync(context.UsuarioId, context.LojaId, cancellationToken);
+
+        var user = await _dbContext.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == usuarioId, cancellationToken)
+            ?? throw new InvalidOperationException("Usuario informado para vinculacao nao encontrado.");
+
+        if (!user.PessoaId.HasValue)
+        {
+            return null;
+        }
+
+        var person = await _dbContext.Pessoas
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == user.PessoaId.Value, cancellationToken)
+            ?? throw new InvalidOperationException("Pessoa vinculada ao usuario nao encontrada.");
+
+        var accounts = await _dbContext.PessoaContasBancarias
+            .AsNoTracking()
+            .Where(x => x.PessoaId == person.Id)
+            .OrderByDescending(x => x.Principal)
+            .ThenBy(x => x.Banco)
             .ToListAsync(cancellationToken);
+
+        var alreadyLinkedToActiveStore = await _dbContext.PessoaLojas
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.LojaId == context.LojaId && x.PessoaId == person.Id,
+                cancellationToken);
+
+        return new PersonReuseDraftResponse(
+            person.Id,
+            person.TipoPessoa,
+            person.Nome,
+            person.NomeSocial,
+            person.Documento,
+            person.Telefone,
+            person.Email,
+            person.Logradouro,
+            person.Numero,
+            person.Complemento,
+            person.Bairro,
+            person.Cidade,
+            person.Uf,
+            person.Cep,
+            person.Observacoes,
+            person.Ativo,
+            accounts.Select(MapBankAccount).ToArray(),
+            alreadyLinkedToActiveStore);
     }
 
     /// <summary>

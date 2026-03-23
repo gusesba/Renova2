@@ -34,7 +34,6 @@ import { queryKeys } from "@/lib/helpers/query-keys";
 import { getZodErrorMessage } from "@/lib/schemas/access";
 import { consignmentCloseFormSchema } from "@/lib/schemas/consignments";
 import {
-  applyConsignmentDiscount,
   closeConsignment,
   getConsignmentById,
   getConsignmentsWorkspace,
@@ -85,28 +84,6 @@ export function ConsignmentsDashboard() {
     enabled: Boolean(selectedPieceId && canViewConsignments),
     queryFn: () => getConsignmentById(token, selectedPieceId),
     queryKey: queryKeys.consignmentDetail(token, session.lojaAtivaId, selectedPieceId),
-  });
-
-  const applyDiscountMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedPieceId) {
-        throw new Error("Selecione uma peca para aplicar o desconto.");
-      }
-
-      return applyConsignmentDiscount(token, selectedPieceId);
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error));
-    },
-    onSuccess: async (response) => {
-      toast.success(
-        `Desconto aplicado. Novo preco: ${response.precoNovo.toLocaleString("pt-BR", {
-          style: "currency",
-          currency: "BRL",
-        })}`,
-      );
-      await refreshModuleData();
-    },
   });
 
   const closeMutation = useMutation({
@@ -175,7 +152,6 @@ export function ConsignmentsDashboard() {
     workspaceQuery.isLoading ||
     listQuery.isLoading ||
     detailQuery.isLoading ||
-    applyDiscountMutation.isPending ||
     closeMutation.isPending;
 
   if (!canViewConsignments) {
@@ -248,7 +224,6 @@ export function ConsignmentsDashboard() {
           canManage={canManageConsignments}
           closeForm={closeForm}
           detail={detailQuery.data}
-          onApplyDiscount={() => applyDiscountMutation.mutate()}
           onClose={handleCloseSubmit}
           receiptText={receiptText}
           setCloseForm={setCloseForm}

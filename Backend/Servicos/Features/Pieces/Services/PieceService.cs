@@ -6,6 +6,7 @@ using Renova.Services.Features.Access.Abstractions;
 using Renova.Services.Features.CommercialRules;
 using Renova.Services.Features.CommercialRules.Abstractions;
 using Renova.Services.Features.CommercialRules.Contracts;
+using Renova.Services.Features.Consignments;
 using Renova.Services.Features.Pieces.Abstractions;
 using Renova.Services.Features.Pieces.Contracts;
 using Renova.Services.Features.SupplierPayments;
@@ -133,6 +134,7 @@ public sealed class PieceService : IPieceService
                 Tamanho = tamanho.Nome,
                 Cor = cor.Nome,
                 FornecedorNome = fornecedor != null ? fornecedor.Nome : null,
+                Condicao = condicao,
                 DataFimConsignacao = condicao != null ? condicao.DataFimConsignacao : null,
             };
 
@@ -183,28 +185,42 @@ public sealed class PieceService : IPieceService
             .ThenByDescending(x => x.Peca.CriadoEm)
             .ToListAsync(cancellationToken);
 
+        var basePriceMap = await LoadBasePriceMapAsync(items.Select(x => x.Peca.Id).ToArray(), cancellationToken);
+
         return items
-            .Select(item => new PieceSummaryResponse(
-                item.Peca.Id,
-                item.Peca.CodigoInterno,
-                item.Peca.CodigoBarras,
-                item.Peca.TipoPeca,
-                item.Peca.StatusPeca,
-                item.Peca.ProdutoNomeId,
-                item.ProdutoNome,
-                item.Peca.MarcaId,
-                item.Marca,
-                item.Peca.TamanhoId,
-                item.Tamanho,
-                item.Peca.CorId,
-                item.Cor,
-                item.Peca.FornecedorPessoaId,
-                item.FornecedorNome,
-                item.Peca.DataEntrada,
-                item.Peca.QuantidadeAtual,
-                item.Peca.PrecoVendaAtual,
-                item.Peca.LocalizacaoFisica,
-                item.DataFimConsignacao))
+            .Select(item =>
+            {
+                var basePrice = basePriceMap.TryGetValue(item.Peca.Id, out var loadedBasePrice)
+                    ? loadedBasePrice
+                    : item.Peca.PrecoVendaAtual;
+                var lifecycle = ConsignmentLifecycleCalculator.Calculate(item.Peca, item.Condicao, basePrice);
+
+                return new PieceSummaryResponse(
+                    item.Peca.Id,
+                    item.Peca.CodigoInterno,
+                    item.Peca.CodigoBarras,
+                    item.Peca.TipoPeca,
+                    item.Peca.StatusPeca,
+                    item.Peca.ProdutoNomeId,
+                    item.ProdutoNome,
+                    item.Peca.MarcaId,
+                    item.Marca,
+                    item.Peca.TamanhoId,
+                    item.Tamanho,
+                    item.Peca.CorId,
+                    item.Cor,
+                    item.Peca.FornecedorPessoaId,
+                    item.FornecedorNome,
+                    item.Peca.DataEntrada,
+                    item.Peca.QuantidadeAtual,
+                    lifecycle.PrecoBase,
+                    item.Peca.PrecoVendaAtual,
+                    lifecycle.PrecoEfetivoVenda,
+                    lifecycle.PercentualDescontoEsperado,
+                    lifecycle.DescontoAutomaticoAtivo,
+                    item.Peca.LocalizacaoFisica,
+                    item.DataFimConsignacao);
+            })
             .ToArray();
     }
 
@@ -636,6 +652,12 @@ public sealed class PieceService : IPieceService
             .ThenBy(x => x.CriadoEm)
             .ToListAsync(cancellationToken);
 
+        var basePriceMap = await LoadBasePriceMapAsync([pecaId], cancellationToken);
+        var basePrice = basePriceMap.TryGetValue(pecaId, out var loadedBasePrice)
+            ? loadedBasePrice
+            : item.Peca.PrecoVendaAtual;
+        var lifecycle = ConsignmentLifecycleCalculator.Calculate(item.Peca, condicao, basePrice);
+
         return new PieceDetailResponse(
             item.Peca.Id,
             item.Peca.LojaId,
@@ -658,12 +680,50 @@ public sealed class PieceService : IPieceService
             item.Peca.DataEntrada,
             item.Peca.QuantidadeInicial,
             item.Peca.QuantidadeAtual,
+            lifecycle.PrecoBase,
             item.Peca.PrecoVendaAtual,
+            lifecycle.PrecoEfetivoVenda,
+            lifecycle.PercentualDescontoEsperado,
+            lifecycle.DescontoAutomaticoAtivo,
             item.Peca.CustoUnitario,
             item.Peca.LocalizacaoFisica,
             item.Peca.ResponsavelCadastroUsuarioId,
             MapCommercialCondition(condicao),
             imagens.Select(MapImage).ToArray());
+    }
+
+    /// <summary>
+    /// Carrega o preco base de referencia para exibicao e calculo de consignacao sem mutar a peca.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, decimal>> LoadBasePriceMapAsync(
+        IReadOnlyCollection<Guid> pieceIds,
+        CancellationToken cancellationToken)
+    {
+        if (pieceIds.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        var currentPrices = await _dbContext.Pecas
+            .AsNoTracking()
+            .Where(x => pieceIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.PrecoVendaAtual })
+            .ToListAsync(cancellationToken);
+
+        var historyItems = await _dbContext.PecaHistoricosPreco
+            .AsNoTracking()
+            .Where(x => pieceIds.Contains(x.PecaId))
+            .OrderBy(x => x.AlteradoEm)
+            .ThenBy(x => x.CriadoEm)
+            .ToListAsync(cancellationToken);
+
+        var result = currentPrices.ToDictionary(x => x.Id, x => x.PrecoVendaAtual);
+        foreach (var group in historyItems.GroupBy(x => x.PecaId))
+        {
+            result[group.Key] = group.First().PrecoAnterior;
+        }
+
+        return result;
     }
 
     /// <summary>

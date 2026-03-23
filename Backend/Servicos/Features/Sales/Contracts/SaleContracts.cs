@@ -59,7 +59,10 @@ public sealed record SalePieceOptionResponse(
     Guid? FornecedorPessoaId,
     string? FornecedorNome,
     int QuantidadeAtual,
+    decimal PrecoBase,
     decimal PrecoVendaAtual,
+    decimal PercentualDescontoAutomatico,
+    bool DescontoAutomaticoAtivo,
     decimal PercentualRepasseDinheiro,
     decimal PercentualRepasseCredito,
     bool PermitePagamentoMisto);

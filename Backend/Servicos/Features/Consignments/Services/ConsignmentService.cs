@@ -38,7 +38,6 @@ public sealed class ConsignmentService : IConsignmentService
         var context = await EnsureConsignmentContextAsync(cancellationToken);
 
         var projections = await LoadConsignmentProjectionsAsync(context.LojaId, null, true, cancellationToken);
-        await ApplyAutomaticDiscountsAsync(context.LojaId, context.UsuarioId, projections, cancellationToken);
         await SyncConsignmentAlertsAsync(context.LojaId, context.UsuarioId, projections, cancellationToken);
 
         var loja = await _dbContext.Lojas
@@ -77,7 +76,6 @@ public sealed class ConsignmentService : IConsignmentService
         var context = await EnsureConsignmentContextAsync(cancellationToken);
 
         var projections = await LoadConsignmentProjectionsAsync(context.LojaId, query, true, cancellationToken);
-        await ApplyAutomaticDiscountsAsync(context.LojaId, context.UsuarioId, projections, cancellationToken);
         await SyncConsignmentAlertsAsync(context.LojaId, context.UsuarioId, projections, cancellationToken);
 
         var basePriceMap = await LoadBasePriceMapAsync(projections.Select(x => x.Peca.Id).ToArray(), cancellationToken);
@@ -102,7 +100,6 @@ public sealed class ConsignmentService : IConsignmentService
         var projection = await LoadConsignmentProjectionByIdAsync(context.LojaId, pecaId, true, cancellationToken)
             ?? throw new InvalidOperationException("Peca consignada nao encontrada na loja ativa.");
 
-        await ApplyAutomaticDiscountsAsync(context.LojaId, context.UsuarioId, [projection], cancellationToken);
         await SyncConsignmentAlertsAsync(context.LojaId, context.UsuarioId, [projection], cancellationToken);
 
         var basePriceMap = await LoadBasePriceMapAsync([projection.Peca.Id], cancellationToken);
@@ -125,65 +122,6 @@ public sealed class ConsignmentService : IConsignmentService
             MapSummary(projection, basePriceMap, alertPieceIds.Contains(projection.Peca.Id)),
             CommercialRulePolicySerializer.Deserialize(projection.Condicao.PoliticaDescontoJson),
             history);
-    }
-
-    /// <summary>
-    /// Aplica o desconto automatico devido pela permanencia da peca na loja.
-    /// </summary>
-    public async Task<ApplyConsignmentDiscountResponse> AplicarDescontoAsync(Guid pecaId, CancellationToken cancellationToken = default)
-    {
-        var context = await EnsureConsignmentManageContextAsync(cancellationToken);
-        var projection = await LoadConsignmentProjectionByIdAsync(context.LojaId, pecaId, true, cancellationToken)
-            ?? throw new InvalidOperationException("Peca consignada nao encontrada na loja ativa.");
-
-        var basePriceMap = await LoadBasePriceMapAsync([projection.Peca.Id], cancellationToken);
-        var lifecycle = BuildLifecycleSnapshot(projection, basePriceMap);
-
-        if (!lifecycle.DescontoPendente)
-        {
-            throw new InvalidOperationException("Nao existe desconto automatico pendente para esta peca.");
-        }
-
-        var before = SnapshotPiece(projection.Peca);
-        var history = CreatePriceHistory(
-            projection.Peca,
-            lifecycle.PrecoSugerido,
-            BuildAutomaticDiscountReason(lifecycle.DiasEmLoja, lifecycle.PercentualDescontoEsperado),
-            context.UsuarioId);
-
-        projection.Peca.PrecoVendaAtual = lifecycle.PrecoSugerido;
-        TouchEntity(projection.Peca, context.UsuarioId);
-        _dbContext.PecaHistoricosPreco.Add(history);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        await _auditService.RegistrarAuditoriaAsync(
-            context.LojaId,
-            "peca",
-            projection.Peca.Id,
-            "desconto_consignacao_aplicado",
-            before,
-            SnapshotPiece(projection.Peca),
-            cancellationToken);
-
-        await _auditService.RegistrarAuditoriaAsync(
-            context.LojaId,
-            "peca_historico_preco",
-            history.Id,
-            "criado",
-            null,
-            SnapshotPriceHistory(history),
-            cancellationToken);
-
-        await SyncConsignmentAlertsAsync(context.LojaId, context.UsuarioId, [projection], cancellationToken);
-
-        return new ApplyConsignmentDiscountResponse(
-            projection.Peca.Id,
-            history.PrecoAnterior,
-            history.PrecoNovo,
-            lifecycle.PercentualDescontoEsperado,
-            lifecycle.DiasEmLoja,
-            history.Motivo);
     }
 
     /// <summary>
@@ -356,73 +294,6 @@ public sealed class ConsignmentService : IConsignmentService
             cancellationToken);
 
         return projections.FirstOrDefault(x => x.Peca.Id == pecaId);
-    }
-
-    /// <summary>
-    /// Aplica descontos automaticos pendentes para a lista avaliada.
-    /// </summary>
-    private async Task ApplyAutomaticDiscountsAsync(
-        Guid lojaId,
-        Guid usuarioId,
-        IReadOnlyList<ConsignmentProjection> projections,
-        CancellationToken cancellationToken)
-    {
-        if (projections.Count == 0)
-        {
-            return;
-        }
-
-        var basePriceMap = await LoadBasePriceMapAsync(projections.Select(x => x.Peca.Id).ToArray(), cancellationToken);
-        var pendingChanges = new List<(Peca Piece, PecaHistoricoPreco History, object Before)>();
-
-        foreach (var projection in projections)
-        {
-            var lifecycle = BuildLifecycleSnapshot(projection, basePriceMap);
-            if (!lifecycle.DescontoPendente || !ConsignmentValues.IsActivePieceStatus(projection.Peca.StatusPeca))
-            {
-                continue;
-            }
-
-            var before = SnapshotPiece(projection.Peca);
-            var history = CreatePriceHistory(
-                projection.Peca,
-                lifecycle.PrecoSugerido,
-                BuildAutomaticDiscountReason(lifecycle.DiasEmLoja, lifecycle.PercentualDescontoEsperado),
-                usuarioId);
-
-            projection.Peca.PrecoVendaAtual = lifecycle.PrecoSugerido;
-            TouchEntity(projection.Peca, usuarioId);
-            _dbContext.PecaHistoricosPreco.Add(history);
-            pendingChanges.Add((projection.Peca, history, before));
-        }
-
-        if (pendingChanges.Count == 0)
-        {
-            return;
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (var change in pendingChanges)
-        {
-            await _auditService.RegistrarAuditoriaAsync(
-                lojaId,
-                "peca",
-                change.Piece.Id,
-                "desconto_consignacao_automatico",
-                change.Before,
-                SnapshotPiece(change.Piece),
-                cancellationToken);
-
-            await _auditService.RegistrarAuditoriaAsync(
-                lojaId,
-                "peca_historico_preco",
-                change.History.Id,
-                "criado",
-                null,
-                SnapshotPriceHistory(change.History),
-                cancellationToken);
-        }
     }
 
     /// <summary>
@@ -714,10 +585,10 @@ public sealed class ConsignmentService : IConsignmentService
             projection.Peca.StatusPeca,
             lifecycle.StatusConsignacao,
             lifecycle.PrecoBase,
-            projection.Peca.PrecoVendaAtual,
+            lifecycle.PrecoEfetivoVenda,
             lifecycle.PercentualDescontoAplicado,
             lifecycle.PercentualDescontoEsperado,
-            lifecycle.DescontoPendente,
+            lifecycle.DescontoAutomaticoAtivo,
             projection.Peca.DataEntrada,
             lifecycle.DataInicioConsignacao,
             lifecycle.DataFimConsignacao,
@@ -736,48 +607,24 @@ public sealed class ConsignmentService : IConsignmentService
         ConsignmentProjection projection,
         IReadOnlyDictionary<Guid, decimal> basePriceMap)
     {
-        var now = DateTimeOffset.UtcNow;
-        var startDate = projection.Condicao.DataInicioConsignacao ?? projection.Peca.DataEntrada;
-        var endDate = projection.Condicao.DataFimConsignacao ?? startDate.AddDays(projection.Condicao.TempoMaximoExposicaoDias);
-        var daysInStore = Math.Max(0, (int)Math.Floor((now - startDate).TotalDays));
-        var daysRemaining = (int)Math.Ceiling((endDate - now).TotalDays);
-        var isClosed = !ConsignmentValues.IsActivePieceStatus(projection.Peca.StatusPeca) || projection.Peca.QuantidadeAtual <= 0;
-        var isExpired = !isClosed && daysRemaining <= 0;
-        var isNear = !isClosed && !isExpired && daysRemaining <= ConsignmentValues.NearExpirationAlertThresholdDays;
-        var status = isClosed
-            ? ConsignmentValues.LifecycleStatuses.Encerrada
-            : isExpired
-                ? ConsignmentValues.LifecycleStatuses.Vencida
-                : isNear
-                    ? ConsignmentValues.LifecycleStatuses.Proxima
-                    : ConsignmentValues.LifecycleStatuses.Ativa;
-
         var basePrice = basePriceMap.TryGetValue(projection.Peca.Id, out var loadedBasePrice)
             ? loadedBasePrice
             : projection.Peca.PrecoVendaAtual;
-        var policy = CommercialRulePolicySerializer.Deserialize(projection.Condicao.PoliticaDescontoJson);
-        var applicableBand = policy
-            .OrderBy(x => x.DiasMinimos)
-            .LastOrDefault(x => x.DiasMinimos <= daysInStore);
-        var expectedDiscount = applicableBand?.PercentualDesconto ?? 0m;
-        var expectedPrice = RoundMoney(basePrice * (1m - (expectedDiscount / 100m)));
-        var appliedDiscount = basePrice <= 0
-            ? 0m
-            : RoundPercentage(((basePrice - projection.Peca.PrecoVendaAtual) / basePrice) * 100m);
+        var snapshot = ConsignmentLifecycleCalculator.Calculate(projection.Peca, projection.Condicao, basePrice);
 
         return new LifecycleSnapshot(
-            basePrice,
-            expectedPrice,
-            appliedDiscount,
-            expectedDiscount,
-            projection.Peca.PrecoVendaAtual > expectedPrice,
-            startDate,
-            endDate,
-            daysInStore,
-            isClosed ? null : daysRemaining,
-            isNear,
-            isExpired,
-            status);
+            snapshot.PrecoBase,
+            snapshot.PrecoEfetivoVenda,
+            snapshot.PercentualDescontoAplicado,
+            snapshot.PercentualDescontoEsperado,
+            snapshot.DescontoAutomaticoAtivo,
+            snapshot.DataInicioConsignacao,
+            snapshot.DataFimConsignacao,
+            snapshot.DiasEmLoja,
+            snapshot.DiasRestantes,
+            snapshot.ProximaDoFim,
+            snapshot.Vencida,
+            snapshot.StatusConsignacao);
     }
 
     /// <summary>
@@ -821,32 +668,6 @@ public sealed class ConsignmentService : IConsignmentService
             ConsignmentValues.CloseActions.Descartar => PieceValues.StockMovementTypes.Descarte,
             _ => throw new InvalidOperationException("Acao de encerramento invalida."),
         };
-    }
-
-    /// <summary>
-    /// Cria um registro de historico de preco para a peca informada.
-    /// </summary>
-    private static PecaHistoricoPreco CreatePriceHistory(Peca piece, decimal newPrice, string reason, Guid usuarioId)
-    {
-        return new PecaHistoricoPreco
-        {
-            Id = Guid.NewGuid(),
-            PecaId = piece.Id,
-            PrecoAnterior = piece.PrecoVendaAtual,
-            PrecoNovo = newPrice,
-            Motivo = reason,
-            AlteradoEm = DateTimeOffset.UtcNow,
-            AlteradoPorUsuarioId = usuarioId,
-            CriadoPorUsuarioId = usuarioId,
-        };
-    }
-
-    /// <summary>
-    /// Monta o motivo padrao do desconto automatico aplicado por permanencia.
-    /// </summary>
-    private static string BuildAutomaticDiscountReason(int daysInStore, decimal percentage)
-    {
-        return $"Desconto automatico de consignacao aplicado aos {daysInStore} dias ({percentage:0.##}%).";
     }
 
     /// <summary>
@@ -925,22 +746,6 @@ Motivo: {reason}";
     }
 
     /// <summary>
-    /// Arredonda valores monetarios para duas casas fixas.
-    /// </summary>
-    private static decimal RoundMoney(decimal value)
-    {
-        return Math.Round(value, 2, MidpointRounding.AwayFromZero);
-    }
-
-    /// <summary>
-    /// Arredonda um percentual calculado para exibicao.
-    /// </summary>
-    private static decimal RoundPercentage(decimal value)
-    {
-        return Math.Round(value, 2, MidpointRounding.AwayFromZero);
-    }
-
-    /// <summary>
     /// Resume a peca para trilha de auditoria.
     /// </summary>
     private static object SnapshotPiece(Peca entity)
@@ -956,22 +761,6 @@ Motivo: {reason}";
             entity.QuantidadeAtual,
             entity.StatusPeca,
             entity.LocalizacaoFisica,
-        };
-    }
-
-    /// <summary>
-    /// Resume o historico de preco para auditoria.
-    /// </summary>
-    private static object SnapshotPriceHistory(PecaHistoricoPreco entity)
-    {
-        return new
-        {
-            entity.PecaId,
-            entity.PrecoAnterior,
-            entity.PrecoNovo,
-            entity.Motivo,
-            entity.AlteradoEm,
-            entity.AlteradoPorUsuarioId,
         };
     }
 
@@ -1012,10 +801,10 @@ Motivo: {reason}";
     /// </summary>
     private sealed record LifecycleSnapshot(
         decimal PrecoBase,
-        decimal PrecoSugerido,
+        decimal PrecoEfetivoVenda,
         decimal PercentualDescontoAplicado,
         decimal PercentualDescontoEsperado,
-        bool DescontoPendente,
+        bool DescontoAutomaticoAtivo,
         DateTimeOffset DataInicioConsignacao,
         DateTimeOffset DataFimConsignacao,
         int DiasEmLoja,

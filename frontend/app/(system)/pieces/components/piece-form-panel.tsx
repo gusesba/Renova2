@@ -5,8 +5,10 @@ import type { PieceFormState } from "@/app/(system)/pieces/components/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeading } from "@/components/ui/card";
 import { SelectField, TextArea, TextInput } from "@/components/ui/field";
+import { formatCurrency } from "@/lib/helpers/formatters";
 import type {
   PieceCatalogOption,
+  PieceDetail,
   PieceOption,
   PieceSupplierOption,
 } from "@/lib/services/pieces";
@@ -21,6 +23,7 @@ type PieceFormPanelProps = {
   brands: PieceCatalogOption[];
   sizes: PieceCatalogOption[];
   colors: PieceCatalogOption[];
+  detail?: PieceDetail | null;
   pieceTypes: PieceOption[];
   suppliers: PieceSupplierOption[];
   setForm: Dispatch<SetStateAction<PieceFormState>>;
@@ -35,10 +38,14 @@ export function PieceFormPanel({
   brands,
   sizes,
   colors,
+  detail,
   pieceTypes,
   suppliers,
   setForm,
 }: PieceFormPanelProps) {
+  const showDerivedConsignmentData =
+    detail?.tipoPeca === "consignada" && detail.descontoAutomaticoAtivo;
+
   return (
     <Card>
       <CardBody className="section-stack">
@@ -227,6 +234,40 @@ export function PieceFormPanel({
               value={form.custoUnitario}
             />
           </div>
+
+          {detail?.tipoPeca === "consignada" ? (
+            <div className="record-item">
+              <div className="selection-item-title">Consignacao da peca</div>
+              <div className="record-item-copy">
+                O preco salvo continua sendo editado aqui. O desconto automatico,
+                quando aplicavel, e apenas derivado para exibicao e venda.
+              </div>
+              <div className="record-tags">
+                <span className="record-tag">
+                  Preco salvo {formatCurrency(detail.precoVendaAtual)}
+                </span>
+                <span className="record-tag">
+                  Preco base {formatCurrency(detail.precoBase)}
+                </span>
+                <span className="record-tag">
+                  Preco efetivo {formatCurrency(detail.precoEfetivoVenda)}
+                </span>
+                <span className="record-tag">
+                  Desc. auto {detail.percentualDescontoAutomatico}%
+                </span>
+                {detail.condicaoComercial.dataFimConsignacao ? (
+                  <span className="record-tag">
+                    Fim {detail.condicaoComercial.dataFimConsignacao.slice(0, 10)}
+                  </span>
+                ) : null}
+                <span className="record-tag">
+                  {showDerivedConsignmentData
+                    ? "Desconto automatico ativo"
+                    : "Sem desconto automatico ativo"}
+                </span>
+              </div>
+            </div>
+          ) : null}
 
           <div className="split-fields">
             <TextInput

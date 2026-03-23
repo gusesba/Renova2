@@ -21,6 +21,11 @@ public interface IPersonService
     Task<IReadOnlyList<PersonUserOptionResponse>> ListarUsuariosVinculaveisAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Recupera os dados mestre da pessoa ja vinculada a um usuario para reaproveitamento em outra loja.
+    /// </summary>
+    Task<PersonReuseDraftResponse?> ObterRascunhoUsuarioVinculadoAsync(Guid usuarioId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Cria o cadastro mestre da pessoa e o vinculo com a loja ativa.
     /// </summary>
     Task<PersonDetailResponse> CriarAsync(CreatePersonRequest request, CancellationToken cancellationToken = default);
