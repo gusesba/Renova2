@@ -6,9 +6,9 @@ using Renova.Service.Queries;
 using Renova.Service.Services;
 using Renova.Tests.Infrastructure;
 
-namespace Renova.Tests.Services;
+namespace Renova.Tests.Services.Renova;
 
-public class Exemplo : InMemoryDbContextTestBase<RenovaDbContext>
+public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
 {
     protected override RenovaDbContext CriarContexto(DbContextOptions<RenovaDbContext> options)
     {

@@ -8,7 +8,16 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 builder.Services.AddDbContext<RenovaDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (builder.Environment.IsEnvironment("Testing"))
+    {
+        var databaseName = builder.Configuration["TestDatabaseName"] ?? "renova-api-tests";
+        options.UseInMemoryDatabase(databaseName);
+        return;
+    }
+
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 builder.Services.AddScoped<IRenovaService, RenovaService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -30,3 +39,7 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}
