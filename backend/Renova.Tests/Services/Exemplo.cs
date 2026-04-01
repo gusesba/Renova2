@@ -1,0 +1,87 @@
+using Microsoft.EntityFrameworkCore;
+using Renova.Domain.Model;
+using Renova.Persistence;
+using Renova.Service.Commands;
+using Renova.Service.Queries;
+using Renova.Service.Services;
+using Renova.Tests.Infrastructure;
+
+namespace Renova.Tests.Services;
+
+public class Exemplo : InMemoryDbContextTestBase<RenovaDbContext>
+{
+    protected override RenovaDbContext CriarContexto(DbContextOptions<RenovaDbContext> options)
+    {
+        return new RenovaDbContext(options);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DeveSalvarERetornarEntidade()
+    {
+        await using var context = CriarContextoEmMemoria();
+        var service = new RenovaService(context);
+
+        var command = new RenovaCommand
+        {
+            Campo2 = "teste",
+            Campo3 = 123
+        };
+
+        var resultado = await service.CreateAsync(command);
+
+        Assert.NotNull(resultado);
+        Assert.Equal("teste", resultado.Campo2);
+        Assert.Equal(123, resultado.Campo3);
+
+        var salvoNoBanco = await context.Renova.SingleAsync();
+
+        Assert.Equal(resultado.Campo1, salvoNoBanco.Campo1);
+        Assert.Equal("teste", salvoNoBanco.Campo2);
+        Assert.Equal(123, salvoNoBanco.Campo3);
+    }
+
+    [Fact]
+    public async Task GetAsync_DeveRetornarRegistroQuandoExistir()
+    {
+        await using var context = CriarContextoEmMemoria();
+
+        var entidade = new RenovaModel
+        {
+            Campo2 = "existente",
+            Campo3 = 50
+        };
+
+        context.Renova.Add(entidade);
+        await context.SaveChangesAsync();
+
+        var service = new RenovaService(context);
+
+        var query = new RenovaQuery
+        {
+            CampoQuery = entidade.Campo1
+        };
+
+        var resultado = await service.GetAsync(query);
+
+        Assert.NotNull(resultado);
+        Assert.Equal(entidade.Campo1, resultado!.Campo1);
+        Assert.Equal("existente", resultado.Campo2);
+        Assert.Equal(50, resultado.Campo3);
+    }
+
+    [Fact]
+    public async Task GetAsync_DeveRetornarNullQuandoNaoExistir()
+    {
+        await using var context = CriarContextoEmMemoria();
+        var service = new RenovaService(context);
+
+        var query = new RenovaQuery
+        {
+            CampoQuery = 999
+        };
+
+        var resultado = await service.GetAsync(query);
+
+        Assert.Null(resultado);
+    }
+}
