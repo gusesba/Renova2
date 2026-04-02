@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Services.Auth;
+using Renova.Service.Services.Loja;
 using Renova.Service.Services.Renova;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -40,6 +41,7 @@ builder.Services.AddDbContext<RenovaDbContext>(options =>
     _ = options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 builder.Services.AddScoped<IRenovaService, RenovaService>();
+builder.Services.AddScoped<ILojaService, LojaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 JwtSettings jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()

@@ -1,12 +1,23 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+using Renova.Domain.Model;
+using Renova.Domain.Model.Dto;
+using Renova.Domain.Settings;
+using Renova.Persistence;
+using Renova.Service.Commands.Loja;
+using Renova.Service.Services.Auth;
 using Renova.Tests.Infrastructure;
 
 namespace Renova.Tests.Services.Loja
 {
     public class Integracao
     {
-        private const string MotivoPendente = "TODO: implementar quando endpoint/autorizacao de Loja estiverem disponiveis.";
-
-        [Fact(Skip = MotivoPendente)]
+        [Fact]
         //Input: usuario autenticado e payload valido
         //Grava loja vinculada ao usuario autenticado
         //Retorna: created com id e nome
@@ -15,21 +26,33 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            // Arrange
-            // TODO: criar usuario de teste.
-            // TODO: autenticar requisicao com bearer token.
-            // TODO: montar payload com nome da loja.
+            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
 
-            // Act
-            // TODO: enviar POST para /api/loja.
+            CriarLojaCommand command = new()
+            {
+                Nome = "Loja Centro"
+            };
 
-            // Assert
-            // TODO: validar status code Created.
-            // TODO: validar corpo com id e nome.
-            // TODO: validar persistencia da loja no banco.
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/loja", command);
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            LojaDto? body = await response.Content.ReadFromJsonAsync<LojaDto>();
+
+            Assert.NotNull(body);
+            Assert.True(body.Id > 0);
+            Assert.Equal(command.Nome, body.Nome);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            LojaModel lojaSalva = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id && loja.Nome == command.Nome));
+            Assert.Equal(body.Id, lojaSalva.Id);
+            Assert.Equal(command.Nome, lojaSalva.Nome);
         }
 
-        [Fact(Skip = MotivoPendente)]
+        [Fact]
         //Input: usuario autenticado com loja de mesmo nome ja cadastrada
         //Nao grava nova loja duplicada para o mesmo usuario
         //Retorna: conflict
@@ -38,20 +61,27 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            // Arrange
-            // TODO: criar usuario com loja existente.
-            // TODO: autenticar requisicao com bearer token do mesmo usuario.
-            // TODO: montar payload com nome repetido.
+            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
+            await CriarLojaAsync(factory, usuario.Id, "Loja Centro");
 
-            // Act
-            // TODO: enviar POST para /api/loja.
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
 
-            // Assert
-            // TODO: validar status code Conflict.
-            // TODO: validar que nao houve duplicacao no banco.
+            CriarLojaCommand command = new()
+            {
+                Nome = "Loja Centro"
+            };
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/loja", command);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id && loja.Nome == command.Nome));
         }
 
-        [Fact(Skip = MotivoPendente)]
+        [Fact]
         //Input: payload valido sem usuario autenticado
         //Nao grava loja
         //Retorna: unauthorized
@@ -60,18 +90,22 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            // Arrange
-            // TODO: montar payload com nome da loja sem token de autenticacao.
+            CriarLojaCommand command = new()
+            {
+                Nome = "Loja Centro"
+            };
 
-            // Act
-            // TODO: enviar POST para /api/loja.
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/loja", command);
 
-            // Assert
-            // TODO: validar status code Unauthorized.
-            // TODO: validar que nenhuma loja foi persistida.
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            Assert.Empty(context.Lojas.Where(loja => loja.Nome == command.Nome));
         }
 
-        [Fact(Skip = MotivoPendente)]
+        [Fact]
         //Input: usuario autenticado com payload invalido
         //Nao grava loja
         //Retorna: bad request
@@ -80,17 +114,63 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            // Arrange
-            // TODO: criar usuario de teste.
-            // TODO: autenticar requisicao com bearer token.
-            // TODO: montar payload invalido para nome da loja.
+            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
 
-            // Act
-            // TODO: enviar POST para /api/loja.
+            CriarLojaCommand command = new()
+            {
+                Nome = string.Empty
+            };
 
-            // Assert
-            // TODO: validar status code BadRequest.
-            // TODO: validar que nenhuma loja foi persistida.
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/loja", command);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            Assert.Empty(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id));
+        }
+
+        private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaApiFactory factory, string email)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            UsuarioModel usuario = new()
+            {
+                Nome = "Usuario de Teste",
+                Email = email,
+                SenhaHash = "hash"
+            };
+
+            _ = context.Usuarios.Add(usuario);
+            _ = await context.SaveChangesAsync();
+
+            return usuario;
+        }
+
+        private static async Task CriarLojaAsync(RenovaApiFactory factory, int usuarioId, string nome)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            LojaModel loja = new()
+            {
+                Nome = nome,
+                UsuarioId = usuarioId
+            };
+
+            _ = context.Lojas.Add(loja);
+            _ = await context.SaveChangesAsync();
+        }
+
+        private static string CriarToken(UsuarioModel usuario)
+        {
+            JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
+            JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
+
+            return jwtTokenService.GenerateToken(usuario);
         }
     }
 }

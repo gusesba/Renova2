@@ -8,6 +8,7 @@ namespace Renova.Persistence
     {
         public DbSet<RenovaModel> Renova { get; set; }
         public DbSet<UsuarioModel> Usuarios { get; set; }
+        public DbSet<LojaModel> Lojas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +31,20 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Email).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.SenhaHash).HasMaxLength(500).IsRequired();
                 _ = entity.HasIndex(p => p.Email).IsUnique();
+            });
+
+            _ = modelBuilder.Entity<LojaModel>(entity =>
+            {
+                _ = entity.ToTable("Loja");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.UsuarioId).IsRequired();
+                _ = entity.HasIndex(p => new { p.UsuarioId, p.Nome }).IsUnique();
+                _ = entity.HasOne(p => p.Usuario)
+                    .WithMany(p => p.Lojas)
+                    .HasForeignKey(p => p.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
