@@ -19,7 +19,7 @@ builder.Services.AddDbContext<RenovaDbContext>(options =>
 {
     if (builder.Environment.IsEnvironment("Testing"))
     {
-        var databaseName = builder.Configuration["TestDatabaseName"] ?? "renova-api-tests";
+        string databaseName = builder.Configuration["TestDatabaseName"] ?? "renova-api-tests";
         _ = options.UseInMemoryDatabase(databaseName);
         return;
     }

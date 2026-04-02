@@ -6,5 +6,6 @@ namespace Renova.Service.Services.Auth
     public interface IAuthService
     {
         Task<UsuarioTokenDto> CreateAsync(CadastroCommand request, CancellationToken cancellationToken = default);
+        Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default);
     }
 }

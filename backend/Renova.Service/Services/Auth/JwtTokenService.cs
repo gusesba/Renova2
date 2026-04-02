@@ -19,13 +19,13 @@ namespace Renova.Service.Services.Auth
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            Claim[] claims = new[]
-            {
+            Claim[] claims =
+            [
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, usuario.Email),
                 new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
                 new Claim("nome", usuario.Nome)
-            };
+            ];
 
             var token = new JwtSecurityToken(
                 issuer: _jwtSettings.Issuer,

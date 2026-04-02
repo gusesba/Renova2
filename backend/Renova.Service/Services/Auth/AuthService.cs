@@ -15,7 +15,7 @@ namespace Renova.Service.Services.Auth
 
         public async Task<UsuarioTokenDto> CreateAsync(CadastroCommand request, CancellationToken cancellationToken = default)
         {
-            var emailJaCadastrado = await _context.Usuarios
+            bool emailJaCadastrado = await _context.Usuarios
                 .AnyAsync(usuario => usuario.Email == request.Email, cancellationToken);
 
             if (emailJaCadastrado)
@@ -43,6 +43,14 @@ namespace Renova.Service.Services.Auth
                 },
                 Token = _jwtTokenService.GenerateToken(resultado.Entity)
             };
+        }
+
+        public Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default)
+        {
+            _ = request;
+            _ = cancellationToken;
+
+            throw new NotImplementedException();
         }
     }
 }

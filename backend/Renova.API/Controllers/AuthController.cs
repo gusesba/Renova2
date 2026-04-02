@@ -29,5 +29,23 @@ namespace Renova.API.Controllers
                 return Conflict(new { mensagem = ex.Message });
             }
         }
+
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(UsuarioTokenDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PostLogin([FromBody] LoginCommand command, CancellationToken cancellationToken)
+        {
+            try
+            {
+                UsuarioTokenDto resultado = await _authService.LoginAsync(command, cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
     }
 }
