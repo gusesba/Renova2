@@ -7,9 +7,10 @@ using Renova.Service.Commands;
 
 namespace Renova.Service.Services;
 
-public class AuthService(RenovaDbContext context) : IAuthService
+public class AuthService(RenovaDbContext context, IJwtTokenService jwtTokenService) : IAuthService
 {
     private readonly RenovaDbContext _context = context;
+    private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
 
     public async Task<UsuarioTokenDto> CreateAsync(CadastroCommand request, CancellationToken cancellationToken = default)
     {
@@ -39,7 +40,7 @@ public class AuthService(RenovaDbContext context) : IAuthService
                 Nome = resultado.Entity.Nome,
                 Email = resultado.Entity.Email
             },
-            Token = "token-gerado"
+            Token = _jwtTokenService.GenerateToken(resultado.Entity)
         };
     }
 }

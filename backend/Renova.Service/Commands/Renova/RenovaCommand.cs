@@ -1,6 +1,6 @@
 using Renova.Domain.Model;
 
-namespace Renova.Service.Commands
+namespace Renova.Service.Commands.Renova
 {
     public class RenovaCommand
     {

@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
+using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Commands;
 using Renova.Service.Services;
 using Renova.Tests.Infrastructure;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Renova.Tests.Services.Auth.Cadastro;
 
@@ -22,7 +25,9 @@ public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
     public async Task CreateAsync_DeveSalvarComSenhaHashERetornarUsuarioToken()
     {
         await using var context = CriarContextoEmMemoria();
-        var service = new AuthService(context);
+        var jwtSettings = JwtTokenAssert.CreateTestingSettings();
+        var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
+        var service = new AuthService(context, jwtTokenService);
 
         var command = new CadastroCommand
         {
@@ -31,24 +36,15 @@ public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
             Senha = "Senha@123"
         };
 
-        var saidaEsperada = new UsuarioTokenDto
-        {
-            Usuario = new UsuarioDto
-            {
-                Id = 1,
-                Nome = "Maria da Silva",
-                Email = "maria@renova.com"
-            },
-            Token = "token-gerado"
-        };
-
         var resultado = await service.CreateAsync(command);
         var salvoNoBanco = await context.Usuarios.SingleAsync();
+        _ = JwtTokenAssert.Validate(resultado.Token, jwtSettings);
+        var jwt = JwtTokenAssert.Read(resultado.Token);
 
         Assert.NotNull(resultado);
-        Assert.Equal(saidaEsperada.Usuario.Nome, resultado.Usuario.Nome);
-        Assert.Equal(saidaEsperada.Usuario.Email, resultado.Usuario.Email);
-        Assert.Equal(saidaEsperada.Token, resultado.Token);
+        Assert.Equal("Maria da Silva", resultado.Usuario.Nome);
+        Assert.Equal("maria@renova.com", resultado.Usuario.Email);
+        Assert.Equal("maria@renova.com", jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
         Assert.NotEqual(command.Senha, salvoNoBanco.SenhaHash);
         Assert.False(string.IsNullOrWhiteSpace(salvoNoBanco.SenhaHash));
     }
@@ -68,7 +64,9 @@ public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
         });
         await context.SaveChangesAsync();
 
-        var service = new AuthService(context);
+        var jwtSettings = JwtTokenAssert.CreateTestingSettings();
+        var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
+        var service = new AuthService(context, jwtTokenService);
 
         var command = new CadastroCommand
         {
@@ -87,7 +85,9 @@ public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
     public async Task CreateAsync_DevePersistirSenhaApenasComoHash()
     {
         await using var context = CriarContextoEmMemoria();
-        var service = new AuthService(context);
+        var jwtSettings = JwtTokenAssert.CreateTestingSettings();
+        var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
+        var service = new AuthService(context, jwtTokenService);
 
         var command = new CadastroCommand
         {
@@ -98,11 +98,13 @@ public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
 
         var resultado = await service.CreateAsync(command);
         var salvoNoBanco = await context.Usuarios.SingleAsync();
+        _ = JwtTokenAssert.Validate(resultado.Token, jwtSettings);
+        var jwt = JwtTokenAssert.Read(resultado.Token);
 
         Assert.NotNull(resultado);
         Assert.NotEqual(command.Senha, salvoNoBanco.SenhaHash);
         Assert.Equal(resultado.Usuario.Email, salvoNoBanco.Email);
         Assert.Equal(resultado.Usuario.Nome, salvoNoBanco.Nome);
-        Assert.False(string.IsNullOrWhiteSpace(resultado.Token));
+        Assert.Equal("joao@renova.com", jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
     }
 }

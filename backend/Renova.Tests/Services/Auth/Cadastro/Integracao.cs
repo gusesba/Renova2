@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
+using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Commands;
 using Renova.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Json;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Renova.Tests.Services.Auth.Cadastro;
 
@@ -20,6 +22,7 @@ public class Integracao
     {
         await using var factory = new RenovaApiFactory();
         var client = factory.CreateClient();
+        var jwtSettings = JwtTokenAssert.CreateTestingSettings();
 
         var command = new CadastroCommand
         {
@@ -33,11 +36,13 @@ public class Integracao
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         var body = await response.Content.ReadFromJsonAsync<UsuarioTokenDto>();
+        _ = JwtTokenAssert.Validate(body!.Token, jwtSettings);
+        var jwt = JwtTokenAssert.Read(body.Token);
 
         Assert.NotNull(body);
-        Assert.Equal(command.Nome, body!.Usuario.Nome);
+        Assert.Equal(command.Nome, body.Usuario.Nome);
         Assert.Equal(command.Email, body.Usuario.Email);
-        Assert.False(string.IsNullOrWhiteSpace(body.Token));
+        Assert.Equal(command.Email, jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();

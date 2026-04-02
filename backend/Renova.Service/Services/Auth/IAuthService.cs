@@ -1,7 +1,7 @@
 using Renova.Domain.Model.Dto;
-using Renova.Service.Commands;
+using Renova.Service.Commands.Auth;
 
-namespace Renova.Service.Services;
+namespace Renova.Service.Services.Auth;
 
 public interface IAuthService
 {

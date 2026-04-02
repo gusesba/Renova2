@@ -1,9 +1,9 @@
 using Renova.Domain.Model;
 using Renova.Persistence;
-using Renova.Service.Commands;
-using Renova.Service.Queries;
+using Renova.Service.Commands.Renova;
+using Renova.Service.Queries.Renova;
 
-namespace Renova.Service.Services;
+namespace Renova.Service.Services.Renova;
 
 public class RenovaService(RenovaDbContext context) : IRenovaService
 {

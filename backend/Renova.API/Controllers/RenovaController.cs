@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Renova.Domain.Model;
-using Renova.Service.Commands;
-using Renova.Service.Queries;
-using Renova.Service.Services;
+using Renova.Service.Commands.Renova;
+using Renova.Service.Queries.Renova;
+using Renova.Service.Services.Renova;
 
 namespace Renova.API.Controllers;
 
