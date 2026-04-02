@@ -6,7 +6,7 @@ using Renova.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Json;
 
-namespace Renova.Tests.Endpoints;
+namespace Renova.Tests.Services.Renova;
 
 public class Integracao
 {
