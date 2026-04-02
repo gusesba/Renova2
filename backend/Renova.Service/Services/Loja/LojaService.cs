@@ -47,5 +47,24 @@ namespace Renova.Service.Services.Loja
                 Nome = loja.Nome
             };
         }
+
+        public async Task<IReadOnlyList<LojaDto>> GetAllAsync(ObterLojasParametros parametros, CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            return !usuarioExiste
+                ? throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.")
+                : (IReadOnlyList<LojaDto>)await _context.Lojas
+                .Where(loja => loja.UsuarioId == parametros.UsuarioId)
+                .OrderBy(loja => loja.Nome)
+                .ThenBy(loja => loja.Id)
+                .Select(loja => new LojaDto
+                {
+                    Id = loja.Id,
+                    Nome = loja.Nome
+                })
+                .ToListAsync(cancellationToken);
+        }
     }
 }

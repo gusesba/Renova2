@@ -8,7 +8,7 @@ using Renova.Service.Parameters.Loja;
 using Renova.Service.Services.Loja;
 using Renova.Tests.Infrastructure;
 
-namespace Renova.Tests.Services.Loja
+namespace Renova.Tests.Services.Loja.Criar
 {
     public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
     {

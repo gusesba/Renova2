@@ -16,6 +16,35 @@ namespace Renova.API.Controllers
     {
         private readonly ILojaService _lojaService = lojaService;
 
+        [HttpGet]
+        [ProducesResponseType(typeof(IReadOnlyList<LojaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetLojas(CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                IReadOnlyList<LojaDto> resultado = await _lojaService.GetAllAsync(
+                    new ObterLojasParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(LojaDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

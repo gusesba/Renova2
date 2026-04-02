@@ -11,7 +11,7 @@ using Renova.Service.Commands.Auth;
 using Renova.Service.Commands.Loja;
 using Renova.Tests.Infrastructure;
 
-namespace Renova.Tests.Services.Loja
+namespace Renova.Tests.Services.Loja.Criar
 {
     public class Integracao
     {
@@ -162,6 +162,5 @@ namespace Renova.Tests.Services.Loja
             _ = context.Lojas.Add(loja);
             _ = await context.SaveChangesAsync();
         }
-
     }
 }
