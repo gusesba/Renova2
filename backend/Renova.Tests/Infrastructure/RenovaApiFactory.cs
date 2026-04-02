@@ -14,9 +14,10 @@ namespace Renova.Tests.Infrastructure
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             _ = builder.UseEnvironment("Testing");
-            _ = builder.ConfigureAppConfiguration((_, configurationBuilder) =>
+            _ = builder.ConfigureAppConfiguration((context, configurationBuilder) =>
             {
-                _ = (WebHostBuilderContext)configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+                _ = context;
+                _ = configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["TestDatabaseName"] = _databaseName,
                     [$"{JwtSettings.SectionName}:SecretKey"] = _jwtSettings.SecretKey,

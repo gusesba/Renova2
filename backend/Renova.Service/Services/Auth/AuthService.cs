@@ -23,7 +23,7 @@ namespace Renova.Service.Services.Auth
                 throw new InvalidOperationException("Email ja cadastrado.");
             }
 
-            var usuario = new UsuarioModel
+            UsuarioModel usuario = new()
             {
                 Nome = request.Nome,
                 Email = request.Email,
@@ -45,12 +45,24 @@ namespace Renova.Service.Services.Auth
             };
         }
 
-        public Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default)
+        public async Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default)
         {
-            _ = request;
-            _ = cancellationToken;
+            UsuarioModel? usuario = await _context.Usuarios
+                .SingleOrDefaultAsync(usuario => usuario.Email == request.Email, cancellationToken) ?? throw new UnauthorizedAccessException("Credenciais invalidas.");
+            bool senhaValida = BCrypt.Net.BCrypt.Verify(request.Senha, usuario.SenhaHash);
 
-            throw new NotImplementedException();
+            return !senhaValida
+                ? throw new UnauthorizedAccessException("Credenciais invalidas.")
+                : new UsuarioTokenDto
+                {
+                    Usuario = new UsuarioDto
+                    {
+                        Id = usuario.Id,
+                        Nome = usuario.Nome,
+                        Email = usuario.Email
+                    },
+                    Token = _jwtTokenService.GenerateToken(usuario)
+                };
         }
     }
 }

@@ -16,8 +16,8 @@ namespace Renova.Service.Services.Auth
 
         public string GenerateToken(UsuarioModel usuario)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+            SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
 
             Claim[] claims =
             [
@@ -27,7 +27,7 @@ namespace Renova.Service.Services.Auth
                 new Claim("nome", usuario.Nome)
             ];
 
-            var token = new JwtSecurityToken(
+            JwtSecurityToken token = new(
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
