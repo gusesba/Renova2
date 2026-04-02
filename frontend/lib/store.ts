@@ -9,6 +9,12 @@ export type LojaResponse = {
   nome: string;
 };
 
+export type UsuarioResumo = {
+  id: number;
+  nome: string;
+  email: string;
+};
+
 export const initialStoreValues: StoreFormValues = {
   nome: "",
 };
@@ -21,6 +27,41 @@ type ApiErrorResponse = {
 
 export function getAuthToken() {
   return localStorage.getItem("renova.token");
+}
+
+export function getAuthUser(): UsuarioResumo | null {
+  const rawUser = localStorage.getItem("renova.usuario");
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser) as UsuarioResumo;
+  } catch {
+    return null;
+  }
+}
+
+export function getStoredSelectedStoreId() {
+  const value = localStorage.getItem("renova.selectedStoreId");
+
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function persistSelectedStoreId(storeId: number | null) {
+  if (!storeId) {
+    localStorage.removeItem("renova.selectedStoreId");
+    return;
+  }
+
+  localStorage.setItem("renova.selectedStoreId", String(storeId));
 }
 
 export function extractStoreApiMessage(body: unknown): string | null {

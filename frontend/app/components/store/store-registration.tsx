@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ import { StoreRegistrationHeader } from "./store-registration-header";
 import { StoreRegistrationResponse } from "./store-registration-response";
 
 export function StoreRegistration() {
+  const queryClient = useQueryClient();
   const [values, setValues] = useState<StoreFormValues>(initialStoreValues);
   const [errors, setErrors] = useState<StoreFieldErrors>({});
   const [latestStore, setLatestStore] = useState<LojaResponse | null>(null);
@@ -95,6 +96,7 @@ export function StoreRegistration() {
         setValues(initialStoreValues);
       });
 
+      await queryClient.invalidateQueries({ queryKey: ["stores"] });
       toast.success(`Loja ${result.nome} cadastrada com sucesso.`);
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
