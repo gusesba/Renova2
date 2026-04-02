@@ -1,18 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Renova.Tests.Infrastructure;
-
-public abstract class InMemoryDbContextTestBase<TContext>
-    where TContext : DbContext
+namespace Renova.Tests.Infrastructure
 {
-    protected TContext CriarContextoEmMemoria()
+    public abstract class InMemoryDbContextTestBase<TContext>
+        where TContext : DbContext
     {
-        var options = new DbContextOptionsBuilder<TContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
+        protected TContext CriarContextoEmMemoria()
+        {
+            DbContextOptions<TContext> options = new DbContextOptionsBuilder<TContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
 
-        return CriarContexto(options);
+            return CriarContexto(options);
+        }
+
+        protected abstract TContext CriarContexto(DbContextOptions<TContext> options);
     }
-
-    protected abstract TContext CriarContexto(DbContextOptions<TContext> options);
 }

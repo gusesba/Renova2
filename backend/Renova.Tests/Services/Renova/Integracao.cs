@@ -1,55 +1,56 @@
+using System.Net;
+using System.Net.Http.Json;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Renova.Domain.Model;
 using Renova.Persistence;
 using Renova.Service.Commands.Renova;
 using Renova.Tests.Infrastructure;
-using System.Net;
-using System.Net.Http.Json;
 
-namespace Renova.Tests.Services.Renova;
-
-public class Integracao
+namespace Renova.Tests.Services.Renova
 {
-    [Fact]
-    public async Task PostRenova_DeveRetornarCreatedEPersistirRegistro()
+    public class Integracao
     {
-        await using var factory = new RenovaApiFactory();
-        var client = factory.CreateClient();
-
-        var command = new RenovaCommand
+        [Fact]
+        public async Task PostRenovaDeveRetornarCreatedEPersistirRegistro()
         {
-            Campo2 = "novo registro",
-            Campo3 = 123
-        };
+            await using var factory = new RenovaApiFactory();
+            HttpClient client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/renova", command);
+            var command = new RenovaCommand
+            {
+                Campo2 = "novo registro",
+                Campo3 = 123
+            };
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/renova", command);
 
-        var body = await response.Content.ReadFromJsonAsync<RenovaModel>();
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        Assert.NotNull(body);
-        Assert.Equal("novo registro", body!.Campo2);
-        Assert.Equal(123, body.Campo3);
+            RenovaModel? body = await response.Content.ReadFromJsonAsync<RenovaModel>();
 
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            Assert.NotNull(body);
+            Assert.Equal("novo registro", body.Campo2);
+            Assert.Equal(123, body.Campo3);
 
-        var salvo = await context.Renova.FindAsync(body.Campo1);
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-        Assert.NotNull(salvo);
-        Assert.Equal("novo registro", salvo!.Campo2);
-        Assert.Equal(123, salvo.Campo3);
-    }
+            RenovaModel? salvo = await context.Renova.FindAsync(body.Campo1);
 
-    [Fact]
-    public async Task GetRenova_DeveRetornarOkQuandoRegistroExistir()
-    {
-        await using var factory = new RenovaApiFactory();
+            Assert.NotNull(salvo);
+            Assert.Equal("novo registro", salvo.Campo2);
+            Assert.Equal(123, salvo.Campo3);
+        }
 
-        using (var scope = factory.Services.CreateScope())
+        [Fact]
+        public async Task GetRenovaDeveRetornarOkQuandoRegistroExistir()
         {
-            var context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            await using var factory = new RenovaApiFactory();
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
             var entidade = new RenovaModel
             {
@@ -57,31 +58,31 @@ public class Integracao
                 Campo3 = 50
             };
 
-            context.Renova.Add(entidade);
-            await context.SaveChangesAsync();
+            _ = context.Renova.Add(entidade);
+            _ = await context.SaveChangesAsync();
 
-            var client = factory.CreateClient();
-            var response = await client.GetAsync($"/api/renova?CampoQuery={entidade.Campo1}");
+            HttpClient client = factory.CreateClient();
+            HttpResponseMessage response = await client.GetAsync($"/api/renova?CampoQuery={entidade.Campo1}");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-            var body = await response.Content.ReadFromJsonAsync<RenovaModel>();
+            RenovaModel? body = await response.Content.ReadFromJsonAsync<RenovaModel>();
 
             Assert.NotNull(body);
-            Assert.Equal(entidade.Campo1, body!.Campo1);
+            Assert.Equal(entidade.Campo1, body.Campo1);
             Assert.Equal("existente", body.Campo2);
             Assert.Equal(50, body.Campo3);
         }
-    }
 
-    [Fact]
-    public async Task GetRenova_DeveRetornarNoContentQuandoRegistroNaoExistir()
-    {
-        await using var factory = new RenovaApiFactory();
-        var client = factory.CreateClient();
+        [Fact]
+        public async Task GetRenovaDeveRetornarNoContentQuandoRegistroNaoExistir()
+        {
+            await using var factory = new RenovaApiFactory();
+            HttpClient client = factory.CreateClient();
 
-        var response = await client.GetAsync("/api/renova?CampoQuery=999");
+            HttpResponseMessage response = await client.GetAsync("/api/renova?CampoQuery=999");
 
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        }
     }
 }

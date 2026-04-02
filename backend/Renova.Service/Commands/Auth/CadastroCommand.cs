@@ -1,18 +1,19 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Renova.Service.Commands.Auth;
-
-public class CadastroCommand
+namespace Renova.Service.Commands.Auth
 {
-    [Required]
-    [MinLength(1)]
-    public required string Nome { get; set; }
+    public class CadastroCommand
+    {
+        [Required]
+        [MinLength(1)]
+        public required string Nome { get; set; }
 
-    [Required]
-    [EmailAddress]
-    public required string Email { get; set; }
+        [Required]
+        [EmailAddress]
+        public required string Email { get; set; }
 
-    [Required]
-    [MinLength(6)]
-    public required string Senha { get; set; }
+        [Required]
+        [MinLength(6)]
+        public required string Senha { get; set; }
+    }
 }

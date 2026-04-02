@@ -1,5 +1,3 @@
-using Renova.Domain.Model;
-
 namespace Renova.Service.Queries.Renova
 {
     public class RenovaQuery

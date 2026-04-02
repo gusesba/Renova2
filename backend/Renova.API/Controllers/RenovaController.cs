@@ -1,37 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
+
 using Renova.Domain.Model;
 using Renova.Service.Commands.Renova;
 using Renova.Service.Queries.Renova;
 using Renova.Service.Services.Renova;
 
-namespace Renova.API.Controllers;
-
-[ApiController]
-[Route("api/renova")]
-public class RenovaController(IRenovaService renovaService) : ControllerBase
+namespace Renova.API.Controllers
 {
-    private readonly IRenovaService _renovaService = renovaService;
-
-    [HttpGet]
-    [ProducesResponseType(typeof(RenovaModel), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> GetRenova([FromQuery] RenovaQuery request, CancellationToken cancellationToken)
+    [ApiController]
+    [Route("api/renova")]
+    public class RenovaController(IRenovaService renovaService) : ControllerBase
     {
-        var renova = await _renovaService.GetAsync(request, cancellationToken);
-        if (renova is null)
+        private readonly IRenovaService _renovaService = renovaService;
+
+        [HttpGet]
+        [ProducesResponseType(typeof(RenovaModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> GetRenova([FromQuery] RenovaQuery request, CancellationToken cancellationToken)
         {
-            return NoContent();
+            RenovaModel? renova = await _renovaService.GetAsync(request, cancellationToken);
+            return renova is null ? NoContent() : Ok(renova);
         }
 
-        return Ok(renova);
-    }
+        [HttpPost]
+        [ProducesResponseType(typeof(RenovaModel), StatusCodes.Status201Created)]
+        public async Task<IActionResult> PostRenova([FromBody] RenovaCommand command, CancellationToken cancellationToken)
+        {
+            RenovaModel renova = await _renovaService.CreateAsync(command, cancellationToken);
 
-    [HttpPost]
-    [ProducesResponseType(typeof(RenovaModel), StatusCodes.Status201Created)]
-    public async Task<IActionResult> PostRenova([FromBody] RenovaCommand command, CancellationToken cancellationToken)
-    {
-        var renova = await _renovaService.CreateAsync(command, cancellationToken);
-
-        return Created(string.Empty, renova);
+            return Created(string.Empty, renova);
+        }
     }
 }

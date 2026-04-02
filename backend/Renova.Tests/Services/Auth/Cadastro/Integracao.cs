@@ -1,111 +1,115 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Json;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
+using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Commands.Auth;
 using Renova.Tests.Infrastructure;
-using System.Net;
-using System.Net.Http.Json;
-using System.IdentityModel.Tokens.Jwt;
 
-namespace Renova.Tests.Services.Auth.Cadastro;
-
-public class Integracao
+namespace Renova.Tests.Services.Auth.Cadastro
 {
-    [Fact]
-    //Input: payload de cadastro valido
-    //Grava usuario no banco com senha hash
-    //Retorna: usuario e token
-    public async Task PostCadastro_DeveSalvarComSenhaHashERetornarUsuarioToken()
+    public class Integracao
     {
-        await using var factory = new RenovaApiFactory();
-        var client = factory.CreateClient();
-        var jwtSettings = JwtTokenAssert.CreateTestingSettings();
-
-        var command = new CadastroCommand
+        [Fact]
+        //Input: payload de cadastro valido
+        //Grava usuario no banco com senha hash
+        //Retorna: usuario e token
+        public async Task PostCadastroDeveSalvarComSenhaHashERetornarUsuarioToken()
         {
-            Nome = "Maria da Silva",
-            Email = "maria@renova.com",
-            Senha = "Senha@123"
-        };
+            await using var factory = new RenovaApiFactory();
+            HttpClient client = factory.CreateClient();
+            JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
 
-        var response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<UsuarioTokenDto>();
-        _ = JwtTokenAssert.Validate(body!.Token, jwtSettings);
-        var jwt = JwtTokenAssert.Read(body.Token);
-
-        Assert.NotNull(body);
-        Assert.Equal(command.Nome, body.Usuario.Nome);
-        Assert.Equal(command.Email, body.Usuario.Email);
-        Assert.Equal(command.Email, jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
-
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-
-        var salvo = await context.Usuarios.SingleAsync();
-
-        Assert.Equal(command.Nome, salvo.Nome);
-        Assert.Equal(command.Email, salvo.Email);
-        Assert.NotEqual(command.Senha, salvo.SenhaHash);
-    }
-
-    [Fact]
-    //Input: payload com email ja cadastrado
-    //Nao grava novo usuario no banco
-    //Retorna: conflito de cadastro
-    public async Task PostCadastro_DeveRetornarConflitoQuandoEmailJaExistir()
-    {
-        await using var factory = new RenovaApiFactory();
-
-        using (var scope = factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-
-            context.Usuarios.Add(new UsuarioModel
+            var command = new CadastroCommand
             {
-                Nome = "Usuario Existente",
-                Email = "duplicado@renova.com",
-                SenhaHash = "hash-existente"
-            });
-            await context.SaveChangesAsync();
+                Nome = "Maria da Silva",
+                Email = "maria@renova.com",
+                Senha = "Senha@123"
+            };
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            UsuarioTokenDto? body = await response.Content.ReadFromJsonAsync<UsuarioTokenDto>();
+            _ = JwtTokenAssert.Validate(body!.Token, jwtSettings);
+            JwtSecurityToken jwt = JwtTokenAssert.Read(body.Token);
+
+            Assert.NotNull(body);
+            Assert.Equal(command.Nome, body.Usuario.Nome);
+            Assert.Equal(command.Email, body.Usuario.Email);
+            Assert.Equal(command.Email, jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            UsuarioModel salvo = await context.Usuarios.SingleAsync();
+
+            Assert.Equal(command.Nome, salvo.Nome);
+            Assert.Equal(command.Email, salvo.Email);
+            Assert.NotEqual(command.Senha, salvo.SenhaHash);
         }
 
-        var client = factory.CreateClient();
-
-        var command = new CadastroCommand
+        [Fact]
+        //Input: payload com email ja cadastrado
+        //Nao grava novo usuario no banco
+        //Retorna: conflito de cadastro
+        public async Task PostCadastroDeveRetornarConflitoQuandoEmailJaExistir()
         {
-            Nome = "Novo Usuario",
-            Email = "duplicado@renova.com",
-            Senha = "Senha@123"
-        };
+            await using var factory = new RenovaApiFactory();
 
-        var response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
+            using (IServiceScope scope = factory.Services.CreateScope())
+            {
+                RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-    }
+                _ = context.Usuarios.Add(new UsuarioModel
+                {
+                    Nome = "Usuario Existente",
+                    Email = "duplicado@renova.com",
+                    SenhaHash = "hash-existente"
+                });
+                _ = await context.SaveChangesAsync();
+            }
 
-    [Fact]
-    //Input: payload de cadastro invalido
-    //Nao grava usuario no banco
-    //Retorna: erro de validacao
-    public async Task PostCadastro_DeveRetornarErroValidacaoQuandoPayloadForInvalido()
-    {
-        await using var factory = new RenovaApiFactory();
-        var client = factory.CreateClient();
+            HttpClient client = factory.CreateClient();
 
-        var command = new CadastroCommand
+            var command = new CadastroCommand
+            {
+                Nome = "Novo Usuario",
+                Email = "duplicado@renova.com",
+                Senha = "Senha@123"
+            };
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        }
+
+        [Fact]
+        //Input: payload de cadastro invalido
+        //Nao grava usuario no banco
+        //Retorna: erro de validacao
+        public async Task PostCadastroDeveRetornarErroValidacaoQuandoPayloadForInvalido()
         {
-            Nome = string.Empty,
-            Email = "email-invalido",
-            Senha = "123"
-        };
+            await using var factory = new RenovaApiFactory();
+            HttpClient client = factory.CreateClient();
 
-        var response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
+            var command = new CadastroCommand
+            {
+                Nome = string.Empty,
+                Email = "email-invalido",
+                Senha = "123"
+            };
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
     }
 }

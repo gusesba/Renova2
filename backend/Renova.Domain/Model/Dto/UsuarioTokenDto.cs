@@ -1,7 +1,8 @@
-namespace Renova.Domain.Model.Dto;
-
-public class UsuarioTokenDto
+namespace Renova.Domain.Model.Dto
 {
-    public required UsuarioDto Usuario { get; set; }
-    public required string Token { get; set; }
+    public class UsuarioTokenDto
+    {
+        public required UsuarioDto Usuario { get; set; }
+        public required string Token { get; set; }
+    }
 }

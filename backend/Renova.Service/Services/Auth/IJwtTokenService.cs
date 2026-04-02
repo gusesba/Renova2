@@ -1,8 +1,9 @@
 using Renova.Domain.Model;
 
-namespace Renova.Service.Services.Auth;
-
-public interface IJwtTokenService
+namespace Renova.Service.Services.Auth
 {
-    string GenerateToken(UsuarioModel usuario);
+    public interface IJwtTokenService
+    {
+        string GenerateToken(UsuarioModel usuario);
+    }
 }

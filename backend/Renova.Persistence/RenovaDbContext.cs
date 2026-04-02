@@ -1,36 +1,35 @@
 using Microsoft.EntityFrameworkCore;
+
 using Renova.Domain.Model;
 
 namespace Renova.Persistence
 {
-    public class RenovaDbContext : DbContext
+    public class RenovaDbContext(DbContextOptions<RenovaDbContext> options) : DbContext(options)
     {
-        public RenovaDbContext(DbContextOptions<RenovaDbContext> options) : base(options) { }
-        
         public DbSet<RenovaModel> Renova { get; set; }
         public DbSet<UsuarioModel> Usuarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<RenovaModel>(entity =>
+            _ = modelBuilder.Entity<RenovaModel>(entity =>
             {
-                entity.ToTable("Renova");
-                entity.HasKey(p => p.Campo1);
-                entity.Property(p => p.Campo1).ValueGeneratedOnAdd();
-                entity.Property(p => p.Campo2).HasMaxLength(500).IsRequired();
-                entity.Property(p => p.Campo3);
-                entity.HasIndex(p => p.Campo1);
+                _ = entity.ToTable("Renova");
+                _ = entity.HasKey(p => p.Campo1);
+                _ = entity.Property(p => p.Campo1).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Campo2).HasMaxLength(500).IsRequired();
+                _ = entity.Property(p => p.Campo3);
+                _ = entity.HasIndex(p => p.Campo1);
             });
 
-            modelBuilder.Entity<UsuarioModel>(entity =>
+            _ = modelBuilder.Entity<UsuarioModel>(entity =>
             {
-                entity.ToTable("Usuario");
-                entity.HasKey(p => p.Id);
-                entity.Property(p => p.Id).ValueGeneratedOnAdd();
-                entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
-                entity.Property(p => p.Email).HasMaxLength(200).IsRequired();
-                entity.Property(p => p.SenhaHash).HasMaxLength(500).IsRequired();
-                entity.HasIndex(p => p.Email).IsUnique();
+                _ = entity.ToTable("Usuario");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.Email).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.SenhaHash).HasMaxLength(500).IsRequired();
+                _ = entity.HasIndex(p => p.Email).IsUnique();
             });
         }
     }

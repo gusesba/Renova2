@@ -1,8 +1,9 @@
-namespace Renova.Domain.Model.Dto;
-
-public class UsuarioDto
+namespace Renova.Domain.Model.Dto
 {
-    public int Id { get; set; }
-    public required string Nome { get; set; }
-    public required string Email { get; set; }
+    public class UsuarioDto
+    {
+        public int Id { get; set; }
+        public required string Nome { get; set; }
+        public required string Email { get; set; }
+    }
 }
