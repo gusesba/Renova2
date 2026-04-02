@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -22,7 +23,16 @@ export function AuthShell() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const authMutation = useMutation({
+    mutationFn: async ({
+      currentMode,
+      payload,
+    }: {
+      currentMode: AuthMode;
+      payload: { email: string; senha: string } | FormValues;
+    }) => authenticate(currentMode, payload),
+  });
 
   function handleModeChange(nextMode: AuthMode) {
     setMode(nextMode);
@@ -47,6 +57,10 @@ export function AuthShell() {
   }
 
   async function submitCurrentMode() {
+    if (authMutation.isPending) {
+      return;
+    }
+
     const payload =
       mode === "login"
         ? { email: values.email.trim(), senha: values.senha }
@@ -66,10 +80,12 @@ export function AuthShell() {
     }
 
     setErrors({});
-    setIsSubmitting(true);
 
     try {
-      const response = await authenticate(mode, validation.data);
+      const response = await authMutation.mutateAsync({
+        currentMode: mode,
+        payload: validation.data,
+      });
 
       if (!response.ok) {
         const apiFieldErrors = extractApiFieldErrors(response.body);
@@ -107,8 +123,6 @@ export function AuthShell() {
       }));
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -119,7 +133,7 @@ export function AuthShell() {
           <AuthLeftPanel />
           <AuthRightPanel
             errors={errors}
-            isSubmitting={isSubmitting}
+            isSubmitting={authMutation.isPending}
             mode={mode}
             values={values}
             onFieldChange={updateField}

@@ -10,3 +10,4 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - Zod para formulários
 - Sonner para alertas
+- Tanstack query para querys
