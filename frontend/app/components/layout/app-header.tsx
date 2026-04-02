@@ -73,7 +73,9 @@ export function AppHeader() {
               GB
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-[var(--foreground)]">Gustavo Bareta</p>
+              <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+                Gustavo Bareta
+              </p>
               <p className="truncate text-xs text-[var(--muted)]">Administrador</p>
             </div>
             <span className="text-[var(--muted)]">
