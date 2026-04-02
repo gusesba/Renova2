@@ -17,8 +17,7 @@ export function AuthLeftPanel() {
       <div className="space-y-3 text-[#544cbf]">
         <p className="text-3xl font-semibold leading-tight sm:text-4xl">Renova</p>
         <p className="max-w-sm text-sm leading-6 text-[#7c76c9] sm:text-base">
-          Acesse sua conta e organize sua rotina com uma experiencia leve, limpa e
-          direta.
+          Acesse sua conta e organize sua rotina com uma experiencia leve, limpa e direta.
         </p>
       </div>
     </section>

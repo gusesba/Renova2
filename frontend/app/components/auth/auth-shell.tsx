@@ -77,9 +77,7 @@ export function AuthShell() {
           setErrors(apiFieldErrors);
         }
 
-        toast.error(
-          extractApiMessage(response.body) ?? "Nao foi possivel concluir a solicitacao.",
-        );
+        toast.error(extractApiMessage(response.body) ?? "Nao foi possivel concluir a solicitacao.");
         return;
       }
 

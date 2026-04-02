@@ -1,7 +1,6 @@
 import type { AuthMode, UsuarioTokenResponse } from "@/lib/auth";
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:5268";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:5268";
 
 export async function authenticate<TPayload>(
   mode: AuthMode,
