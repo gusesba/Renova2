@@ -1,6 +1,9 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 using Renova.Domain.Settings;
 
@@ -25,6 +28,14 @@ namespace Renova.Tests.Infrastructure
                     [$"{JwtSettings.SectionName}:Audience"] = _jwtSettings.Audience,
                     [$"{JwtSettings.SectionName}:ExpirationMinutes"] = _jwtSettings.ExpirationMinutes.ToString()
                 });
+            });
+            _ = builder.ConfigureTestServices(services =>
+            {
+                _ = services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = "Test";
+                    options.DefaultChallengeScheme = "Test";
+                }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
             });
         }
     }

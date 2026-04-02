@@ -81,7 +81,7 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty;
 });
 app.UseCors("Frontend");
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
 {
     _ = app.UseHttpsRedirection();
 }

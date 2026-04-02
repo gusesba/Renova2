@@ -3,14 +3,12 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
-using Renova.Domain.Settings;
 using Renova.Persistence;
+using Renova.Service.Commands.Auth;
 using Renova.Service.Commands.Loja;
-using Renova.Service.Services.Auth;
 using Renova.Tests.Infrastructure;
 
 namespace Renova.Tests.Services.Loja
@@ -26,8 +24,8 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
             CriarLojaCommand command = new()
             {
@@ -47,7 +45,7 @@ namespace Renova.Tests.Services.Loja
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-            LojaModel lojaSalva = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id && loja.Nome == command.Nome));
+            LojaModel lojaSalva = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == autenticacao.Usuario.Id && loja.Nome == command.Nome));
             Assert.Equal(body.Id, lojaSalva.Id);
             Assert.Equal(command.Nome, lojaSalva.Nome);
         }
@@ -61,10 +59,10 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
-            await CriarLojaAsync(factory, usuario.Id, "Loja Centro");
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
             CriarLojaCommand command = new()
             {
@@ -78,7 +76,7 @@ namespace Renova.Tests.Services.Loja
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-            Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id && loja.Nome == command.Nome));
+            _ = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == autenticacao.Usuario.Id && loja.Nome == command.Nome));
         }
 
         [Fact]
@@ -114,8 +112,8 @@ namespace Renova.Tests.Services.Loja
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            UsuarioModel usuario = await CriarUsuarioAsync(factory, "maria@renova.com");
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CriarToken(usuario));
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
             CriarLojaCommand command = new()
             {
@@ -129,25 +127,25 @@ namespace Renova.Tests.Services.Loja
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-            Assert.Empty(context.Lojas.Where(loja => loja.UsuarioId == usuario.Id));
+            Assert.Empty(context.Lojas.Where(loja => loja.UsuarioId == autenticacao.Usuario.Id));
         }
 
-        private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaApiFactory factory, string email)
+        private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
-            using IServiceScope scope = factory.Services.CreateScope();
-            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-
-            UsuarioModel usuario = new()
+            CadastroCommand command = new()
             {
                 Nome = "Usuario de Teste",
                 Email = email,
-                SenhaHash = "hash"
+                Senha = "Senha@123"
             };
 
-            _ = context.Usuarios.Add(usuario);
-            _ = await context.SaveChangesAsync();
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", command);
 
-            return usuario;
+            _ = response.EnsureSuccessStatusCode();
+
+            UsuarioTokenDto? resultado = await response.Content.ReadFromJsonAsync<UsuarioTokenDto>();
+
+            return Assert.IsType<UsuarioTokenDto>(resultado);
         }
 
         private static async Task CriarLojaAsync(RenovaApiFactory factory, int usuarioId, string nome)
@@ -165,12 +163,5 @@ namespace Renova.Tests.Services.Loja
             _ = await context.SaveChangesAsync();
         }
 
-        private static string CriarToken(UsuarioModel usuario)
-        {
-            JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
-            JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
-
-            return jwtTokenService.GenerateToken(usuario);
-        }
     }
 }

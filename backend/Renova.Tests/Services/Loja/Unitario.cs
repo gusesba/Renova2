@@ -98,7 +98,7 @@ namespace Renova.Tests.Services.Loja
             LojaService service = new(context);
             _ = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(command, parametros));
 
-            Assert.Single(context.Lojas);
+            _ = Assert.Single(context.Lojas);
         }
 
         [Fact]
@@ -152,8 +152,8 @@ namespace Renova.Tests.Services.Loja
             Assert.NotNull(resultado);
             Assert.True(resultado.Id > 0);
             Assert.Equal(command.Nome, resultado.Nome);
-            Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == primeiroUsuario.Id && loja.Nome == command.Nome));
-            Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == segundoUsuario.Id && loja.Nome == command.Nome));
+            _ = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == primeiroUsuario.Id && loja.Nome == command.Nome));
+            _ = Assert.Single(context.Lojas.Where(loja => loja.UsuarioId == segundoUsuario.Id && loja.Nome == command.Nome));
         }
     }
 }
