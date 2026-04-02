@@ -17,8 +17,15 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> PostCadastro([FromBody] CadastroCommand command, CancellationToken cancellationToken)
     {
-        var resultado = await _authService.CreateAsync(command, cancellationToken);
+        try
+        {
+            var resultado = await _authService.CreateAsync(command, cancellationToken);
 
-        return Created(string.Empty, resultado);
+            return Created(string.Empty, resultado);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { mensagem = ex.Message });
+        }
     }
 }
