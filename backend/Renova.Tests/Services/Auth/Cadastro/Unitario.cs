@@ -28,10 +28,10 @@ namespace Renova.Tests.Services.Auth.Cadastro
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
             JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
-            var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
-            var service = new AuthService(context, jwtTokenService);
+            JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
+            AuthService service = new(context, jwtTokenService);
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = "Maria da Silva",
                 Email = "maria@renova.com",
@@ -67,10 +67,10 @@ namespace Renova.Tests.Services.Auth.Cadastro
             _ = await context.SaveChangesAsync();
 
             JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
-            var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
-            var service = new AuthService(context, jwtTokenService);
+            JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
+            AuthService service = new(context, jwtTokenService);
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = "Maria da Silva",
                 Email = "maria@renova.com",
@@ -88,10 +88,10 @@ namespace Renova.Tests.Services.Auth.Cadastro
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
             JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
-            var jwtTokenService = new JwtTokenService(Options.Create(jwtSettings));
-            var service = new AuthService(context, jwtTokenService);
+            JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
+            AuthService service = new(context, jwtTokenService);
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = "Joao Souza",
                 Email = "joao@renova.com",

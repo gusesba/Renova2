@@ -23,7 +23,7 @@ namespace Renova.Tests.Infrastructure
 
         public static ClaimsPrincipal Validate(string token, JwtSettings settings)
         {
-            var validationParameters = new TokenValidationParameters
+            TokenValidationParameters validationParameters = new()
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -35,7 +35,7 @@ namespace Renova.Tests.Infrastructure
                 ClockSkew = TimeSpan.Zero
             };
 
-            var handler = new JwtSecurityTokenHandler();
+            JwtSecurityTokenHandler handler = new();
             return handler.ValidateToken(token, validationParameters, out _);
         }
 

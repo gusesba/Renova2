@@ -20,9 +20,9 @@ namespace Renova.Tests.Services.Renova
         public async Task CreateAsyncDeveSalvarERetornarEntidade()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
-            var service = new RenovaService(context);
+            RenovaService service = new(context);
 
-            var command = new RenovaCommand
+            RenovaCommand command = new()
             {
                 Campo2 = "teste",
                 Campo3 = 123
@@ -46,7 +46,7 @@ namespace Renova.Tests.Services.Renova
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
-            var entidade = new RenovaModel
+            RenovaModel entidade = new()
             {
                 Campo2 = "existente",
                 Campo3 = 50
@@ -55,9 +55,9 @@ namespace Renova.Tests.Services.Renova
             _ = context.Renova.Add(entidade);
             _ = await context.SaveChangesAsync();
 
-            var service = new RenovaService(context);
+            RenovaService service = new(context);
 
-            var query = new RenovaQuery
+            RenovaQuery query = new()
             {
                 CampoQuery = entidade.Campo1
             };
@@ -74,9 +74,9 @@ namespace Renova.Tests.Services.Renova
         public async Task GetAsyncDeveRetornarNullQuandoNaoExistir()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
-            var service = new RenovaService(context);
+            RenovaService service = new(context);
 
-            var query = new RenovaQuery
+            RenovaQuery query = new()
             {
                 CampoQuery = 999
             };

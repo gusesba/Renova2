@@ -22,11 +22,11 @@ namespace Renova.Tests.Services.Auth.Cadastro
         //Retorna: usuario e token
         public async Task PostCadastroDeveSalvarComSenhaHashERetornarUsuarioToken()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
             JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = "Maria da Silva",
                 Email = "maria@renova.com",
@@ -62,7 +62,7 @@ namespace Renova.Tests.Services.Auth.Cadastro
         //Retorna: conflito de cadastro
         public async Task PostCadastroDeveRetornarConflitoQuandoEmailJaExistir()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
 
             using (IServiceScope scope = factory.Services.CreateScope())
             {
@@ -79,7 +79,7 @@ namespace Renova.Tests.Services.Auth.Cadastro
 
             HttpClient client = factory.CreateClient();
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = "Novo Usuario",
                 Email = "duplicado@renova.com",
@@ -97,10 +97,10 @@ namespace Renova.Tests.Services.Auth.Cadastro
         //Retorna: erro de validacao
         public async Task PostCadastroDeveRetornarErroValidacaoQuandoPayloadForInvalido()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            var command = new CadastroCommand
+            CadastroCommand command = new()
             {
                 Nome = string.Empty,
                 Email = "email-invalido",

@@ -15,10 +15,10 @@ namespace Renova.Tests.Services.Renova
         [Fact]
         public async Task PostRenovaDeveRetornarCreatedEPersistirRegistro()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            var command = new RenovaCommand
+            RenovaCommand command = new()
             {
                 Campo2 = "novo registro",
                 Campo3 = 123
@@ -47,12 +47,12 @@ namespace Renova.Tests.Services.Renova
         [Fact]
         public async Task GetRenovaDeveRetornarOkQuandoRegistroExistir()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
 
-            var entidade = new RenovaModel
+            RenovaModel entidade = new()
             {
                 Campo2 = "existente",
                 Campo3 = 50
@@ -77,7 +77,7 @@ namespace Renova.Tests.Services.Renova
         [Fact]
         public async Task GetRenovaDeveRetornarNoContentQuandoRegistroNaoExistir()
         {
-            await using var factory = new RenovaApiFactory();
+            await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
             HttpResponseMessage response = await client.GetAsync("/api/renova?CampoQuery=999");

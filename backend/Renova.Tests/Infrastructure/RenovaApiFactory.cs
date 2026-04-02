@@ -16,7 +16,7 @@ namespace Renova.Tests.Infrastructure
             _ = builder.UseEnvironment("Testing");
             _ = builder.ConfigureAppConfiguration((_, configurationBuilder) =>
             {
-                _ = configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+                _ = (WebHostBuilderContext)configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["TestDatabaseName"] = _databaseName,
                     [$"{JwtSettings.SectionName}:SecretKey"] = _jwtSettings.SecretKey,
