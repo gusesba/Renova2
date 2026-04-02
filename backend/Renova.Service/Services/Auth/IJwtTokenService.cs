@@ -1,6 +1,6 @@
 using Renova.Domain.Model;
 
-namespace Renova.Service.Services;
+namespace Renova.Service.Services.Auth;
 
 public interface IJwtTokenService
 {

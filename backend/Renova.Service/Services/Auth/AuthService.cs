@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Renova.Domain.Model.Dto;
 using Renova.Domain.Model;
 using Renova.Persistence;
-using Renova.Service.Commands;
+using Renova.Service.Commands.Auth;
 
-namespace Renova.Service.Services;
+namespace Renova.Service.Services.Auth;
 
 public class AuthService(RenovaDbContext context, IJwtTokenService jwtTokenService) : IAuthService
 {

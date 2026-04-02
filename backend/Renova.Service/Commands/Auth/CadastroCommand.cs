@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Renova.Service.Commands;
+namespace Renova.Service.Commands.Auth;
 
 public class CadastroCommand
 {

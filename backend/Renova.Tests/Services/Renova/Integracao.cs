@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Renova.Domain.Model;
 using Renova.Persistence;
-using Renova.Service.Commands;
+using Renova.Service.Commands.Renova;
 using Renova.Tests.Infrastructure;
 using System.Net;
 using System.Net.Http.Json;

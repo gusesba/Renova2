@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Renova.Domain.Model;
-using Renova.Domain.Model.Dto;
-using Renova.Domain.Settings;
 using Renova.Persistence;
-using Renova.Service.Commands;
-using Renova.Service.Services;
+using Renova.Service.Commands.Auth;
+using Renova.Service.Services.Auth;
 using Renova.Tests.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
 

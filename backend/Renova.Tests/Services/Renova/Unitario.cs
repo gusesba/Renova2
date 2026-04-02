@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Renova.Domain.Model;
 using Renova.Persistence;
-using Renova.Service.Commands;
-using Renova.Service.Queries;
-using Renova.Service.Services;
+using Renova.Service.Commands.Renova;
+using Renova.Service.Queries.Renova;
+using Renova.Service.Services.Renova;
 using Renova.Tests.Infrastructure;
 
 namespace Renova.Tests.Services.Renova;

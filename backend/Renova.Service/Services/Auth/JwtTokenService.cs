@@ -2,12 +2,11 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Renova.Domain.Model;
 using Renova.Domain.Settings;
-using Renova.Service.Services.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Renova.Service.Services;
+namespace Renova.Service.Services.Auth;
 
 public class JwtTokenService(IOptions<JwtSettings> jwtOptions) : IJwtTokenService
 {

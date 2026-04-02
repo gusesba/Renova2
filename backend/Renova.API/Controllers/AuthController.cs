@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Renova.Domain.Model.Dto;
-using Renova.Service.Commands;
-using Renova.Service.Services;
+using Renova.Service.Commands.Auth;
+using Renova.Service.Services.Auth;
 
 namespace Renova.API.Controllers;
 
