@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 
 using Renova.Domain.Model;
+using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Cliente;
 using Renova.Service.Parameters.Cliente;
@@ -39,7 +40,21 @@ namespace Renova.Tests.Services.Cliente.Criar
             };
 
             ClienteService service = new(context);
-            _ = await service.CreateAsync(command, parametros);
+            ClienteDto resultado = await service.CreateAsync(command, parametros);
+
+            Assert.NotNull(resultado);
+            Assert.True(resultado.Id > 0);
+            Assert.Equal(command.Nome, resultado.Nome);
+            Assert.Equal(command.Contato, resultado.Contato);
+            Assert.Equal(command.LojaId, resultado.LojaId);
+            Assert.Null(resultado.UserId);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync();
+            Assert.Equal(resultado.Id, clienteSalvo.Id);
+            Assert.Equal(command.Nome, clienteSalvo.Nome);
+            Assert.Equal(command.Contato, clienteSalvo.Contato);
+            Assert.Equal(command.LojaId, clienteSalvo.LojaId);
+            Assert.Null(clienteSalvo.UserId);
         }
 
         [Fact]
@@ -76,7 +91,14 @@ namespace Renova.Tests.Services.Cliente.Criar
             };
 
             ClienteService service = new(context);
-            _ = await service.CreateAsync(command, parametros);
+            ClienteDto resultado = await service.CreateAsync(command, parametros);
+
+            Assert.NotNull(resultado);
+            Assert.True(resultado.Id > 0);
+            Assert.Equal(contaCliente.Id, resultado.UserId);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync();
+            Assert.Equal(contaCliente.Id, clienteSalvo.UserId);
         }
 
         [Fact]
@@ -110,7 +132,9 @@ namespace Renova.Tests.Services.Cliente.Criar
             };
 
             ClienteService service = new(context);
-            _ = await service.CreateAsync(command, parametros);
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(command, parametros));
+
+            _ = Assert.Single(context.Clientes.Where(cliente => cliente.LojaId == loja.Id));
         }
 
         [Fact]
@@ -145,7 +169,13 @@ namespace Renova.Tests.Services.Cliente.Criar
             };
 
             ClienteService service = new(context);
-            _ = await service.CreateAsync(command, parametros);
+            ClienteDto resultado = await service.CreateAsync(command, parametros);
+
+            Assert.NotNull(resultado);
+            Assert.True(resultado.Id > 0);
+            Assert.Equal(segundaLoja.Id, resultado.LojaId);
+            _ = Assert.Single(context.Clientes.Where(cliente => cliente.LojaId == primeiraLoja.Id && cliente.Nome == command.Nome));
+            _ = Assert.Single(context.Clientes.Where(cliente => cliente.LojaId == segundaLoja.Id && cliente.Nome == command.Nome));
         }
 
         [Fact]
@@ -180,7 +210,9 @@ namespace Renova.Tests.Services.Cliente.Criar
             };
 
             ClienteService service = new(context);
-            _ = await service.CreateAsync(command, parametros);
+            _ = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CreateAsync(command, parametros));
+
+            Assert.Empty(context.Clientes.Where(cliente => cliente.LojaId == loja.Id));
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
