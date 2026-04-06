@@ -6,5 +6,6 @@ namespace Renova.Domain.Model
         public required string Nome { get; set; }
         public int UsuarioId { get; set; }
         public UsuarioModel? Usuario { get; set; }
+        public ICollection<ClienteModel> Clientes { get; set; } = [];
     }
 }
