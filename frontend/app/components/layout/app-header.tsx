@@ -1,6 +1,7 @@
 "use client";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { Select } from "@/app/components/ui/select";
 
 function SearchIcon() {
   return (
@@ -59,6 +60,11 @@ export function AppHeader() {
       .map((part) => part[0]?.toUpperCase())
       .join("") ?? "RN";
 
+  const storeOptions = stores.map((store) => ({
+    label: store.nome,
+    value: String(store.id),
+  }));
+
   return (
     <header className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -76,30 +82,19 @@ export function AppHeader() {
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
               Loja
             </span>
-            <div className="relative min-w-0 flex-1">
-              <select
-                value={selectedStoreId ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value;
+            <div className="min-w-0 flex-1">
+              <Select
+                ariaLabel="Selecionar loja"
+                value={selectedStoreId ? String(selectedStoreId) : null}
+                options={storeOptions}
+                disabled={isLoadingStores || stores.length === 0}
+                placeholder={isLoadingStores ? "Carregando lojas..." : "Selecionar loja"}
+                emptyLabel="Nenhuma loja cadastrada"
+                helper={isLoadingStores ? "As lojas estao sendo carregadas." : null}
+                onChange={(value) => {
                   setSelectedStoreId(value ? Number(value) : null);
                 }}
-                disabled={isLoadingStores || stores.length === 0}
-                className="w-full appearance-none bg-transparent pr-6 text-right font-medium outline-none disabled:cursor-not-allowed disabled:text-[var(--muted)]"
-                aria-label="Selecionar loja"
-              >
-                {isLoadingStores ? <option value="">Carregando lojas...</option> : null}
-                {!isLoadingStores && stores.length === 0 ? (
-                  <option value="">Nenhuma loja cadastrada</option>
-                ) : null}
-                {stores.map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.nome}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[var(--muted)]">
-                <ChevronDownIcon />
-              </span>
+              />
             </div>
           </label>
 
