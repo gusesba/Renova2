@@ -1,0 +1,34 @@
+import { z } from "zod";
+
+import type { ClientFieldErrors } from "@/lib/client";
+
+export const clientSchema = z.object({
+  nome: z.string().trim().min(1, "Informe o nome do cliente."),
+  contato: z.string().trim().min(1, "Informe um contato."),
+  userId: z
+    .string()
+    .trim()
+    .refine((value) => value === "" || (/^\d+$/).test(value), "Informe um UserId numerico valido."),
+});
+
+export function mapClientZodErrors(error: z.ZodError): ClientFieldErrors {
+  const mapped: ClientFieldErrors = {};
+
+  for (const issue of error.issues) {
+    const field = issue.path[0];
+
+    if (field === "nome" && !mapped.nome) {
+      mapped.nome = issue.message;
+    }
+
+    if (field === "contato" && !mapped.contato) {
+      mapped.contato = issue.message;
+    }
+
+    if (field === "userId" && !mapped.userId) {
+      mapped.userId = issue.message;
+    }
+  }
+
+  return mapped;
+}

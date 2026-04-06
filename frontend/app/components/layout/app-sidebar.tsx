@@ -11,6 +11,7 @@ type NavItem = {
 const primaryItems: NavItem[] = [
   { label: "Inicio", href: "/dashboard" },
   { label: "Lojas", href: "/dashboard/loja" },
+  { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Relatorios", href: "/relatorios" },
   { label: "Faturas", href: "/faturas" },
   { label: "Transacoes", href: "/transacoes" },
