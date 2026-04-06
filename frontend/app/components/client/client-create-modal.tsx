@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import type { ClientFieldErrors, ClientFormValues } from "@/lib/client";
 
@@ -57,9 +57,29 @@ export function ClientCreateModal({
   onClose,
   onSubmit,
 }: ClientCreateModalProps) {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
-    if (!isOpen) {
-      return;
+    let animationFrame = 0;
+    let visibilityFrame = 0;
+    let closeTimeout = 0;
+
+    if (isOpen) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setShouldRender(true);
+        visibilityFrame = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else if (shouldRender) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setIsVisible(false);
+      });
+
+      closeTimeout = window.setTimeout(() => {
+        setShouldRender(false);
+      }, 220);
     }
 
     function handleEscape(event: KeyboardEvent) {
@@ -71,17 +91,28 @@ export function ClientCreateModal({
     window.addEventListener("keydown", handleEscape);
 
     return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(visibilityFrame);
+      window.clearTimeout(closeTimeout);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, shouldRender]);
 
-  if (!isOpen) {
+  if (!shouldRender) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4">
-      <div className="w-full max-w-2xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)]">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <div
+        className={`w-full max-w-2xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+          isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
+        }`}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
