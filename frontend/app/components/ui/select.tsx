@@ -105,7 +105,7 @@ export function Select({
             setOpen((current) => !current);
           }
         }}
-        className="flex w-full items-center justify-end gap-2 bg-transparent text-right font-medium outline-none disabled:cursor-not-allowed disabled:text-[var(--muted)]"
+        className="flex w-full cursor-pointer items-center justify-end gap-2 bg-transparent text-right font-medium outline-none disabled:cursor-not-allowed disabled:text-[var(--muted)]"
       >
         <span className={`truncate ${selectedOption ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}>
           {selectedOption?.label ?? placeholder}
@@ -145,7 +145,7 @@ export function Select({
                         onChange(option.value);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
+                      className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
                         isSelected
                           ? "bg-[var(--primary-soft)] font-semibold text-[var(--foreground)]"
                           : "text-[var(--foreground)]"
