@@ -55,6 +55,8 @@ export function Select({
   value,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [shouldRenderList, setShouldRenderList] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const buttonId = useId();
   const listboxId = useId();
@@ -63,6 +65,35 @@ export function Select({
     () => options.find((option) => option.value === value) ?? null,
     [options, value],
   );
+
+  useEffect(() => {
+    let animationFrame = 0;
+    let visibilityFrame = 0;
+    let closeTimeout = 0;
+
+    if (open) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setShouldRenderList(true);
+        visibilityFrame = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else if (shouldRenderList) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setIsVisible(false);
+      });
+
+      closeTimeout = window.setTimeout(() => {
+        setShouldRenderList(false);
+      }, 250);
+    }
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(visibilityFrame);
+      window.clearTimeout(closeTimeout);
+    };
+  }, [open, shouldRenderList]);
 
   useEffect(() => {
     if (!open) {
@@ -116,8 +147,16 @@ export function Select({
       </button>
 
       {open ? (
+        <div />
+      ) : null}
+
+      {shouldRenderList ? (
         <div
-          className="absolute right-0 top-[calc(100%+0.75rem)] z-30 min-w-full overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.12)]"
+          className={`absolute right-0 top-[calc(100%+0.75rem)] z-30 min-w-full origin-top overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.12)] transition-all duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isVisible
+              ? "translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none -translate-y-3 scale-95 opacity-0"
+          }`}
         >
           {helper ? (
             <div className="border-b border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
