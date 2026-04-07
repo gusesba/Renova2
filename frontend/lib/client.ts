@@ -133,29 +133,32 @@ export function extractClientFieldErrors(body: unknown): ClientFieldErrors {
     return {};
   }
 
-  const fieldMap = Object.entries(errors).reduce<ClientFieldErrors>((accumulator, [key, values]) => {
-    const error = values?.[0];
+  const fieldMap = Object.entries(errors).reduce<ClientFieldErrors>(
+    (accumulator, [key, values]) => {
+      const error = values?.[0];
 
-    if (!error) {
+      if (!error) {
+        return accumulator;
+      }
+
+      const normalizedKey = key.toLowerCase();
+
+      if (normalizedKey === "nome" && !accumulator.nome) {
+        accumulator.nome = error;
+      }
+
+      if (normalizedKey === "contato" && !accumulator.contato) {
+        accumulator.contato = error;
+      }
+
+      if (normalizedKey === "userid" && !accumulator.userId) {
+        accumulator.userId = error;
+      }
+
       return accumulator;
-    }
-
-    const normalizedKey = key.toLowerCase();
-
-    if (normalizedKey === "nome" && !accumulator.nome) {
-      accumulator.nome = error;
-    }
-
-    if (normalizedKey === "contato" && !accumulator.contato) {
-      accumulator.contato = error;
-    }
-
-    if (normalizedKey === "userid" && !accumulator.userId) {
-      accumulator.userId = error;
-    }
-
-    return accumulator;
-  }, {});
+    },
+    {},
+  );
 
   return fieldMap;
 }

@@ -151,7 +151,9 @@ export function ClientSettingsModal({
                       className="mt-1 h-4 w-4 rounded border-[var(--border-strong)]"
                     />
                     <div>
-                      <p className="text-sm font-semibold text-[var(--foreground)]">{field.label}</p>
+                      <p className="text-sm font-semibold text-[var(--foreground)]">
+                        {field.label}
+                      </p>
                       <p className="text-sm text-[var(--muted)]">{field.description}</p>
                     </div>
                   </label>

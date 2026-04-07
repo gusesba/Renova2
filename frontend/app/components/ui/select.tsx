@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 type SelectOption = {
   label: string;
@@ -138,7 +131,9 @@ export function Select({
         }}
         className="flex w-full cursor-pointer items-center justify-end gap-2 bg-transparent text-right font-medium outline-none disabled:cursor-not-allowed disabled:text-[var(--muted)]"
       >
-        <span className={`truncate ${selectedOption ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}>
+        <span
+          className={`truncate ${selectedOption ? "text-[var(--foreground)]" : "text-[var(--muted)]"}`}
+        >
           {selectedOption?.label ?? placeholder}
         </span>
         <span className="text-[var(--muted)]">
@@ -146,9 +141,7 @@ export function Select({
         </span>
       </button>
 
-      {open ? (
-        <div />
-      ) : null}
+      {open ? <div /> : null}
 
       {shouldRenderList ? (
         <div

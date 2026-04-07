@@ -1,14 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
   getAuthToken,
@@ -69,7 +62,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     return stores.some((store) => store.id === selectedStoreIdState)
       ? selectedStoreIdState
-      : stores[0]?.id ?? null;
+      : (stores[0]?.id ?? null);
   }, [selectedStoreIdState, stores]);
 
   useEffect(() => {

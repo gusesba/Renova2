@@ -8,7 +8,7 @@ export const clientSchema = z.object({
   userId: z
     .string()
     .trim()
-    .refine((value) => value === "" || (/^\d+$/).test(value), "Informe um UserId numerico valido."),
+    .refine((value) => value === "" || /^\d+$/.test(value), "Informe um UserId numerico valido."),
 });
 
 export function mapClientZodErrors(error: z.ZodError): ClientFieldErrors {
