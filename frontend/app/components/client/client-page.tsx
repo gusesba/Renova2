@@ -21,10 +21,16 @@ import {
   type ClientFormValues,
 } from "@/lib/client";
 import { getAuthToken } from "@/lib/store";
-import { createClient, getClients, updateClient } from "@/services/client-service";
+import {
+  createClient,
+  deleteClient,
+  getClients,
+  updateClient,
+} from "@/services/client-service";
 import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 import { ClientCreateModal } from "./client-create-modal";
+import { ClientDeleteModal } from "./client-delete-modal";
 import { ClientEditModal } from "./client-edit-modal";
 import { ClientEmptyState } from "./client-empty-state";
 import { ClientFiltersBar } from "./client-filters-bar";
@@ -39,12 +45,14 @@ export function ClientPage() {
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [formValues, setFormValues] = useState<ClientFormValues>(initialClientFormValues);
   const [formErrors, setFormErrors] = useState<ClientFieldErrors>({});
   const [editFormValues, setEditFormValues] = useState<ClientFormValues>(initialClientFormValues);
   const [editFormErrors, setEditFormErrors] = useState<ClientFieldErrors>({});
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [tableSettings, setTableSettings] = useState<ClientTableSettings>(() =>
     getStoredClientTableSettings(),
   );
@@ -112,6 +120,16 @@ export function ClientPage() {
     },
   });
 
+  const deleteClientMutation = useMutation({
+    mutationFn: async (clientId: number) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para excluir um cliente.");
+      }
+
+      return deleteClient(clientId, token);
+    },
+  });
+
   function handleOpenModal() {
     setIsCreateModalOpen(true);
   }
@@ -129,6 +147,12 @@ export function ClientPage() {
 
   function handleOpenSettingsModal() {
     setIsSettingsModalOpen(true);
+  }
+
+  function handleOpenDeleteModal(client: ClientListItem) {
+    setSelectedClientId(client.id);
+    setSelectedClientName(client.nome);
+    setIsDeleteModalOpen(true);
   }
 
   function handleCloseModal() {
@@ -150,6 +174,16 @@ export function ClientPage() {
     setSelectedClientId(null);
     setEditFormValues(initialClientFormValues);
     setEditFormErrors({});
+  }
+
+  function handleCloseDeleteModal() {
+    if (deleteClientMutation.isPending) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
+    setSelectedClientId(null);
+    setSelectedClientName(null);
   }
 
   function handleCloseSettingsModal() {
@@ -304,6 +338,43 @@ export function ClientPage() {
     }
   }
 
+  async function handleDeleteConfirm() {
+    if (!selectedClientId) {
+      toast.error("Selecione um cliente valido para excluir.");
+      return;
+    }
+
+    try {
+      const response = await deleteClientMutation.mutateAsync(selectedClientId);
+
+      if (!response.ok) {
+        toast.error(getClientApiMessage(response.body) ?? "Nao foi possivel excluir o cliente.");
+        return;
+      }
+
+      const deletedClientName = selectedClientName;
+
+      startTransition(() => {
+        setIsDeleteModalOpen(false);
+        setSelectedClientId(null);
+        setSelectedClientName(null);
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(
+        deletedClientName
+          ? `Cliente ${deletedClientName} excluido com sucesso.`
+          : "Cliente excluido com sucesso.",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
   const listResponse = clientsQuery.data;
   const hasStore = Boolean(selectedStoreId);
 
@@ -344,6 +415,7 @@ export function ClientPage() {
               clients={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
               onEditClient={handleOpenEditModal}
+              onDeleteClient={handleOpenDeleteModal}
             />
             <ClientPagination
               currentPage={filters.pagina}
@@ -381,6 +453,13 @@ export function ClientPage() {
         onChange={updateEditFormField}
         onClose={handleCloseEditModal}
         onSubmit={handleEditSubmit}
+      />
+      <ClientDeleteModal
+        clientName={selectedClientName}
+        isOpen={isDeleteModalOpen}
+        isSubmitting={deleteClientMutation.isPending}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteConfirm}
       />
       <ClientSettingsModal
         key={`${isSettingsModalOpen}-${tableSettings.tamanhoPagina}-${tableSettings.visibleFields.join(",")}`}

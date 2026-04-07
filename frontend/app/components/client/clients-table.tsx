@@ -4,6 +4,7 @@ type ClientsTableProps = {
   clients: ClientListItem[];
   visibleFields: ClientVisibleField[];
   onEditClient: (client: ClientListItem) => void;
+  onDeleteClient: (client: ClientListItem) => void;
 };
 
 function ClientTableCell({
@@ -40,7 +41,33 @@ function EditIcon() {
   );
 }
 
-export function ClientsTable({ clients, visibleFields, onEditClient }: ClientsTableProps) {
+function DeleteIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
+export function ClientsTable({
+  clients,
+  visibleFields,
+  onEditClient,
+  onDeleteClient,
+}: ClientsTableProps) {
   const showName = visibleFields.includes("nome");
   const showContact = visibleFields.includes("contato");
   const showUserId = visibleFields.includes("userId");
@@ -110,15 +137,26 @@ export function ClientsTable({ clients, visibleFields, onEditClient }: ClientsTa
                 ) : null}
                 {showId ? <ClientTableCell subtle>#{client.id}</ClientTableCell> : null}
                 <ClientTableCell>
-                  <button
-                    type="button"
-                    onClick={() => onEditClient(client)}
-                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
-                    aria-label={`Editar cliente ${client.nome}`}
-                    title={`Editar cliente ${client.nome}`}
-                  >
-                    <EditIcon />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onEditClient(client)}
+                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                      aria-label={`Editar cliente ${client.nome}`}
+                      title={`Editar cliente ${client.nome}`}
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteClient(client)}
+                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                      aria-label={`Excluir cliente ${client.nome}`}
+                      title={`Excluir cliente ${client.nome}`}
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </div>
                 </ClientTableCell>
               </tr>
             ))}
