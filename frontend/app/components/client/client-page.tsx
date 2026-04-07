@@ -7,10 +7,14 @@ import { toast } from "sonner";
 import {
   asClientListResponse,
   asClientResponse,
+  defaultClientTableSettings,
   extractClientFieldErrors,
+  getStoredClientTableSettings,
   getClientApiMessage,
   initialClientFilters,
   initialClientFormValues,
+  persistClientTableSettings,
+  type ClientTableSettings,
   type ClientFieldErrors,
   type ClientFilters,
   type ClientFormValues,
@@ -23,6 +27,7 @@ import { ClientCreateModal } from "./client-create-modal";
 import { ClientEmptyState } from "./client-empty-state";
 import { ClientFiltersBar } from "./client-filters-bar";
 import { ClientPagination } from "./client-pagination";
+import { ClientSettingsModal } from "./client-settings-modal";
 import { ClientsTable } from "./clients-table";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
@@ -31,9 +36,16 @@ export function ClientPage() {
   const queryClient = useQueryClient();
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [formValues, setFormValues] = useState<ClientFormValues>(initialClientFormValues);
   const [formErrors, setFormErrors] = useState<ClientFieldErrors>({});
-  const [filters, setFilters] = useState<ClientFilters>(initialClientFilters);
+  const [tableSettings, setTableSettings] = useState<ClientTableSettings>(() =>
+    getStoredClientTableSettings(),
+  );
+  const [filters, setFilters] = useState<ClientFilters>(() => ({
+    ...initialClientFilters,
+    tamanhoPagina: getStoredClientTableSettings().tamanhoPagina,
+  }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const clientsQuery = useQuery({
@@ -75,6 +87,10 @@ export function ClientPage() {
     setIsCreateModalOpen(true);
   }
 
+  function handleOpenSettingsModal() {
+    setIsSettingsModalOpen(true);
+  }
+
   function handleCloseModal() {
     if (createClientMutation.isPending) {
       return;
@@ -83,6 +99,10 @@ export function ClientPage() {
     setIsCreateModalOpen(false);
     setFormValues(initialClientFormValues);
     setFormErrors({});
+  }
+
+  function handleCloseSettingsModal() {
+    setIsSettingsModalOpen(false);
   }
 
   function handleFilterChange(next: Partial<ClientFilters>) {
@@ -172,6 +192,7 @@ export function ClientPage() {
           hasStore={hasStore}
           isLoading={clientsQuery.isLoading || isLoadingStores}
           onAddClient={handleOpenModal}
+          onOpenSettings={handleOpenSettingsModal}
           onChange={handleFilterChange}
         />
 
@@ -196,7 +217,10 @@ export function ClientPage() {
           />
         ) : listResponse && listResponse.itens.length > 0 ? (
           <>
-            <ClientsTable clients={listResponse.itens} />
+            <ClientsTable
+              clients={listResponse.itens}
+              visibleFields={tableSettings.visibleFields}
+            />
             <ClientPagination
               currentPage={filters.pagina}
               hasNextPage={filters.pagina < listResponse.totalPaginas}
@@ -223,6 +247,28 @@ export function ClientPage() {
         onChange={updateFormField}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
+      />
+      <ClientSettingsModal
+        key={`${isSettingsModalOpen}-${tableSettings.tamanhoPagina}-${tableSettings.visibleFields.join(",")}`}
+        isOpen={isSettingsModalOpen}
+        settings={tableSettings}
+        onClose={handleCloseSettingsModal}
+        onSave={(nextSettings) => {
+          const normalizedSettings = {
+            ...defaultClientTableSettings,
+            ...nextSettings,
+          };
+
+          setTableSettings(normalizedSettings);
+          persistClientTableSettings(normalizedSettings);
+          setFilters((current) => ({
+            ...current,
+            pagina: 1,
+            tamanhoPagina: normalizedSettings.tamanhoPagina,
+          }));
+          setIsSettingsModalOpen(false);
+          toast.success("Configuracoes da tabela atualizadas.");
+        }}
       />
     </section>
   );

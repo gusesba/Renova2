@@ -33,6 +33,13 @@ export type ClientFilters = {
   tamanhoPagina: number;
 };
 
+export type ClientVisibleField = "nome" | "contato" | "userId" | "id";
+
+export type ClientTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: ClientVisibleField[];
+};
+
 type ApiErrorResponse = {
   mensagem?: unknown;
   title?: unknown;
@@ -53,6 +60,13 @@ export const initialClientFilters: ClientFilters = {
   pagina: 1,
   tamanhoPagina: 10,
 };
+
+export const defaultClientTableSettings: ClientTableSettings = {
+  tamanhoPagina: 10,
+  visibleFields: ["nome", "contato", "userId", "id"],
+};
+
+const clientTableSettingsStorageKey = "renova.clientTableSettings";
 
 export function asClientListResponse(body: unknown) {
   return body as ClientListResponse;
@@ -148,4 +162,50 @@ export function extractClientFieldErrors(body: unknown): ClientFieldErrors {
 
 export function formatClientStoreLabel(store: LojaResponse | null) {
   return store ? store.nome : "Selecione uma loja";
+}
+
+export function getStoredClientTableSettings(): ClientTableSettings {
+  if (typeof window === "undefined") {
+    return defaultClientTableSettings;
+  }
+
+  const rawValue = window.localStorage.getItem(clientTableSettingsStorageKey);
+
+  if (!rawValue) {
+    return defaultClientTableSettings;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<ClientTableSettings>;
+    const tamanhoPagina =
+      typeof parsed.tamanhoPagina === "number" &&
+      Number.isInteger(parsed.tamanhoPagina) &&
+      parsed.tamanhoPagina > 0 &&
+      parsed.tamanhoPagina <= 100
+        ? parsed.tamanhoPagina
+        : defaultClientTableSettings.tamanhoPagina;
+
+    const visibleFields = Array.isArray(parsed.visibleFields)
+      ? parsed.visibleFields.filter((field): field is ClientVisibleField =>
+          ["nome", "contato", "userId", "id"].includes(String(field)),
+        )
+      : defaultClientTableSettings.visibleFields;
+
+    return {
+      tamanhoPagina,
+      visibleFields: visibleFields.length
+        ? visibleFields
+        : defaultClientTableSettings.visibleFields,
+    };
+  } catch {
+    return defaultClientTableSettings;
+  }
+}
+
+export function persistClientTableSettings(settings: ClientTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(clientTableSettingsStorageKey, JSON.stringify(settings));
 }

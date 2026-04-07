@@ -1,4 +1,5 @@
 import type { ClientFilters } from "@/lib/client";
+import { GearIcon } from "@/app/components/ui/gear-icon";
 import { Select } from "@/app/components/ui/select";
 
 type ClientFiltersBarProps = {
@@ -6,6 +7,7 @@ type ClientFiltersBarProps = {
   hasStore: boolean;
   isLoading: boolean;
   onAddClient: () => void;
+  onOpenSettings: () => void;
   onChange: (next: Partial<ClientFilters>) => void;
 };
 
@@ -70,6 +72,7 @@ export function ClientFiltersBar({
   hasStore,
   isLoading,
   onAddClient,
+  onOpenSettings,
   onChange,
 }: ClientFiltersBarProps) {
   return (
@@ -82,14 +85,24 @@ export function ClientFiltersBar({
           </p>
         </div>
 
-        <button
-          type="button"
-          disabled={!hasStore || isLoading}
-          onClick={onAddClient}
-          className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Novo cliente
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105"
+            aria-label="Configurar tabela de clientes"
+          >
+            <GearIcon />
+          </button>
+          <button
+            type="button"
+            disabled={!hasStore || isLoading}
+            onClick={onAddClient}
+            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Novo cliente
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_220px_180px]">
@@ -113,7 +126,9 @@ export function ClientFiltersBar({
             { label: "Contato", value: "contato" },
             { label: "Id", value: "id" },
           ]}
-          onChange={(ordenarPor) => onChange({ ordenarPor: ordenarPor as ClientFilters["ordenarPor"] })}
+          onChange={(ordenarPor) =>
+            onChange({ ordenarPor: ordenarPor as ClientFilters["ordenarPor"] })
+          }
         />
         <SelectField
           label="Direcao"
