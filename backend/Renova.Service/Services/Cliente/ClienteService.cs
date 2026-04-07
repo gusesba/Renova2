@@ -82,6 +82,74 @@ namespace Renova.Service.Services.Cliente
             };
         }
 
+        public async Task<ClienteDto> EditAsync(EditarClienteCommand request, EditarClienteParametros parametros, CancellationToken cancellationToken = default)
+        {
+            string nomeNormalizado = request.Nome.Trim();
+            string contatoNormalizado = request.Contato.Trim();
+
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            ClienteModel? cliente = await _context.Clientes
+                .SingleOrDefaultAsync(clienteAtual => clienteAtual.Id == parametros.ClienteId, cancellationToken);
+
+            if (cliente is null)
+            {
+                throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
+            }
+
+            LojaModel? loja = await _context.Lojas
+                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == cliente.LojaId, cancellationToken);
+
+            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
+            {
+                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
+            }
+
+            if (request.UserId.HasValue)
+            {
+                bool contaExiste = await _context.Usuarios
+                    .AnyAsync(usuario => usuario.Id == request.UserId.Value, cancellationToken);
+
+                if (!contaExiste)
+                {
+                    throw new InvalidOperationException("Conta informada para vinculo nao foi encontrada.");
+                }
+            }
+
+            bool clienteJaExiste = await _context.Clientes
+                .AnyAsync(clienteAtual =>
+                    clienteAtual.LojaId == cliente.LojaId &&
+                    clienteAtual.Id != cliente.Id &&
+                    clienteAtual.Nome == nomeNormalizado,
+                    cancellationToken);
+
+            if (clienteJaExiste)
+            {
+                throw new InvalidOperationException("Loja ja possui um cliente com este nome.");
+            }
+
+            cliente.Nome = nomeNormalizado;
+            cliente.Contato = contatoNormalizado;
+            cliente.UserId = request.UserId;
+
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            return new ClienteDto
+            {
+                Id = cliente.Id,
+                Nome = cliente.Nome,
+                Contato = cliente.Contato,
+                LojaId = cliente.LojaId,
+                UserId = cliente.UserId
+            };
+        }
+
         public async Task<PaginacaoDto<ClienteDto>> GetAllAsync(ObterClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default)
         {
             if (!request.LojaId.HasValue)

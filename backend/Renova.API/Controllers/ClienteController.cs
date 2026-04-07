@@ -87,5 +87,47 @@ namespace Renova.API.Controllers
                 return Unauthorized(new { mensagem = ex.Message });
             }
         }
+
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(typeof(ClienteDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> PutCliente(int id, [FromBody] EditarClienteCommand command, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                ClienteDto resultado = await _clienteService.EditAsync(
+                    command,
+                    new EditarClienteParametros
+                    {
+                        UsuarioId = usuarioId.Value,
+                        ClienteId = id
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
     }
 }
