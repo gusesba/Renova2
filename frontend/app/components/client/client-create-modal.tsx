@@ -20,12 +20,14 @@ function FormField({
   placeholder,
   value,
   error,
+  inputMode,
   onChange,
 }: {
   label: string;
   placeholder: string;
   value: string;
   error?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   onChange: (value: string) => void;
 }) {
   return (
@@ -35,6 +37,7 @@ function FormField({
         type="text"
         value={value}
         placeholder={placeholder}
+        inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
           error
@@ -149,9 +152,10 @@ export function ClientCreateModal({
             />
             <FormField
               label="Contato"
-              placeholder="Telefone, email ou identificador"
+              placeholder="Somente numeros"
               value={values.contato}
               error={errors.contato}
+              inputMode="numeric"
               onChange={(value) => onChange("contato", value)}
             />
           </div>

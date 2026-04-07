@@ -58,6 +58,63 @@ namespace Renova.Tests.Services.Cliente.Criar
         }
 
         [Fact]
+        // Input: contato com mascara e caracteres nao numericos
+        // Normaliza o valor antes de persistir
+        // Retorna: cliente salvo somente com digitos no contato
+        public async Task CreateAsyncDeveManterApenasDigitosNoContato()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+
+            CriarClienteCommand command = new()
+            {
+                Nome = "Cliente A",
+                Contato = "(44) 9 9999-0000",
+                LojaId = loja.Id
+            };
+
+            CriarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId
+            };
+
+            ClienteService service = new(context);
+            ClienteDto resultado = await service.CreateAsync(command, parametros);
+
+            Assert.Equal("44999990000", resultado.Contato);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync();
+            Assert.Equal("44999990000", clienteSalvo.Contato);
+        }
+
+        [Fact]
+        // Input: contato sem qualquer digito
+        // Impede o cadastro apos a normalizacao
+        // Retorna: erro de validacao
+        public async Task CreateAsyncDeveFalharQuandoContatoNaoPossuirDigitos()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+
+            CriarClienteCommand command = new()
+            {
+                Nome = "Cliente A",
+                Contato = "(--)",
+                LojaId = loja.Id
+            };
+
+            CriarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId
+            };
+
+            ClienteService service = new(context);
+            _ = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(command, parametros));
+        }
+
+        [Fact]
         // Input: payload valido com userId de uma conta existente
         // Vincula a conta cadastrada ao cliente criado
         // Retorna: cliente com userId preenchido

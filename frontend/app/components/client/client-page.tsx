@@ -13,6 +13,7 @@ import {
   getClientApiMessage,
   initialClientFilters,
   initialClientFormValues,
+  normalizeNumericValue,
   persistClientTableSettings,
   type ClientTableSettings,
   type ClientFieldErrors,
@@ -199,9 +200,11 @@ export function ClientPage() {
   }
 
   function updateFormField<K extends keyof ClientFormValues>(field: K, value: ClientFormValues[K]) {
+    const normalizedValue = field === "contato" ? normalizeNumericValue(String(value)) : value;
+
     setFormValues((current) => ({
       ...current,
-      [field]: value,
+      [field]: normalizedValue,
     }));
     setFormErrors((current) => ({
       ...current,
@@ -213,9 +216,11 @@ export function ClientPage() {
     field: K,
     value: ClientFormValues[K],
   ) {
+    const normalizedValue = field === "contato" ? normalizeNumericValue(String(value)) : value;
+
     setEditFormValues((current) => ({
       ...current,
-      [field]: value,
+      [field]: normalizedValue,
     }));
     setEditFormErrors((current) => ({
       ...current,

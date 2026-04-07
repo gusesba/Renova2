@@ -4,7 +4,11 @@ import type { ClientFieldErrors } from "@/lib/client";
 
 export const clientSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome do cliente."),
-  contato: z.string().trim().min(1, "Informe um contato."),
+  contato: z
+    .string()
+    .trim()
+    .min(1, "Informe um contato.")
+    .refine((value) => /^\d+$/.test(value), "Informe apenas numeros no contato."),
   userId: z
     .string()
     .trim()

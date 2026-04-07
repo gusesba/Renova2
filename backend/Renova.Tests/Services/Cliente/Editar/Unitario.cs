@@ -68,6 +68,65 @@ namespace Renova.Tests.Services.Cliente.Editar
         }
 
         [Fact]
+        // Input: contato editado com mascara e caracteres nao numericos
+        // Normaliza o valor antes de persistir
+        // Retorna: cliente atualizado somente com digitos no contato
+        public async Task EditAsyncDeveManterApenasDigitosNoContato()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+
+            EditarClienteCommand command = new()
+            {
+                Nome = "Cliente Editado",
+                Contato = "(44) 98888-7777"
+            };
+
+            EditarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId,
+                ClienteId = cliente.Id
+            };
+
+            ClienteService service = new(context);
+            ClienteDto resultado = await service.EditAsync(command, parametros);
+
+            Assert.Equal("44988887777", resultado.Contato);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync(clienteAtual => clienteAtual.Id == cliente.Id);
+            Assert.Equal("44988887777", clienteSalvo.Contato);
+        }
+
+        [Fact]
+        // Input: contato editado sem qualquer digito
+        // Impede a persistencia apos a normalizacao
+        // Retorna: erro de validacao
+        public async Task EditAsyncDeveFalharQuandoContatoNaoPossuirDigitos()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+
+            EditarClienteCommand command = new()
+            {
+                Nome = "Cliente Editado",
+                Contato = "(--)"
+            };
+
+            EditarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId,
+                ClienteId = cliente.Id
+            };
+
+            ClienteService service = new(context);
+            _ = await Assert.ThrowsAsync<ArgumentException>(() => service.EditAsync(command, parametros));
+        }
+
+        [Fact]
         // Input: cliente existente sendo editado sem alterar o proprio nome
         // Permite salvar a edicao sem tratar o proprio registro como duplicado
         // Retorna: cliente editado com sucesso

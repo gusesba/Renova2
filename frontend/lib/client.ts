@@ -66,6 +66,10 @@ export const defaultClientTableSettings: ClientTableSettings = {
   visibleFields: ["nome", "contato", "userId", "id"],
 };
 
+export function normalizeNumericValue(value: string) {
+  return value.replace(/\D+/g, "");
+}
+
 const clientTableSettingsStorageKey = "renova.clientTableSettings";
 
 export function asClientListResponse(body: unknown) {

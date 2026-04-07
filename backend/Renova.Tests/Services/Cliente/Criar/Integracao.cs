@@ -58,6 +58,37 @@ namespace Renova.Tests.Services.Cliente.Criar
         }
 
         [Fact]
+        // Input: contato com caracteres nao numericos
+        // Normaliza antes de salvar pela API
+        // Retorna: created com contato somente numerico
+        public async Task PostClienteDeveNormalizarContatoQuandoPayloadPossuirMascara()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            CriarClienteCommand command = new()
+            {
+                Nome = "Cliente A",
+                Contato = "(44) 9 9999-0000",
+                LojaId = loja.Id
+            };
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/cliente", command);
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            ClienteDto? body = await response.Content.ReadFromJsonAsync<ClienteDto>();
+
+            Assert.NotNull(body);
+            Assert.Equal("44999990000", body.Contato);
+        }
+
+        [Fact]
         // Input: usuario autenticado com cliente de mesmo nome na mesma loja
         // Nao grava cliente duplicado
         // Retorna: conflict

@@ -58,6 +58,37 @@ namespace Renova.Tests.Services.Cliente.Editar
         }
 
         [Fact]
+        // Input: contato editado com caracteres nao numericos
+        // Normaliza antes de salvar pela API
+        // Retorna: ok com contato somente numerico
+        public async Task PutClienteDeveNormalizarContatoQuandoPayloadPossuirMascara()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            EditarClienteCommand command = new()
+            {
+                Nome = "Cliente Editado",
+                Contato = "(44) 98888-7777"
+            };
+
+            HttpResponseMessage response = await client.PutAsJsonAsync($"/api/cliente/{cliente.Id}", command);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            ClienteDto? body = await response.Content.ReadFromJsonAsync<ClienteDto>();
+
+            Assert.NotNull(body);
+            Assert.Equal("44988887777", body.Contato);
+        }
+
+        [Fact]
         // Input: usuario autenticado tentando renomear cliente para nome ja existente na mesma loja
         // Nao salva a alteracao para evitar duplicidade
         // Retorna: conflict

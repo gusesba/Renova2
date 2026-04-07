@@ -24,7 +24,12 @@ namespace Renova.Service.Services.Cliente
         public async Task<ClienteDto> CreateAsync(CriarClienteCommand request, CriarClienteParametros parametros, CancellationToken cancellationToken = default)
         {
             string nomeNormalizado = request.Nome.Trim();
-            string contatoNormalizado = request.Contato.Trim();
+            string contatoNormalizado = request.Contato.KeepOnlyDigits();
+
+            if (string.IsNullOrWhiteSpace(contatoNormalizado))
+            {
+                throw new ArgumentException("Contato deve conter ao menos um caractere numerico.", nameof(request));
+            }
 
             bool usuarioExiste = await _context.Usuarios
                 .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
@@ -85,7 +90,12 @@ namespace Renova.Service.Services.Cliente
         public async Task<ClienteDto> EditAsync(EditarClienteCommand request, EditarClienteParametros parametros, CancellationToken cancellationToken = default)
         {
             string nomeNormalizado = request.Nome.Trim();
-            string contatoNormalizado = request.Contato.Trim();
+            string contatoNormalizado = request.Contato.KeepOnlyDigits();
+
+            if (string.IsNullOrWhiteSpace(contatoNormalizado))
+            {
+                throw new ArgumentException("Contato deve conter ao menos um caractere numerico.", nameof(request));
+            }
 
             bool usuarioExiste = await _context.Usuarios
                 .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);

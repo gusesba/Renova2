@@ -78,6 +78,10 @@ namespace Renova.API.Controllers
 
                 return Created(string.Empty, resultado);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
             catch (InvalidOperationException ex)
             {
                 return Conflict(new { mensagem = ex.Message });
@@ -115,6 +119,10 @@ namespace Renova.API.Controllers
                     cancellationToken);
 
                 return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
             }
             catch (KeyNotFoundException ex)
             {

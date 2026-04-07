@@ -21,6 +21,7 @@ function FormField({
   value,
   error,
   readOnly = false,
+  inputMode,
   onChange,
 }: {
   label: string;
@@ -28,6 +29,7 @@ function FormField({
   value: string;
   error?: string;
   readOnly?: boolean;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   onChange?: (value: string) => void;
 }) {
   return (
@@ -38,6 +40,7 @@ function FormField({
         value={value}
         placeholder={placeholder}
         readOnly={readOnly}
+        inputMode={inputMode}
         onChange={(event) => onChange?.(event.target.value)}
         className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
           readOnly
@@ -159,9 +162,10 @@ export function ClientEditModal({
             />
             <FormField
               label="Contato"
-              placeholder="Telefone, email ou identificador"
+              placeholder="Somente numeros"
               value={values.contato}
               error={errors.contato}
+              inputMode="numeric"
               onChange={(value) => onChange("contato", value)}
             />
           </div>
