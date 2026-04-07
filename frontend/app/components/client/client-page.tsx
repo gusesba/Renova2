@@ -13,6 +13,7 @@ import {
   getClientApiMessage,
   initialClientFilters,
   initialClientFormValues,
+  formatPhoneValue,
   normalizeNumericValue,
   persistClientTableSettings,
   type ClientTableSettings,
@@ -139,7 +140,7 @@ export function ClientPage() {
     setSelectedClientId(client.id);
     setEditFormValues({
       nome: client.nome,
-      contato: client.contato,
+      contato: formatPhoneValue(client.contato),
       userId: client.userId ? String(client.userId) : "",
     });
     setEditFormErrors({});
@@ -200,7 +201,7 @@ export function ClientPage() {
   }
 
   function updateFormField<K extends keyof ClientFormValues>(field: K, value: ClientFormValues[K]) {
-    const normalizedValue = field === "contato" ? normalizeNumericValue(String(value)) : value;
+    const normalizedValue = field === "contato" ? formatPhoneValue(String(value)) : value;
 
     setFormValues((current) => ({
       ...current,
@@ -216,7 +217,7 @@ export function ClientPage() {
     field: K,
     value: ClientFormValues[K],
   ) {
-    const normalizedValue = field === "contato" ? normalizeNumericValue(String(value)) : value;
+    const normalizedValue = field === "contato" ? formatPhoneValue(String(value)) : value;
 
     setEditFormValues((current) => ({
       ...current,
@@ -248,7 +249,7 @@ export function ClientPage() {
     try {
       const payload = {
         nome: validation.data.nome.trim(),
-        contato: validation.data.contato.trim(),
+        contato: normalizeNumericValue(validation.data.contato),
         lojaId: selectedStoreId,
         ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
       };
@@ -306,7 +307,7 @@ export function ClientPage() {
       const payload = {
         clientId: selectedClientId,
         nome: validation.data.nome.trim(),
-        contato: validation.data.contato.trim(),
+        contato: normalizeNumericValue(validation.data.contato),
         ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
       };
 

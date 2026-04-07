@@ -100,10 +100,10 @@ namespace Renova.Tests.Services.Cliente.Editar
         }
 
         [Fact]
-        // Input: contato editado sem qualquer digito
+        // Input: contato editado sem 10 ou 11 digitos
         // Impede a persistencia apos a normalizacao
         // Retorna: erro de validacao
-        public async Task EditAsyncDeveFalharQuandoContatoNaoPossuirDigitos()
+        public async Task EditAsyncDeveFalharQuandoContatoNaoPossuirQuantidadeValidaDeDigitos()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -113,7 +113,7 @@ namespace Renova.Tests.Services.Cliente.Editar
             EditarClienteCommand command = new()
             {
                 Nome = "Cliente Editado",
-                Contato = "(--)"
+                Contato = "9999-999"
             };
 
             EditarClienteParametros parametros = new()

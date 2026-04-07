@@ -89,10 +89,10 @@ namespace Renova.Tests.Services.Cliente.Criar
         }
 
         [Fact]
-        // Input: contato sem qualquer digito
+        // Input: contato sem 10 ou 11 digitos
         // Impede o cadastro apos a normalizacao
         // Retorna: erro de validacao
-        public async Task CreateAsyncDeveFalharQuandoContatoNaoPossuirDigitos()
+        public async Task CreateAsyncDeveFalharQuandoContatoNaoPossuirQuantidadeValidaDeDigitos()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -101,7 +101,7 @@ namespace Renova.Tests.Services.Cliente.Criar
             CriarClienteCommand command = new()
             {
                 Nome = "Cliente A",
-                Contato = "(--)",
+                Contato = "9999-999",
                 LojaId = loja.Id
             };
 

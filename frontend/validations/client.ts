@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ClientFieldErrors } from "@/lib/client";
+import { normalizeNumericValue, type ClientFieldErrors } from "@/lib/client";
 
 export const clientSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome do cliente."),
@@ -8,7 +8,13 @@ export const clientSchema = z.object({
     .string()
     .trim()
     .min(1, "Informe um contato.")
-    .refine((value) => /^\d+$/.test(value), "Informe apenas numeros no contato."),
+    .refine(
+      (value) => {
+        const digits = normalizeNumericValue(value);
+        return digits.length === 10 || digits.length === 11;
+      },
+      "Informe um contato com 10 ou 11 numeros.",
+    ),
   userId: z
     .string()
     .trim()

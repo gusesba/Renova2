@@ -57,7 +57,7 @@ namespace Renova.Persistence.Migrations
 
                     b.ToTable("Cliente", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Cliente_Contato_ApenasNumeros", "\"Contato\" !~ '[^0-9]'");
+                            t.HasCheckConstraint("CK_Cliente_Contato_ApenasNumeros", "\"Contato\" !~ '[^0-9]' AND length(\"Contato\") IN (10, 11)");
                         });
                 });
 

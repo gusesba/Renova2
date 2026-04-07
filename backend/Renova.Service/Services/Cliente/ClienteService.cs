@@ -26,9 +26,9 @@ namespace Renova.Service.Services.Cliente
             string nomeNormalizado = request.Nome.Trim();
             string contatoNormalizado = request.Contato.KeepOnlyDigits();
 
-            if (string.IsNullOrWhiteSpace(contatoNormalizado))
+            if (contatoNormalizado.Length is not (10 or 11))
             {
-                throw new ArgumentException("Contato deve conter ao menos um caractere numerico.", nameof(request));
+                throw new ArgumentException("Contato deve conter 10 ou 11 numeros.", nameof(request));
             }
 
             bool usuarioExiste = await _context.Usuarios
@@ -92,9 +92,9 @@ namespace Renova.Service.Services.Cliente
             string nomeNormalizado = request.Nome.Trim();
             string contatoNormalizado = request.Contato.KeepOnlyDigits();
 
-            if (string.IsNullOrWhiteSpace(contatoNormalizado))
+            if (contatoNormalizado.Length is not (10 or 11))
             {
-                throw new ArgumentException("Contato deve conter ao menos um caractere numerico.", nameof(request));
+                throw new ArgumentException("Contato deve conter 10 ou 11 numeros.", nameof(request));
             }
 
             bool usuarioExiste = await _context.Usuarios

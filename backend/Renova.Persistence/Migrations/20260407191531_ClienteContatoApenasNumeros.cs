@@ -19,7 +19,7 @@ namespace Renova.Persistence.Migrations
             migrationBuilder.AddCheckConstraint(
                 name: "CK_Cliente_Contato_ApenasNumeros",
                 table: "Cliente",
-                sql: "\"Contato\" !~ '[^0-9]'");
+                sql: "\"Contato\" !~ '[^0-9]' AND length(\"Contato\") IN (10, 11)");
         }
 
         /// <inheritdoc />

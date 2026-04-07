@@ -51,7 +51,7 @@ namespace Renova.Persistence
             _ = modelBuilder.Entity<ClienteModel>(entity =>
             {
                 _ = entity.ToTable("Cliente");
-                _ = entity.ToTable(t => t.HasCheckConstraint("CK_Cliente_Contato_ApenasNumeros", "\"Contato\" !~ '[^0-9]'"));
+                _ = entity.ToTable(t => t.HasCheckConstraint("CK_Cliente_Contato_ApenasNumeros", "\"Contato\" !~ '[^0-9]' AND length(\"Contato\") IN (10, 11)"));
                 _ = entity.HasKey(p => p.Id);
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();

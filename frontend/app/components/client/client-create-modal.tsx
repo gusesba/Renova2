@@ -152,7 +152,7 @@ export function ClientCreateModal({
             />
             <FormField
               label="Contato"
-              placeholder="Somente numeros"
+              placeholder="(41) 99717-3484"
               value={values.contato}
               error={errors.contato}
               inputMode="numeric"

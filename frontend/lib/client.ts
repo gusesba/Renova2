@@ -70,6 +70,27 @@ export function normalizeNumericValue(value: string) {
   return value.replace(/\D+/g, "");
 }
 
+export function formatPhoneValue(value: string) {
+  const digits = normalizeNumericValue(value).slice(0, 11);
+
+  if (digits.length <= 2) {
+    return digits.length ? `(${digits}` : "";
+  }
+
+  const ddd = digits.slice(0, 2);
+  const remaining = digits.slice(2);
+
+  if (remaining.length <= 4) {
+    return `(${ddd}) ${remaining}`;
+  }
+
+  if (digits.length <= 10) {
+    return `(${ddd}) ${remaining.slice(0, 4)}-${remaining.slice(4)}`;
+  }
+
+  return `(${ddd}) ${remaining.slice(0, 5)}-${remaining.slice(5)}`;
+}
+
 const clientTableSettingsStorageKey = "renova.clientTableSettings";
 
 export function asClientListResponse(body: unknown) {
