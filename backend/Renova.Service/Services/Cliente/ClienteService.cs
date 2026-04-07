@@ -249,14 +249,10 @@ namespace Renova.Service.Services.Cliente
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
-        private static Task<bool> ClientePossuiRelacionamentosAtivosAsync(int clienteId, CancellationToken cancellationToken)
+        private Task<bool> ClientePossuiRelacionamentosAtivosAsync(int clienteId, CancellationToken cancellationToken)
         {
-            _ = clienteId;
-            _ = cancellationToken;
-
-            // TODO: quando existirem tabelas relacionadas ao cliente, validar dependencias ativas
-            // antes da exclusao e bloquear com mensagem de negocio adequada.
-            return Task.FromResult(false);
+            return _context.ProdutosEstoque
+                .AnyAsync(produto => produto.FornecedorId == clienteId, cancellationToken);
         }
     }
 }

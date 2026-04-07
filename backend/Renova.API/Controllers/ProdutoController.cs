@@ -1,0 +1,149 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using Renova.Domain.Model.Dto;
+using Renova.Persistence;
+using Renova.Service.Commands.Produto;
+using Renova.Service.Parameters.Produto;
+using Renova.Service.Services.Produto;
+
+namespace Renova.API.Controllers
+{
+    [ApiController]
+    [Route("api/produto")]
+    [Authorize]
+    public class ProdutoController(IProdutoService produtoService, RenovaDbContext context) : AuthenticatedControllerBase(context)
+    {
+        private readonly IProdutoService _produtoService = produtoService;
+
+        [HttpPost]
+        [ProducesResponseType(typeof(ProdutoDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> PostProduto([FromBody] CriarProdutoCommand command, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                ProdutoDto resultado = await _produtoService.CreateAsync(
+                    command,
+                    new CriarProdutoParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Created(string.Empty, resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
+        [HttpPost("referencia")]
+        [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> PostProdutoAuxiliar([FromBody] CriarProdutoAuxiliarCommand command, CancellationToken cancellationToken)
+        {
+            return CriarAuxiliarAsync(
+                (request, parametros, token) => _produtoService.CreateProdutoAuxiliarAsync(request, parametros, token),
+                command,
+                cancellationToken);
+        }
+
+        [HttpPost("marca")]
+        [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> PostMarca([FromBody] CriarProdutoAuxiliarCommand command, CancellationToken cancellationToken)
+        {
+            return CriarAuxiliarAsync(
+                (request, parametros, token) => _produtoService.CreateMarcaAsync(request, parametros, token),
+                command,
+                cancellationToken);
+        }
+
+        [HttpPost("tamanho")]
+        [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> PostTamanho([FromBody] CriarProdutoAuxiliarCommand command, CancellationToken cancellationToken)
+        {
+            return CriarAuxiliarAsync(
+                (request, parametros, token) => _produtoService.CreateTamanhoAsync(request, parametros, token),
+                command,
+                cancellationToken);
+        }
+
+        [HttpPost("cor")]
+        [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> PostCor([FromBody] CriarProdutoAuxiliarCommand command, CancellationToken cancellationToken)
+        {
+            return CriarAuxiliarAsync(
+                (request, parametros, token) => _produtoService.CreateCorAsync(request, parametros, token),
+                command,
+                cancellationToken);
+        }
+
+        private async Task<IActionResult> CriarAuxiliarAsync(
+            Func<CriarProdutoAuxiliarCommand, CriarProdutoAuxiliarParametros, CancellationToken, Task<ProdutoAuxiliarDto>> operacao,
+            CriarProdutoAuxiliarCommand command,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                ProdutoAuxiliarDto resultado = await operacao(
+                    command,
+                    new CriarProdutoAuxiliarParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Created(string.Empty, resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+    }
+}

@@ -10,8 +10,6 @@ namespace Renova.Tests.Services.Cliente.Excluir
 {
     public class Unitario : InMemoryDbContextTestBase<RenovaDbContext>
     {
-        private const string RelacionamentosAtivosNaoImplementados = "Relacionamentos ativos de cliente ainda nao implementados.";
-
         protected override RenovaDbContext CriarContexto(DbContextOptions<RenovaDbContext> options)
         {
             return new RenovaDbContext(options);
@@ -94,7 +92,7 @@ namespace Renova.Tests.Services.Cliente.Excluir
             _ = await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteAsync(parametros));
         }
 
-        [Fact(Skip = RelacionamentosAtivosNaoImplementados)]
+        [Fact]
         // Input: cliente com relacionamentos ativos
         // Nao remove o cliente enquanto houver dependencias de negocio
         // Retorna: mensagem adequada explicando o bloqueio
@@ -102,18 +100,40 @@ namespace Renova.Tests.Services.Cliente.Excluir
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
-            // Arrange
-            // TODO: quando existirem tabelas relacionadas com cliente, criar dependencias ativas
-            // TODO: exemplos esperados: pedidos em aberto, fiados ativos, agendamentos pendentes ou contratos vinculados
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoReferenciaModel produto = await CriarProdutoReferenciaAsync(context, loja.Id, "Vestido");
+            MarcaModel marca = await CriarMarcaAsync(context, loja.Id, "Farm");
+            TamanhoModel tamanho = await CriarTamanhoAsync(context, loja.Id, "M");
+            CorModel cor = await CriarCorAsync(context, loja.Id, "Azul");
 
-            // Act
-            // TODO: executar service.DeleteAsync(...).
+            _ = context.ProdutosEstoque.Add(new ProdutoEstoqueModel
+            {
+                Preco = 100m,
+                ProdutoId = produto.Id,
+                MarcaId = marca.Id,
+                TamanhoId = tamanho.Id,
+                CorId = cor.Id,
+                FornecedorId = cliente.Id,
+                Descricao = "Produto vinculado",
+                Entrada = DateTime.UtcNow,
+                LojaId = loja.Id,
+                Situacao = SituacaoProduto.Estoque,
+                Consignado = false
+            });
+            _ = await context.SaveChangesAsync();
 
-            // Assert
-            // TODO: validar InvalidOperationException com mensagem de negocio adequada
-            // TODO: sugestao de mensagem: "Cliente possui relacionamentos ativos e nao pode ser excluido."
-            // TODO: validar que o cliente permanece salvo na base.
-            await Task.CompletedTask;
+            ExcluirClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId,
+                ClienteId = cliente.Id
+            };
+
+            ClienteService service = new(context);
+            InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(parametros));
+
+            Assert.Equal("Cliente possui relacionamentos ativos e nao pode ser excluido.", ex.Message);
+            _ = Assert.Single(context.Clientes);
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
@@ -153,6 +173,62 @@ namespace Renova.Tests.Services.Cliente.Excluir
             _ = await context.SaveChangesAsync();
 
             return cliente;
+        }
+
+        private static async Task<ProdutoReferenciaModel> CriarProdutoReferenciaAsync(RenovaDbContext context, int lojaId, string valor)
+        {
+            ProdutoReferenciaModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.ProdutosReferencia.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<MarcaModel> CriarMarcaAsync(RenovaDbContext context, int lojaId, string valor)
+        {
+            MarcaModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Marcas.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<TamanhoModel> CriarTamanhoAsync(RenovaDbContext context, int lojaId, string valor)
+        {
+            TamanhoModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Tamanhos.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<CorModel> CriarCorAsync(RenovaDbContext context, int lojaId, string valor)
+        {
+            CorModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Cores.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
         }
     }
 }

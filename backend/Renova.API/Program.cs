@@ -9,6 +9,7 @@ using Renova.Persistence;
 using Renova.Service.Services.Auth;
 using Renova.Service.Services.Cliente;
 using Renova.Service.Services.Loja;
+using Renova.Service.Services.Produto;
 using Renova.Service.Services.Renova;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -44,6 +45,7 @@ builder.Services.AddDbContext<RenovaDbContext>(options =>
 builder.Services.AddScoped<IRenovaService, RenovaService>();
 builder.Services.AddScoped<ILojaService, LojaService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IProdutoService, ProdutoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 JwtSettings jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()

@@ -14,8 +14,6 @@ namespace Renova.Tests.Services.Cliente.Excluir
 {
     public class Integracao
     {
-        private const string RelacionamentosAtivosNaoImplementados = "Relacionamentos ativos de cliente ainda nao implementados.";
-
         [Fact]
         // Input: usuario autenticado e cliente existente na propria loja
         // Remove o cliente via API
@@ -104,7 +102,7 @@ namespace Renova.Tests.Services.Cliente.Excluir
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
-        [Fact(Skip = RelacionamentosAtivosNaoImplementados)]
+        [Fact]
         // Input: cliente com relacionamentos ativos
         // Nao remove o cliente pela API enquanto houver dependencias de negocio
         // Retorna: conflict com mensagem adequada
@@ -113,20 +111,24 @@ namespace Renova.Tests.Services.Cliente.Excluir
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
 
-            // Arrange
-            // TODO: autenticar usuario, criar cliente e dependencias ativas nas futuras tabelas relacionadas.
-            // TODO: exemplos esperados: pedidos em aberto, fiados ativos, agendamentos pendentes ou contratos vinculados.
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "token-placeholder");
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoReferenciaModel produto = await CriarProdutoReferenciaAsync(factory, loja.Id, "Vestido");
+            MarcaModel marca = await CriarMarcaAsync(factory, loja.Id, "Farm");
+            TamanhoModel tamanho = await CriarTamanhoAsync(factory, loja.Id, "M");
+            CorModel cor = await CriarCorAsync(factory, loja.Id, "Azul");
+            await CriarProdutoAsync(factory, loja.Id, cliente.Id, produto.Id, marca.Id, tamanho.Id, cor.Id);
 
-            // Act
-            // TODO: executar DELETE /api/cliente/{id}.
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
-            // Assert
-            // TODO: validar HttpStatusCode.Conflict.
-            // TODO: validar mensagem de negocio adequada no corpo da resposta.
-            // TODO: sugestao de mensagem: "Cliente possui relacionamentos ativos e nao pode ser excluido."
-            // TODO: validar que o cliente permanece salvo na base.
-            await Task.CompletedTask;
+            HttpResponseMessage response = await client.DeleteAsync($"/api/cliente/{cliente.Id}");
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            _ = Assert.Single(context.Clientes);
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
@@ -180,6 +182,98 @@ namespace Renova.Tests.Services.Cliente.Excluir
             _ = await context.SaveChangesAsync();
 
             return cliente;
+        }
+
+        private static async Task<ProdutoReferenciaModel> CriarProdutoReferenciaAsync(RenovaApiFactory factory, int lojaId, string valor)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ProdutoReferenciaModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.ProdutosReferencia.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<MarcaModel> CriarMarcaAsync(RenovaApiFactory factory, int lojaId, string valor)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            MarcaModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Marcas.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<TamanhoModel> CriarTamanhoAsync(RenovaApiFactory factory, int lojaId, string valor)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            TamanhoModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Tamanhos.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task<CorModel> CriarCorAsync(RenovaApiFactory factory, int lojaId, string valor)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            CorModel entity = new()
+            {
+                Valor = valor,
+                LojaId = lojaId
+            };
+
+            _ = context.Cores.Add(entity);
+            _ = await context.SaveChangesAsync();
+
+            return entity;
+        }
+
+        private static async Task CriarProdutoAsync(RenovaApiFactory factory, int lojaId, int fornecedorId, int produtoId, int marcaId, int tamanhoId, int corId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ProdutoEstoqueModel entity = new()
+            {
+                Preco = 100m,
+                ProdutoId = produtoId,
+                MarcaId = marcaId,
+                TamanhoId = tamanhoId,
+                CorId = corId,
+                FornecedorId = fornecedorId,
+                Descricao = "Produto vinculado",
+                Entrada = DateTime.UtcNow,
+                LojaId = lojaId,
+                Situacao = SituacaoProduto.Estoque,
+                Consignado = false
+            };
+
+            _ = context.ProdutosEstoque.Add(entity);
+            _ = await context.SaveChangesAsync();
         }
     }
 }

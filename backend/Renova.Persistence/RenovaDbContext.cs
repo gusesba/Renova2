@@ -10,6 +10,11 @@ namespace Renova.Persistence
         public DbSet<UsuarioModel> Usuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
         public DbSet<ClienteModel> Clientes { get; set; }
+        public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
+        public DbSet<ProdutoReferenciaModel> ProdutosReferencia { get; set; }
+        public DbSet<MarcaModel> Marcas { get; set; }
+        public DbSet<TamanhoModel> Tamanhos { get; set; }
+        public DbSet<CorModel> Cores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,6 +72,104 @@ namespace Renova.Persistence
                     .WithMany(p => p.Clientes)
                     .HasForeignKey(p => p.UserId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            _ = modelBuilder.Entity<ProdutoReferenciaModel>(entity =>
+            {
+                _ = entity.ToTable("ProdutoReferencia");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.ProdutosReferencia)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<MarcaModel>(entity =>
+            {
+                _ = entity.ToTable("Marca");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Marcas)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<TamanhoModel>(entity =>
+            {
+                _ = entity.ToTable("Tamanho");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Tamanhos)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<CorModel>(entity =>
+            {
+                _ = entity.ToTable("Cor");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Cores)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<ProdutoEstoqueModel>(entity =>
+            {
+                _ = entity.ToTable("ProdutoEstoque");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Preco).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.ProdutoId).IsRequired();
+                _ = entity.Property(p => p.MarcaId).IsRequired();
+                _ = entity.Property(p => p.TamanhoId).IsRequired();
+                _ = entity.Property(p => p.CorId).IsRequired();
+                _ = entity.Property(p => p.FornecedorId).IsRequired();
+                _ = entity.Property(p => p.Descricao).HasMaxLength(1000).IsRequired();
+                _ = entity.Property(p => p.Entrada).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.Situacao).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.Consignado).IsRequired();
+                _ = entity.HasOne(p => p.Produto)
+                    .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.ProdutoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Marca)
+                    .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.MarcaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Tamanho)
+                    .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.TamanhoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Cor)
+                    .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.CorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Fornecedor)
+                    .WithMany(p => p.ProdutosFornecidos)
+                    .HasForeignKey(p => p.FornecedorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
