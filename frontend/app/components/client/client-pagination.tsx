@@ -29,7 +29,7 @@ export function ClientPagination({
           type="button"
           disabled={!hasPreviousPage}
           onClick={() => onPageChange(currentPage - 1)}
-          className="flex h-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Anterior
         </button>
@@ -37,7 +37,7 @@ export function ClientPagination({
           type="button"
           disabled={!hasNextPage}
           onClick={() => onPageChange(currentPage + 1)}
-          className="flex h-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Proxima
         </button>
