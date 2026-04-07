@@ -115,7 +115,7 @@ export function buildClientQuery(storeId: number, filters: ClientFilters) {
   }
 
   if (filters.contato.trim()) {
-    params.set("contato", filters.contato.trim());
+    params.set("contato", normalizeNumericValue(filters.contato));
   }
 
   return params.toString();

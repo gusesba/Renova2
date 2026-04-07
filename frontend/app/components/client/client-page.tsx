@@ -63,15 +63,22 @@ export function ClientPage() {
     tamanhoPagina: getStoredClientTableSettings().tamanhoPagina,
   }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const queryFilters = useMemo<ClientFilters>(
+    () => ({
+      ...filters,
+      contato: normalizeNumericValue(filters.contato),
+    }),
+    [filters],
+  );
 
   const clientsQuery = useQuery({
-    queryKey: ["clients", token, selectedStoreId, filters],
+    queryKey: ["clients", token, selectedStoreId, queryFilters],
     queryFn: async () => {
       if (!token || !selectedStoreId) {
         return null;
       }
 
-      const response = await getClients(token, selectedStoreId, filters);
+      const response = await getClients(token, selectedStoreId, queryFilters);
 
       if (!response.ok) {
         throw new Error(
