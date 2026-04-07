@@ -8,6 +8,7 @@ namespace Renova.Service.Services.Cliente
     public interface IClienteService
     {
         Task<ClienteDto> CreateAsync(CriarClienteCommand request, CriarClienteParametros parametros, CancellationToken cancellationToken = default);
+        Task DeleteAsync(ExcluirClienteParametros parametros, CancellationToken cancellationToken = default);
         Task<ClienteDto> EditAsync(EditarClienteCommand request, EditarClienteParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ClienteDto>> GetAllAsync(ObterClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default);
     }

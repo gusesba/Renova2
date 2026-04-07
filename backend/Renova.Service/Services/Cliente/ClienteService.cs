@@ -150,6 +150,41 @@ namespace Renova.Service.Services.Cliente
             };
         }
 
+        public async Task DeleteAsync(ExcluirClienteParametros parametros, CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            ClienteModel? cliente = await _context.Clientes
+                .SingleOrDefaultAsync(clienteAtual => clienteAtual.Id == parametros.ClienteId, cancellationToken);
+
+            if (cliente is null)
+            {
+                throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
+            }
+
+            LojaModel? loja = await _context.Lojas
+                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == cliente.LojaId, cancellationToken);
+
+            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
+            {
+                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
+            }
+
+            if (await ClientePossuiRelacionamentosAtivosAsync(cliente.Id, cancellationToken))
+            {
+                throw new InvalidOperationException("Cliente possui relacionamentos ativos e nao pode ser excluido.");
+            }
+
+            _ = _context.Clientes.Remove(cliente);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<PaginacaoDto<ClienteDto>> GetAllAsync(ObterClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default)
         {
             if (!request.LojaId.HasValue)
@@ -202,6 +237,16 @@ namespace Renova.Service.Services.Cliente
             });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        private static Task<bool> ClientePossuiRelacionamentosAtivosAsync(int clienteId, CancellationToken cancellationToken)
+        {
+            _ = clienteId;
+            _ = cancellationToken;
+
+            // TODO: quando existirem tabelas relacionadas ao cliente, validar dependencias ativas
+            // antes da exclusao e bloquear com mensagem de negocio adequada.
+            return Task.FromResult(false);
         }
     }
 }
