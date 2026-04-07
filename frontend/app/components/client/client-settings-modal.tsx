@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ClientTableSettings, ClientVisibleField } from "@/lib/client";
 
@@ -27,13 +27,21 @@ export function ClientSettingsModal({
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
   const [draft, setDraft] = useState<ClientTableSettings>(settings);
+  const wasOpenRef = useRef(isOpen);
 
   useEffect(() => {
+    let draftFrame = 0;
     let animationFrame = 0;
     let visibilityFrame = 0;
     let closeTimeout = 0;
 
     if (isOpen) {
+      if (!wasOpenRef.current) {
+        draftFrame = window.requestAnimationFrame(() => {
+          setDraft(settings);
+        });
+      }
+
       animationFrame = window.requestAnimationFrame(() => {
         setShouldRender(true);
         visibilityFrame = window.requestAnimationFrame(() => {
@@ -59,12 +67,17 @@ export function ClientSettingsModal({
     window.addEventListener("keydown", handleEscape);
 
     return () => {
+      window.cancelAnimationFrame(draftFrame);
       window.cancelAnimationFrame(animationFrame);
       window.cancelAnimationFrame(visibilityFrame);
       window.clearTimeout(closeTimeout);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen, onClose, shouldRender]);
+  }, [isOpen, onClose, settings, shouldRender]);
+
+  useEffect(() => {
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   if (!shouldRender) {
     return null;

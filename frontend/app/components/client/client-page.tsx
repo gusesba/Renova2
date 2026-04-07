@@ -494,7 +494,6 @@ export function ClientPage() {
         onConfirm={handleDeleteConfirm}
       />
       <ClientSettingsModal
-        key={`${isSettingsModalOpen}-${tableSettings.tamanhoPagina}-${tableSettings.visibleFields.join(",")}`}
         isOpen={isSettingsModalOpen}
         settings={tableSettings}
         onClose={handleCloseSettingsModal}
