@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -62,13 +62,32 @@ export function ClientPage() {
     ...initialClientFilters,
     tamanhoPagina: getStoredClientTableSettings().tamanhoPagina,
   }));
+  const [debouncedTextFilters, setDebouncedTextFilters] = useState(() => ({
+    nome: initialClientFilters.nome,
+    contato: initialClientFilters.contato,
+  }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedTextFilters({
+        nome: filters.nome,
+        contato: filters.contato,
+      });
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [filters.nome, filters.contato]);
+
   const queryFilters = useMemo<ClientFilters>(
     () => ({
       ...filters,
-      contato: normalizeNumericValue(filters.contato),
+      nome: debouncedTextFilters.nome,
+      contato: normalizeNumericValue(debouncedTextFilters.contato),
     }),
-    [filters],
+    [debouncedTextFilters.contato, debouncedTextFilters.nome, filters],
   );
 
   const clientsQuery = useQuery({
