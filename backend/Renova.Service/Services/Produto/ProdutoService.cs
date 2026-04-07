@@ -4,13 +4,28 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Produto;
+using Renova.Service.Extensions;
 using Renova.Service.Parameters.Produto;
+using Renova.Service.Queries.Produto;
+using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Produto
 {
     public class ProdutoService(RenovaDbContext context) : IProdutoService
     {
         private readonly RenovaDbContext _context = context;
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<ProdutoEstoqueModel, int>>)(produto => produto.Id),
+            ["descricao"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Descricao),
+            ["preco"] = (Expression<Func<ProdutoEstoqueModel, decimal>>)(produto => produto.Preco),
+            ["entrada"] = (Expression<Func<ProdutoEstoqueModel, DateTime>>)(produto => produto.Entrada),
+            ["produto"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Produto != null ? produto.Produto.Valor : string.Empty),
+            ["marca"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Marca != null ? produto.Marca.Valor : string.Empty),
+            ["tamanho"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty),
+            ["cor"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Cor != null ? produto.Cor.Valor : string.Empty),
+            ["fornecedor"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty)
+        };
 
         public async Task<ProdutoDto> CreateAsync(CriarProdutoCommand request, CriarProdutoParametros parametros, CancellationToken cancellationToken = default)
         {
@@ -139,6 +154,102 @@ namespace Renova.Service.Services.Produto
                 },
                 "Cor",
                 cancellationToken);
+        }
+
+        public async Task<PaginacaoDto<ProdutoBuscaDto>> GetAllAsync(ObterProdutosQuery request, ObterProdutosParametros parametros, CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
+                .Where(produto => produto.LojaId == request.LojaId.Value);
+
+            if (!string.IsNullOrWhiteSpace(request.Descricao))
+            {
+                string descricaoFiltro = request.Descricao.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Descricao.ToLower().Contains(descricaoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Produto))
+            {
+                string produtoFiltro = request.Produto.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Produto != null && produto.Produto.Valor.ToLower().Contains(produtoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Marca))
+            {
+                string marcaFiltro = request.Marca.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Marca != null && produto.Marca.Valor.ToLower().Contains(marcaFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Tamanho))
+            {
+                string tamanhoFiltro = request.Tamanho.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Tamanho != null && produto.Tamanho.Valor.ToLower().Contains(tamanhoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Cor))
+            {
+                string corFiltro = request.Cor.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Cor != null && produto.Cor.Valor.ToLower().Contains(corFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Fornecedor))
+            {
+                string fornecedorFiltro = request.Fornecedor.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Fornecedor != null && produto.Fornecedor.Nome.ToLower().Contains(fornecedorFiltro));
+            }
+
+            if (request.PrecoInicial.HasValue)
+            {
+                query = query.Where(produto => produto.Preco >= request.PrecoInicial.Value);
+            }
+
+            if (request.PrecoFinal.HasValue)
+            {
+                query = query.Where(produto => produto.Preco <= request.PrecoFinal.Value);
+            }
+
+            if (request.DataInicial.HasValue)
+            {
+                query = query.Where(produto => produto.Entrada >= request.DataInicial.Value);
+            }
+
+            if (request.DataFinal.HasValue)
+            {
+                query = query.Where(produto => produto.Entrada <= request.DataFinal.Value);
+            }
+
+            IQueryable<ProdutoEstoqueModel> queryOrdenada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "descricao")
+                .ThenBy(produto => produto.Id);
+
+            IQueryable<ProdutoBuscaDto> queryProjetada = queryOrdenada.Select(produto => new ProdutoBuscaDto
+            {
+                Id = produto.Id,
+                Preco = produto.Preco,
+                ProdutoId = produto.ProdutoId,
+                Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                MarcaId = produto.MarcaId,
+                Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                TamanhoId = produto.TamanhoId,
+                Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                CorId = produto.CorId,
+                Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                FornecedorId = produto.FornecedorId,
+                Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                Descricao = produto.Descricao,
+                Entrada = produto.Entrada,
+                LojaId = produto.LojaId,
+                Situacao = produto.Situacao,
+                Consignado = produto.Consignado
+            });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
         private async Task<ProdutoAuxiliarDto> CriarAuxiliarAsync<TModel>(

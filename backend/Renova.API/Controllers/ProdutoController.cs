@@ -5,6 +5,7 @@ using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Produto;
 using Renova.Service.Parameters.Produto;
+using Renova.Service.Queries.Produto;
 using Renova.Service.Services.Produto;
 
 namespace Renova.API.Controllers
@@ -15,6 +16,41 @@ namespace Renova.API.Controllers
     public class ProdutoController(IProdutoService produtoService, RenovaDbContext context) : AuthenticatedControllerBase(context)
     {
         private readonly IProdutoService _produtoService = produtoService;
+
+        [HttpGet]
+        [ProducesResponseType(typeof(PaginacaoDto<ProdutoBuscaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetProdutos([FromQuery] ObterProdutosQuery query, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                PaginacaoDto<ProdutoBuscaDto> resultado = await _produtoService.GetAllAsync(
+                    query,
+                    new ObterProdutosParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
 
         [HttpPost]
         [ProducesResponseType(typeof(ProdutoDto), StatusCodes.Status201Created)]
