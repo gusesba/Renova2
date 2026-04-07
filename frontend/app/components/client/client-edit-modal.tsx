@@ -130,7 +130,7 @@ export function ClientEditModal({
               Atualize os dados do cadastro
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-              O identificador e fixo. Nome, contato e UserId podem ser ajustados nesta tela.
+              Nome, contato e UserId podem ser ajustados nesta tela.
             </p>
           </div>
 
