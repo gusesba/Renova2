@@ -1,4 +1,4 @@
-import type { ClientListItem, ClientVisibleField } from "@/lib/client";
+import { formatPhoneValue, type ClientListItem, type ClientVisibleField } from "@/lib/client";
 
 type ClientsTableProps = {
   clients: ClientListItem[];
@@ -131,7 +131,9 @@ export function ClientsTable({
                     </div>
                   </ClientTableCell>
                 ) : null}
-                {showContact ? <ClientTableCell>{client.contato}</ClientTableCell> : null}
+                {showContact ? (
+                  <ClientTableCell>{formatPhoneValue(client.contato)}</ClientTableCell>
+                ) : null}
                 {showUserId ? (
                   <ClientTableCell subtle>{client.userId ?? "Nao vinculado"}</ClientTableCell>
                 ) : null}
