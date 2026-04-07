@@ -1,3 +1,5 @@
+import { getAuthToken as getStoredAuthToken } from "@/lib/auth";
+
 export type StoreFormValues = {
   nome: string;
 };
@@ -26,7 +28,7 @@ type ApiErrorResponse = {
 };
 
 export function getAuthToken() {
-  return localStorage.getItem("renova.token");
+  return getStoredAuthToken();
 }
 
 export function getAuthUser(): UsuarioResumo | null {

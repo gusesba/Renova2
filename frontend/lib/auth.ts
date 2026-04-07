@@ -37,6 +37,13 @@ export const initialValues: FormValues = {
   senha: "",
 };
 
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
+
+  return atob(`${normalized}${padding}`);
+}
+
 export function extractApiMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") {
     return null;
@@ -89,4 +96,38 @@ export function extractApiFieldErrors(body: unknown): FieldErrors {
 export function persistAuthSession(response: UsuarioTokenResponse) {
   localStorage.setItem("renova.token", response.token);
   localStorage.setItem("renova.usuario", JSON.stringify(response.usuario));
+}
+
+export function clearAuthSession() {
+  localStorage.removeItem("renova.token");
+  localStorage.removeItem("renova.usuario");
+  localStorage.removeItem("renova.selectedStoreId");
+}
+
+export function getAuthToken() {
+  return localStorage.getItem("renova.token");
+}
+
+export function isTokenValid(token: string | null) {
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const parts = token.split(".");
+
+    if (parts.length !== 3) {
+      return false;
+    }
+
+    const payload = JSON.parse(decodeBase64Url(parts[1])) as { exp?: unknown };
+
+    if (typeof payload.exp !== "number") {
+      return false;
+    }
+
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
 }

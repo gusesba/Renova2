@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ import { AuthLeftPanel } from "./left-panel";
 import { AuthRightPanel } from "./right-panel";
 
 export function AuthShell() {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -106,21 +108,7 @@ export function AuthShell() {
           ? `Login realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`
           : `Cadastro realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`,
       );
-
-      if (mode === "cadastro") {
-        setMode("login");
-        setValues({
-          nome: "",
-          email: result.usuario.email,
-          senha: "",
-        });
-        return;
-      }
-
-      setValues((current) => ({
-        ...current,
-        senha: "",
-      }));
+      router.replace("/dashboard");
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
     }
