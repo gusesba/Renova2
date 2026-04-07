@@ -93,10 +93,10 @@ namespace Renova.Tests.Services.Cliente.Excluir
         }
 
         [Fact]
-        // Input: cliente com relacionamentos ativos
-        // Nao remove o cliente enquanto houver dependencias de negocio
+        // Input: cliente referenciado como fornecedor em produto
+        // Nao remove o cliente enquanto existir produto relacionado
         // Retorna: mensagem adequada explicando o bloqueio
-        public async Task DeleteAsyncDeveImpedirExclusaoQuandoClientePossuirRelacionamentosAtivos()
+        public async Task DeleteAsyncDeveImpedirExclusaoQuandoClienteEstiverRelacionadoAProduto()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -134,6 +134,7 @@ namespace Renova.Tests.Services.Cliente.Excluir
 
             Assert.Equal("Cliente possui relacionamentos ativos e nao pode ser excluido.", ex.Message);
             _ = Assert.Single(context.Clientes);
+            _ = Assert.Single(context.ProdutosEstoque.Where(produtoAtual => produtoAtual.FornecedorId == cliente.Id));
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)

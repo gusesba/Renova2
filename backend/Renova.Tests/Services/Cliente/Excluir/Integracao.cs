@@ -103,10 +103,10 @@ namespace Renova.Tests.Services.Cliente.Excluir
         }
 
         [Fact]
-        // Input: cliente com relacionamentos ativos
-        // Nao remove o cliente pela API enquanto houver dependencias de negocio
+        // Input: cliente referenciado como fornecedor em produto
+        // Nao remove o cliente pela API enquanto existir produto relacionado
         // Retorna: conflict com mensagem adequada
-        public async Task DeleteClienteDeveRetornarConflictQuandoClientePossuirRelacionamentosAtivos()
+        public async Task DeleteClienteDeveRetornarConflictQuandoClienteEstiverRelacionadoAProduto()
         {
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
@@ -129,6 +129,7 @@ namespace Renova.Tests.Services.Cliente.Excluir
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             _ = Assert.Single(context.Clientes);
+            _ = Assert.Single(context.ProdutosEstoque.Where(produtoAtual => produtoAtual.FornecedorId == cliente.Id));
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
