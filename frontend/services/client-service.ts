@@ -51,3 +51,29 @@ export async function createClient(
     status: response.status,
   };
 }
+
+export async function updateClient(
+  clientId: number,
+  payload: { nome: string; contato: string; userId?: number },
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/cliente/${clientId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}

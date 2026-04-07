@@ -17,13 +17,15 @@ import {
   type ClientTableSettings,
   type ClientFieldErrors,
   type ClientFilters,
+  type ClientListItem,
   type ClientFormValues,
 } from "@/lib/client";
 import { getAuthToken } from "@/lib/store";
-import { createClient, getClients } from "@/services/client-service";
+import { createClient, getClients, updateClient } from "@/services/client-service";
 import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 import { ClientCreateModal } from "./client-create-modal";
+import { ClientEditModal } from "./client-edit-modal";
 import { ClientEmptyState } from "./client-empty-state";
 import { ClientFiltersBar } from "./client-filters-bar";
 import { ClientPagination } from "./client-pagination";
@@ -36,9 +38,13 @@ export function ClientPage() {
   const queryClient = useQueryClient();
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [formValues, setFormValues] = useState<ClientFormValues>(initialClientFormValues);
   const [formErrors, setFormErrors] = useState<ClientFieldErrors>({});
+  const [editFormValues, setEditFormValues] = useState<ClientFormValues>(initialClientFormValues);
+  const [editFormErrors, setEditFormErrors] = useState<ClientFieldErrors>({});
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const [tableSettings, setTableSettings] = useState<ClientTableSettings>(() =>
     getStoredClientTableSettings(),
   );
@@ -83,8 +89,42 @@ export function ClientPage() {
     },
   });
 
+  const updateClientMutation = useMutation({
+    mutationFn: async (payload: {
+      clientId: number;
+      nome: string;
+      contato: string;
+      userId?: number;
+    }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para editar um cliente.");
+      }
+
+      return updateClient(
+        payload.clientId,
+        {
+          nome: payload.nome,
+          contato: payload.contato,
+          ...(payload.userId ? { userId: payload.userId } : {}),
+        },
+        token,
+      );
+    },
+  });
+
   function handleOpenModal() {
     setIsCreateModalOpen(true);
+  }
+
+  function handleOpenEditModal(client: ClientListItem) {
+    setSelectedClientId(client.id);
+    setEditFormValues({
+      nome: client.nome,
+      contato: client.contato,
+      userId: client.userId ? String(client.userId) : "",
+    });
+    setEditFormErrors({});
+    setIsEditModalOpen(true);
   }
 
   function handleOpenSettingsModal() {
@@ -99,6 +139,17 @@ export function ClientPage() {
     setIsCreateModalOpen(false);
     setFormValues(initialClientFormValues);
     setFormErrors({});
+  }
+
+  function handleCloseEditModal() {
+    if (updateClientMutation.isPending) {
+      return;
+    }
+
+    setIsEditModalOpen(false);
+    setSelectedClientId(null);
+    setEditFormValues(initialClientFormValues);
+    setEditFormErrors({});
   }
 
   function handleCloseSettingsModal() {
@@ -119,6 +170,20 @@ export function ClientPage() {
       [field]: value,
     }));
     setFormErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }));
+  }
+
+  function updateEditFormField<K extends keyof ClientFormValues>(
+    field: K,
+    value: ClientFormValues[K],
+  ) {
+    setEditFormValues((current) => ({
+      ...current,
+      [field]: value,
+    }));
+    setEditFormErrors((current) => ({
       ...current,
       [field]: undefined,
     }));
@@ -181,6 +246,64 @@ export function ClientPage() {
     }
   }
 
+  async function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedClientId) {
+      toast.error("Selecione um cliente valido para editar.");
+      return;
+    }
+
+    const validation = clientSchema.safeParse(editFormValues);
+
+    if (!validation.success) {
+      setEditFormErrors(mapClientZodErrors(validation.error));
+      return;
+    }
+
+    setEditFormErrors({});
+
+    try {
+      const payload = {
+        clientId: selectedClientId,
+        nome: validation.data.nome.trim(),
+        contato: validation.data.contato.trim(),
+        ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
+      };
+
+      const response = await updateClientMutation.mutateAsync(payload);
+
+      if (!response.ok) {
+        const apiErrors = extractClientFieldErrors(response.body);
+
+        if (Object.keys(apiErrors).length > 0) {
+          setEditFormErrors(apiErrors);
+        }
+
+        toast.error(getClientApiMessage(response.body) ?? "Nao foi possivel editar o cliente.");
+        return;
+      }
+
+      const updatedClient = asClientResponse(response.body);
+
+      startTransition(() => {
+        setSelectedClientId(null);
+        setEditFormValues(initialClientFormValues);
+        setEditFormErrors({});
+        setIsEditModalOpen(false);
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(`Cliente ${updatedClient.nome} atualizado com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
   const listResponse = clientsQuery.data;
   const hasStore = Boolean(selectedStoreId);
 
@@ -220,6 +343,7 @@ export function ClientPage() {
             <ClientsTable
               clients={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
+              onEditClient={handleOpenEditModal}
             />
             <ClientPagination
               currentPage={filters.pagina}
@@ -247,6 +371,16 @@ export function ClientPage() {
         onChange={updateFormField}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
+      />
+      <ClientEditModal
+        clientId={selectedClientId}
+        errors={editFormErrors}
+        isOpen={isEditModalOpen}
+        isSubmitting={updateClientMutation.isPending}
+        values={editFormValues}
+        onChange={updateEditFormField}
+        onClose={handleCloseEditModal}
+        onSubmit={handleEditSubmit}
       />
       <ClientSettingsModal
         key={`${isSettingsModalOpen}-${tableSettings.tamanhoPagina}-${tableSettings.visibleFields.join(",")}`}

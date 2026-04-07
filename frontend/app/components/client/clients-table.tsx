@@ -3,6 +3,7 @@ import type { ClientListItem, ClientVisibleField } from "@/lib/client";
 type ClientsTableProps = {
   clients: ClientListItem[];
   visibleFields: ClientVisibleField[];
+  onEditClient: (client: ClientListItem) => void;
 };
 
 function ClientTableCell({
@@ -21,7 +22,25 @@ function ClientTableCell({
   );
 }
 
-export function ClientsTable({ clients, visibleFields }: ClientsTableProps) {
+function EditIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  );
+}
+
+export function ClientsTable({ clients, visibleFields, onEditClient }: ClientsTableProps) {
   const showName = visibleFields.includes("nome");
   const showContact = visibleFields.includes("contato");
   const showUserId = visibleFields.includes("userId");
@@ -53,6 +72,9 @@ export function ClientsTable({ clients, visibleFields }: ClientsTableProps) {
                   Identificador
                 </th>
               ) : null}
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Acoes
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -87,6 +109,17 @@ export function ClientsTable({ clients, visibleFields }: ClientsTableProps) {
                   <ClientTableCell subtle>{client.userId ?? "Nao vinculado"}</ClientTableCell>
                 ) : null}
                 {showId ? <ClientTableCell subtle>#{client.id}</ClientTableCell> : null}
+                <ClientTableCell>
+                  <button
+                    type="button"
+                    onClick={() => onEditClient(client)}
+                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                    aria-label={`Editar cliente ${client.nome}`}
+                    title={`Editar cliente ${client.nome}`}
+                  >
+                    <EditIcon />
+                  </button>
+                </ClientTableCell>
               </tr>
             ))}
           </tbody>
