@@ -365,6 +365,49 @@ namespace Renova.Service.Services.Produto
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
+        public async Task<ProdutoBuscaDto> GetByIdAsync(ObterProdutoParametros parametros, CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .Include(item => item.Produto)
+                .Include(item => item.Marca)
+                .Include(item => item.Tamanho)
+                .Include(item => item.Cor)
+                .Include(item => item.Fornecedor)
+                .SingleOrDefaultAsync(item => item.Id == parametros.ProdutoId, cancellationToken)
+                ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
+
+            _ = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+
+            return new ProdutoBuscaDto
+            {
+                Id = produto.Id,
+                Preco = produto.Preco,
+                ProdutoId = produto.ProdutoId,
+                Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                MarcaId = produto.MarcaId,
+                Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                TamanhoId = produto.TamanhoId,
+                Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                CorId = produto.CorId,
+                Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                FornecedorId = produto.FornecedorId,
+                Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                Descricao = produto.Descricao,
+                Entrada = produto.Entrada,
+                LojaId = produto.LojaId,
+                Situacao = produto.Situacao,
+                Consignado = produto.Consignado
+            };
+        }
+
         private async Task<ProdutoAuxiliarDto> CriarAuxiliarAsync<TModel>(
             CriarProdutoAuxiliarCommand request,
             CriarProdutoAuxiliarParametros parametros,
