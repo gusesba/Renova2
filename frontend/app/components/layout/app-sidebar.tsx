@@ -81,11 +81,22 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  isCollapsed?: boolean;
+};
+
+export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-full w-[290px] shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--surface)] px-5 py-6 lg:flex lg:flex-col">
+    <aside
+      className={`hidden h-full shrink-0 overflow-hidden border-r border-[var(--border)] bg-[var(--surface)] transition-all duration-300 lg:flex lg:flex-col ${
+        isCollapsed
+          ? "w-0 border-r-0 px-0 py-0 opacity-0"
+          : "w-[290px] overflow-y-auto px-5 py-6 opacity-100"
+      }`}
+      aria-hidden={isCollapsed}
+    >
       <div className="flex items-center gap-3 px-2">
         <HexagonMark />
         <div>

@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
@@ -8,13 +11,52 @@ type AppShellProps = {
 };
 
 export function AppShell({ children }: AppShellProps) {
+  const [isChromeCollapsed, setIsChromeCollapsed] = useState(false);
+
   return (
     <div className="h-screen overflow-hidden bg-[var(--background)] p-4 lg:p-6">
-      <div className="mx-auto flex h-full w-full max-w-[1600px] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)]">
-        <AppSidebar />
+      <div
+        className={`relative mx-auto flex h-full w-full max-w-[1600px] overflow-hidden bg-[var(--surface)] transition-all duration-300 ${
+          isChromeCollapsed
+            ? "rounded-[16px] border border-[color:rgba(231,236,245,0.55)] shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
+            : "rounded-[28px] border border-[var(--border)] shadow-[var(--shadow-soft)]"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setIsChromeCollapsed((current) => !current)}
+          aria-label={
+            isChromeCollapsed ? "Expandir header e sidebar" : "Contrair header e sidebar"
+          }
+          aria-pressed={isChromeCollapsed}
+          className="absolute top-2 left-2 z-20 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-3 lg:left-3"
+        >
+          <span
+            className={`transition-transform duration-300 ${isChromeCollapsed ? "rotate-180" : ""}`}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+              <path
+                d="M17 17L7 7m0 0h8.5M7 7v8.5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
+          </span>
+        </button>
+
+        <AppSidebar isCollapsed={isChromeCollapsed} />
         <div className="flex min-h-0 flex-1 flex-col bg-[var(--surface-muted)]">
-          <AppHeader />
-          <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+          <AppHeader isCollapsed={isChromeCollapsed} />
+          <main
+            className={`min-h-0 flex-1 overflow-y-auto transition-[padding] duration-300 ${
+              isChromeCollapsed ? "p-16 sm:p-16 lg:p-20" : "p-4 sm:p-6 lg:p-8"
+            }`}
+          >
+            {children}
+          </main>
         </div>
       </div>
     </div>

@@ -34,7 +34,11 @@ function BellIcon() {
   );
 }
 
-export function AppHeader() {
+type AppHeaderProps = {
+  isCollapsed?: boolean;
+};
+
+export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
   const { currentUser, isLoadingStores, selectedStoreId, setSelectedStoreId, stores } =
     useStoreContext();
 
@@ -52,7 +56,12 @@ export function AppHeader() {
   }));
 
   return (
-    <header className="border-b border-[var(--border)] bg-[var(--surface)] px-4 py-4 sm:px-6 lg:px-8">
+    <header
+      className={`overflow-hidden border-b border-[var(--border)] bg-[var(--surface)] transition-all duration-300 ${
+        isCollapsed ? "max-h-0 border-b-0 px-0 py-0 opacity-0" : "max-h-64 px-4 py-4 opacity-100 sm:px-6 lg:px-8"
+      }`}
+      aria-hidden={isCollapsed}
+    >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <label className="flex h-12 w-full max-w-md items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 text-[var(--muted)] shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
           <SearchIcon />
