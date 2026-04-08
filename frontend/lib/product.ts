@@ -18,6 +18,57 @@ export type ProductListItem = {
   consignado: boolean;
 };
 
+export type ProductCreateResponse = {
+  id: number;
+  preco: number;
+  produtoId: number;
+  marcaId: number;
+  tamanhoId: number;
+  corId: number;
+  fornecedorId: number;
+  descricao: string;
+  entrada: string;
+  lojaId: number;
+  situacao: number;
+  consignado: boolean;
+};
+
+export type ProductFormValues = {
+  descricao: string;
+  preco: string;
+  entrada: string;
+  consignado: boolean;
+  produtoId: string;
+  produtoLabel: string;
+  marcaId: string;
+  marcaLabel: string;
+  tamanhoId: string;
+  tamanhoLabel: string;
+  corId: string;
+  corLabel: string;
+  fornecedorId: string;
+  fornecedorLabel: string;
+};
+
+export type ProductFieldErrors = Partial<
+  Record<
+    | "descricao"
+    | "preco"
+    | "entrada"
+    | "produtoId"
+    | "marcaId"
+    | "tamanhoId"
+    | "corId"
+    | "fornecedorId",
+    string
+  >
+>;
+
+export type ProductLookupOption = {
+  id: number;
+  label: string;
+};
+
 export type ProductListResponse = {
   itens: ProductListItem[];
   pagina: number;
@@ -93,6 +144,23 @@ export const initialProductFilters: ProductFilters = {
   tamanhoPagina: 10,
 };
 
+export const initialProductFormValues: ProductFormValues = {
+  descricao: "",
+  preco: "",
+  entrada: new Date().toISOString().slice(0, 10),
+  consignado: true,
+  produtoId: "",
+  produtoLabel: "",
+  marcaId: "",
+  marcaLabel: "",
+  tamanhoId: "",
+  tamanhoLabel: "",
+  corId: "",
+  corLabel: "",
+  fornecedorId: "",
+  fornecedorLabel: "",
+};
+
 export const defaultProductTableSettings: ProductTableSettings = {
   tamanhoPagina: 10,
   visibleFields: [
@@ -112,6 +180,10 @@ const productTableSettingsStorageKey = "renova.productTableSettings";
 
 export function asProductListResponse(body: unknown) {
   return body as ProductListResponse;
+}
+
+export function asProductResponse(body: unknown) {
+  return body as ProductCreateResponse;
 }
 
 export function normalizeDecimalValue(value: string) {
@@ -218,6 +290,62 @@ export function getProductApiMessage(body: unknown): string | null {
   }
 
   return null;
+}
+
+export function extractProductFieldErrors(body: unknown): ProductFieldErrors {
+  if (!body || typeof body !== "object" || !("errors" in body)) {
+    return {};
+  }
+
+  const errors = (body as ApiErrorResponse).errors;
+
+  if (!errors) {
+    return {};
+  }
+
+  return Object.entries(errors).reduce<ProductFieldErrors>((accumulator, [key, values]) => {
+    const error = values?.[0];
+
+    if (!error) {
+      return accumulator;
+    }
+
+    const normalizedKey = key.toLowerCase();
+
+    if (normalizedKey === "descricao" && !accumulator.descricao) {
+      accumulator.descricao = error;
+    }
+
+    if (normalizedKey === "preco" && !accumulator.preco) {
+      accumulator.preco = error;
+    }
+
+    if (normalizedKey === "entrada" && !accumulator.entrada) {
+      accumulator.entrada = error;
+    }
+
+    if (normalizedKey === "produtoid" && !accumulator.produtoId) {
+      accumulator.produtoId = error;
+    }
+
+    if (normalizedKey === "marcaid" && !accumulator.marcaId) {
+      accumulator.marcaId = error;
+    }
+
+    if (normalizedKey === "tamanhoid" && !accumulator.tamanhoId) {
+      accumulator.tamanhoId = error;
+    }
+
+    if (normalizedKey === "corid" && !accumulator.corId) {
+      accumulator.corId = error;
+    }
+
+    if (normalizedKey === "fornecedorid" && !accumulator.fornecedorId) {
+      accumulator.fornecedorId = error;
+    }
+
+    return accumulator;
+  }, {});
 }
 
 export function getStoredProductTableSettings(): ProductTableSettings {

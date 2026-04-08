@@ -26,7 +26,7 @@ import { ProductSettingsModal } from "./product-settings-modal";
 import { ProductsTable } from "./products-table";
 
 export function ProductPage() {
-  const { isLoadingStores, selectedStoreId } = useStoreContext();
+  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [tableSettings, setTableSettings] = useState<ProductTableSettings>(() =>
@@ -165,6 +165,8 @@ export function ProductPage() {
 
       <ProductCreateModal
         isOpen={isCreateModalOpen}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
         onClose={() => setIsCreateModalOpen(false)}
       />
       <ProductSettingsModal
