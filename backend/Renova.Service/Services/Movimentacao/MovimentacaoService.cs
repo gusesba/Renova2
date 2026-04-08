@@ -5,13 +5,23 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Movimentacao;
+using Renova.Service.Extensions;
 using Renova.Service.Parameters.Movimentacao;
+using Renova.Service.Queries.Movimentacao;
+using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Movimentacao
 {
     public class MovimentacaoService(RenovaDbContext context) : IMovimentacaoService
     {
         private readonly RenovaDbContext _context = context;
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<MovimentacaoModel, int>>)(movimentacao => movimentacao.Id),
+            ["data"] = (Expression<Func<MovimentacaoModel, DateTime>>)(movimentacao => movimentacao.Data),
+            ["cliente"] = (Expression<Func<MovimentacaoModel, string>>)(movimentacao => movimentacao.Cliente != null ? movimentacao.Cliente.Nome : string.Empty),
+            ["tipo"] = (Expression<Func<MovimentacaoModel, TipoMovimentacao>>)(movimentacao => movimentacao.Tipo)
+        };
         private static readonly IReadOnlyDictionary<TipoMovimentacao, SituacaoProduto> SituacoesEsperadasPorTipo = new Dictionary<TipoMovimentacao, SituacaoProduto>
         {
             [TipoMovimentacao.Venda] = SituacaoProduto.Estoque,
@@ -30,6 +40,85 @@ namespace Renova.Service.Services.Movimentacao
             [TipoMovimentacao.DevolucaoVenda] = SituacaoProduto.Estoque,
             [TipoMovimentacao.DevolucaoEmprestimo] = SituacaoProduto.Estoque
         };
+
+        public async Task<PaginacaoDto<MovimentacaoBuscaDto>> GetAllAsync(ObterMovimentacoesQuery request, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            IQueryable<MovimentacaoModel> query = _context.Movimentacoes
+                .Where(movimentacao => movimentacao.LojaId == request.LojaId.Value);
+
+            if (request.DataInicial.HasValue)
+            {
+                query = query.Where(movimentacao => movimentacao.Data >= request.DataInicial.Value);
+            }
+
+            if (request.DataFinal.HasValue)
+            {
+                query = query.Where(movimentacao => movimentacao.Data <= request.DataFinal.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Cliente))
+            {
+                string clienteFiltro = request.Cliente.Trim().ToLowerInvariant();
+                query = query.Where(movimentacao => movimentacao.Cliente != null && movimentacao.Cliente.Nome.ToLower().Contains(clienteFiltro));
+            }
+
+            if (request.Tipo.HasValue)
+            {
+                if (!Enum.IsDefined(request.Tipo.Value))
+                {
+                    throw new ArgumentException("Tipo de movimentacao informado e invalido.", nameof(request));
+                }
+
+                query = query.Where(movimentacao => movimentacao.Tipo == request.Tipo.Value);
+            }
+
+            IQueryable<MovimentacaoModel> queryOrdenada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "data")
+                .ThenBy(movimentacao => movimentacao.Id);
+
+            IQueryable<MovimentacaoBuscaDto> queryProjetada = queryOrdenada.Select(movimentacao => new MovimentacaoBuscaDto
+            {
+                Id = movimentacao.Id,
+                Tipo = movimentacao.Tipo,
+                Data = movimentacao.Data,
+                ClienteId = movimentacao.ClienteId,
+                Cliente = movimentacao.Cliente != null ? movimentacao.Cliente.Nome : string.Empty,
+                LojaId = movimentacao.LojaId,
+                QuantidadeProdutos = movimentacao.Produtos.Count,
+                Produtos = movimentacao.Produtos
+                    .OrderBy(item => item.ProdutoId)
+                    .Select(item => new ProdutoBuscaDto
+                    {
+                        Id = item.ProdutoId,
+                        Preco = item.Produto != null ? item.Produto.Preco : 0,
+                        ProdutoId = item.Produto != null ? item.Produto.ProdutoId : 0,
+                        Produto = item.Produto != null && item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
+                        MarcaId = item.Produto != null ? item.Produto.MarcaId : 0,
+                        Marca = item.Produto != null && item.Produto.Marca != null ? item.Produto.Marca.Valor : string.Empty,
+                        TamanhoId = item.Produto != null ? item.Produto.TamanhoId : 0,
+                        Tamanho = item.Produto != null && item.Produto.Tamanho != null ? item.Produto.Tamanho.Valor : string.Empty,
+                        CorId = item.Produto != null ? item.Produto.CorId : 0,
+                        Cor = item.Produto != null && item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
+                        FornecedorId = item.Produto != null ? item.Produto.FornecedorId : 0,
+                        Fornecedor = item.Produto != null && item.Produto.Fornecedor != null ? item.Produto.Fornecedor.Nome : string.Empty,
+                        Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
+                        Entrada = item.Produto != null ? item.Produto.Entrada : default,
+                        LojaId = item.Produto != null ? item.Produto.LojaId : 0,
+                        Situacao = item.Produto != null ? item.Produto.Situacao : default,
+                        Consignado = item.Produto != null && item.Produto.Consignado
+                    })
+                    .ToList()
+            });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
 
         public async Task<MovimentacaoDto> CreateAsync(CriarMovimentacaoCommand request, CriarMovimentacaoParametros parametros, CancellationToken cancellationToken = default)
         {
