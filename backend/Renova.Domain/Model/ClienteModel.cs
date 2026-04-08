@@ -10,5 +10,6 @@ namespace Renova.Domain.Model
         public int? UserId { get; set; }
         public UsuarioModel? User { get; set; }
         public ICollection<ProdutoEstoqueModel> ProdutosFornecidos { get; set; } = [];
+        public ICollection<MovimentacaoModel> Movimentacoes { get; set; } = [];
     }
 }

@@ -131,6 +131,50 @@ namespace Renova.Persistence.Migrations
                     b.ToTable("Marca", (string)null);
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.MovimentacaoModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Data")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LojaId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("LojaId");
+
+                    b.ToTable("Movimentacao", (string)null);
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.MovimentacaoProdutoModel", b =>
+                {
+                    b.Property<int>("MovimentacaoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProdutoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MovimentacaoId", "ProdutoId");
+
+                    b.HasIndex("ProdutoId");
+
+                    b.ToTable("MovimentacaoProduto", (string)null);
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.ProdutoEstoqueModel", b =>
                 {
                     b.Property<int>("Id")
@@ -345,6 +389,44 @@ namespace Renova.Persistence.Migrations
                     b.Navigation("Loja");
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.MovimentacaoModel", b =>
+                {
+                    b.HasOne("Renova.Domain.Model.ClienteModel", "Cliente")
+                        .WithMany("Movimentacoes")
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Renova.Domain.Model.LojaModel", "Loja")
+                        .WithMany("Movimentacoes")
+                        .HasForeignKey("LojaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Loja");
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.MovimentacaoProdutoModel", b =>
+                {
+                    b.HasOne("Renova.Domain.Model.MovimentacaoModel", "Movimentacao")
+                        .WithMany("Produtos")
+                        .HasForeignKey("MovimentacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Renova.Domain.Model.ProdutoEstoqueModel", "Produto")
+                        .WithMany("Movimentacoes")
+                        .HasForeignKey("ProdutoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Movimentacao");
+
+                    b.Navigation("Produto");
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.ProdutoEstoqueModel", b =>
                 {
                     b.HasOne("Renova.Domain.Model.CorModel", "Cor")
@@ -420,6 +502,8 @@ namespace Renova.Persistence.Migrations
 
             modelBuilder.Entity("Renova.Domain.Model.ClienteModel", b =>
                 {
+                    b.Navigation("Movimentacoes");
+
                     b.Navigation("ProdutosFornecidos");
                 });
 
@@ -435,6 +519,8 @@ namespace Renova.Persistence.Migrations
                     b.Navigation("Cores");
 
                     b.Navigation("Marcas");
+
+                    b.Navigation("Movimentacoes");
 
                     b.Navigation("ProdutosEstoque");
 
@@ -456,6 +542,11 @@ namespace Renova.Persistence.Migrations
             modelBuilder.Entity("Renova.Domain.Model.TamanhoModel", b =>
                 {
                     b.Navigation("ProdutosEstoque");
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.ProdutoEstoqueModel", b =>
+                {
+                    b.Navigation("Movimentacoes");
                 });
 
             modelBuilder.Entity("Renova.Domain.Model.UsuarioModel", b =>

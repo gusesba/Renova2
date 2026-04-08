@@ -12,6 +12,8 @@ namespace Renova.Persistence
         public DbSet<ClienteModel> Clientes { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
         public DbSet<ProdutoReferenciaModel> ProdutosReferencia { get; set; }
+        public DbSet<MovimentacaoModel> Movimentacoes { get; set; }
+        public DbSet<MovimentacaoProdutoModel> MovimentacoesProdutos { get; set; }
         public DbSet<MarcaModel> Marcas { get; set; }
         public DbSet<TamanhoModel> Tamanhos { get; set; }
         public DbSet<CorModel> Cores { get; set; }
@@ -170,6 +172,41 @@ namespace Renova.Persistence
                     .WithMany(p => p.ProdutosEstoque)
                     .HasForeignKey(p => p.LojaId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<MovimentacaoModel>(entity =>
+            {
+                _ = entity.ToTable("Movimentacao");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Tipo).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.Property(p => p.ClienteId).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasOne(p => p.Cliente)
+                    .WithMany(p => p.Movimentacoes)
+                    .HasForeignKey(p => p.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Movimentacoes)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<MovimentacaoProdutoModel>(entity =>
+            {
+                _ = entity.ToTable("MovimentacaoProduto");
+                _ = entity.HasKey(p => new { p.MovimentacaoId, p.ProdutoId });
+                _ = entity.Property(p => p.MovimentacaoId).IsRequired();
+                _ = entity.Property(p => p.ProdutoId).IsRequired();
+                _ = entity.HasOne(p => p.Movimentacao)
+                    .WithMany(p => p.Produtos)
+                    .HasForeignKey(p => p.MovimentacaoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Produto)
+                    .WithMany(p => p.Movimentacoes)
+                    .HasForeignKey(p => p.ProdutoId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
