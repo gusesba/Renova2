@@ -114,6 +114,29 @@ export async function updateProduct(
   };
 }
 
+export async function deleteProduct(
+  productId: number,
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/produto/${productId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
 async function createProductAuxiliar(
   path: "referencia" | "marca" | "tamanho" | "cor",
   payload: { valor: string; lojaId: number },

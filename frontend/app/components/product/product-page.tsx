@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,9 +17,10 @@ import {
   type ProductListItem,
   type ProductTableSettings,
 } from "@/lib/product";
-import { getProducts } from "@/services/product-service";
+import { deleteProduct, getProducts } from "@/services/product-service";
 
 import { ProductCreateModal } from "./product-create-modal";
+import { ProductDeleteModal } from "./product-delete-modal";
 import { ProductEditModal } from "./product-edit-modal";
 import { ProductEmptyState } from "./product-empty-state";
 import { ProductFiltersBar } from "./product-filters-bar";
@@ -28,11 +29,14 @@ import { ProductSettingsModal } from "./product-settings-modal";
 import { ProductsTable } from "./products-table";
 
 export function ProductPage() {
+  const queryClient = useQueryClient();
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductListItem | null>(null);
+  const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
   const editModalCleanupTimeoutRef = useRef<number | null>(null);
   const [tableSettings, setTableSettings] = useState<ProductTableSettings>(() =>
     getStoredProductTableSettings(),
@@ -103,6 +107,16 @@ export function ProductPage() {
     enabled: Boolean(token && selectedStoreId),
   });
 
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para excluir um produto.");
+      }
+
+      return deleteProduct(productId, token);
+    },
+  });
+
   function handleFilterChange(next: Partial<ProductFilters>) {
     setFilters((current) => ({
       ...current,
@@ -124,6 +138,22 @@ export function ProductPage() {
     }, 240);
   }
 
+  function handleOpenDeleteModal(product: ProductListItem) {
+    setSelectedProduct(product);
+    setSelectedProductName(product.id.toString());
+    setIsDeleteModalOpen(true);
+  }
+
+  function handleCloseDeleteModal() {
+    if (deleteProductMutation.isPending) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
+    setSelectedProduct(null);
+    setSelectedProductName(null);
+  }
+
   useEffect(() => {
     return () => {
       if (editModalCleanupTimeoutRef.current) {
@@ -131,6 +161,43 @@ export function ProductPage() {
       }
     };
   }, []);
+
+  async function handleDeleteConfirm() {
+    if (!selectedProduct) {
+      toast.error("Selecione um produto valido para excluir.");
+      return;
+    }
+
+    try {
+      const response = await deleteProductMutation.mutateAsync(selectedProduct.id);
+
+      if (!response.ok) {
+        toast.error(getProductApiMessage(response.body) ?? "Nao foi possivel excluir o produto.");
+        return;
+      }
+
+      const deletedProductName = selectedProductName;
+
+      startTransition(() => {
+        setIsDeleteModalOpen(false);
+        setSelectedProduct(null);
+        setSelectedProductName(null);
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success(
+        deletedProductName
+          ? `Produto ${deletedProductName} excluido com sucesso.`
+          : "Produto excluido com sucesso.",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
 
   const listResponse = productsQuery.data;
   const hasStore = Boolean(selectedStoreId);
@@ -179,6 +246,7 @@ export function ProductPage() {
                 setSelectedProduct(product);
                 setIsEditModalOpen(true);
               }}
+              onDeleteProduct={handleOpenDeleteModal}
             />
             <ProductPagination
               currentPage={filters.pagina}
@@ -208,6 +276,13 @@ export function ProductPage() {
         product={selectedProduct}
         storeId={selectedStoreId}
         onClose={handleCloseEditModal}
+      />
+      <ProductDeleteModal
+        productName={selectedProductName}
+        isOpen={isDeleteModalOpen}
+        isSubmitting={deleteProductMutation.isPending}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteConfirm}
       />
       <ProductSettingsModal
         isOpen={isSettingsModalOpen}
