@@ -25,6 +25,43 @@ export type MovementCreateResponse = {
   produtoIds: number[];
 };
 
+export type MovementListItem = {
+  id: number;
+  tipo: MovementTypeValue;
+  data: string;
+  clienteId: number;
+  cliente: string;
+  lojaId: number;
+  quantidadeProdutos: number;
+  produtos: ProductListItem[];
+};
+
+export type MovementListResponse = {
+  itens: MovementListItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+};
+
+export type MovementFilters = {
+  dataInicial: string;
+  dataFinal: string;
+  cliente: string;
+  tipo: string;
+  ordenarPor: "data" | "cliente" | "tipo" | "id";
+  direcao: "asc" | "desc";
+  pagina: number;
+  tamanhoPagina: number;
+};
+
+export type MovementVisibleField = "id" | "data" | "cliente" | "quantidadeProdutos" | "tipo";
+
+export type MovementTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: MovementVisibleField[];
+};
+
 export type MovementSuggestion = {
   message: string;
   product: ProductListItem;
@@ -46,8 +83,30 @@ export const initialMovementDraftFormValues: MovementDraftFormValues = {
   clienteId: "",
 };
 
+export const initialMovementFilters: MovementFilters = {
+  dataInicial: "",
+  dataFinal: "",
+  cliente: "",
+  tipo: "",
+  ordenarPor: "data",
+  direcao: "desc",
+  pagina: 1,
+  tamanhoPagina: 10,
+};
+
+export const defaultMovementTableSettings: MovementTableSettings = {
+  tamanhoPagina: 10,
+  visibleFields: ["id", "data", "cliente", "quantidadeProdutos", "tipo"],
+};
+
+const movementTableSettingsStorageKey = "renova.movementTableSettings";
+
 export function asMovementResponse(body: unknown) {
   return body as MovementCreateResponse;
+}
+
+export function asMovementListResponse(body: unknown) {
+  return body as MovementListResponse;
 }
 
 export function formatMovementType(value: number) {
@@ -78,6 +137,100 @@ export function getMovementApiMessage(body: unknown): string | null {
   }
 
   return null;
+}
+
+function toApiDateStart(value: string) {
+  return `${value}T00:00:00`;
+}
+
+function toApiDateEnd(value: string) {
+  return `${value}T23:59:59.999`;
+}
+
+export function buildMovementQuery(storeId: number, filters: MovementFilters) {
+  const params = new URLSearchParams({
+    lojaId: String(storeId),
+    pagina: String(filters.pagina),
+    tamanhoPagina: String(filters.tamanhoPagina),
+    ordenarPor: filters.ordenarPor,
+    direcao: filters.direcao,
+  });
+
+  if (filters.dataInicial) {
+    params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.dataFinal) {
+    params.set("dataFinal", toApiDateEnd(filters.dataFinal));
+  }
+
+  if (filters.cliente.trim()) {
+    params.set("cliente", filters.cliente.trim());
+  }
+
+  if (filters.tipo.trim()) {
+    params.set("tipo", filters.tipo.trim());
+  }
+
+  return params.toString();
+}
+
+export function formatMovementDate(value: string) {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+  }).format(parsed);
+}
+
+export function getStoredMovementTableSettings(): MovementTableSettings {
+  if (typeof window === "undefined") {
+    return defaultMovementTableSettings;
+  }
+
+  const rawValue = window.localStorage.getItem(movementTableSettingsStorageKey);
+
+  if (!rawValue) {
+    return defaultMovementTableSettings;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<MovementTableSettings>;
+    const tamanhoPagina =
+      typeof parsed.tamanhoPagina === "number" &&
+      Number.isInteger(parsed.tamanhoPagina) &&
+      parsed.tamanhoPagina > 0 &&
+      parsed.tamanhoPagina <= 100
+        ? parsed.tamanhoPagina
+        : defaultMovementTableSettings.tamanhoPagina;
+
+    const visibleFields = Array.isArray(parsed.visibleFields)
+      ? parsed.visibleFields.filter((field): field is MovementVisibleField =>
+          ["id", "data", "cliente", "quantidadeProdutos", "tipo"].includes(String(field)),
+        )
+      : defaultMovementTableSettings.visibleFields;
+
+    return {
+      tamanhoPagina,
+      visibleFields: visibleFields.length
+        ? visibleFields
+        : defaultMovementTableSettings.visibleFields,
+    };
+  } catch {
+    return defaultMovementTableSettings;
+  }
+}
+
+export function persistMovementTableSettings(settings: MovementTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(movementTableSettingsStorageKey, JSON.stringify(settings));
 }
 
 export function isProductSituationCompatible(movementType: number, productSituation: number) {
@@ -137,4 +290,3 @@ export function buildMovementSuggestion(
     message: `O produto ${product.id} esta em ${productSituation} e nao pode ser usado em ${currentType}. Escolha outro produto ou ajuste o tipo desta movimentacao.`,
   };
 }
-

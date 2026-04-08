@@ -1,5 +1,5 @@
-import { MovementPage } from "@/app/components/movement/movement-page";
+import { MovementListPage } from "@/app/components/movement/movement-list-page";
 
 export default function MovimentacaoPage() {
-  return <MovementPage />;
+  return <MovementListPage />;
 }
