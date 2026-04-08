@@ -13,6 +13,7 @@ const primaryItems: NavItem[] = [
   { label: "Lojas", href: "/dashboard/loja" },
   { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Produtos", href: "/dashboard/produto" },
+  { label: "Movimentacoes", href: "/dashboard/movimentacao" },
   { label: "Relatorios", href: "/relatorios" },
   { label: "Faturas", href: "/faturas" },
   { label: "Transacoes", href: "/transacoes" },
