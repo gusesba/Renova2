@@ -1,0 +1,279 @@
+export type ProductListItem = {
+  id: number;
+  preco: number;
+  produtoId: number;
+  produto: string;
+  marcaId: number;
+  marca: string;
+  tamanhoId: number;
+  tamanho: string;
+  corId: number;
+  cor: string;
+  fornecedorId: number;
+  fornecedor: string;
+  descricao: string;
+  entrada: string;
+  lojaId: number;
+  situacao: number;
+  consignado: boolean;
+};
+
+export type ProductListResponse = {
+  itens: ProductListItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+};
+
+export type ProductFilters = {
+  descricao: string;
+  produto: string;
+  marca: string;
+  tamanho: string;
+  cor: string;
+  fornecedor: string;
+  precoInicial: string;
+  precoFinal: string;
+  dataInicial: string;
+  dataFinal: string;
+  ordenarPor:
+    | "descricao"
+    | "produto"
+    | "marca"
+    | "tamanho"
+    | "cor"
+    | "fornecedor"
+    | "preco"
+    | "entrada"
+    | "id";
+  direcao: "asc" | "desc";
+  pagina: number;
+  tamanhoPagina: number;
+};
+
+export type ProductVisibleField =
+  | "produto"
+  | "descricao"
+  | "marca"
+  | "tamanho"
+  | "cor"
+  | "fornecedor"
+  | "preco"
+  | "entrada"
+  | "situacao"
+  | "consignado"
+  | "id";
+
+export type ProductTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: ProductVisibleField[];
+};
+
+type ApiErrorResponse = {
+  mensagem?: unknown;
+  title?: unknown;
+  errors?: Record<string, string[] | undefined>;
+};
+
+export const initialProductFilters: ProductFilters = {
+  descricao: "",
+  produto: "",
+  marca: "",
+  tamanho: "",
+  cor: "",
+  fornecedor: "",
+  precoInicial: "",
+  precoFinal: "",
+  dataInicial: "",
+  dataFinal: "",
+  ordenarPor: "descricao",
+  direcao: "asc",
+  pagina: 1,
+  tamanhoPagina: 10,
+};
+
+export const defaultProductTableSettings: ProductTableSettings = {
+  tamanhoPagina: 10,
+  visibleFields: [
+    "produto",
+    "descricao",
+    "marca",
+    "fornecedor",
+    "preco",
+    "entrada",
+    "situacao",
+    "consignado",
+    "id",
+  ],
+};
+
+const productTableSettingsStorageKey = "renova.productTableSettings";
+
+export function asProductListResponse(body: unknown) {
+  return body as ProductListResponse;
+}
+
+export function normalizeDecimalValue(value: string) {
+  return value.replace(",", ".").trim();
+}
+
+export function formatCurrencyValue(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+export function formatDateValue(value: string) {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+  }).format(parsed);
+}
+
+export function formatSituacaoValue(value: number) {
+  const labels: Record<number, string> = {
+    0: "Estoque",
+    1: "Emprestado",
+    2: "Vendido",
+  };
+
+  return labels[value] ?? `Situacao ${value}`;
+}
+
+function toApiDateStart(value: string) {
+  return `${value}T00:00:00`;
+}
+
+function toApiDateEnd(value: string) {
+  return `${value}T23:59:59.999`;
+}
+
+export function buildProductQuery(storeId: number, filters: ProductFilters) {
+  const params = new URLSearchParams({
+    lojaId: String(storeId),
+    pagina: String(filters.pagina),
+    tamanhoPagina: String(filters.tamanhoPagina),
+    ordenarPor: filters.ordenarPor,
+    direcao: filters.direcao,
+  });
+
+  const textFields: Array<keyof Pick<
+    ProductFilters,
+    "descricao" | "produto" | "marca" | "tamanho" | "cor" | "fornecedor"
+  >> = ["descricao", "produto", "marca", "tamanho", "cor", "fornecedor"];
+
+  for (const field of textFields) {
+    if (filters[field].trim()) {
+      params.set(field, filters[field].trim());
+    }
+  }
+
+  if (filters.precoInicial.trim()) {
+    params.set("precoInicial", normalizeDecimalValue(filters.precoInicial));
+  }
+
+  if (filters.precoFinal.trim()) {
+    params.set("precoFinal", normalizeDecimalValue(filters.precoFinal));
+  }
+
+  if (filters.dataInicial) {
+    params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.dataFinal) {
+    params.set("dataFinal", toApiDateEnd(filters.dataFinal));
+  }
+
+  return params.toString();
+}
+
+export function getProductApiMessage(body: unknown): string | null {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  const data = body as ApiErrorResponse;
+
+  if (typeof data.mensagem === "string" && data.mensagem.trim()) {
+    return data.mensagem;
+  }
+
+  if (typeof data.title === "string" && data.title.trim()) {
+    return data.title;
+  }
+
+  if (data.errors) {
+    const firstError = Object.values(data.errors).flat().find(Boolean);
+
+    if (firstError) {
+      return firstError;
+    }
+  }
+
+  return null;
+}
+
+export function getStoredProductTableSettings(): ProductTableSettings {
+  if (typeof window === "undefined") {
+    return defaultProductTableSettings;
+  }
+
+  const rawValue = window.localStorage.getItem(productTableSettingsStorageKey);
+
+  if (!rawValue) {
+    return defaultProductTableSettings;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<ProductTableSettings>;
+    const tamanhoPagina =
+      typeof parsed.tamanhoPagina === "number" &&
+      Number.isInteger(parsed.tamanhoPagina) &&
+      parsed.tamanhoPagina > 0 &&
+      parsed.tamanhoPagina <= 100
+        ? parsed.tamanhoPagina
+        : defaultProductTableSettings.tamanhoPagina;
+
+    const visibleFields = Array.isArray(parsed.visibleFields)
+      ? parsed.visibleFields.filter((field): field is ProductVisibleField =>
+          [
+            "produto",
+            "descricao",
+            "marca",
+            "tamanho",
+            "cor",
+            "fornecedor",
+            "preco",
+            "entrada",
+            "situacao",
+            "consignado",
+            "id",
+          ].includes(String(field)),
+        )
+      : defaultProductTableSettings.visibleFields;
+
+    return {
+      tamanhoPagina,
+      visibleFields: visibleFields.length
+        ? visibleFields
+        : defaultProductTableSettings.visibleFields,
+    };
+  } catch {
+    return defaultProductTableSettings;
+  }
+}
+
+export function persistProductTableSettings(settings: ProductTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(productTableSettingsStorageKey, JSON.stringify(settings));
+}
