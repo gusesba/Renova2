@@ -144,7 +144,10 @@ function TypeSelect({
         <Select
           ariaLabel="Tipo de movimentacao"
           value={value}
-          options={movementTypeOptions}
+          options={movementTypeOptions.map((option) => ({
+            label: option.label,
+            value: String(option.value),
+          }))}
           placeholder="Selecionar"
           onChange={onChange}
         />
