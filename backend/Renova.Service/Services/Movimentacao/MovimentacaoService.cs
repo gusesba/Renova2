@@ -1,6 +1,7 @@
 using System.Data;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
