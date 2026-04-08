@@ -25,9 +25,7 @@ export function AppShell({ children }: AppShellProps) {
         <button
           type="button"
           onClick={() => setIsChromeCollapsed((current) => !current)}
-          aria-label={
-            isChromeCollapsed ? "Expandir header e sidebar" : "Contrair header e sidebar"
-          }
+          aria-label={isChromeCollapsed ? "Expandir header e sidebar" : "Contrair header e sidebar"}
           aria-pressed={isChromeCollapsed}
           className="absolute top-2 left-2 z-20 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-3 lg:left-3"
         >
@@ -48,14 +46,20 @@ export function AppShell({ children }: AppShellProps) {
         </button>
 
         <AppSidebar isCollapsed={isChromeCollapsed} />
-        <div className="flex min-h-0 flex-1 flex-col bg-[var(--surface-muted)]">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--surface-muted)]">
           <AppHeader isCollapsed={isChromeCollapsed} />
           <main
-            className={`min-h-0 flex-1 overflow-y-auto transition-[padding] duration-300 ${
+            className={`min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto transition-[padding] duration-300 ${
               isChromeCollapsed ? "p-16 sm:p-16 lg:p-20" : "p-4 sm:p-6 lg:p-8"
             }`}
           >
-            {children}
+            <div
+              className={`mx-auto w-full min-w-0 ${
+                isChromeCollapsed ? "max-w-full" : "max-w-[1250px]"
+              }`}
+            >
+              {children}
+            </div>
           </main>
         </div>
       </div>
