@@ -5,6 +5,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
   asClientListResponse,
@@ -133,21 +134,21 @@ function TypeSelect({
 }) {
   return (
     <FieldShell error={error} label="Tipo de movimentacao">
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
+      <div
+        className={`rounded-2xl border bg-white px-4 py-3 text-sm text-[var(--foreground)] transition ${
           error
             ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
-            : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+            : "border-[var(--border)]"
         }`}
       >
-        {movementTypeOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <Select
+          ariaLabel="Tipo de movimentacao"
+          value={value}
+          options={movementTypeOptions}
+          placeholder="Selecionar"
+          onChange={onChange}
+        />
+      </div>
     </FieldShell>
   );
 }
