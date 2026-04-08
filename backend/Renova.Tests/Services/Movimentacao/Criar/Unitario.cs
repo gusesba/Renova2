@@ -67,7 +67,13 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
-            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
+            SituacaoProduto situacaoInicial = tipo switch
+            {
+                TipoMovimentacao.DevolucaoVenda => SituacaoProduto.Vendido,
+                TipoMovimentacao.DevolucaoEmprestimo => SituacaoProduto.Emprestado,
+                _ => SituacaoProduto.Estoque
+            };
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", situacaoInicial);
 
             MovimentacaoService service = new(context);
             MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand
@@ -219,9 +225,9 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
-            ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
-            ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", "44999990002");
-            ProdutoEstoqueModel produtoC = await CriarProdutoAsync(context, loja.Id, "Produto C", "44999990003");
+            ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
+            ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", "44999990002", SituacaoProduto.Vendido);
+            ProdutoEstoqueModel produtoC = await CriarProdutoAsync(context, loja.Id, "Produto C", "44999990003", SituacaoProduto.Vendido);
 
             MovimentacaoService service = new(context);
             MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand

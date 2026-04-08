@@ -1,5 +1,3 @@
-using System.Data;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -65,7 +63,12 @@ namespace Renova.Service.Services.Movimentacao
                 .Distinct()
                 .ToList();
 
-            await using IDbContextTransaction transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+            IDbContextTransaction? transaction = null;
+
+            if (_context.Database.IsNpgsql())
+            {
+                transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+            }
 
             List<ProdutoEstoqueModel> produtos = await ObterProdutosParaMovimentacaoAsync(produtoIds, cancellationToken);
 
@@ -116,7 +119,11 @@ namespace Renova.Service.Services.Movimentacao
 
             _ = await _context.Movimentacoes.AddAsync(entity, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            if (transaction is not null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                await transaction.DisposeAsync();
+            }
 
             return new MovimentacaoDto
             {
