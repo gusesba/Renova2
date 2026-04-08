@@ -14,15 +14,6 @@ const primaryItems: NavItem[] = [
   { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Produtos", href: "/dashboard/produto" },
   { label: "Movimentacoes", href: "/dashboard/movimentacao" },
-  { label: "Relatorios", href: "/relatorios" },
-  { label: "Faturas", href: "/faturas" },
-  { label: "Transacoes", href: "/transacoes" },
-  { label: "Agenda", href: "/agenda" },
-];
-
-const secondaryItems: NavItem[] = [
-  { label: "Pedidos", href: "/pedidos" },
-  { label: "Configuracoes", href: "/configuracoes" },
 ];
 
 function HexagonMark() {
@@ -111,36 +102,6 @@ export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
           <SidebarLink key={item.label} item={item} pathname={pathname} />
         ))}
       </nav>
-
-      <div className="mt-8 border-t border-[var(--border)] pt-8">
-        <p className="px-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          Gestao
-        </p>
-        <nav className="mt-3 flex flex-col gap-2">
-          {secondaryItems.map((item) => (
-            <SidebarLink key={item.label} item={item} pathname={pathname} />
-          ))}
-        </nav>
-      </div>
-
-      <div className="mt-auto rounded-[28px] bg-[linear-gradient(180deg,_#f8f6ff_0%,_#eef2ff_100%)] p-5">
-        <div className="flex items-center gap-3">
-          <SidebarIcon />
-          <div>
-            <p className="text-sm font-semibold text-[var(--foreground)]">Espaco de trabalho</p>
-            <p className="text-xs text-[var(--muted)]">Operacao central</p>
-          </div>
-        </div>
-        <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
-          Estrutura base pronta para receber as telas autenticadas do sistema.
-        </p>
-        <button
-          type="button"
-          className="mt-5 w-full rounded-2xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-105"
-        >
-          Ver visao geral
-        </button>
-      </div>
     </aside>
   );
 }
