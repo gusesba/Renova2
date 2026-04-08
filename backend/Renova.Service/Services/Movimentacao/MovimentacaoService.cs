@@ -55,12 +55,14 @@ namespace Renova.Service.Services.Movimentacao
 
             if (request.DataInicial.HasValue)
             {
-                query = query.Where(movimentacao => movimentacao.Data >= request.DataInicial.Value);
+                DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+                query = query.Where(movimentacao => movimentacao.Data >= dataInicialUtc);
             }
 
             if (request.DataFinal.HasValue)
             {
-                query = query.Where(movimentacao => movimentacao.Data <= request.DataFinal.Value);
+                DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+                query = query.Where(movimentacao => movimentacao.Data <= dataFinalUtc);
             }
 
             if (!string.IsNullOrWhiteSpace(request.Cliente))
@@ -262,6 +264,17 @@ namespace Renova.Service.Services.Movimentacao
             return loja.UsuarioId != usuarioId
                 ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
                 : loja;
+        }
+
+        private static DateTime NormalizarDateTimeParaUtc(DateTime value)
+        {
+            return value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+                _ => value
+            };
         }
     }
 }
