@@ -26,7 +26,6 @@ namespace Renova.Service.Services.Produto
             ["cor"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Cor != null ? produto.Cor.Valor : string.Empty),
             ["fornecedor"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty)
         };
-
         public async Task<ProdutoDto> CreateAsync(CriarProdutoCommand request, CriarProdutoParametros parametros, CancellationToken cancellationToken = default)
         {
             if (request.Preco <= 0)
@@ -154,6 +153,26 @@ namespace Renova.Service.Services.Produto
                 },
                 "Cor",
                 cancellationToken);
+        }
+
+        public Task<PaginacaoDto<ProdutoAuxiliarDto>> GetProdutoAuxiliarAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ObterAuxiliaresAsync(request, parametros, _context.ProdutosReferencia, cancellationToken);
+        }
+
+        public Task<PaginacaoDto<ProdutoAuxiliarDto>> GetMarcaAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ObterAuxiliaresAsync(request, parametros, _context.Marcas, cancellationToken);
+        }
+
+        public Task<PaginacaoDto<ProdutoAuxiliarDto>> GetTamanhoAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ObterAuxiliaresAsync(request, parametros, _context.Tamanhos, cancellationToken);
+        }
+
+        public Task<PaginacaoDto<ProdutoAuxiliarDto>> GetCorAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ObterAuxiliaresAsync(request, parametros, _context.Cores, cancellationToken);
         }
 
         public async Task<PaginacaoDto<ProdutoBuscaDto>> GetAllAsync(ObterProdutosQuery request, ObterProdutosParametros parametros, CancellationToken cancellationToken = default)
@@ -286,6 +305,82 @@ namespace Renova.Service.Services.Produto
                 Valor = ObterValor(entity),
                 LojaId = ObterLojaId(entity)
             };
+        }
+
+        private async Task<PaginacaoDto<ProdutoAuxiliarDto>> ObterAuxiliaresAsync<TModel>(
+            ObterProdutoAuxiliarQuery request,
+            ObterProdutoAuxiliarParametros parametros,
+            DbSet<TModel> dbSet,
+            CancellationToken cancellationToken)
+            where TModel : class
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == request.LojaId.Value);
+
+            if (!string.IsNullOrWhiteSpace(request.Valor))
+            {
+                string valorFiltro = request.Valor.Trim().ToLowerInvariant();
+                query = query.Where(entity => EF.Property<string>(entity, "Valor").ToLower().Contains(valorFiltro));
+            }
+
+            IQueryable<TModel> queryOrdenada = AplicarOrdenacaoAuxiliar(query, request.OrdenarPor, request.Direcao);
+
+            IQueryable<ProdutoAuxiliarDto> queryProjetada = queryOrdenada.Select(entity => new ProdutoAuxiliarDto
+            {
+                Id = EF.Property<int>(entity, "Id"),
+                Valor = EF.Property<string>(entity, "Valor"),
+                LojaId = EF.Property<int>(entity, "LojaId")
+            });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        private static IOrderedQueryable<TModel> AplicarOrdenacaoAuxiliar<TModel>(
+            IQueryable<TModel> source,
+            string? ordenarPor,
+            string? direcao)
+            where TModel : class
+        {
+            string campoNormalizado = string.IsNullOrWhiteSpace(ordenarPor)
+                ? "valor"
+                : ordenarPor.Trim().ToLowerInvariant();
+
+            if (campoNormalizado is not ("id" or "valor"))
+            {
+                throw new ArgumentException("Campo de ordenacao invalido.", nameof(ordenarPor));
+            }
+
+            string direcaoNormalizada = string.IsNullOrWhiteSpace(direcao)
+                ? "asc"
+                : direcao.Trim().ToLowerInvariant();
+
+            if (direcaoNormalizada is not ("asc" or "desc"))
+            {
+                throw new ArgumentException("Direcao de ordenacao invalida.", nameof(direcao));
+            }
+
+            if (campoNormalizado == "id")
+            {
+                IOrderedQueryable<TModel> queryOrdenadaPorId = direcaoNormalizada == "desc"
+                    ? source.OrderByDescending(entity => EF.Property<int>(entity, "Id"))
+                    : source.OrderBy(entity => EF.Property<int>(entity, "Id"));
+
+                return direcaoNormalizada == "desc"
+                    ? queryOrdenadaPorId.ThenByDescending(entity => EF.Property<string>(entity, "Valor"))
+                    : queryOrdenadaPorId.ThenBy(entity => EF.Property<string>(entity, "Valor"));
+            }
+
+            IOrderedQueryable<TModel> queryOrdenadaPorValor = direcaoNormalizada == "desc"
+                ? source.OrderByDescending(entity => EF.Property<string>(entity, "Valor"))
+                : source.OrderBy(entity => EF.Property<string>(entity, "Valor"));
+
+            return queryOrdenadaPorValor.ThenBy(entity => EF.Property<int>(entity, "Id"));
         }
 
         private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)

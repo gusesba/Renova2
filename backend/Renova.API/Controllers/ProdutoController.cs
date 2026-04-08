@@ -105,6 +105,18 @@ namespace Renova.API.Controllers
                 cancellationToken);
         }
 
+        [HttpGet("referencia")]
+        [ProducesResponseType(typeof(PaginacaoDto<ProdutoAuxiliarDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public Task<IActionResult> GetProdutoAuxiliar([FromQuery] ObterProdutoAuxiliarQuery query, CancellationToken cancellationToken)
+        {
+            return ObterAuxiliarAsync(
+                (request, parametros, token) => _produtoService.GetProdutoAuxiliarAsync(request, parametros, token),
+                query,
+                cancellationToken);
+        }
+
         [HttpPost("marca")]
         [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -115,6 +127,18 @@ namespace Renova.API.Controllers
             return CriarAuxiliarAsync(
                 (request, parametros, token) => _produtoService.CreateMarcaAsync(request, parametros, token),
                 command,
+                cancellationToken);
+        }
+
+        [HttpGet("marca")]
+        [ProducesResponseType(typeof(PaginacaoDto<ProdutoAuxiliarDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public Task<IActionResult> GetMarca([FromQuery] ObterProdutoAuxiliarQuery query, CancellationToken cancellationToken)
+        {
+            return ObterAuxiliarAsync(
+                (request, parametros, token) => _produtoService.GetMarcaAsync(request, parametros, token),
+                query,
                 cancellationToken);
         }
 
@@ -131,6 +155,18 @@ namespace Renova.API.Controllers
                 cancellationToken);
         }
 
+        [HttpGet("tamanho")]
+        [ProducesResponseType(typeof(PaginacaoDto<ProdutoAuxiliarDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public Task<IActionResult> GetTamanho([FromQuery] ObterProdutoAuxiliarQuery query, CancellationToken cancellationToken)
+        {
+            return ObterAuxiliarAsync(
+                (request, parametros, token) => _produtoService.GetTamanhoAsync(request, parametros, token),
+                query,
+                cancellationToken);
+        }
+
         [HttpPost("cor")]
         [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -141,6 +177,18 @@ namespace Renova.API.Controllers
             return CriarAuxiliarAsync(
                 (request, parametros, token) => _produtoService.CreateCorAsync(request, parametros, token),
                 command,
+                cancellationToken);
+        }
+
+        [HttpGet("cor")]
+        [ProducesResponseType(typeof(PaginacaoDto<ProdutoAuxiliarDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public Task<IActionResult> GetCor([FromQuery] ObterProdutoAuxiliarQuery query, CancellationToken cancellationToken)
+        {
+            return ObterAuxiliarAsync(
+                (request, parametros, token) => _produtoService.GetCorAsync(request, parametros, token),
+                query,
                 cancellationToken);
         }
 
@@ -175,6 +223,40 @@ namespace Renova.API.Controllers
             catch (InvalidOperationException ex)
             {
                 return Conflict(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
+        private async Task<IActionResult> ObterAuxiliarAsync(
+            Func<ObterProdutoAuxiliarQuery, ObterProdutoAuxiliarParametros, CancellationToken, Task<PaginacaoDto<ProdutoAuxiliarDto>>> operacao,
+            ObterProdutoAuxiliarQuery query,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                PaginacaoDto<ProdutoAuxiliarDto> resultado = await operacao(
+                    query,
+                    new ObterProdutoAuxiliarParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {
