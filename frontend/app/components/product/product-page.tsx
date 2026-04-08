@@ -14,11 +14,13 @@ import {
   initialProductFilters,
   persistProductTableSettings,
   type ProductFilters,
+  type ProductListItem,
   type ProductTableSettings,
 } from "@/lib/product";
 import { getProducts } from "@/services/product-service";
 
 import { ProductCreateModal } from "./product-create-modal";
+import { ProductEditModal } from "./product-edit-modal";
 import { ProductEmptyState } from "./product-empty-state";
 import { ProductFiltersBar } from "./product-filters-bar";
 import { ProductPagination } from "./product-pagination";
@@ -28,7 +30,9 @@ import { ProductsTable } from "./products-table";
 export function ProductPage() {
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductListItem | null>(null);
   const [tableSettings, setTableSettings] = useState<ProductTableSettings>(() =>
     getStoredProductTableSettings(),
   );
@@ -145,6 +149,10 @@ export function ProductPage() {
             <ProductsTable
               products={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
+              onEditProduct={(product) => {
+                setSelectedProduct(product);
+                setIsEditModalOpen(true);
+              }}
             />
             <ProductPagination
               currentPage={filters.pagina}
@@ -168,6 +176,15 @@ export function ProductPage() {
         storeId={selectedStoreId}
         storeName={selectedStore?.nome ?? null}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+      <ProductEditModal
+        isOpen={isEditModalOpen}
+        product={selectedProduct}
+        storeId={selectedStoreId}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedProduct(null);
+        }}
       />
       <ProductSettingsModal
         isOpen={isSettingsModalOpen}

@@ -741,7 +741,7 @@ export function ProductCreateModal({
         descricao: validation.data.descricao.trim(),
         entrada: toUtcStartOfDay(validation.data.entrada),
         lojaId: storeId,
-        situacao: 1,
+        situacao: Number(validation.data.situacao),
         consignado: values.consignado,
       };
 

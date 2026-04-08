@@ -14,6 +14,7 @@ export const productSchema = z.object({
       return Number.isFinite(parsed) && parsed > 0;
     }, "Informe um preco maior que zero."),
   entrada: z.string().trim().min(1, "Informe a data de entrada."),
+  situacao: z.string().trim().min(1, "Selecione a situacao."),
   produtoId: z.string().trim().min(1, "Selecione o produto."),
   marcaId: z.string().trim().min(1, "Selecione a marca."),
   tamanhoId: z.string().trim().min(1, "Selecione o tamanho."),
@@ -37,6 +38,10 @@ export function mapProductZodErrors(error: z.ZodError): ProductFieldErrors {
 
     if (field === "entrada" && !mapped.entrada) {
       mapped.entrada = issue.message;
+    }
+
+    if (field === "situacao" && !mapped.situacao) {
+      mapped.situacao = issue.message;
     }
 
     if (field === "produtoId" && !mapped.produtoId) {

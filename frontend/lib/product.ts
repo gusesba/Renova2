@@ -37,6 +37,7 @@ export type ProductFormValues = {
   descricao: string;
   preco: string;
   entrada: string;
+  situacao: string;
   consignado: boolean;
   produtoId: string;
   produtoLabel: string;
@@ -55,6 +56,7 @@ export type ProductFieldErrors = Partial<
     | "descricao"
     | "preco"
     | "entrada"
+    | "situacao"
     | "produtoId"
     | "marcaId"
     | "tamanhoId"
@@ -148,6 +150,7 @@ export const initialProductFormValues: ProductFormValues = {
   descricao: "",
   preco: "",
   entrada: new Date().toISOString().slice(0, 10),
+  situacao: "1",
   consignado: true,
   produtoId: "",
   produtoLabel: "",
@@ -210,17 +213,21 @@ export function formatDateValue(value: string) {
 }
 
 export function formatSituacaoValue(value: number) {
-  const labels: Record<number, string> = {
-    1: "Estoque",
-    2: "Vendido",
-    3: "Devolvido",
-    4: "Emprestado",
-    5: "Doado",
-    6: "Perdido",
-  };
+  const labels = Object.fromEntries(
+    productSituacaoOptions.map((option) => [option.value, option.label]),
+  ) as Record<number, string>;
 
   return labels[value] ?? `Situacao ${value}`;
 }
+
+export const productSituacaoOptions = [
+  { value: 1, label: "Estoque" },
+  { value: 2, label: "Vendido" },
+  { value: 3, label: "Devolvido" },
+  { value: 4, label: "Emprestado" },
+  { value: 5, label: "Doado" },
+  { value: 6, label: "Perdido" },
+] as const;
 
 function toApiDateStart(value: string) {
   return `${value}T00:00:00`;
@@ -325,6 +332,10 @@ export function extractProductFieldErrors(body: unknown): ProductFieldErrors {
 
     if (normalizedKey === "entrada" && !accumulator.entrada) {
       accumulator.entrada = error;
+    }
+
+    if (normalizedKey === "situacao" && !accumulator.situacao) {
+      accumulator.situacao = error;
     }
 
     if (normalizedKey === "produtoid" && !accumulator.produtoId) {

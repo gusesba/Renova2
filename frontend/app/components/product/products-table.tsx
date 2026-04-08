@@ -9,6 +9,7 @@ import {
 type ProductsTableProps = {
   products: ProductListItem[];
   visibleFields: ProductVisibleField[];
+  onEditProduct: (product: ProductListItem) => void;
 };
 
 function ProductTableCell({
@@ -39,7 +40,29 @@ function ConsignadoBadge({ value }: { value: boolean }) {
   );
 }
 
-export function ProductsTable({ products, visibleFields }: ProductsTableProps) {
+function EditIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </svg>
+  );
+}
+
+export function ProductsTable({
+  products,
+  visibleFields,
+  onEditProduct,
+}: ProductsTableProps) {
   const showProduto = visibleFields.includes("produto");
   const showDescricao = visibleFields.includes("descricao");
   const showMarca = visibleFields.includes("marca");
@@ -113,6 +136,9 @@ export function ProductsTable({ products, visibleFields }: ProductsTableProps) {
                   Identificador
                 </th>
               ) : null}
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Acoes
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -162,6 +188,17 @@ export function ProductsTable({ products, visibleFields }: ProductsTableProps) {
                   </ProductTableCell>
                 ) : null}
                 {showId ? <ProductTableCell subtle>#{product.id}</ProductTableCell> : null}
+                <ProductTableCell>
+                  <button
+                    type="button"
+                    onClick={() => onEditProduct(product)}
+                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                    aria-label={`Editar produto ${product.descricao}`}
+                    title={`Editar produto ${product.descricao}`}
+                  >
+                    <EditIcon />
+                  </button>
+                </ProductTableCell>
               </tr>
             ))}
           </tbody>

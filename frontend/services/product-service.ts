@@ -77,6 +77,43 @@ export async function createProduct(
   };
 }
 
+export async function updateProduct(
+  productId: number,
+  payload: {
+    preco: number;
+    produtoId: number;
+    marcaId: number;
+    tamanhoId: number;
+    corId: number;
+    fornecedorId: number;
+    descricao: string;
+    entrada: string;
+    situacao: number;
+    consignado: boolean;
+  },
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/produto/${productId}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
 async function createProductAuxiliar(
   path: "referencia" | "marca" | "tamanho" | "cor",
   payload: { valor: string; lojaId: number },
