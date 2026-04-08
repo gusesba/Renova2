@@ -185,6 +185,11 @@ namespace Renova.Service.Services.Produto
 
             _ = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
+            if (await ProdutoPossuiRelacionamentosAtivosAsync(produto.Id, cancellationToken))
+            {
+                throw new InvalidOperationException("Produto possui movimentacoes vinculadas e nao pode ser excluido.");
+            }
+
             _ = _context.ProdutosEstoque.Remove(produto);
             _ = await _context.SaveChangesAsync(cancellationToken);
         }
@@ -537,6 +542,12 @@ namespace Renova.Service.Services.Produto
             return loja.UsuarioId != usuarioId
                 ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
                 : loja;
+        }
+
+        private Task<bool> ProdutoPossuiRelacionamentosAtivosAsync(int produtoId, CancellationToken cancellationToken)
+        {
+            return _context.MovimentacoesProdutos
+                .AnyAsync(movimentacaoProduto => movimentacaoProduto.ProdutoId == produtoId, cancellationToken);
         }
 
         private static ProdutoDto MapearProdutoDto(ProdutoEstoqueModel produto)

@@ -172,6 +172,7 @@ namespace Renova.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> DeleteProduto(int id, CancellationToken cancellationToken)
         {
             int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
@@ -196,6 +197,10 @@ namespace Renova.API.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { mensagem = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {

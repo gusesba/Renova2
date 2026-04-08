@@ -84,6 +84,28 @@ namespace Renova.Tests.Services.Produto.Excluir
             }));
         }
 
+        [Fact]
+        public async Task DeleteAsyncDeveImpedirExclusaoQuandoProdutoEstiverRelacionadoAMovimentacao()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id);
+            await CriarMovimentacaoComProdutoAsync(context, loja.Id, produto.Id);
+
+            ProdutoService service = new(context);
+            InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(new ExcluirProdutoParametros
+            {
+                UsuarioId = loja.UsuarioId,
+                ProdutoId = produto.Id
+            }));
+
+            Assert.Equal("Produto possui movimentacoes vinculadas e nao pode ser excluido.", ex.Message);
+            ProdutoEstoqueModel produtoSalvo = await context.ProdutosEstoque.SingleAsync();
+            Assert.Equal(produto.Id, produtoSalvo.Id);
+            _ = await context.MovimentacoesProdutos.SingleAsync(item => item.ProdutoId == produto.Id);
+        }
+
         private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(RenovaDbContext context, int lojaId)
         {
             ProdutoReferenciaModel produto = await context.ProdutosReferencia.SingleAsync(item => item.LojaId == lojaId);
@@ -215,6 +237,26 @@ namespace Renova.Tests.Services.Produto.Excluir
             _ = context.Cores.Add(entity);
             _ = await context.SaveChangesAsync();
             return entity;
+        }
+
+        private static async Task CriarMovimentacaoComProdutoAsync(RenovaDbContext context, int lojaId, int produtoId)
+        {
+            MovimentacaoModel movimentacao = new()
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                LojaId = lojaId
+            };
+
+            _ = context.Movimentacoes.Add(movimentacao);
+            _ = await context.SaveChangesAsync();
+
+            _ = context.MovimentacoesProdutos.Add(new MovimentacaoProdutoModel
+            {
+                MovimentacaoId = movimentacao.Id,
+                ProdutoId = produtoId
+            });
+            _ = await context.SaveChangesAsync();
         }
     }
 }
