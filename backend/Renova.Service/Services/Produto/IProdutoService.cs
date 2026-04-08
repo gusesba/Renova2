@@ -8,6 +8,7 @@ namespace Renova.Service.Services.Produto
     public interface IProdutoService
     {
         Task<ProdutoDto> CreateAsync(CriarProdutoCommand request, CriarProdutoParametros parametros, CancellationToken cancellationToken = default);
+        Task<ProdutoDto> EditAsync(EditarProdutoCommand request, EditarProdutoParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoBuscaDto>> GetAllAsync(ObterProdutosQuery request, ObterProdutosParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetCorAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateCorAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);

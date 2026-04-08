@@ -95,6 +95,80 @@ namespace Renova.Service.Services.Produto
             return MapearProdutoDto(produto);
         }
 
+        public async Task<ProdutoDto> EditAsync(EditarProdutoCommand request, EditarProdutoParametros parametros, CancellationToken cancellationToken = default)
+        {
+            if (request.Preco <= 0)
+            {
+                throw new ArgumentException("Preco deve ser maior que zero.", nameof(request));
+            }
+
+            string descricaoNormalizada = request.Descricao.Trim();
+
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
+                ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
+
+            LojaModel loja = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+
+            ClienteModel fornecedor = await _context.Clientes
+                .SingleOrDefaultAsync(cliente => cliente.Id == request.FornecedorId, cancellationToken)
+                ?? throw new ArgumentException("Fornecedor informado nao foi encontrado.", nameof(request));
+
+            if (fornecedor.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Fornecedor informado nao pertence a loja selecionada.", nameof(request));
+            }
+
+            ProdutoReferenciaModel produtoReferencia = await _context.ProdutosReferencia
+                .SingleOrDefaultAsync(item => item.Id == request.ProdutoId, cancellationToken)
+                ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
+
+            MarcaModel marca = await _context.Marcas
+                .SingleOrDefaultAsync(item => item.Id == request.MarcaId, cancellationToken)
+                ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
+
+            TamanhoModel tamanho = await _context.Tamanhos
+                .SingleOrDefaultAsync(item => item.Id == request.TamanhoId, cancellationToken)
+                ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
+
+            CorModel cor = await _context.Cores
+                .SingleOrDefaultAsync(item => item.Id == request.CorId, cancellationToken)
+                ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
+
+            if (produtoReferencia.LojaId != loja.Id || marca.LojaId != loja.Id || tamanho.LojaId != loja.Id || cor.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Os registros auxiliares informados devem pertencer a loja selecionada.", nameof(request));
+            }
+
+            if (!Enum.IsDefined(request.Situacao))
+            {
+                throw new ArgumentException("Situacao informada e invalida.", nameof(request));
+            }
+
+            produto.Preco = request.Preco;
+            produto.ProdutoId = request.ProdutoId;
+            produto.MarcaId = request.MarcaId;
+            produto.TamanhoId = request.TamanhoId;
+            produto.CorId = request.CorId;
+            produto.FornecedorId = request.FornecedorId;
+            produto.Descricao = descricaoNormalizada;
+            produto.Entrada = request.Entrada == default ? produto.Entrada : request.Entrada;
+            produto.Situacao = request.Situacao;
+            produto.Consignado = request.Consignado;
+
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            return MapearProdutoDto(produto);
+        }
+
         public Task<ProdutoAuxiliarDto> CreateProdutoAuxiliarAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
         {
             return CriarAuxiliarAsync(
