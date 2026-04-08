@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
@@ -33,6 +33,7 @@ export function ProductPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductListItem | null>(null);
+  const editModalCleanupTimeoutRef = useRef<number | null>(null);
   const [tableSettings, setTableSettings] = useState<ProductTableSettings>(() =>
     getStoredProductTableSettings(),
   );
@@ -110,6 +111,27 @@ export function ProductPage() {
     }));
   }
 
+  function handleCloseEditModal() {
+    setIsEditModalOpen(false);
+
+    if (editModalCleanupTimeoutRef.current) {
+      window.clearTimeout(editModalCleanupTimeoutRef.current);
+    }
+
+    editModalCleanupTimeoutRef.current = window.setTimeout(() => {
+      setSelectedProduct(null);
+      editModalCleanupTimeoutRef.current = null;
+    }, 240);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (editModalCleanupTimeoutRef.current) {
+        window.clearTimeout(editModalCleanupTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const listResponse = productsQuery.data;
   const hasStore = Boolean(selectedStoreId);
 
@@ -150,6 +172,10 @@ export function ProductPage() {
               products={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
               onEditProduct={(product) => {
+                if (editModalCleanupTimeoutRef.current) {
+                  window.clearTimeout(editModalCleanupTimeoutRef.current);
+                  editModalCleanupTimeoutRef.current = null;
+                }
                 setSelectedProduct(product);
                 setIsEditModalOpen(true);
               }}
@@ -181,10 +207,7 @@ export function ProductPage() {
         isOpen={isEditModalOpen}
         product={selectedProduct}
         storeId={selectedStoreId}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedProduct(null);
-        }}
+        onClose={handleCloseEditModal}
       />
       <ProductSettingsModal
         isOpen={isSettingsModalOpen}

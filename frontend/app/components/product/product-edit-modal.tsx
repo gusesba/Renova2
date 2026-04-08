@@ -236,13 +236,14 @@ export function ProductEditModal({
   product,
   storeId,
 }: ProductEditModalProps) {
-  if (!isOpen || !product) {
+  if (!product) {
     return null;
   }
 
   return (
     <ProductEditModalContent
       key={product.id}
+      isOpen={isOpen}
       onClose={onClose}
       product={product}
       storeId={storeId}
@@ -251,18 +252,22 @@ export function ProductEditModal({
 }
 
 type ProductEditModalContentProps = {
+  isOpen: boolean;
   onClose: () => void;
   product: ProductListItem;
   storeId: number | null;
 };
 
 function ProductEditModalContent({
+  isOpen,
   onClose,
   product,
   storeId,
 }: ProductEditModalContentProps) {
   const queryClient = useQueryClient();
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(false);
   const [values, setValues] = useState<ProductFormValues>(() => getInitialProductFormValues(product));
   const [errors, setErrors] = useState<ProductFieldErrors>({});
   const [lookupSearch, setLookupSearch] = useState<LookupSearchState>(() =>
@@ -404,6 +409,44 @@ function ProductEditModalContent({
     },
   });
 
+  useEffect(() => {
+    let animationFrame = 0;
+    let visibilityFrame = 0;
+    let closeTimeout = 0;
+
+    if (isOpen) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setShouldRender(true);
+        visibilityFrame = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else if (shouldRender) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setIsVisible(false);
+      });
+
+      closeTimeout = window.setTimeout(() => {
+        setShouldRender(false);
+      }, 220);
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !updateProductMutation.isPending) {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(visibilityFrame);
+      window.clearTimeout(closeTimeout);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose, shouldRender, updateProductMutation.isPending]);
+
   function updateField<K extends keyof ProductFormValues>(field: K, value: ProductFormValues[K]) {
     setValues((current) => ({
       ...current,
@@ -487,9 +530,21 @@ function ProductEditModalContent({
     }
   }
 
+  if (!shouldRender) {
+    return null;
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4">
-      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)]">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <div
+        className={`max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+          isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
+        }`}
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -649,7 +704,7 @@ function ProductEditModalContent({
             <button
               type="submit"
               disabled={updateProductMutation.isPending || !storeId}
-              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#22c55e,_#16a34a)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(34,197,94,0.25)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {updateProductMutation.isPending ? "Salvando alteracoes..." : "Salvar alteracoes"}
             </button>
