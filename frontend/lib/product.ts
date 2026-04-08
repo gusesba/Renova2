@@ -211,9 +211,12 @@ export function formatDateValue(value: string) {
 
 export function formatSituacaoValue(value: number) {
   const labels: Record<number, string> = {
-    0: "Estoque",
-    1: "Emprestado",
+    1: "Estoque",
     2: "Vendido",
+    3: "Devolvido",
+    4: "Emprestado",
+    5: "Doado",
+    6: "Perdido",
   };
 
   return labels[value] ?? `Situacao ${value}`;
