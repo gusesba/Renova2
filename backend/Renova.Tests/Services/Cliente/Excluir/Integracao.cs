@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Renova.Domain.Model;
@@ -123,13 +125,43 @@ namespace Renova.Tests.Services.Cliente.Excluir
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
             HttpResponseMessage response = await client.DeleteAsync($"/api/cliente/{cliente.Id}");
+            JsonElement body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
 
             Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal("Cliente possui produtos vinculados e nao pode ser excluido.", body.GetProperty("mensagem").GetString());
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             _ = Assert.Single(context.Clientes);
             _ = Assert.Single(context.ProdutosEstoque.Where(produtoAtual => produtoAtual.FornecedorId == cliente.Id));
+        }
+
+        [Fact]
+        // Input: cliente referenciado em movimentacao
+        // Nao remove o cliente pela API enquanto existir movimentacao relacionada
+        // Retorna: conflict com mensagem adequada
+        public async Task DeleteClienteDeveRetornarConflictQuandoClienteEstiverRelacionadoAMovimentacao()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.DeleteAsync($"/api/cliente/{cliente.Id}");
+            JsonElement body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal("Cliente possui movimentacoes vinculadas e nao pode ser excluido.", body.GetProperty("mensagem").GetString());
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            _ = Assert.Single(context.Clientes);
+            _ = await context.Movimentacoes.SingleAsync(movimentacao => movimentacao.ClienteId == cliente.Id);
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
@@ -274,6 +306,23 @@ namespace Renova.Tests.Services.Cliente.Excluir
             };
 
             _ = context.ProdutosEstoque.Add(entity);
+            _ = await context.SaveChangesAsync();
+        }
+
+        private static async Task CriarMovimentacaoAsync(RenovaApiFactory factory, int lojaId, int clienteId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            MovimentacaoModel entity = new()
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = DateTime.UtcNow,
+                LojaId = lojaId,
+                ClienteId = clienteId
+            };
+
+            _ = context.Movimentacoes.Add(entity);
             _ = await context.SaveChangesAsync();
         }
     }

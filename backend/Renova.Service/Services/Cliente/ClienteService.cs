@@ -186,9 +186,14 @@ namespace Renova.Service.Services.Cliente
                 throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
             }
 
-            if (await ClientePossuiRelacionamentosAtivosAsync(cliente.Id, cancellationToken))
+            if (await ClientePossuiProdutosVinculadosAsync(cliente.Id, cancellationToken))
             {
-                throw new InvalidOperationException("Cliente possui relacionamentos ativos e nao pode ser excluido.");
+                throw new InvalidOperationException("Cliente possui produtos vinculados e nao pode ser excluido.");
+            }
+
+            if (await ClientePossuiMovimentacoesVinculadasAsync(cliente.Id, cancellationToken))
+            {
+                throw new InvalidOperationException("Cliente possui movimentacoes vinculadas e nao pode ser excluido.");
             }
 
             _ = _context.Clientes.Remove(cliente);
@@ -249,10 +254,16 @@ namespace Renova.Service.Services.Cliente
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
-        private Task<bool> ClientePossuiRelacionamentosAtivosAsync(int clienteId, CancellationToken cancellationToken)
+        private Task<bool> ClientePossuiProdutosVinculadosAsync(int clienteId, CancellationToken cancellationToken)
         {
             return _context.ProdutosEstoque
                 .AnyAsync(produto => produto.FornecedorId == clienteId, cancellationToken);
+        }
+
+        private Task<bool> ClientePossuiMovimentacoesVinculadasAsync(int clienteId, CancellationToken cancellationToken)
+        {
+            return _context.Movimentacoes
+                .AnyAsync(movimentacao => movimentacao.ClienteId == clienteId, cancellationToken);
         }
     }
 }

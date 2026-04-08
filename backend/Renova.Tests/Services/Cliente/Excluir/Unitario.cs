@@ -132,9 +132,43 @@ namespace Renova.Tests.Services.Cliente.Excluir
             ClienteService service = new(context);
             InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(parametros));
 
-            Assert.Equal("Cliente possui relacionamentos ativos e nao pode ser excluido.", ex.Message);
+            Assert.Equal("Cliente possui produtos vinculados e nao pode ser excluido.", ex.Message);
             _ = Assert.Single(context.Clientes);
             _ = Assert.Single(context.ProdutosEstoque.Where(produtoAtual => produtoAtual.FornecedorId == cliente.Id));
+        }
+
+        [Fact]
+        // Input: cliente referenciado em movimentacao
+        // Nao remove o cliente enquanto existir movimentacao relacionada
+        // Retorna: mensagem adequada explicando o bloqueio
+        public async Task DeleteAsyncDeveImpedirExclusaoQuandoClienteEstiverRelacionadoAMovimentacao()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+
+            _ = context.Movimentacoes.Add(new MovimentacaoModel
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = DateTime.UtcNow,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id
+            });
+            _ = await context.SaveChangesAsync();
+
+            ExcluirClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId,
+                ClienteId = cliente.Id
+            };
+
+            ClienteService service = new(context);
+            InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteAsync(parametros));
+
+            Assert.Equal("Cliente possui movimentacoes vinculadas e nao pode ser excluido.", ex.Message);
+            _ = Assert.Single(context.Clientes);
+            _ = Assert.Single(context.Movimentacoes.Where(movimentacao => movimentacao.ClienteId == cliente.Id));
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
