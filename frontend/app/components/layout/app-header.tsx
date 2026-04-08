@@ -57,8 +57,10 @@ export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
 
   return (
     <header
-      className={`overflow-hidden border-b border-[var(--border)] bg-[var(--surface)] transition-all duration-300 ${
-        isCollapsed ? "max-h-0 border-b-0 px-0 py-0 opacity-0" : "max-h-64 px-4 py-4 opacity-100 sm:px-6 lg:px-8"
+      className={`border-b border-[var(--border)] bg-[var(--surface)] transition-all duration-300 ${
+        isCollapsed
+          ? "max-h-0 overflow-hidden border-b-0 px-0 py-0 opacity-0"
+          : "relative z-20 max-h-64 overflow-visible px-4 py-4 opacity-100 sm:px-6 lg:px-8"
       }`}
       aria-hidden={isCollapsed}
     >
