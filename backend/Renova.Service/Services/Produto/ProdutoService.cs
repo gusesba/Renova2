@@ -169,6 +169,26 @@ namespace Renova.Service.Services.Produto
             return MapearProdutoDto(produto);
         }
 
+        public async Task DeleteAsync(ExcluirProdutoParametros parametros, CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
+                ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
+
+            _ = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+
+            _ = _context.ProdutosEstoque.Remove(produto);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+        }
+
         public Task<ProdutoAuxiliarDto> CreateProdutoAuxiliarAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
         {
             return CriarAuxiliarAsync(
