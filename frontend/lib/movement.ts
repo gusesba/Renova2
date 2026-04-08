@@ -184,6 +184,7 @@ export function formatMovementDate(value: string) {
 
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
+    timeZone: "UTC",
   }).format(parsed);
 }
 

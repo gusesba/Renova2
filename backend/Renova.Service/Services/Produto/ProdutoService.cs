@@ -334,12 +334,14 @@ namespace Renova.Service.Services.Produto
 
             if (request.DataInicial.HasValue)
             {
-                query = query.Where(produto => produto.Entrada >= request.DataInicial.Value);
+                DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+                query = query.Where(produto => produto.Entrada >= dataInicialUtc);
             }
 
             if (request.DataFinal.HasValue)
             {
-                query = query.Where(produto => produto.Entrada <= request.DataFinal.Value);
+                DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+                query = query.Where(produto => produto.Entrada <= dataFinalUtc);
             }
 
             IQueryable<ProdutoEstoqueModel> queryOrdenada = query
@@ -566,6 +568,17 @@ namespace Renova.Service.Services.Produto
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado
+            };
+        }
+
+        private static DateTime NormalizarDateTimeParaUtc(DateTime value)
+        {
+            return value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+                _ => value
             };
         }
 
