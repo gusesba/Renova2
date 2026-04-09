@@ -4,11 +4,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { clearAuthSession } from "@/lib/auth";
+import { GearIcon } from "@/app/components/ui/gear-icon";
 
 type ProfileMenuProps = {
   email: string | null;
+  hasActiveStore: boolean;
   initials: string;
   name: string | null;
+  onOpenSettings: () => void;
 };
 
 function ChevronDownIcon({ open }: { open: boolean }) {
@@ -45,7 +48,13 @@ function LogoutIcon() {
   );
 }
 
-export function ProfileMenu({ email, initials, name }: ProfileMenuProps) {
+export function ProfileMenu({
+  email,
+  hasActiveStore,
+  initials,
+  name,
+  onOpenSettings,
+}: ProfileMenuProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
@@ -113,6 +122,11 @@ export function ProfileMenu({ email, initials, name }: ProfileMenuProps) {
     router.replace("/auth");
   }
 
+  function handleOpenSettings() {
+    setOpen(false);
+    onOpenSettings();
+  }
+
   return (
     <div ref={containerRef} className="relative z-30 min-w-0">
       <button
@@ -152,6 +166,18 @@ export function ProfileMenu({ email, initials, name }: ProfileMenuProps) {
           </div>
 
           <div className="py-2">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleOpenSettings}
+              disabled={!hasActiveStore}
+              className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm text-[var(--foreground)] transition hover:bg-[var(--surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span>Configuracoes</span>
+              <span className="text-[var(--muted)]">
+                <GearIcon className="h-4 w-4 fill-current" />
+              </span>
+            </button>
             <button
               type="button"
               role="menuitem"

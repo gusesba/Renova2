@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { ProfileMenu } from "@/app/components/layout/profile-menu";
+import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
 import { Select } from "@/app/components/ui/select";
+import { toast } from "sonner";
 
 function SearchIcon() {
   return (
@@ -39,7 +43,8 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
-  const { currentUser, isLoadingStores, selectedStoreId, setSelectedStoreId, stores } =
+  const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
+  const { currentUser, isLoadingStores, selectedStore, selectedStoreId, setSelectedStoreId, stores } =
     useStoreContext();
 
   const initials =
@@ -107,9 +112,27 @@ export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
             initials={initials}
             name={currentUser?.nome ?? null}
             email={currentUser?.email ?? null}
+            hasActiveStore={Boolean(selectedStoreId)}
+            onOpenSettings={() => {
+              if (!selectedStoreId) {
+                toast.error("Selecione uma loja antes de abrir as configuracoes.");
+                return;
+              }
+
+              setIsStoreConfigOpen(true);
+            }}
           />
         </div>
       </div>
+
+      <StoreConfigModal
+        isOpen={isStoreConfigOpen}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => {
+          setIsStoreConfigOpen(false);
+        }}
+      />
     </header>
   );
 }
