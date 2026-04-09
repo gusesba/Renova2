@@ -10,5 +10,6 @@ namespace Renova.Domain.Model
         public int LojaId { get; set; }
         public LojaModel? Loja { get; set; }
         public ICollection<MovimentacaoProdutoModel> Produtos { get; set; } = [];
+        public ICollection<PagamentoModel> Pagamentos { get; set; } = [];
     }
 }

@@ -26,6 +26,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
+            await AtualizarFornecedorAsync(factory, produtoB.Id, produtoA.FornecedorId);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -50,6 +52,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             _ = Assert.Single(context.Movimentacoes);
             Assert.Equal(2, context.MovimentacoesProdutos.Count());
+            Assert.Equal(2, context.Pagamentos.Count());
             Assert.All(context.ProdutosEstoque.ToList(), item => Assert.Equal(SituacaoProduto.Vendido, item.Situacao));
         }
 
@@ -313,6 +316,32 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = context.ProdutosEstoque.Add(item);
             _ = await context.SaveChangesAsync();
             return item;
+        }
+
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaApiFactory factory, int lojaId, decimal percentualRepasseFornecedor)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ConfigLojaModel config = new()
+            {
+                LojaId = lojaId,
+                PercentualRepasseFornecedor = percentualRepasseFornecedor
+            };
+
+            _ = context.ConfiguracoesLoja.Add(config);
+            _ = await context.SaveChangesAsync();
+            return config;
+        }
+
+        private static async Task AtualizarFornecedorAsync(RenovaApiFactory factory, int produtoId, int fornecedorId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ProdutoEstoqueModel produto = await context.ProdutosEstoque.SingleAsync(item => item.Id == produtoId);
+            produto.FornecedorId = fornecedorId;
+            _ = await context.SaveChangesAsync();
         }
     }
 }

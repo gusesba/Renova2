@@ -6,6 +6,7 @@ using Renova.Persistence;
 using Renova.Service.Commands.Movimentacao;
 using Renova.Service.Parameters.Movimentacao;
 using Renova.Service.Services.Movimentacao;
+using Renova.Service.Services.Pagamento;
 using Renova.Tests.Infrastructure;
 
 namespace Renova.Tests.Services.Movimentacao.Criar
@@ -249,6 +250,64 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.Contains(relacionamentos, item => item.ProdutoId == produtoC.Id);
         }
 
+        [Fact]
+        public async Task CreateAsyncDeveAcionarPagamentoServiceQuandoMovimentacaoForVenda()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
+
+            CriarMovimentacaoCommand command = new()
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            };
+
+            FakePagamentoService pagamentoService = new();
+            MovimentacaoService service = new(context, pagamentoService);
+            _ = await service.CreateAsync(command, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
+
+            Assert.Single(pagamentoService.Commands);
+            Assert.Equal(TipoMovimentacao.Venda, pagamentoService.Commands[0].TipoMovimentacao);
+            Assert.Equal(cliente.Id, pagamentoService.Commands[0].ClienteId);
+            Assert.Equal(loja.Id, pagamentoService.Commands[0].LojaId);
+            Assert.Equal([produto.Id], pagamentoService.Commands[0].ProdutoIds);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveAcionarPagamentoServiceQuandoMovimentacaoForDevolucaoVenda()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
+
+            CriarMovimentacaoCommand command = new()
+            {
+                Tipo = TipoMovimentacao.DevolucaoVenda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            };
+
+            FakePagamentoService pagamentoService = new();
+            MovimentacaoService service = new(context, pagamentoService);
+            _ = await service.CreateAsync(command, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
+
+            Assert.Single(pagamentoService.Commands);
+            Assert.Equal(TipoMovimentacao.DevolucaoVenda, pagamentoService.Commands[0].TipoMovimentacao);
+            Assert.Equal(cliente.Id, pagamentoService.Commands[0].ClienteId);
+            Assert.Equal(loja.Id, pagamentoService.Commands[0].LojaId);
+            Assert.Equal([produto.Id], pagamentoService.Commands[0].ProdutoIds);
+        }
+
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
         {
             UsuarioModel usuario = new()
@@ -347,6 +406,27 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = await context.SaveChangesAsync();
 
             return item;
+        }
+
+        private sealed class FakePagamentoService : IPagamentoService
+        {
+            public List<Renova.Service.Commands.Pagamento.CriarPagamentoCommand> Commands { get; } = [];
+
+            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(Renova.Service.Commands.Pagamento.CriarPagamentoCommand request, CancellationToken cancellationToken = default)
+            {
+                _ = cancellationToken;
+                Commands.Add(new Renova.Service.Commands.Pagamento.CriarPagamentoCommand
+                {
+                    MovimentacaoId = request.MovimentacaoId,
+                    TipoMovimentacao = request.TipoMovimentacao,
+                    LojaId = request.LojaId,
+                    ClienteId = request.ClienteId,
+                    ProdutoIds = [.. request.ProdutoIds],
+                    Data = request.Data
+                });
+
+                return Task.FromResult<IReadOnlyList<PagamentoDto>>([]);
+            }
         }
     }
 }

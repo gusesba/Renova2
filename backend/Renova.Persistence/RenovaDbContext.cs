@@ -10,6 +10,8 @@ namespace Renova.Persistence
         public DbSet<UsuarioModel> Usuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
         public DbSet<ClienteModel> Clientes { get; set; }
+        public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
+        public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
         public DbSet<ProdutoReferenciaModel> ProdutosReferencia { get; set; }
         public DbSet<MovimentacaoModel> Movimentacoes { get; set; }
@@ -74,6 +76,20 @@ namespace Renova.Persistence
                     .WithMany(p => p.Clientes)
                     .HasForeignKey(p => p.UserId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            _ = modelBuilder.Entity<ConfigLojaModel>(entity =>
+            {
+                _ = entity.ToTable("ConfigLoja");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.PercentualRepasseFornecedor).HasPrecision(5, 2).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithOne(p => p.ConfigLoja)
+                    .HasForeignKey<ConfigLojaModel>(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             _ = modelBuilder.Entity<ProdutoReferenciaModel>(entity =>
@@ -191,6 +207,31 @@ namespace Renova.Persistence
                     .WithMany(p => p.Movimentacoes)
                     .HasForeignKey(p => p.LojaId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<PagamentoModel>(entity =>
+            {
+                _ = entity.ToTable("Pagamento");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.MovimentacaoId).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.ClienteId).IsRequired();
+                _ = entity.Property(p => p.Natureza).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.HasOne(p => p.Movimentacao)
+                    .WithMany(p => p.Pagamentos)
+                    .HasForeignKey(p => p.MovimentacaoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Pagamentos)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Cliente)
+                    .WithMany(p => p.Pagamentos)
+                    .HasForeignKey(p => p.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             _ = modelBuilder.Entity<MovimentacaoProdutoModel>(entity =>

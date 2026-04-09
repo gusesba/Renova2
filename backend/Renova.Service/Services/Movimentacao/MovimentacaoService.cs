@@ -5,16 +5,19 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Movimentacao;
+using Renova.Service.Commands.Pagamento;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Movimentacao;
 using Renova.Service.Queries.Movimentacao;
+using Renova.Service.Services.Pagamento;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Movimentacao
 {
-    public class MovimentacaoService(RenovaDbContext context) : IMovimentacaoService
+    public class MovimentacaoService(RenovaDbContext context, IPagamentoService? pagamentoService = null) : IMovimentacaoService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly IPagamentoService _pagamentoService = pagamentoService ?? NoOpPagamentoService.Instance;
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<MovimentacaoModel, int>>)(movimentacao => movimentacao.Id),
@@ -156,75 +159,107 @@ namespace Renova.Service.Services.Movimentacao
 
             IDbContextTransaction? transaction = null;
 
-            if (_context.Database.IsNpgsql())
+            try
             {
-                transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
-            }
+                if (_context.Database.IsNpgsql())
+                {
+                    transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+                }
 
-            List<ProdutoEstoqueModel> produtos = await ObterProdutosParaMovimentacaoAsync(produtoIds, cancellationToken);
+                List<ProdutoEstoqueModel> produtos = await ObterProdutosParaMovimentacaoAsync(produtoIds, cancellationToken);
 
-            if (produtos.Count != produtoIds.Count)
-            {
-                throw new ArgumentException("Um ou mais produtos informados nao foram encontrados.", nameof(request));
-            }
+                if (produtos.Count != produtoIds.Count)
+                {
+                    throw new ArgumentException("Um ou mais produtos informados nao foram encontrados.", nameof(request));
+                }
 
-            if (produtos.Any(item => item.LojaId != loja.Id))
-            {
-                throw new ArgumentException("Os produtos informados devem pertencer a loja selecionada.", nameof(request));
-            }
+                if (produtos.Any(item => item.LojaId != loja.Id))
+                {
+                    throw new ArgumentException("Os produtos informados devem pertencer a loja selecionada.", nameof(request));
+                }
 
-            SituacaoProduto situacaoEsperada = SituacoesEsperadasPorTipo[request.Tipo];
-            List<ProdutoEstoqueModel> produtosComSituacaoInvalida = produtos
-                .Where(item => item.Situacao != situacaoEsperada)
-                .OrderBy(item => item.Id)
-                .ToList();
+                SituacaoProduto situacaoEsperada = SituacoesEsperadasPorTipo[request.Tipo];
+                List<ProdutoEstoqueModel> produtosComSituacaoInvalida = produtos
+                    .Where(item => item.Situacao != situacaoEsperada)
+                    .OrderBy(item => item.Id)
+                    .ToList();
 
-            if (produtosComSituacaoInvalida.Count > 0)
-            {
-                string produtosInvalidos = string.Join(", ", produtosComSituacaoInvalida.Select(item => item.Id));
-                throw new ArgumentException(
-                    $"Os produtos [{produtosInvalidos}] nao estao com a situacao esperada {situacaoEsperada} para a movimentacao {request.Tipo}.",
-                    nameof(request));
-            }
+                if (produtosComSituacaoInvalida.Count > 0)
+                {
+                    string produtosInvalidos = string.Join(", ", produtosComSituacaoInvalida.Select(item => item.Id));
+                    throw new ArgumentException(
+                        $"Os produtos [{produtosInvalidos}] nao estao com a situacao esperada {situacaoEsperada} para a movimentacao {request.Tipo}.",
+                        nameof(request));
+                }
 
-            SituacaoProduto situacaoFinal = SituacoesFinaisPorTipo[request.Tipo];
+                SituacaoProduto situacaoFinal = SituacoesFinaisPorTipo[request.Tipo];
 
-            MovimentacaoModel entity = new()
-            {
-                Tipo = request.Tipo,
-                Data = request.Data,
-                ClienteId = request.ClienteId,
-                LojaId = request.LojaId,
-                Produtos = produtoIds
-                    .Select(produtoId => new MovimentacaoProdutoModel
+                MovimentacaoModel entity = new()
+                {
+                    Tipo = request.Tipo,
+                    Data = request.Data,
+                    ClienteId = request.ClienteId,
+                    LojaId = request.LojaId,
+                    Produtos = produtoIds
+                        .Select(produtoId => new MovimentacaoProdutoModel
+                        {
+                            ProdutoId = produtoId
+                        })
+                        .ToList()
+                };
+
+                foreach (ProdutoEstoqueModel produto in produtos)
+                {
+                    produto.Situacao = situacaoFinal;
+                }
+
+                _ = await _context.Movimentacoes.AddAsync(entity, cancellationToken);
+                _ = await _context.SaveChangesAsync(cancellationToken);
+
+                if (request.Tipo is TipoMovimentacao.Venda or TipoMovimentacao.DevolucaoVenda)
+                {
+                    _ = await _pagamentoService.CreateAsync(new CriarPagamentoCommand
                     {
-                        ProdutoId = produtoId
-                    })
-                    .ToList()
-            };
+                        MovimentacaoId = entity.Id,
+                        TipoMovimentacao = request.Tipo,
+                        LojaId = request.LojaId,
+                        ClienteId = request.ClienteId,
+                        ProdutoIds = produtoIds,
+                        Data = request.Data
+                    }, cancellationToken);
+                }
 
-            foreach (ProdutoEstoqueModel produto in produtos)
-            {
-                produto.Situacao = situacaoFinal;
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
+
+                return new MovimentacaoDto
+                {
+                    Id = entity.Id,
+                    Tipo = entity.Tipo,
+                    Data = entity.Data,
+                    ClienteId = entity.ClienteId,
+                    LojaId = entity.LojaId,
+                    ProdutoIds = produtoIds
+                };
             }
-
-            _ = await _context.Movimentacoes.AddAsync(entity, cancellationToken);
-            _ = await _context.SaveChangesAsync(cancellationToken);
-            if (transaction is not null)
+            catch
             {
-                await transaction.CommitAsync(cancellationToken);
-                await transaction.DisposeAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+
+                throw;
             }
-
-            return new MovimentacaoDto
+            finally
             {
-                Id = entity.Id,
-                Tipo = entity.Tipo,
-                Data = entity.Data,
-                ClienteId = entity.ClienteId,
-                LojaId = entity.LojaId,
-                ProdutoIds = produtoIds
-            };
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync();
+                }
+            }
         }
 
         private async Task<List<ProdutoEstoqueModel>> ObterProdutosParaMovimentacaoAsync(List<int> produtoIds, CancellationToken cancellationToken)
@@ -275,6 +310,18 @@ namespace Renova.Service.Services.Movimentacao
                 DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
                 _ => value
             };
+        }
+
+        private sealed class NoOpPagamentoService : IPagamentoService
+        {
+            public static readonly NoOpPagamentoService Instance = new();
+
+            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = cancellationToken;
+                return Task.FromResult<IReadOnlyList<PagamentoDto>>([]);
+            }
         }
     }
 }
