@@ -10,6 +10,7 @@ namespace Renova.Persistence
         public DbSet<UsuarioModel> Usuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
         public DbSet<ClienteModel> Clientes { get; set; }
+        public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
         public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
@@ -92,6 +93,25 @@ namespace Renova.Persistence
                 _ = entity.HasOne(p => p.Loja)
                     .WithOne(p => p.ConfigLoja)
                     .HasForeignKey<ConfigLojaModel>(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<ClienteCreditoModel>(entity =>
+            {
+                _ = entity.ToTable("ClienteCredito");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.ClienteId).IsRequired();
+                _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
+                _ = entity.HasIndex(p => p.ClienteId).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.CreditosClientes)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Cliente)
+                    .WithOne(p => p.Credito)
+                    .HasForeignKey<ClienteCreditoModel>(p => p.ClienteId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

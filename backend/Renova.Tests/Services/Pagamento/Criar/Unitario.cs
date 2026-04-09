@@ -42,6 +42,8 @@ namespace Renova.Tests.Services.Pagamento.Criar
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 200m && item.ClienteId == cliente.Id);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
             Assert.Equal(2, await context.Pagamentos.CountAsync());
+            Assert.Equal(-200m, await ObterCreditoAsync(context, cliente.Id));
+            Assert.Equal(120m, await ObterCreditoAsync(context, produto.FornecedorId));
         }
 
         [Fact]
@@ -69,6 +71,8 @@ namespace Renova.Tests.Services.Pagamento.Criar
             Assert.Equal(2, resultado.Count);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 200m && item.ClienteId == cliente.Id);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
+            Assert.Equal(200m, await ObterCreditoAsync(context, cliente.Id));
+            Assert.Equal(-120m, await ObterCreditoAsync(context, produto.FornecedorId));
         }
 
         [Fact]
@@ -98,6 +102,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 item.ClienteId == produtoA.FornecedorId &&
                 item.Natureza == NaturezaPagamento.Pagar);
             Assert.Equal(240m, pagamentoFornecedor.Valor);
+            Assert.Equal(240m, await ObterCreditoAsync(context, produtoA.FornecedorId));
         }
 
         [Fact]
@@ -128,6 +133,42 @@ namespace Renova.Tests.Services.Pagamento.Criar
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 60m && item.ClienteId == produtoA.FornecedorId);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 180m && item.ClienteId == produtoB.FornecedorId);
             Assert.Equal(3, await context.Pagamentos.CountAsync());
+            Assert.Equal(-400m, await ObterCreditoAsync(context, cliente.Id));
+            Assert.Equal(60m, await ObterCreditoAsync(context, produtoA.FornecedorId));
+            Assert.Equal(180m, await ObterCreditoAsync(context, produtoB.FornecedorId));
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveReaproveitarLinhaExistenteDeCreditoDoClienteSomandoONovoSaldo()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", 200m, "44999990001");
+            MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produto.Id]);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
+            _ = context.ClientesCreditos.Add(new ClienteCreditoModel
+            {
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                Valor = 50m
+            });
+            _ = await context.SaveChangesAsync();
+
+            PagamentoService service = new(context);
+            _ = await service.CreateAsync(new CriarPagamentoCommand
+            {
+                MovimentacaoId = movimentacao.Id,
+                TipoMovimentacao = TipoMovimentacao.Venda,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                ProdutoIds = [produto.Id],
+                Data = movimentacao.Data
+            });
+
+            Assert.Equal(-150m, await ObterCreditoAsync(context, cliente.Id));
+            Assert.Equal(2, await context.ClientesCreditos.CountAsync());
         }
 
         [Fact]
@@ -204,7 +245,8 @@ namespace Renova.Tests.Services.Pagamento.Criar
             {
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
-                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito
+                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
+                TempoPermanenciaProdutoMeses = 6
             };
 
             _ = context.ConfiguracoesLoja.Add(config);
@@ -297,6 +339,12 @@ namespace Renova.Tests.Services.Pagamento.Criar
             _ = await context.SaveChangesAsync();
 
             return item;
+        }
+
+        private static async Task<decimal> ObterCreditoAsync(RenovaDbContext context, int clienteId)
+        {
+            ClienteCreditoModel credito = await context.ClientesCreditos.SingleAsync(item => item.ClienteId == clienteId);
+            return credito.Valor;
         }
     }
 }
