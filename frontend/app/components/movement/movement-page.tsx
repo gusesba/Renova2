@@ -78,6 +78,19 @@ function getDraftTitle(index: number, draft: MovementDraft) {
   return `Mov. ${index + 1} - ${formatMovementType(Number(draft.tipo))}`;
 }
 
+function isDraftPending(draft: MovementDraft) {
+  return (
+    draft.tipo !== initialMovementDraftFormValues.tipo ||
+    draft.data !== initialMovementDraftFormValues.data ||
+    draft.clienteId.trim().length > 0 ||
+    draft.clienteLabel.trim().length > 0 ||
+    draft.clienteSearch.trim().length > 0 ||
+    draft.productIdInput.trim().length > 0 ||
+    draft.products.length > 0 ||
+    draft.suggestion !== null
+  );
+}
+
 function FieldShell({
   children,
   error,
@@ -177,6 +190,7 @@ export function MovementPage() {
     () => drafts.find((draft) => draft.id === activeDraftId) ?? drafts[0] ?? null,
     [activeDraftId, drafts],
   );
+  const hasPendingMovements = useMemo(() => drafts.some(isDraftPending), [drafts]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -195,6 +209,23 @@ export function MovementPage() {
       setActiveDraftId("draft-1");
     });
   }, [selectedStoreId]);
+
+  useEffect(() => {
+    if (!hasPendingMovements) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasPendingMovements]);
 
   useEffect(() => {
     if (!token || !selectedStoreId || !activeDraft?.clienteId) {
