@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import {
@@ -28,9 +29,18 @@ export function StoreConfigModal({
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [values, setValues] = useState<StoreConfigFormValues>(initialStoreConfigValues);
   const [lastLoadedStoreId, setLastLoadedStoreId] = useState<number | null>(null);
   const wasOpenRef = useRef(isOpen);
+
+  useEffect(() => {
+    setIsMounted(true);
+
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -146,7 +156,7 @@ export function StoreConfigModal({
     };
   }, [isOpen, lastLoadedStoreId, onClose, storeId]);
 
-  if (!shouldRender) {
+  if (!shouldRender || !isMounted) {
     return null;
   }
 
@@ -206,9 +216,9 @@ export function StoreConfigModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-[200] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -297,6 +307,7 @@ export function StoreConfigModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
