@@ -249,6 +249,10 @@ export function persistMovementTableSettings(settings: MovementTableSettings) {
 }
 
 export function isProductSituationCompatible(movementType: number, productSituation: number) {
+  if (movementType === 1 && productSituation === 4) {
+    return true;
+  }
+
   if (movementType === 5) {
     return productSituation === 2;
   }

@@ -178,15 +178,15 @@ namespace Renova.Service.Services.Movimentacao
                     throw new ArgumentException("Os produtos informados devem pertencer a loja selecionada.", nameof(request));
                 }
 
-                SituacaoProduto situacaoEsperada = SituacoesEsperadasPorTipo[request.Tipo];
-                List<ProdutoEstoqueModel> produtosComSituacaoInvalida = produtos
-                    .Where(item => item.Situacao != situacaoEsperada)
-                    .OrderBy(item => item.Id)
-                    .ToList();
+                List<ProdutoEstoqueModel> produtosComSituacaoInvalida = await ObterProdutosComSituacaoInvalidaAsync(
+                    request,
+                    produtos,
+                    cancellationToken);
 
                 if (produtosComSituacaoInvalida.Count > 0)
                 {
                     string produtosInvalidos = string.Join(", ", produtosComSituacaoInvalida.Select(item => item.Id));
+                    string situacaoEsperada = ObterDescricaoSituacaoEsperada(request.Tipo, request.ClienteId);
                     throw new ArgumentException(
                         $"Os produtos [{produtosInvalidos}] nao estao com a situacao esperada {situacaoEsperada} para a movimentacao {request.Tipo}.",
                         nameof(request));
@@ -281,6 +281,129 @@ namespace Renova.Service.Services.Movimentacao
                 .Where(item => produtoIds.Contains(item.Id))
                 .ToListAsync(cancellationToken);
         }
+
+        private async Task<List<ProdutoEstoqueModel>> ObterProdutosComSituacaoInvalidaAsync(
+            CriarMovimentacaoCommand request,
+            List<ProdutoEstoqueModel> produtos,
+            CancellationToken cancellationToken)
+        {
+            SituacaoProduto situacaoEsperada = SituacoesEsperadasPorTipo[request.Tipo];
+            List<ProdutoEstoqueModel> produtosComSituacaoInvalidaPorSituacao = produtos
+                .Where(item => item.Situacao != situacaoEsperada)
+                .ToList();
+
+            if (request.Tipo is not TipoMovimentacao.Venda
+                and not TipoMovimentacao.DevolucaoVenda
+                and not TipoMovimentacao.DevolucaoEmprestimo)
+            {
+                return produtosComSituacaoInvalidaPorSituacao
+                    .OrderBy(item => item.Id)
+                    .ToList();
+            }
+
+            List<ProdutoEstoqueModel> produtosQueExigemValidacaoPorUltimaMovimentacao = produtos
+                .Where(item => request.Tipo switch
+                {
+                    TipoMovimentacao.Venda => item.Situacao == SituacaoProduto.Emprestado,
+                    TipoMovimentacao.DevolucaoVenda => item.Situacao == SituacaoProduto.Vendido,
+                    TipoMovimentacao.DevolucaoEmprestimo => item.Situacao == SituacaoProduto.Emprestado,
+                    _ => false
+                })
+                .ToList();
+
+            if (produtosQueExigemValidacaoPorUltimaMovimentacao.Count == 0)
+            {
+                return produtosComSituacaoInvalidaPorSituacao
+                    .OrderBy(item => item.Id)
+                    .ToList();
+            }
+
+            Dictionary<int, UltimaMovimentacaoProdutoInfo> ultimasMovimentacoesPorProduto = await ObterUltimaMovimentacaoPorProdutoAsync(
+                produtosQueExigemValidacaoPorUltimaMovimentacao.Select(item => item.Id).ToList(),
+                cancellationToken);
+
+            HashSet<int> produtosInvalidosPorSituacao = produtosComSituacaoInvalidaPorSituacao
+                .Select(item => item.Id)
+                .ToHashSet();
+
+            HashSet<int> produtosInvalidosPorUltimaMovimentacao = produtosQueExigemValidacaoPorUltimaMovimentacao
+                .Where(item =>
+                    !ultimasMovimentacoesPorProduto.TryGetValue(item.Id, out UltimaMovimentacaoProdutoInfo? ultimaMovimentacao)
+                    || !UltimaMovimentacaoEhCompativel(request.Tipo, request.ClienteId, ultimaMovimentacao))
+                .Select(item => item.Id)
+                .ToHashSet();
+
+            return produtos
+                .Where(item => produtosInvalidosPorSituacao.Contains(item.Id)
+                    || produtosInvalidosPorUltimaMovimentacao.Contains(item.Id))
+                .OrderBy(item => item.Id)
+                .ToList();
+        }
+
+        private async Task<Dictionary<int, UltimaMovimentacaoProdutoInfo>> ObterUltimaMovimentacaoPorProdutoAsync(
+            List<int> produtoIds,
+            CancellationToken cancellationToken)
+        {
+            return await _context.MovimentacoesProdutos
+                .Where(item => produtoIds.Contains(item.ProdutoId) && item.Movimentacao != null)
+                .Select(item => new
+                {
+                    item.ProdutoId,
+                    MovimentacaoId = item.MovimentacaoId,
+                    item.Movimentacao!.ClienteId,
+                    item.Movimentacao.Tipo,
+                    item.Movimentacao.Data
+                })
+                .GroupBy(item => item.ProdutoId)
+                .Select(group => group
+                    .OrderByDescending(item => item.Data)
+                    .ThenByDescending(item => item.MovimentacaoId)
+                    .Select(item => new UltimaMovimentacaoProdutoInfo(
+                        group.Key,
+                        item.Tipo,
+                        item.ClienteId))
+                    .First())
+                .ToDictionaryAsync(item => item.ProdutoId, item => item, cancellationToken);
+        }
+
+        private static bool UltimaMovimentacaoEhCompativel(
+            TipoMovimentacao tipoSolicitado,
+            int clienteId,
+            UltimaMovimentacaoProdutoInfo ultimaMovimentacao)
+        {
+            return tipoSolicitado switch
+            {
+                TipoMovimentacao.Venda =>
+                    ultimaMovimentacao.Tipo == TipoMovimentacao.Emprestimo
+                    && ultimaMovimentacao.ClienteId == clienteId,
+                TipoMovimentacao.DevolucaoVenda =>
+                    ultimaMovimentacao.Tipo == TipoMovimentacao.Venda
+                    && ultimaMovimentacao.ClienteId == clienteId,
+                TipoMovimentacao.DevolucaoEmprestimo =>
+                    ultimaMovimentacao.Tipo == TipoMovimentacao.Emprestimo
+                    && ultimaMovimentacao.ClienteId == clienteId,
+                _ => false
+            };
+        }
+
+        private static string ObterDescricaoSituacaoEsperada(TipoMovimentacao tipo, int clienteId)
+        {
+            return tipo switch
+            {
+                TipoMovimentacao.Venda =>
+                    "disponiveis para venda deste cliente",
+                TipoMovimentacao.DevolucaoVenda =>
+                    "da ultima venda deste cliente",
+                TipoMovimentacao.DevolucaoEmprestimo =>
+                    "do ultimo emprestimo deste cliente",
+                _ => SituacoesEsperadasPorTipo[tipo].ToString()
+            };
+        }
+
+        private sealed record UltimaMovimentacaoProdutoInfo(
+            int ProdutoId,
+            TipoMovimentacao Tipo,
+            int ClienteId);
 
         private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
         {

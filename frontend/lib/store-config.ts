@@ -8,16 +8,19 @@ export type ConfigLojaResponse = {
   lojaId: number;
   percentualRepasseFornecedor: number;
   percentualRepasseVendedorCredito: number;
+  tempoPermanenciaProdutoMeses: number;
 };
 
 export type StoreConfigFormValues = {
   percentualRepasseFornecedor: string;
   percentualRepasseVendedorCredito: string;
+  tempoPermanenciaProdutoMeses: string;
 };
 
 export const initialStoreConfigValues: StoreConfigFormValues = {
   percentualRepasseFornecedor: "",
   percentualRepasseVendedorCredito: "",
+  tempoPermanenciaProdutoMeses: "",
 };
 
 export function extractStoreConfigApiMessage(body: unknown): string | null {

@@ -12,5 +12,8 @@ namespace Renova.Service.Commands.ConfigLoja
 
         [Range(typeof(decimal), "0", "100")]
         public decimal PercentualRepasseVendedorCredito { get; set; }
+
+        [Range(1, int.MaxValue)]
+        public int TempoPermanenciaProdutoMeses { get; set; }
     }
 }

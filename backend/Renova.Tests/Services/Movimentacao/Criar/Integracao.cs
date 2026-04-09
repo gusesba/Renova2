@@ -247,6 +247,187 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         }
 
         [Fact]
+        public async Task PostMovimentacaoDevePermitirVendaDeProdutoEmprestadoQuandoForParaOMesmoCliente()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestimo@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Emprestimo, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            Assert.Equal(SituacaoProduto.Vendido, await context.ProdutosEstoque.Where(item => item.Id == produto.Id).Select(item => item.Situacao).SingleAsync());
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDeveRetornarBadRequestQuandoVendaDeProdutoEmprestadoForParaClienteDiferente()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestimo-bloqueio@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel clienteEmprestimo = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ClienteModel clienteVenda = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteEmprestimo.Id, TipoMovimentacao.Emprestimo, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteVenda.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            string body = await response.Content.ReadAsStringAsync();
+            Assert.Contains(produto.Id.ToString(), body);
+            Assert.Contains("Emprestado", body);
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDevePermitirDevolucaoVendaQuandoUltimaMovimentacaoForVendaDoMesmoCliente()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-devolucao-venda@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Venda, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.DevolucaoVenda,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDeveRetornarBadRequestQuandoDevolucaoVendaForParaClienteDiferenteDaUltimaVenda()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-devolucao-venda-bloqueio@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel clienteVenda = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ClienteModel clienteDevolucao = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteVenda.Id, TipoMovimentacao.Venda, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.DevolucaoVenda,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteDevolucao.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            string body = await response.Content.ReadAsStringAsync();
+            Assert.Contains(produto.Id.ToString(), body);
+            Assert.Contains(TipoMovimentacao.Venda.ToString(), body);
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDevePermitirDevolucaoEmprestimoQuandoUltimaMovimentacaoForEmprestimoDoMesmoCliente()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-devolucao-emprestimo@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Emprestimo, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.DevolucaoEmprestimo,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDeveRetornarBadRequestQuandoDevolucaoEmprestimoForParaClienteDiferenteDoUltimoEmprestimo()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-devolucao-emprestimo-bloqueio@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel clienteEmprestimo = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ClienteModel clienteDevolucao = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteEmprestimo.Id, TipoMovimentacao.Emprestimo, produto.Id);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.DevolucaoEmprestimo,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteDevolucao.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            string body = await response.Content.ReadAsStringAsync();
+            Assert.Contains(produto.Id.ToString(), body);
+            Assert.Contains(TipoMovimentacao.Emprestimo.ToString(), body);
+        }
+
+        [Fact]
         public async Task PostMovimentacaoDeveRetornarUnauthorizedQuandoLojaNaoPertencerAoUsuarioAutenticado()
         {
             await using RenovaApiFactory factory = new();
@@ -380,6 +561,35 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = context.ProdutosEstoque.Add(item);
             _ = await context.SaveChangesAsync();
             return item;
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            params int[] produtoIds)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            MovimentacaoModel movimentacao = new()
+            {
+                Tipo = tipo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteId,
+                LojaId = lojaId,
+                Produtos = produtoIds
+                    .Select(produtoId => new MovimentacaoProdutoModel
+                    {
+                        ProdutoId = produtoId
+                    })
+                    .ToList()
+            };
+
+            _ = context.Movimentacoes.Add(movimentacao);
+            _ = await context.SaveChangesAsync();
+            return movimentacao;
         }
 
         private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaApiFactory factory, int lojaId, decimal percentualRepasseFornecedor)

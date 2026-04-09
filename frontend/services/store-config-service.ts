@@ -30,6 +30,7 @@ export async function saveStoreConfig(
     lojaId: number;
     percentualRepasseFornecedor: number;
     percentualRepasseVendedorCredito: number;
+    tempoPermanenciaProdutoMeses: number;
   },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {

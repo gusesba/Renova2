@@ -130,6 +130,7 @@ export function StoreConfigModal({
         setValues({
           percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
           percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
+          tempoPermanenciaProdutoMeses: String(config.tempoPermanenciaProdutoMeses),
         });
       } catch {
         if (isMounted) {
@@ -172,6 +173,8 @@ export function StoreConfigModal({
     const parsedValue = Number(normalizedValue);
     const normalizedCreditValue = values.percentualRepasseVendedorCredito.replace(",", ".").trim();
     const parsedCreditValue = Number(normalizedCreditValue);
+    const normalizedStayValue = values.tempoPermanenciaProdutoMeses.trim();
+    const parsedStayValue = Number(normalizedStayValue);
 
     if (!normalizedValue || Number.isNaN(parsedValue) || parsedValue < 0 || parsedValue > 100) {
       toast.error("Informe um percentual de repasse valido entre 0 e 100.");
@@ -193,6 +196,15 @@ export function StoreConfigModal({
       return;
     }
 
+    if (
+      !normalizedStayValue ||
+      !Number.isInteger(parsedStayValue) ||
+      parsedStayValue < 1
+    ) {
+      toast.error("Informe um tempo de permanencia valido em meses, com valor inteiro maior ou igual a 1.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -201,6 +213,7 @@ export function StoreConfigModal({
           lojaId: storeId,
           percentualRepasseFornecedor: parsedValue,
           percentualRepasseVendedorCredito: parsedCreditValue,
+          tempoPermanenciaProdutoMeses: parsedStayValue,
         },
         token,
       );
@@ -218,6 +231,7 @@ export function StoreConfigModal({
       setValues({
         percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
         percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
+        tempoPermanenciaProdutoMeses: String(config.tempoPermanenciaProdutoMeses),
       });
       toast.success("Configuracao da loja atualizada.");
       onClose();
@@ -322,6 +336,35 @@ export function StoreConfigModal({
             </div>
             <p className="text-sm text-[var(--muted)]">
               Percentual aplicado quando o vendedor usa o valor pendente em compras na propria loja.
+            </p>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-[var(--foreground)]">
+              Permanencia do produto na loja
+            </span>
+            <div className="relative">
+              <input
+                type="number"
+                min={1}
+                step="1"
+                value={values.tempoPermanenciaProdutoMeses}
+                disabled={isLoading || isSaving}
+                onChange={(event) => {
+                  setValues((current) => ({
+                    ...current,
+                    tempoPermanenciaProdutoMeses: event.target.value,
+                  }));
+                }}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-20 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                placeholder="Ex.: 6"
+              />
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                meses
+              </span>
+            </div>
+            <p className="text-sm text-[var(--muted)]">
+              Tempo padrao de permanencia do produto na loja, informado em meses inteiros.
             </p>
           </label>
 

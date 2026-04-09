@@ -70,6 +70,10 @@ namespace Renova.API.Controllers
 
                 return Ok(resultado);
             }
+            catch (Exception ex) when (ex is ArgumentException or ArgumentOutOfRangeException)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { mensagem = ex.Message });

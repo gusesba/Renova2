@@ -40,6 +40,11 @@ namespace Renova.Service.Services.ConfigLoja
                 throw new ArgumentException("Percentual de repasse ao vendedor em credito deve ser maior ou igual ao repasse normal.");
             }
 
+            if (request.TempoPermanenciaProdutoMeses < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(request), "Tempo de permanencia do produto na loja deve ser de ao menos 1 mes.");
+            }
+
             _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
@@ -51,7 +56,8 @@ namespace Renova.Service.Services.ConfigLoja
                 {
                     LojaId = request.LojaId,
                     PercentualRepasseFornecedor = request.PercentualRepasseFornecedor,
-                    PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito
+                    PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito,
+                    TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses
                 };
 
                 _ = await _context.ConfiguracoesLoja.AddAsync(config, cancellationToken);
@@ -60,6 +66,7 @@ namespace Renova.Service.Services.ConfigLoja
             {
                 config.PercentualRepasseFornecedor = request.PercentualRepasseFornecedor;
                 config.PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito;
+                config.TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses;
             }
 
             _ = await _context.SaveChangesAsync(cancellationToken);
@@ -91,7 +98,8 @@ namespace Renova.Service.Services.ConfigLoja
             {
                 LojaId = config.LojaId,
                 PercentualRepasseFornecedor = config.PercentualRepasseFornecedor,
-                PercentualRepasseVendedorCredito = config.PercentualRepasseVendedorCredito
+                PercentualRepasseVendedorCredito = config.PercentualRepasseVendedorCredito,
+                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses
             };
         }
     }

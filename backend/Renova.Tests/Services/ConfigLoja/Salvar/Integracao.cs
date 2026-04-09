@@ -29,7 +29,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             {
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 45m
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6
             });
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -38,6 +39,7 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(loja.Id, body.LojaId);
             Assert.Equal(45m, body.PercentualRepasseFornecedor);
             Assert.Equal(45m, body.PercentualRepasseVendedorCredito);
+            Assert.Equal(6, body.TempoPermanenciaProdutoMeses);
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -45,6 +47,7 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(loja.Id, config.LojaId);
             Assert.Equal(45m, config.PercentualRepasseFornecedor);
             Assert.Equal(45m, config.PercentualRepasseVendedorCredito);
+            Assert.Equal(6, config.TempoPermanenciaProdutoMeses);
         }
 
         [Fact]
@@ -61,7 +64,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             {
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 150m,
-                PercentualRepasseVendedorCredito = 100m
+                PercentualRepasseVendedorCredito = 100m,
+                TempoPermanenciaProdutoMeses = 6
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -81,7 +85,29 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             {
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 30m
+                PercentualRepasseVendedorCredito = 30m,
+                TempoPermanenciaProdutoMeses = 6
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PutConfigLojaDeveRetornarBadRequestQuandoTempoPermanenciaProdutoForInvalido()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-tempo@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 0
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -102,7 +128,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             {
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 45m
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6
             });
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
