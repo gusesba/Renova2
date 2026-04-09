@@ -371,36 +371,25 @@ export function MovementDestinationPage() {
                 </div>
 
                 <div className="rounded-[24px] border border-[var(--border)] bg-white p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                        Sugestao automatica
-                      </p>
-                      <p className="mt-2 text-sm text-[var(--muted)]">
-                        {suggestionsQuery.isLoading || isLoadingStores
-                          ? "Carregando os itens pela permanencia da loja..."
-                          : suggestionsQuery.isError
-                            ? suggestionsQuery.error instanceof Error
-                              ? suggestionsQuery.error.message
-                              : "Nao foi possivel carregar a sugestao."
-                            : suggestionsQuery.data
-                              ? `Produtos em estoque com entrada ate ${formatMovementDate(
-                                  suggestionsQuery.data.dataLimitePermanencia,
-                                )}. Permanencia atual: ${
-                                  suggestionsQuery.data.tempoPermanenciaProdutoMeses
-                                } mes(es).`
-                              : "Nenhuma configuracao carregada."}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => suggestionsQuery.refetch()}
-                      disabled={suggestionsQuery.isFetching}
-                      className="flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {suggestionsQuery.isFetching ? "Atualizando..." : "Recarregar lista"}
-                    </button>
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Sugestao automatica
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      {suggestionsQuery.isLoading || isLoadingStores
+                        ? "Carregando os itens pela permanencia da loja..."
+                        : suggestionsQuery.isError
+                          ? suggestionsQuery.error instanceof Error
+                            ? suggestionsQuery.error.message
+                            : "Nao foi possivel carregar a sugestao."
+                          : suggestionsQuery.data
+                            ? `Produtos em estoque com entrada ate ${formatMovementDate(
+                                suggestionsQuery.data.dataLimitePermanencia,
+                              )}. Permanencia atual: ${
+                                suggestionsQuery.data.tempoPermanenciaProdutoMeses
+                              } mes(es).`
+                            : "Nenhuma configuracao carregada."}
+                    </p>
                   </div>
                 </div>
 
