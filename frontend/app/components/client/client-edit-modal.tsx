@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import type { ClientFieldErrors, ClientFormValues } from "@/lib/client";
 
 type ClientEditModalProps = {
@@ -9,9 +10,15 @@ type ClientEditModalProps = {
   errors: ClientFieldErrors;
   isOpen: boolean;
   isSubmitting: boolean;
+  isUserLoading?: boolean;
+  userEmptyLabel?: string;
+  userOptions?: Array<{ id: number; nome: string; email: string }>;
+  userSearchValue?: string;
+  userSelectedLabel?: string;
   values: ClientFormValues;
   onChange: <K extends keyof ClientFormValues>(field: K, value: ClientFormValues[K]) => void;
   onClose: () => void;
+  onUserSearchChange?: (value: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
@@ -87,9 +94,15 @@ export function ClientEditModal({
   errors,
   isOpen,
   isSubmitting,
+  isUserLoading = false,
+  userEmptyLabel = "Nenhum usuario encontrado.",
+  userOptions = [],
+  userSearchValue = "",
+  userSelectedLabel,
   values,
   onChange,
   onClose,
+  onUserSearchChange,
   onSubmit,
 }: ClientEditModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
@@ -197,13 +210,39 @@ export function ClientEditModal({
             />
           </div>
 
-          <FormField
-            label="UserId (opcional)"
-            placeholder="Ex.: 42"
-            value={values.userId}
-            error={errors.userId}
-            onChange={(value) => onChange("userId", value)}
-          />
+          {onUserSearchChange ? (
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Usuario vinculado (opcional)</span>
+              <>
+                <SearchableSelect
+                  ariaLabel="Usuario vinculado"
+                  emptyLabel={userEmptyLabel}
+                  error={errors.userId}
+                  loading={isUserLoading}
+                  options={userOptions.map((user) => ({
+                    label: `${user.nome} - ${user.email}`,
+                    value: String(user.id),
+                  }))}
+                  placeholder="Selecione um usuario"
+                  searchPlaceholder="Pesquisar por nome ou email"
+                  searchValue={userSearchValue}
+                  selectedLabel={userSelectedLabel}
+                  value={values.userId || null}
+                  onSearchChange={onUserSearchChange}
+                  onChange={(option) => onChange("userId", option.value)}
+                />
+                {errors.userId ? <p className="text-sm text-red-500">{errors.userId}</p> : null}
+              </>
+            </div>
+          ) : (
+            <FormField
+              label="UserId (opcional)"
+              placeholder="Ex.: 42"
+              value={values.userId}
+              error={errors.userId}
+              onChange={(value) => onChange("userId", value)}
+            />
+          )}
 
           <ToggleField
             checked={values.doacao}

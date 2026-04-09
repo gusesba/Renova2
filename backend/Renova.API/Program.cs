@@ -14,6 +14,7 @@ using Renova.Service.Services.Movimentacao;
 using Renova.Service.Services.Pagamento;
 using Renova.Service.Services.Produto;
 using Renova.Service.Services.Renova;
+using Renova.Service.Services.Usuario;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,7 @@ builder.Services.AddScoped<IPagamentoService, PagamentoService>();
 builder.Services.AddScoped<IMovimentacaoService, MovimentacaoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 JwtSettings jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("JWT settings are not configured.");
 

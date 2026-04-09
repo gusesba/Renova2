@@ -1,0 +1,60 @@
+using System.Linq.Expressions;
+
+using Microsoft.EntityFrameworkCore;
+
+using Renova.Domain.Model;
+using Renova.Domain.Model.Dto;
+using Renova.Persistence;
+using Renova.Service.Extensions;
+using Renova.Service.Queries.Usuario;
+
+namespace Renova.Service.Services.Usuario
+{
+    public class UsuarioService(RenovaDbContext context) : IUsuarioService
+    {
+        private readonly RenovaDbContext _context = context;
+
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<UsuarioModel, int>>)(usuario => usuario.Id),
+            ["nome"] = (Expression<Func<UsuarioModel, string>>)(usuario => usuario.Nome),
+            ["email"] = (Expression<Func<UsuarioModel, string>>)(usuario => usuario.Email)
+        };
+
+        public async Task<PaginacaoDto<UsuarioDto>> GetAllAsync(
+            ObterUsuariosQuery request,
+            int usuarioAutenticadoId,
+            CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == usuarioAutenticadoId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            IQueryable<UsuarioModel> query = _context.Usuarios.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.Busca))
+            {
+                string buscaNormalizada = request.Busca.Trim().ToLowerInvariant();
+                query = query.Where(usuario =>
+                    usuario.Nome.ToLower().Contains(buscaNormalizada) ||
+                    usuario.Email.ToLower().Contains(buscaNormalizada));
+            }
+
+            IQueryable<UsuarioDto> queryProjetada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "nome")
+                .ThenBy(usuario => usuario.Id)
+                .Select(usuario => new UsuarioDto
+                {
+                    Id = usuario.Id,
+                    Nome = usuario.Nome,
+                    Email = usuario.Email
+                });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+    }
+}

@@ -85,7 +85,9 @@ namespace Renova.Service.Services.Cliente
                 Contato = cliente.Contato,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
-                UserId = cliente.UserId
+                UserId = cliente.UserId,
+                UserNome = null,
+                UserEmail = null
             };
         }
 
@@ -160,7 +162,9 @@ namespace Renova.Service.Services.Cliente
                 Contato = cliente.Contato,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
-                UserId = cliente.UserId
+                UserId = cliente.UserId,
+                UserNome = null,
+                UserEmail = null
             };
         }
 
@@ -263,7 +267,9 @@ namespace Renova.Service.Services.Cliente
                 Contato = cliente.Contato,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
-                UserId = cliente.UserId
+                UserId = cliente.UserId,
+                UserNome = cliente.User != null ? cliente.User.Nome : null,
+                UserEmail = cliente.User != null ? cliente.User.Email : null
             });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);

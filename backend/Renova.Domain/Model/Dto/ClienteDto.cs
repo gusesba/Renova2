@@ -8,5 +8,7 @@ namespace Renova.Domain.Model.Dto
         public bool Doacao { get; set; }
         public int LojaId { get; set; }
         public int? UserId { get; set; }
+        public string? UserNome { get; set; }
+        public string? UserEmail { get; set; }
     }
 }

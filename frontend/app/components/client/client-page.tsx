@@ -21,6 +21,7 @@ import {
   type ClientFilters,
   type ClientListItem,
   type ClientFormValues,
+  type ClientUserOption,
 } from "@/lib/client";
 import { getAuthToken } from "@/lib/store";
 import {
@@ -29,6 +30,7 @@ import {
   getClients,
   updateClient,
 } from "@/services/client-service";
+import { getUserOptions } from "@/services/user-service";
 import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 import { ClientCreateModal } from "./client-create-modal";
@@ -58,6 +60,12 @@ export function ClientPage() {
   const [tableSettings, setTableSettings] = useState<ClientTableSettings>(() =>
     getStoredClientTableSettings(),
   );
+  const [userSearch, setUserSearch] = useState("");
+  const [editUserSearch, setEditUserSearch] = useState("");
+  const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
+  const [debouncedEditUserSearch, setDebouncedEditUserSearch] = useState("");
+  const [selectedUserOption, setSelectedUserOption] = useState<ClientUserOption | null>(null);
+  const [selectedEditUserOption, setSelectedEditUserOption] = useState<ClientUserOption | null>(null);
   const [filters, setFilters] = useState<ClientFilters>(() => ({
     ...initialClientFilters,
     tamanhoPagina: getStoredClientTableSettings().tamanhoPagina,
@@ -80,6 +88,26 @@ export function ClientPage() {
       window.clearTimeout(timeoutId);
     };
   }, [filters.nome, filters.contato]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedUserSearch(userSearch);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [userSearch]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedEditUserSearch(editUserSearch);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [editUserSearch]);
 
   const queryFilters = useMemo<ClientFilters>(
     () => ({
@@ -108,6 +136,42 @@ export function ClientPage() {
       return asClientListResponse(response.body);
     },
     enabled: Boolean(token && selectedStoreId),
+  });
+
+  const createUserOptionsQuery = useQuery({
+    queryKey: ["client-users", token, debouncedUserSearch],
+    queryFn: async () => {
+      if (!token) {
+        return [];
+      }
+
+      const response = await getUserOptions(token, debouncedUserSearch);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar os usuarios.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(token && isCreateModalOpen),
+  });
+
+  const editUserOptionsQuery = useQuery({
+    queryKey: ["client-users", token, debouncedEditUserSearch],
+    queryFn: async () => {
+      if (!token) {
+        return [];
+      }
+
+      const response = await getUserOptions(token, debouncedEditUserSearch);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar os usuarios.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(token && isEditModalOpen),
   });
 
   const createClientMutation = useMutation({
@@ -162,6 +226,9 @@ export function ClientPage() {
   });
 
   function handleOpenModal() {
+    setUserSearch("");
+    setDebouncedUserSearch("");
+    setSelectedUserOption(null);
     setIsCreateModalOpen(true);
   }
 
@@ -173,6 +240,17 @@ export function ClientPage() {
       doacao: client.doacao,
       userId: client.userId ? String(client.userId) : "",
     });
+    setEditUserSearch(client.userNome ?? "");
+    setDebouncedEditUserSearch(client.userNome ?? "");
+    setSelectedEditUserOption(
+      client.userId && client.userNome && client.userEmail
+        ? {
+            id: client.userId,
+            nome: client.userNome,
+            email: client.userEmail,
+          }
+        : null,
+    );
     setEditFormErrors({});
     setIsEditModalOpen(true);
   }
@@ -195,6 +273,9 @@ export function ClientPage() {
     setIsCreateModalOpen(false);
     setFormValues(initialClientFormValues);
     setFormErrors({});
+    setUserSearch("");
+    setDebouncedUserSearch("");
+    setSelectedUserOption(null);
   }
 
   function handleCloseEditModal() {
@@ -206,6 +287,9 @@ export function ClientPage() {
     setSelectedClientId(null);
     setEditFormValues(initialClientFormValues);
     setEditFormErrors({});
+    setEditUserSearch("");
+    setDebouncedEditUserSearch("");
+    setSelectedEditUserOption(null);
   }
 
   function handleCloseDeleteModal() {
@@ -241,6 +325,10 @@ export function ClientPage() {
       ...current,
       [field]: undefined,
     }));
+
+    if (field === "userId" && !value) {
+      setSelectedUserOption(null);
+    }
   }
 
   function updateEditFormField<K extends keyof ClientFormValues>(
@@ -257,6 +345,10 @@ export function ClientPage() {
       ...current,
       [field]: undefined,
     }));
+
+    if (field === "userId" && !value) {
+      setSelectedEditUserOption(null);
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -476,10 +568,32 @@ export function ClientPage() {
         errors={formErrors}
         isOpen={isCreateModalOpen}
         isSubmitting={createClientMutation.isPending}
+        isUserLoading={createUserOptionsQuery.isLoading}
         storeName={selectedStore?.nome ?? null}
+        userEmptyLabel={
+          createUserOptionsQuery.isError ? "Falha ao carregar usuarios." : "Nenhum usuario encontrado."
+        }
+        userOptions={createUserOptionsQuery.data ?? []}
+        userSearchValue={userSearch}
+        userSelectedLabel={
+          selectedUserOption ? `${selectedUserOption.nome} - ${selectedUserOption.email}` : undefined
+        }
         values={formValues}
-        onChange={updateFormField}
+        onChange={(field, value) => {
+          updateFormField(field, value);
+
+          if (field === "userId") {
+            const selected = (createUserOptionsQuery.data ?? []).find((user) => user.id === Number(value));
+            setSelectedUserOption(selected ?? null);
+            setUserSearch(selected ? `${selected.nome} - ${selected.email}` : "");
+          }
+        }}
         onClose={handleCloseModal}
+        onUserSearchChange={(value) => {
+          setUserSearch(value);
+          setSelectedUserOption(null);
+          updateFormField("userId", "");
+        }}
         onSubmit={handleSubmit}
       />
       <ClientEditModal
@@ -487,9 +601,33 @@ export function ClientPage() {
         errors={editFormErrors}
         isOpen={isEditModalOpen}
         isSubmitting={updateClientMutation.isPending}
+        isUserLoading={editUserOptionsQuery.isLoading}
+        userEmptyLabel={
+          editUserOptionsQuery.isError ? "Falha ao carregar usuarios." : "Nenhum usuario encontrado."
+        }
+        userOptions={editUserOptionsQuery.data ?? []}
+        userSearchValue={editUserSearch}
+        userSelectedLabel={
+          selectedEditUserOption
+            ? `${selectedEditUserOption.nome} - ${selectedEditUserOption.email}`
+            : undefined
+        }
         values={editFormValues}
-        onChange={updateEditFormField}
+        onChange={(field, value) => {
+          updateEditFormField(field, value);
+
+          if (field === "userId") {
+            const selected = (editUserOptionsQuery.data ?? []).find((user) => user.id === Number(value));
+            setSelectedEditUserOption(selected ?? null);
+            setEditUserSearch(selected ? `${selected.nome} - ${selected.email}` : "");
+          }
+        }}
         onClose={handleCloseEditModal}
+        onUserSearchChange={(value) => {
+          setEditUserSearch(value);
+          setSelectedEditUserOption(null);
+          updateEditFormField("userId", "");
+        }}
         onSubmit={handleEditSubmit}
       />
       <ClientDeleteModal

@@ -7,6 +7,8 @@ export type ClientListItem = {
   doacao: boolean;
   lojaId: number;
   userId: number | null;
+  userNome?: string | null;
+  userEmail?: string | null;
 };
 
 export type ClientListResponse = {
@@ -25,6 +27,12 @@ export type ClientFormValues = {
 };
 
 export type ClientFieldErrors = Partial<Record<keyof ClientFormValues, string>>;
+
+export type ClientUserOption = {
+  id: number;
+  nome: string;
+  email: string;
+};
 
 export type ClientFilters = {
   nome: string;
