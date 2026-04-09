@@ -38,13 +38,6 @@ namespace Renova.Service.Services.Pagamento
             }
 
             decimal valorTotal = produtos.Sum(item => item.Preco);
-            decimal valorFornecedor = decimal.Round(valorTotal * (config.PercentualRepasseFornecedor / 100m), 2, MidpointRounding.AwayFromZero);
-            int fornecedorId = produtos[0].FornecedorId;
-
-            if (produtos.Any(item => item.FornecedorId != fornecedorId))
-            {
-                throw new InvalidOperationException("Todos os produtos da movimentacao devem possuir o mesmo fornecedor para gerar os pagamentos.");
-            }
 
             (NaturezaPagamento naturezaCliente, NaturezaPagamento naturezaFornecedor) = request.TipoMovimentacao switch
             {
@@ -63,24 +56,31 @@ namespace Renova.Service.Services.Pagamento
                 Data = request.Data
             };
 
-            PagamentoModel pagamentoFornecedor = new()
-            {
-                MovimentacaoId = request.MovimentacaoId,
-                LojaId = request.LojaId,
-                ClienteId = fornecedorId,
-                Natureza = naturezaFornecedor,
-                Valor = valorFornecedor,
-                Data = request.Data
-            };
+            List<PagamentoModel> pagamentos = [pagamentoCliente];
+            pagamentos.AddRange(produtos
+                .GroupBy(item => item.FornecedorId)
+                .Select(grupo =>
+                {
+                    decimal valorFornecedor = decimal.Round(
+                        grupo.Sum(item => item.Preco) * (config.PercentualRepasseFornecedor / 100m),
+                        2,
+                        MidpointRounding.AwayFromZero);
 
-            await _context.Pagamentos.AddRangeAsync([pagamentoCliente, pagamentoFornecedor], cancellationToken);
+                    return new PagamentoModel
+                    {
+                        MovimentacaoId = request.MovimentacaoId,
+                        LojaId = request.LojaId,
+                        ClienteId = grupo.Key,
+                        Natureza = naturezaFornecedor,
+                        Valor = valorFornecedor,
+                        Data = request.Data
+                    };
+                }));
+
+            await _context.Pagamentos.AddRangeAsync(pagamentos, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
-            return
-            [
-                Mapear(pagamentoCliente),
-                Mapear(pagamentoFornecedor)
-            ];
+            return [.. pagamentos.Select(Mapear)];
         }
 
         private static PagamentoDto Mapear(PagamentoModel pagamento)

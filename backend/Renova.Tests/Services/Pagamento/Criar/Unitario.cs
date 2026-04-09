@@ -17,7 +17,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
         }
 
         [Fact]
-        public async Task CreateAsyncDeveCriarDuasOrdensPagamentoParaMovimentacaoDeVenda()
+        public async Task CreateAsyncDeveCriarUmaOrdemDoClienteEUmaDoFornecedorQuandoVendaTiverUmUnicoFornecedor()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -45,7 +45,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
         }
 
         [Fact]
-        public async Task CreateAsyncDeveCriarDuasOrdensPagamentoParaMovimentacaoDeDevolucaoVenda()
+        public async Task CreateAsyncDeveCriarUmaOrdemDoClienteEUmaDoFornecedorQuandoDevolucaoVendaTiverUmUnicoFornecedor()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -94,8 +94,40 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 Data = movimentacao.Data
             });
 
-            PagamentoDto pagamentoFornecedor = Assert.Single(resultado.Where(item => item.ClienteId == produtoA.FornecedorId));
+            PagamentoDto pagamentoFornecedor = Assert.Single(resultado, item =>
+                item.ClienteId == produtoA.FornecedorId &&
+                item.Natureza == NaturezaPagamento.Pagar);
             Assert.Equal(180m, pagamentoFornecedor.Valor);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveCriarUmaOrdemParaCadaFornecedorQuandoMovimentacaoTiverProdutosDeFornecedoresDiferentes()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", 100m, "44999990001");
+            ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", 300m, "44999990002");
+            MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produtoA.Id, produtoB.Id]);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+
+            PagamentoService service = new(context);
+            IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
+            {
+                MovimentacaoId = movimentacao.Id,
+                TipoMovimentacao = TipoMovimentacao.Venda,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                ProdutoIds = [produtoA.Id, produtoB.Id],
+                Data = movimentacao.Data
+            });
+
+            Assert.Equal(3, resultado.Count);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 400m && item.ClienteId == cliente.Id);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 45m && item.ClienteId == produtoA.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 135m && item.ClienteId == produtoB.FornecedorId);
+            Assert.Equal(3, await context.Pagamentos.CountAsync());
         }
 
         [Fact]

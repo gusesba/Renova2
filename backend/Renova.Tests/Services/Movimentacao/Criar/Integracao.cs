@@ -27,7 +27,6 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
-            await AtualizarFornecedorAsync(factory, produtoB.Id, produtoA.FornecedorId);
             _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
@@ -53,8 +52,44 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             _ = Assert.Single(context.Movimentacoes);
             Assert.Equal(2, context.MovimentacoesProdutos.Count());
-            Assert.Equal(2, context.Pagamentos.Count());
+            Assert.Equal(3, context.Pagamentos.Count());
             Assert.All(context.ProdutosEstoque.ToList(), item => Assert.Equal(SituacaoProduto.Vendido, item.Situacao));
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDeveCriarUmaOrdemParaCadaFornecedorQuandoVendaTiverProdutosDeFornecedoresDiferentes()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-multi@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
+            ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produtoA.Id, produtoB.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            List<PagamentoModel> pagamentos = await context.Pagamentos.OrderBy(item => item.ClienteId).ToListAsync();
+
+            Assert.Equal(3, pagamentos.Count);
+            Assert.Contains(pagamentos, item => item.ClienteId == cliente.Id && item.Natureza == NaturezaPagamento.Receber && item.Valor == 299.80m);
+            Assert.Contains(pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 67.46m);
+            Assert.Contains(pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 67.46m);
         }
 
         [Fact]
@@ -335,14 +370,5 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             return config;
         }
 
-        private static async Task AtualizarFornecedorAsync(RenovaApiFactory factory, int produtoId, int fornecedorId)
-        {
-            using IServiceScope scope = factory.Services.CreateScope();
-            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-
-            ProdutoEstoqueModel produto = await context.ProdutosEstoque.SingleAsync(item => item.Id == produtoId);
-            produto.FornecedorId = fornecedorId;
-            _ = await context.SaveChangesAsync();
-        }
     }
 }
