@@ -322,7 +322,12 @@ namespace Renova.Service.Services.Movimentacao
                 produtosQueExigemValidacaoPorUltimaMovimentacao.Select(item => item.Id).ToList(),
                 cancellationToken);
 
+            HashSet<int> produtosComValidacaoEspecial = produtosQueExigemValidacaoPorUltimaMovimentacao
+                .Select(item => item.Id)
+                .ToHashSet();
+
             HashSet<int> produtosInvalidosPorSituacao = produtosComSituacaoInvalidaPorSituacao
+                .Where(item => !produtosComValidacaoEspecial.Contains(item.Id))
                 .Select(item => item.Id)
                 .ToHashSet();
 
