@@ -31,7 +31,6 @@ export function StoreConfigModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [values, setValues] = useState<StoreConfigFormValues>(initialStoreConfigValues);
-  const [lastLoadedStoreId, setLastLoadedStoreId] = useState<number | null>(null);
   const wasOpenRef = useRef(isOpen);
 
   useEffect(() => {
@@ -91,10 +90,6 @@ export function StoreConfigModal({
 
     const currentStoreId = storeId;
 
-    if (wasOpenRef.current && lastLoadedStoreId === storeId) {
-      return;
-    }
-
     const token = getAuthToken();
 
     if (!token) {
@@ -118,7 +113,6 @@ export function StoreConfigModal({
 
         if (response.status === 404) {
           setValues(initialStoreConfigValues);
-          setLastLoadedStoreId(currentStoreId);
           return;
         }
 
@@ -136,7 +130,6 @@ export function StoreConfigModal({
         setValues({
           percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
         });
-        setLastLoadedStoreId(currentStoreId);
       } catch {
         if (isMounted) {
           toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
@@ -154,7 +147,7 @@ export function StoreConfigModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, lastLoadedStoreId, onClose, storeId]);
+  }, [isOpen, onClose, storeId]);
 
   if (!shouldRender || !isMounted) {
     return null;
@@ -206,7 +199,6 @@ export function StoreConfigModal({
       setValues({
         percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
       });
-      setLastLoadedStoreId(storeId);
       toast.success("Configuracao da loja atualizada.");
       onClose();
     } catch {
