@@ -347,6 +347,52 @@ namespace Renova.Tests.Services.Produto.Get
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
+        [Fact]
+        public async Task GetProdutosEmprestadosDeveRetornarOkComEmprestadosDoClienteSelecionado()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestados@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel elaine = await CriarClienteAsync(factory, loja.Id, "Elaine", "44999990001");
+            ClienteModel gustavo = await CriarClienteAsync(factory, loja.Id, "Gustavo", "44999990002");
+            ProdutoEstoqueModel produtoElaine = await CriarProdutoCompletoAsync(factory, loja.Id, "Vestido", "Farm", "M", "Azul", "Fornecedor Alpha", "Vestido Elaine");
+            ProdutoEstoqueModel produtoGustavo = await CriarProdutoCompletoAsync(factory, loja.Id, "Blazer", "Animale", "G", "Preto", "Fornecedor Beta", "Blazer Gustavo");
+            await AtualizarSituacaoProdutoAsync(factory, produtoElaine.Id, SituacaoProduto.Emprestado);
+            await AtualizarSituacaoProdutoAsync(factory, produtoGustavo.Id, SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
+            _ = await CriarMovimentacaoAsync(factory, loja.Id, gustavo.Id, TipoMovimentacao.Emprestimo, produtoGustavo.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/produto/emprestados?lojaId={loja.Id}&clienteId={elaine.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            IReadOnlyList<ProdutoBuscaDto>? body = await response.Content.ReadFromJsonAsync<IReadOnlyList<ProdutoBuscaDto>>();
+            ProdutoBuscaDto item = Assert.Single(body!);
+            Assert.Equal(produtoElaine.Id, item.Id);
+        }
+
+        [Fact]
+        public async Task GetProdutosEmprestadosDeveRetornarBadRequestQuandoClienteNaoPertencerALoja()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestados-badrequest@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            LojaModel outraLoja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Bairro");
+            ClienteModel clienteOutraLoja = await CriarClienteAsync(factory, outraLoja.Id, "Elaine", "44999990001");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/produto/emprestados?lojaId={loja.Id}&clienteId={clienteOutraLoja.Id}");
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", new CadastroCommand
@@ -497,6 +543,45 @@ namespace Renova.Tests.Services.Produto.Get
             _ = context.Cores.Add(entity);
             _ = await context.SaveChangesAsync();
             return entity;
+        }
+
+        private static async Task AtualizarSituacaoProdutoAsync(RenovaApiFactory factory, int produtoId, SituacaoProduto situacao)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ProdutoEstoqueModel produto = await context.ProdutosEstoque.SingleAsync(item => item.Id == produtoId);
+            produto.Situacao = situacao;
+            _ = await context.SaveChangesAsync();
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            params int[] produtoIds)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            MovimentacaoModel movimentacao = new()
+            {
+                Tipo = tipo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteId,
+                LojaId = lojaId,
+                Produtos = produtoIds
+                    .Select(produtoId => new MovimentacaoProdutoModel
+                    {
+                        ProdutoId = produtoId
+                    })
+                    .ToList()
+            };
+
+            _ = context.Movimentacoes.Add(movimentacao);
+            _ = await context.SaveChangesAsync();
+            return movimentacao;
         }
     }
 }

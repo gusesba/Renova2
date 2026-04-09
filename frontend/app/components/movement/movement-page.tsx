@@ -37,10 +37,11 @@ import {
 import { getAuthToken } from "@/lib/store";
 import { createMovement } from "@/services/movement-service";
 import { getClients } from "@/services/client-service";
-import { getProductById } from "@/services/product-service";
+import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
 import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
 
 type MovementDraft = {
+  autoLinkedBorrowedProductIds: number[];
   clienteId: string;
   clienteLabel: string;
   clienteSearch: string;
@@ -57,6 +58,7 @@ function createDraft(id: string): MovementDraft {
   return {
     id,
     ...initialMovementDraftFormValues,
+    autoLinkedBorrowedProductIds: [],
     clienteLabel: "",
     clienteSearch: "",
     data: initialMovementDraftFormValues.data,
@@ -168,6 +170,7 @@ export function MovementPage() {
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
+  const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const activeDraft = useMemo(
@@ -192,6 +195,76 @@ export function MovementPage() {
       setActiveDraftId("draft-1");
     });
   }, [selectedStoreId]);
+
+  useEffect(() => {
+    if (!token || !selectedStoreId || !activeDraft?.clienteId) {
+      return;
+    }
+
+    let cancelled = false;
+    const draftId = activeDraft.id;
+    const clienteId = Number(activeDraft.clienteId);
+
+    setAutoLinkingDraftId(draftId);
+
+    void (async () => {
+      try {
+        const response = await getBorrowedProductsByClient(token, selectedStoreId, clienteId);
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!response.ok) {
+          toast.error(
+            getProductApiMessage(response.body) ??
+              "Nao foi possivel carregar os produtos emprestados deste cliente.",
+          );
+          return;
+        }
+
+        const borrowedProducts = (response.body as ProductListItem[]) ?? [];
+
+        updateDraft(draftId, (draft) => {
+          if (draft.clienteId !== String(clienteId)) {
+            return draft;
+          }
+
+          const manualProducts = draft.products.filter(
+            (product) => !draft.autoLinkedBorrowedProductIds.includes(product.id),
+          );
+
+          return {
+            ...draft,
+            products: [
+              ...manualProducts,
+              ...borrowedProducts.filter(
+                (product) => !manualProducts.some((manualProduct) => manualProduct.id === product.id),
+              ),
+            ],
+            autoLinkedBorrowedProductIds: borrowedProducts.map((product) => product.id),
+            errors: { ...draft.errors, produtoIds: undefined },
+          };
+        });
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Nao foi possivel carregar os produtos emprestados deste cliente.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setAutoLinkingDraftId((current) => (current === draftId ? null : current));
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDraft?.clienteId, activeDraft?.id, selectedStoreId, token]);
 
   const clientOptionsQuery = useQuery({
     queryKey: ["movement-clients", token, selectedStoreId, debouncedClientSearch],
@@ -301,6 +374,7 @@ export function MovementPage() {
   function handleClientSelect(draftId: string, client: ClientListItem) {
     updateDraft(draftId, (draft) => ({
       ...draft,
+      autoLinkedBorrowedProductIds: [],
       clienteId: String(client.id),
       clienteLabel: client.nome,
       clienteSearch: client.nome,
@@ -375,6 +449,9 @@ export function MovementPage() {
         ...current,
         productIdInput: "",
         products: [...current.products, product],
+        autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
+          (itemId) => itemId !== product.id,
+        ),
         suggestion: null,
         errors: { ...current.errors, produtoIds: undefined },
       }));
@@ -743,7 +820,9 @@ export function MovementPage() {
                           Nenhum produto adicionado
                         </p>
                         <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                          Busque um produto pelo id para compor esta movimentacao.
+                          {autoLinkingDraftId === activeDraft.id
+                            ? "Carregando emprestados do cliente selecionado..."
+                            : "Busque um produto pelo id para compor esta movimentacao."}
                         </p>
                       </div>
                     ) : (
@@ -778,6 +857,9 @@ export function MovementPage() {
                                     updateDraft(activeDraft.id, (draft) => ({
                                       ...draft,
                                       products: draft.products.filter((item) => item.id !== product.id),
+                                      autoLinkedBorrowedProductIds: draft.autoLinkedBorrowedProductIds.filter(
+                                        (itemId) => itemId !== product.id,
+                                      ),
                                       errors: { ...draft.errors, produtoIds: undefined },
                                     }))
                                   }

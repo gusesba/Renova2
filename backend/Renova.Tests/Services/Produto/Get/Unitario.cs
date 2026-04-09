@@ -402,6 +402,80 @@ namespace Renova.Tests.Services.Produto.Get
             Assert.Equal(0, resultado.TotalPaginas);
         }
 
+        [Fact]
+        public async Task GetEmprestadosDoClienteAsyncDeveRetornarApenasProdutosEmprestadosDoClienteInformado()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel elaine = await CriarClienteAsync(context, loja.Id, "Elaine", "44999990001");
+            ClienteModel gustavo = await CriarClienteAsync(context, loja.Id, "Gustavo", "44999990002");
+            ProdutoEstoqueModel produtoElaine = await CriarProdutoCompletoAsync(context, loja.Id, "Vestido", "Farm", "M", "Azul", "Fornecedor Alpha", "Vestido Elaine");
+            ProdutoEstoqueModel produtoGustavo = await CriarProdutoCompletoAsync(context, loja.Id, "Blazer", "Animale", "G", "Preto", "Fornecedor Beta", "Blazer Gustavo");
+
+            produtoElaine.Situacao = SituacaoProduto.Emprestado;
+            produtoGustavo.Situacao = SituacaoProduto.Emprestado;
+            _ = await context.SaveChangesAsync();
+
+            _ = await CriarMovimentacaoAsync(context, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
+            _ = await CriarMovimentacaoAsync(context, loja.Id, gustavo.Id, TipoMovimentacao.Emprestimo, produtoGustavo.Id);
+
+            ProdutoService service = new(context);
+            IReadOnlyList<ProdutoBuscaDto> resultado = await service.GetEmprestadosDoClienteAsync(
+                new ObterProdutosEmprestadosClienteParametros
+                {
+                    UsuarioId = usuario.Id,
+                    LojaId = loja.Id,
+                    ClienteId = elaine.Id
+                });
+
+            ProdutoBuscaDto item = Assert.Single(resultado);
+            Assert.Equal(produtoElaine.Id, item.Id);
+        }
+
+        [Fact]
+        public async Task GetEmprestadosDoClienteAsyncDeveRetornarListaVaziaQuandoClienteNaoPossuirEmprestados()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel elaine = await CriarClienteAsync(context, loja.Id, "Elaine", "44999990001");
+
+            ProdutoService service = new(context);
+            IReadOnlyList<ProdutoBuscaDto> resultado = await service.GetEmprestadosDoClienteAsync(
+                new ObterProdutosEmprestadosClienteParametros
+                {
+                    UsuarioId = usuario.Id,
+                    LojaId = loja.Id,
+                    ClienteId = elaine.Id
+                });
+
+            Assert.Empty(resultado);
+        }
+
+        [Fact]
+        public async Task GetEmprestadosDoClienteAsyncDeveFalharQuandoClienteNaoPertencerALoja()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            LojaModel outraLoja = await CriarLojaAsync(context, usuario.Id, "Loja Bairro");
+            ClienteModel clienteOutraLoja = await CriarClienteAsync(context, outraLoja.Id, "Elaine", "44999990001");
+
+            ProdutoService service = new(context);
+
+            _ = await Assert.ThrowsAsync<ArgumentException>(() => service.GetEmprestadosDoClienteAsync(
+                new ObterProdutosEmprestadosClienteParametros
+                {
+                    UsuarioId = usuario.Id,
+                    LojaId = loja.Id,
+                    ClienteId = clienteOutraLoja.Id
+                }));
+        }
+
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)
         {
             UsuarioModel usuario = new()
@@ -531,6 +605,32 @@ namespace Renova.Tests.Services.Produto.Get
             _ = context.Cores.Add(entity);
             _ = await context.SaveChangesAsync();
             return entity;
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            params int[] produtoIds)
+        {
+            MovimentacaoModel movimentacao = new()
+            {
+                Tipo = tipo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = clienteId,
+                LojaId = lojaId,
+                Produtos = produtoIds
+                    .Select(produtoId => new MovimentacaoProdutoModel
+                    {
+                        ProdutoId = produtoId
+                    })
+                    .ToList()
+            };
+
+            _ = context.Movimentacoes.Add(movimentacao);
+            _ = await context.SaveChangesAsync();
+            return movimentacao;
         }
     }
 }

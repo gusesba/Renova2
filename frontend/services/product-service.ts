@@ -63,6 +63,33 @@ export async function getProductById(
   };
 }
 
+export async function getBorrowedProductsByClient(
+  token: string,
+  storeId: number,
+  clientId: number,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(
+    `${apiBaseUrl}/api/produto/emprestados?lojaId=${storeId}&clienteId=${clientId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
 export async function createProduct(
   payload: {
     preco: number;

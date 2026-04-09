@@ -415,6 +415,55 @@ namespace Renova.Service.Services.Produto
             };
         }
 
+        public async Task<IReadOnlyList<ProdutoBuscaDto>> GetEmprestadosDoClienteAsync(
+            ObterProdutosEmprestadosClienteParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            LojaModel loja = await ObterLojaDoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
+
+            ClienteModel cliente = await _context.Clientes
+                .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
+                ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(parametros));
+
+            if (cliente.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(parametros));
+            }
+
+            return await _context.ProdutosEstoque
+                .Where(produto => produto.LojaId == parametros.LojaId && produto.Situacao == SituacaoProduto.Emprestado)
+                .Where(produto => produto.Movimentacoes
+                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                    .Take(1)
+                    .Any(movimentacaoProduto =>
+                        movimentacaoProduto.Movimentacao!.Tipo == TipoMovimentacao.Emprestimo
+                        && movimentacaoProduto.Movimentacao.ClienteId == parametros.ClienteId))
+                .OrderBy(produto => produto.Id)
+                .Select(produto => new ProdutoBuscaDto
+                {
+                    Id = produto.Id,
+                    Preco = produto.Preco,
+                    ProdutoId = produto.ProdutoId,
+                    Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                    MarcaId = produto.MarcaId,
+                    Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                    TamanhoId = produto.TamanhoId,
+                    Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                    CorId = produto.CorId,
+                    Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                    FornecedorId = produto.FornecedorId,
+                    Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                    Descricao = produto.Descricao,
+                    Entrada = produto.Entrada,
+                    LojaId = produto.LojaId,
+                    Situacao = produto.Situacao,
+                    Consignado = produto.Consignado
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         private async Task<ProdutoAuxiliarDto> CriarAuxiliarAsync<TModel>(
             CriarProdutoAuxiliarCommand request,
             CriarProdutoAuxiliarParametros parametros,
