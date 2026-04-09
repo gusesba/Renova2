@@ -306,7 +306,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
             string body = await response.Content.ReadAsStringAsync();
             Assert.Contains(produto.Id.ToString(), body);
-            Assert.Contains("Emprestado", body);
+            Assert.Contains("disponiveis para venda deste cliente", body);
         }
 
         [Fact]

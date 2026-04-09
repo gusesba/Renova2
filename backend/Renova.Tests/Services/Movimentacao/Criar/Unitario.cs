@@ -75,6 +75,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 _ => SituacaoProduto.Estoque
             };
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", situacaoInicial);
+            await CriarHistoricoNecessarioParaTipoAsync(context, loja.Id, cliente.Id, tipo, produto.Id);
 
             MovimentacaoService service = new(context);
             MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand
@@ -87,7 +88,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.Equal(tipo, resultado.Tipo);
-            Assert.Equal(tipo, (await context.Movimentacoes.SingleAsync()).Tipo);
+            Assert.Equal(tipo, (await context.Movimentacoes.OrderBy(item => item.Id).LastAsync()).Tipo);
         }
 
         [Theory]
@@ -110,6 +111,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 _ => SituacaoProduto.Estoque
             };
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", situacaoInicial);
+            await CriarHistoricoNecessarioParaTipoAsync(context, loja.Id, cliente.Id, tipo, produto.Id);
 
             MovimentacaoService service = new(context);
             _ = await service.CreateAsync(new CriarMovimentacaoCommand
@@ -229,6 +231,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", "44999990002", SituacaoProduto.Vendido);
             ProdutoEstoqueModel produtoC = await CriarProdutoAsync(context, loja.Id, "Produto C", "44999990003", SituacaoProduto.Vendido);
+            _ = await CriarMovimentacaoExistenteAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, produtoA.Id, produtoB.Id, produtoC.Id);
 
             MovimentacaoService service = new(context);
             MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand
@@ -287,6 +290,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
+            _ = await CriarMovimentacaoExistenteAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, produto.Id);
 
             CriarMovimentacaoCommand command = new()
             {
@@ -355,7 +359,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Contains(produto.Id.ToString(), exception.Message);
-            Assert.Contains(SituacaoProduto.Emprestado.ToString(), exception.Message);
+            Assert.Contains("disponiveis para venda deste cliente", exception.Message);
             Assert.Equal(SituacaoProduto.Emprestado, (await context.ProdutosEstoque.SingleAsync(item => item.Id == produto.Id)).Situacao);
         }
 
@@ -459,6 +463,23 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.Contains(produto.Id.ToString(), exception.Message);
             Assert.Contains(TipoMovimentacao.Emprestimo.ToString(), exception.Message);
             Assert.Equal(SituacaoProduto.Emprestado, (await context.ProdutosEstoque.SingleAsync(item => item.Id == produto.Id)).Situacao);
+        }
+
+        private static Task CriarHistoricoNecessarioParaTipoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            params int[] produtoIds)
+        {
+            return tipo switch
+            {
+                TipoMovimentacao.DevolucaoVenda =>
+                    CriarMovimentacaoExistenteAsync(context, lojaId, clienteId, TipoMovimentacao.Venda, produtoIds),
+                TipoMovimentacao.DevolucaoEmprestimo =>
+                    CriarMovimentacaoExistenteAsync(context, lojaId, clienteId, TipoMovimentacao.Emprestimo, produtoIds),
+                _ => Task.CompletedTask
+            };
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
