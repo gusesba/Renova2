@@ -13,6 +13,7 @@ namespace Renova.Persistence
         public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
         public DbSet<PagamentoModel> Pagamentos { get; set; }
+        public DbSet<PagamentoCreditoModel> PagamentosCredito { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
         public DbSet<ProdutoReferenciaModel> ProdutosReferencia { get; set; }
         public DbSet<MovimentacaoModel> Movimentacoes { get; set; }
@@ -253,6 +254,27 @@ namespace Renova.Persistence
                     .OnDelete(DeleteBehavior.Cascade);
                 _ = entity.HasOne(p => p.Cliente)
                     .WithMany(p => p.Pagamentos)
+                    .HasForeignKey(p => p.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            _ = modelBuilder.Entity<PagamentoCreditoModel>(entity =>
+            {
+                _ = entity.ToTable("PagamentoCredito");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.ClienteId).IsRequired();
+                _ = entity.Property(p => p.Tipo).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.ValorCredito).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.ValorDinheiro).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.PagamentosCredito)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Cliente)
+                    .WithMany(p => p.PagamentosCredito)
                     .HasForeignKey(p => p.ClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
             });

@@ -12,6 +12,7 @@ namespace Renova.Domain.Model
         public ICollection<ProdutoEstoqueModel> ProdutosEstoque { get; set; } = [];
         public ICollection<MovimentacaoModel> Movimentacoes { get; set; } = [];
         public ICollection<PagamentoModel> Pagamentos { get; set; } = [];
+        public ICollection<PagamentoCreditoModel> PagamentosCredito { get; set; } = [];
         public ICollection<ProdutoReferenciaModel> ProdutosReferencia { get; set; } = [];
         public ICollection<MarcaModel> Marcas { get; set; } = [];
         public ICollection<TamanhoModel> Tamanhos { get; set; } = [];

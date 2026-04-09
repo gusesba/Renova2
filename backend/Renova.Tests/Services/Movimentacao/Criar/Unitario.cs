@@ -4,7 +4,9 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Movimentacao;
+using Renova.Service.Commands.Pagamento;
 using Renova.Service.Parameters.Movimentacao;
+using Renova.Service.Parameters.Pagamento;
 using Renova.Service.Services.Movimentacao;
 using Renova.Service.Services.Pagamento;
 using Renova.Tests.Infrastructure;
@@ -610,12 +612,12 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
         private sealed class FakePagamentoService : IPagamentoService
         {
-            public List<global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand> Commands { get; } = [];
+            public List<CriarPagamentoCommand> Commands { get; } = [];
 
-            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand request, CancellationToken cancellationToken = default)
+            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {
                 _ = cancellationToken;
-                Commands.Add(new global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand
+                Commands.Add(new CriarPagamentoCommand
                 {
                     MovimentacaoId = request.MovimentacaoId,
                     TipoMovimentacao = request.TipoMovimentacao,
@@ -626,6 +628,17 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 });
 
                 return Task.FromResult<IReadOnlyList<PagamentoDto>>([]);
+            }
+
+            public Task<PagamentoCreditoDto> CreateCreditoAsync(
+                CriarPagamentoCreditoCommand request,
+                CriarPagamentoCreditoParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException();
             }
         }
     }

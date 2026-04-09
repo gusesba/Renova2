@@ -200,6 +200,16 @@ namespace Renova.Service.Services.Cliente
                 throw new InvalidOperationException("Cliente possui movimentacoes vinculadas e nao pode ser excluido.");
             }
 
+            if (await ClientePossuiPagamentosVinculadosAsync(cliente.Id, cancellationToken))
+            {
+                throw new InvalidOperationException("Cliente possui pagamentos vinculados e nao pode ser excluido.");
+            }
+
+            if (await ClientePossuiPagamentosCreditoVinculadosAsync(cliente.Id, cancellationToken))
+            {
+                throw new InvalidOperationException("Cliente possui pagamentos de credito vinculados e nao pode ser excluido.");
+            }
+
             _ = _context.Clientes.Remove(cliente);
             _ = await _context.SaveChangesAsync(cancellationToken);
         }
@@ -269,6 +279,18 @@ namespace Renova.Service.Services.Cliente
         {
             return _context.Movimentacoes
                 .AnyAsync(movimentacao => movimentacao.ClienteId == clienteId, cancellationToken);
+        }
+
+        private Task<bool> ClientePossuiPagamentosVinculadosAsync(int clienteId, CancellationToken cancellationToken)
+        {
+            return _context.Pagamentos
+                .AnyAsync(pagamento => pagamento.ClienteId == clienteId, cancellationToken);
+        }
+
+        private Task<bool> ClientePossuiPagamentosCreditoVinculadosAsync(int clienteId, CancellationToken cancellationToken)
+        {
+            return _context.PagamentosCredito
+                .AnyAsync(pagamento => pagamento.ClienteId == clienteId, cancellationToken);
         }
     }
 }

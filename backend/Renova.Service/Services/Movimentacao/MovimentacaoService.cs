@@ -8,6 +8,7 @@ using Renova.Service.Commands.Movimentacao;
 using Renova.Service.Commands.Pagamento;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Movimentacao;
+using Renova.Service.Parameters.Pagamento;
 using Renova.Service.Queries.Movimentacao;
 using Renova.Service.Services.Pagamento;
 using System.Linq.Expressions;
@@ -645,6 +646,17 @@ namespace Renova.Service.Services.Movimentacao
                 _ = request;
                 _ = cancellationToken;
                 return Task.FromResult<IReadOnlyList<PagamentoDto>>([]);
+            }
+
+            public Task<PagamentoCreditoDto> CreateCreditoAsync(
+                CriarPagamentoCreditoCommand request,
+                CriarPagamentoCreditoParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException("Pagamento de credito nao suportado no service no-op.");
             }
         }
     }
