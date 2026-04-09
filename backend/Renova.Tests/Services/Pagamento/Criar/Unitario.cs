@@ -25,7 +25,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", 200m, "44999990001");
             MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produto.Id]);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
 
             PagamentoService service = new(context);
             IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
@@ -40,7 +40,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
 
             Assert.Equal(2, resultado.Count);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 200m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 90m && item.ClienteId == produto.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
             Assert.Equal(2, await context.Pagamentos.CountAsync());
         }
 
@@ -53,7 +53,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", 200m, "44999990001");
             MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.DevolucaoVenda, [produto.Id]);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
 
             PagamentoService service = new(context);
             IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
@@ -68,11 +68,11 @@ namespace Renova.Tests.Services.Pagamento.Criar
 
             Assert.Equal(2, resultado.Count);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 200m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 90m && item.ClienteId == produto.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
         }
 
         [Fact]
-        public async Task CreateAsyncDeveCalcularValorDaOrdemDoFornecedorComBaseNoPercentualDaLoja()
+        public async Task CreateAsyncDeveCalcularValorDaOrdemDoFornecedorComBaseNoPercentualDeRepasseEmCredito()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -81,7 +81,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", 100m, "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", 300m, "44999990001", produtoA.FornecedorId);
             MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produtoA.Id, produtoB.Id]);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
 
             PagamentoService service = new(context);
             IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
@@ -97,7 +97,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
             PagamentoDto pagamentoFornecedor = Assert.Single(resultado, item =>
                 item.ClienteId == produtoA.FornecedorId &&
                 item.Natureza == NaturezaPagamento.Pagar);
-            Assert.Equal(180m, pagamentoFornecedor.Valor);
+            Assert.Equal(240m, pagamentoFornecedor.Valor);
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", 100m, "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", 300m, "44999990002");
             MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produtoA.Id, produtoB.Id]);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
 
             PagamentoService service = new(context);
             IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
@@ -125,8 +125,8 @@ namespace Renova.Tests.Services.Pagamento.Criar
 
             Assert.Equal(3, resultado.Count);
             Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 400m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 45m && item.ClienteId == produtoA.FornecedorId);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 135m && item.ClienteId == produtoB.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 60m && item.ClienteId == produtoA.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 180m && item.ClienteId == produtoB.FornecedorId);
             Assert.Equal(3, await context.Pagamentos.CountAsync());
         }
 
@@ -194,13 +194,17 @@ namespace Renova.Tests.Services.Pagamento.Criar
             return cliente;
         }
 
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaDbContext context, int lojaId, decimal percentualRepasseFornecedor)
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(
+            RenovaDbContext context,
+            int lojaId,
+            decimal percentualRepasseFornecedor,
+            decimal percentualRepasseVendedorCredito)
         {
             ConfigLojaModel config = new()
             {
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
-                PercentualRepasseVendedorCredito = 0m
+                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito
             };
 
             _ = context.ConfiguracoesLoja.Add(config);

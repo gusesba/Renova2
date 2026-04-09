@@ -62,7 +62,7 @@ namespace Renova.Service.Services.Pagamento
                 .Select(grupo =>
                 {
                     decimal valorFornecedor = decimal.Round(
-                        grupo.Sum(item => item.Preco) * (config.PercentualRepasseFornecedor / 100m),
+                        grupo.Sum(item => item.Preco) * (config.PercentualRepasseVendedorCredito / 100m),
                         2,
                         MidpointRounding.AwayFromZero);
 

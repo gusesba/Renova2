@@ -27,7 +27,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -53,6 +53,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = Assert.Single(context.Movimentacoes);
             Assert.Equal(2, context.MovimentacoesProdutos.Count());
             Assert.Equal(3, context.Pagamentos.Count());
+            Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
+            Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.All(context.ProdutosEstoque.ToList(), item => Assert.Equal(SituacaoProduto.Vendido, item.Situacao));
         }
 
@@ -67,7 +69,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -88,8 +90,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
             Assert.Equal(3, pagamentos.Count);
             Assert.Contains(pagamentos, item => item.ClienteId == cliente.Id && item.Natureza == NaturezaPagamento.Receber && item.Valor == 299.80m);
-            Assert.Contains(pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 67.46m);
-            Assert.Contains(pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 67.46m);
+            Assert.Contains(pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
+            Assert.Contains(pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
         }
 
         [Fact]
@@ -257,7 +259,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Emprestimo, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -289,7 +291,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel clienteVenda = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteEmprestimo.Id, TipoMovimentacao.Emprestimo, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -320,7 +322,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Venda, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -348,7 +350,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel clienteDevolucao = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteVenda.Id, TipoMovimentacao.Venda, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -379,7 +381,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, cliente.Id, TipoMovimentacao.Emprestimo, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -407,7 +409,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel clienteDevolucao = await CriarClienteAsync(factory, loja.Id, "Cliente B", "44999990003");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", SituacaoProduto.Emprestado);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, clienteEmprestimo.Id, TipoMovimentacao.Emprestimo, produto.Id);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(factory, loja.Id, 45m, 60m);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -592,7 +594,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             return movimentacao;
         }
 
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaApiFactory factory, int lojaId, decimal percentualRepasseFornecedor)
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            decimal percentualRepasseFornecedor,
+            decimal percentualRepasseVendedorCredito)
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -601,7 +607,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             {
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
-                PercentualRepasseVendedorCredito = 0m
+                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito
             };
 
             _ = context.ConfiguracoesLoja.Add(config);
