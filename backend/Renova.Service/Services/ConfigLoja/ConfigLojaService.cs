@@ -30,6 +30,16 @@ namespace Renova.Service.Services.ConfigLoja
                 throw new ArgumentOutOfRangeException(nameof(request), "Percentual de repasse ao fornecedor deve estar entre 0 e 100.");
             }
 
+            if (request.PercentualRepasseVendedorCredito < 0 || request.PercentualRepasseVendedorCredito > 100)
+            {
+                throw new ArgumentOutOfRangeException(nameof(request), "Percentual de repasse ao vendedor em credito deve estar entre 0 e 100.");
+            }
+
+            if (request.PercentualRepasseVendedorCredito < request.PercentualRepasseFornecedor)
+            {
+                throw new ArgumentException("Percentual de repasse ao vendedor em credito deve ser maior ou igual ao repasse normal.");
+            }
+
             _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
@@ -40,7 +50,8 @@ namespace Renova.Service.Services.ConfigLoja
                 config = new ConfigLojaModel
                 {
                     LojaId = request.LojaId,
-                    PercentualRepasseFornecedor = request.PercentualRepasseFornecedor
+                    PercentualRepasseFornecedor = request.PercentualRepasseFornecedor,
+                    PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito
                 };
 
                 _ = await _context.ConfiguracoesLoja.AddAsync(config, cancellationToken);
@@ -48,6 +59,7 @@ namespace Renova.Service.Services.ConfigLoja
             else
             {
                 config.PercentualRepasseFornecedor = request.PercentualRepasseFornecedor;
+                config.PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito;
             }
 
             _ = await _context.SaveChangesAsync(cancellationToken);
@@ -78,7 +90,8 @@ namespace Renova.Service.Services.ConfigLoja
             return new ConfigLojaDto
             {
                 LojaId = config.LojaId,
-                PercentualRepasseFornecedor = config.PercentualRepasseFornecedor
+                PercentualRepasseFornecedor = config.PercentualRepasseFornecedor,
+                PercentualRepasseVendedorCredito = config.PercentualRepasseVendedorCredito
             };
         }
     }

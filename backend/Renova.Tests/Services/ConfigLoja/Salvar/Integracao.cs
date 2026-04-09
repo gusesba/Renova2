@@ -28,7 +28,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 45m
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m
             });
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -36,12 +37,14 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.NotNull(body);
             Assert.Equal(loja.Id, body.LojaId);
             Assert.Equal(45m, body.PercentualRepasseFornecedor);
+            Assert.Equal(45m, body.PercentualRepasseVendedorCredito);
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             ConfigLojaModel config = Assert.Single(context.ConfiguracoesLoja);
             Assert.Equal(loja.Id, config.LojaId);
             Assert.Equal(45m, config.PercentualRepasseFornecedor);
+            Assert.Equal(45m, config.PercentualRepasseVendedorCredito);
         }
 
         [Fact]
@@ -57,7 +60,28 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 150m
+                PercentualRepasseFornecedor = 150m,
+                PercentualRepasseVendedorCredito = 100m
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PutConfigLojaDeveRetornarBadRequestQuandoRepasseEmCreditoForMenorQueRepasseNormal()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-credito@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 30m
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -77,7 +101,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 45m
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m
             });
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

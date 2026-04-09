@@ -85,6 +85,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.PercentualRepasseFornecedor).HasPrecision(5, 2).IsRequired();
+                _ = entity.Property(p => p.PercentualRepasseVendedorCredito).HasPrecision(5, 2).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithOne(p => p.ConfigLoja)

@@ -7,14 +7,17 @@ type ApiErrorResponse = {
 export type ConfigLojaResponse = {
   lojaId: number;
   percentualRepasseFornecedor: number;
+  percentualRepasseVendedorCredito: number;
 };
 
 export type StoreConfigFormValues = {
   percentualRepasseFornecedor: string;
+  percentualRepasseVendedorCredito: string;
 };
 
 export const initialStoreConfigValues: StoreConfigFormValues = {
   percentualRepasseFornecedor: "",
+  percentualRepasseVendedorCredito: "",
 };
 
 export function extractStoreConfigApiMessage(body: unknown): string | null {

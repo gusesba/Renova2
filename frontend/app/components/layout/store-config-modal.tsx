@@ -129,6 +129,7 @@ export function StoreConfigModal({
 
         setValues({
           percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
+          percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
         });
       } catch {
         if (isMounted) {
@@ -169,9 +170,26 @@ export function StoreConfigModal({
 
     const normalizedValue = values.percentualRepasseFornecedor.replace(",", ".").trim();
     const parsedValue = Number(normalizedValue);
+    const normalizedCreditValue = values.percentualRepasseVendedorCredito.replace(",", ".").trim();
+    const parsedCreditValue = Number(normalizedCreditValue);
 
     if (!normalizedValue || Number.isNaN(parsedValue) || parsedValue < 0 || parsedValue > 100) {
       toast.error("Informe um percentual de repasse valido entre 0 e 100.");
+      return;
+    }
+
+    if (
+      !normalizedCreditValue ||
+      Number.isNaN(parsedCreditValue) ||
+      parsedCreditValue < 0 ||
+      parsedCreditValue > 100
+    ) {
+      toast.error("Informe um percentual de repasse ao vendedor em credito valido entre 0 e 100.");
+      return;
+    }
+
+    if (parsedCreditValue < parsedValue) {
+      toast.error("O repasse ao vendedor em credito deve ser maior ou igual ao repasse normal.");
       return;
     }
 
@@ -182,6 +200,7 @@ export function StoreConfigModal({
         {
           lojaId: storeId,
           percentualRepasseFornecedor: parsedValue,
+          percentualRepasseVendedorCredito: parsedCreditValue,
         },
         token,
       );
@@ -198,6 +217,7 @@ export function StoreConfigModal({
 
       setValues({
         percentualRepasseFornecedor: String(config.percentualRepasseFornecedor),
+        percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
       });
       toast.success("Configuracao da loja atualizada.");
       onClose();
@@ -258,9 +278,10 @@ export function StoreConfigModal({
                 value={values.percentualRepasseFornecedor}
                 disabled={isLoading || isSaving}
                 onChange={(event) => {
-                  setValues({
+                  setValues((current) => ({
+                    ...current,
                     percentualRepasseFornecedor: event.target.value,
-                  });
+                  }));
                 }}
                 className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
                 placeholder="Ex.: 45"
@@ -271,6 +292,36 @@ export function StoreConfigModal({
             </div>
             <p className="text-sm text-[var(--muted)]">
               Use valores entre 0 e 100. Exemplo: 45 significa 45% de repasse ao fornecedor.
+            </p>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-[var(--foreground)]">
+              Repasse ao vendedor em credito
+            </span>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={values.percentualRepasseVendedorCredito}
+                disabled={isLoading || isSaving}
+                onChange={(event) => {
+                  setValues((current) => ({
+                    ...current,
+                    percentualRepasseVendedorCredito: event.target.value,
+                  }));
+                }}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                placeholder="Ex.: 10"
+              />
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                %
+              </span>
+            </div>
+            <p className="text-sm text-[var(--muted)]">
+              Percentual aplicado quando o vendedor usa o valor pendente em compras na propria loja.
             </p>
           </label>
 

@@ -9,5 +9,8 @@ namespace Renova.Service.Commands.ConfigLoja
 
         [Range(typeof(decimal), "0", "100")]
         public decimal PercentualRepasseFornecedor { get; set; }
+
+        [Range(typeof(decimal), "0", "100")]
+        public decimal PercentualRepasseVendedorCredito { get; set; }
     }
 }

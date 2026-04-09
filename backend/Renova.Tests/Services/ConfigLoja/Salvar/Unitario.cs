@@ -28,7 +28,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             ConfigLojaDto resultado = await service.SaveAsync(new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 45m
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
@@ -36,9 +37,11 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
 
             Assert.Equal(loja.Id, resultado.LojaId);
             Assert.Equal(45m, resultado.PercentualRepasseFornecedor);
+            Assert.Equal(45m, resultado.PercentualRepasseVendedorCredito);
             ConfigLojaModel configSalva = await context.ConfiguracoesLoja.SingleAsync();
             Assert.Equal(loja.Id, configSalva.LojaId);
             Assert.Equal(45m, configSalva.PercentualRepasseFornecedor);
+            Assert.Equal(45m, configSalva.PercentualRepasseVendedorCredito);
         }
 
         [Fact]
@@ -47,25 +50,28 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
-            _ = await CriarConfigLojaAsync(context, loja.Id, 45m);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 45m);
             ConfigLojaService service = new(context);
 
             ConfigLojaDto resultado = await service.SaveAsync(new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 50m
+                PercentualRepasseFornecedor = 50m,
+                PercentualRepasseVendedorCredito = 60m
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
             });
 
             Assert.Equal(50m, resultado.PercentualRepasseFornecedor);
+            Assert.Equal(60m, resultado.PercentualRepasseVendedorCredito);
             Assert.Single(context.ConfiguracoesLoja);
             Assert.Equal(50m, (await context.ConfiguracoesLoja.SingleAsync()).PercentualRepasseFornecedor);
+            Assert.Equal(60m, (await context.ConfiguracoesLoja.SingleAsync()).PercentualRepasseVendedorCredito);
         }
 
         [Fact]
-        public async Task SaveAsyncDeveImpedirPercentualDeRepasseForaDoIntervaloPermitido()
+        public async Task SaveAsyncDeveImpedirPercentualDeRepasseAoFornecedorForaDoIntervaloPermitido()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -75,11 +81,52 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.SaveAsync(new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 150m
+                PercentualRepasseFornecedor = 150m,
+                PercentualRepasseVendedorCredito = 100m
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
             }));
+        }
+
+        [Fact]
+        public async Task SaveAsyncDeveImpedirPercentualDeRepasseAoVendedorEmCreditoForaDoIntervaloPermitido()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ConfigLojaService service = new(context);
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.SaveAsync(new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 150m
+            }, new SalvarConfigLojaParametros
+            {
+                UsuarioId = loja.UsuarioId
+            }));
+        }
+
+        [Fact]
+        public async Task SaveAsyncDeveImpedirQuandoRepasseEmCreditoForMenorQueRepasseNormal()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ConfigLojaService service = new(context);
+
+            ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 30m
+            }, new SalvarConfigLojaParametros
+            {
+                UsuarioId = loja.UsuarioId
+            }));
+
+            Assert.Contains("maior ou igual", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -93,7 +140,8 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.SaveAsync(new SalvarConfigLojaCommand
             {
                 LojaId = loja.Id,
-                PercentualRepasseFornecedor = 45m
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = 9999
@@ -124,12 +172,13 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             return loja;
         }
 
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaDbContext context, int lojaId, decimal percentualRepasseFornecedor)
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaDbContext context, int lojaId, decimal percentualRepasseFornecedor, decimal percentualRepasseVendedorCredito)
         {
             ConfigLojaModel config = new()
             {
                 LojaId = lojaId,
-                PercentualRepasseFornecedor = percentualRepasseFornecedor
+                PercentualRepasseFornecedor = percentualRepasseFornecedor,
+                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito
             };
 
             _ = context.ConfiguracoesLoja.Add(config);

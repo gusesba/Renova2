@@ -26,7 +26,11 @@ export async function getStoreConfig(
 }
 
 export async function saveStoreConfig(
-  payload: { lojaId: number; percentualRepasseFornecedor: number },
+  payload: {
+    lojaId: number;
+    percentualRepasseFornecedor: number;
+    percentualRepasseVendedorCredito: number;
+  },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {
   const response = await fetch(`${apiBaseUrl}/api/config-loja`, {

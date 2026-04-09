@@ -390,7 +390,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ConfigLojaModel config = new()
             {
                 LojaId = lojaId,
-                PercentualRepasseFornecedor = percentualRepasseFornecedor
+                PercentualRepasseFornecedor = percentualRepasseFornecedor,
+                PercentualRepasseVendedorCredito = 0m
             };
 
             _ = context.ConfiguracoesLoja.Add(config);
