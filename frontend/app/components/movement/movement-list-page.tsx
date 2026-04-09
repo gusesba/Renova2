@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ import { MovementsTable } from "./movements-table";
 
 export function MovementListPage() {
   const { isLoadingStores, selectedStoreId } = useStoreContext();
+  const router = useRouter();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [tableSettings, setTableSettings] = useState<MovementTableSettings>(() =>
@@ -90,7 +92,7 @@ export function MovementListPage() {
       return;
     }
 
-    window.open("/dashboard/movimentacao/nova", "_blank", "noopener,noreferrer");
+    router.push("/dashboard/movimentacao/nova");
   }
 
   function handleOpenDestination() {
@@ -99,7 +101,7 @@ export function MovementListPage() {
       return;
     }
 
-    window.open("/dashboard/movimentacao/doacao-devolucao", "_blank", "noopener,noreferrer");
+    router.push("/dashboard/movimentacao/doacao-devolucao");
   }
 
   function handleToggleExpanded(movementId: number) {
