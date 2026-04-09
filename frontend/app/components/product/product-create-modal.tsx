@@ -271,6 +271,7 @@ export function ProductCreateModal({
     mutationFn: async (payload: {
       nome: string;
       contato: string;
+      doacao: boolean;
       lojaId: number;
       userId?: number;
     }) => {
@@ -669,6 +670,7 @@ export function ProductCreateModal({
       const response = await createSupplierMutation.mutateAsync({
         nome: validation.data.nome.trim(),
         contato: normalizeNumericValue(validation.data.contato),
+        doacao: validation.data.doacao,
         lojaId: storeId,
         ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
       });

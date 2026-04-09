@@ -93,6 +93,15 @@ export function MovementListPage() {
     window.open("/dashboard/movimentacao/nova", "_blank", "noopener,noreferrer");
   }
 
+  function handleOpenDestination() {
+    if (!selectedStoreId) {
+      toast.error("Selecione uma loja antes de abrir a destinacao por permanencia.");
+      return;
+    }
+
+    window.open("/dashboard/movimentacao/doacao-devolucao", "_blank", "noopener,noreferrer");
+  }
+
   function handleToggleExpanded(movementId: number) {
     setExpandedIds((current) =>
       current.includes(movementId)
@@ -112,6 +121,7 @@ export function MovementListPage() {
           hasStore={hasStore}
           isLoading={movementsQuery.isLoading || isLoadingStores}
           onAddMovement={handleAddMovement}
+          onOpenDestination={handleOpenDestination}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           onChange={handleFilterChange}
         />

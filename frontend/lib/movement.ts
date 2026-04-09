@@ -25,6 +25,17 @@ export type MovementCreateResponse = {
   produtoIds: number[];
 };
 
+export type MovementDestinationProduct = ProductListItem & {
+  tipoSugerido: MovementTypeValue;
+};
+
+export type MovementDestinationSuggestionResponse = {
+  lojaId: number;
+  tempoPermanenciaProdutoMeses: number;
+  dataLimitePermanencia: string;
+  produtos: MovementDestinationProduct[];
+};
+
 export type MovementListItem = {
   id: number;
   tipo: MovementTypeValue;
@@ -107,6 +118,14 @@ export function asMovementResponse(body: unknown) {
 
 export function asMovementListResponse(body: unknown) {
   return body as MovementListResponse;
+}
+
+export function asMovementDestinationSuggestionResponse(body: unknown) {
+  return body as MovementDestinationSuggestionResponse;
+}
+
+export function asMovementBatchResponse(body: unknown) {
+  return body as MovementCreateResponse[];
 }
 
 export function formatMovementType(value: number) {

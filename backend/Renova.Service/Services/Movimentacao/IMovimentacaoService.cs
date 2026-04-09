@@ -9,5 +9,7 @@ namespace Renova.Service.Services.Movimentacao
     {
         Task<PaginacaoDto<MovimentacaoBuscaDto>> GetAllAsync(ObterMovimentacoesQuery request, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default);
         Task<MovimentacaoDto> CreateAsync(CriarMovimentacaoCommand request, CriarMovimentacaoParametros parametros, CancellationToken cancellationToken = default);
+        Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<MovimentacaoDto>> CreateDestinacaoAsync(CriarMovimentacaoDestinacaoCommand request, CriarMovimentacaoParametros parametros, CancellationToken cancellationToken = default);
     }
 }

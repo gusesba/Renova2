@@ -7,6 +7,7 @@ type MovementFiltersBarProps = {
   hasStore: boolean;
   isLoading: boolean;
   onAddMovement: () => void;
+  onOpenDestination: () => void;
   onOpenSettings: () => void;
   onChange: (next: Partial<MovementFilters>) => void;
 };
@@ -96,6 +97,7 @@ export function MovementFiltersBar({
   hasStore,
   isLoading,
   onAddMovement,
+  onOpenDestination,
   onOpenSettings,
   onChange,
 }: MovementFiltersBarProps) {
@@ -117,6 +119,14 @@ export function MovementFiltersBar({
             aria-label="Configurar tabela de movimentacoes"
           >
             <GearIcon />
+          </button>
+          <button
+            type="button"
+            disabled={!hasStore || isLoading}
+            onClick={onOpenDestination}
+            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Doacao e devolucao
           </button>
           <button
             type="button"

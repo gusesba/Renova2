@@ -262,6 +262,202 @@ namespace Renova.Service.Services.Movimentacao
             }
         }
 
+        public async Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
+        {
+            _ = await ObterLojaDoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
+
+            ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
+                ?? throw new InvalidOperationException("Configuracao da loja nao encontrada.");
+
+            DateTime dataLimitePermanencia = DateTime.UtcNow.AddMonths(-config.TempoPermanenciaProdutoMeses);
+
+            List<MovimentacaoDestinacaoProdutoDto> produtos = await _context.ProdutosEstoque
+                .Where(produto =>
+                    produto.LojaId == lojaId
+                    && produto.Situacao == SituacaoProduto.Estoque
+                    && produto.Entrada <= dataLimitePermanencia)
+                .OrderBy(produto => produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty)
+                .ThenBy(produto => produto.Id)
+                .Select(produto => new MovimentacaoDestinacaoProdutoDto
+                {
+                    Id = produto.Id,
+                    Preco = produto.Preco,
+                    ProdutoId = produto.ProdutoId,
+                    Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                    MarcaId = produto.MarcaId,
+                    Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                    TamanhoId = produto.TamanhoId,
+                    Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                    CorId = produto.CorId,
+                    Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                    FornecedorId = produto.FornecedorId,
+                    Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                    Descricao = produto.Descricao,
+                    Entrada = produto.Entrada,
+                    LojaId = produto.LojaId,
+                    Situacao = produto.Situacao,
+                    Consignado = produto.Consignado,
+                    TipoSugerido = produto.Fornecedor != null && produto.Fornecedor.Doacao
+                        ? TipoMovimentacao.Doacao
+                        : TipoMovimentacao.DevolucaoDono
+                })
+                .ToListAsync(cancellationToken);
+
+            return new MovimentacaoDestinacaoSugestaoDto
+            {
+                LojaId = lojaId,
+                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses,
+                DataLimitePermanencia = dataLimitePermanencia,
+                Produtos = produtos
+            };
+        }
+
+        public async Task<IReadOnlyList<MovimentacaoDto>> CreateDestinacaoAsync(CriarMovimentacaoDestinacaoCommand request, CriarMovimentacaoParametros parametros, CancellationToken cancellationToken = default)
+        {
+            if (request.Data == default)
+            {
+                throw new ArgumentException("Data da movimentacao e obrigatoria.", nameof(request));
+            }
+
+            if (request.Itens.Count == 0)
+            {
+                throw new ArgumentException("Ao menos um produto deve ser informado.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+
+            List<int> produtoIdsDuplicados = request.Itens
+                .GroupBy(item => item.ProdutoId)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key)
+                .OrderBy(id => id)
+                .ToList();
+
+            if (produtoIdsDuplicados.Count > 0)
+            {
+                throw new ArgumentException($"Os produtos [{string.Join(", ", produtoIdsDuplicados)}] foram informados mais de uma vez.", nameof(request));
+            }
+
+            if (request.Itens.Any(item => item.Tipo is not TipoMovimentacao.Doacao and not TipoMovimentacao.DevolucaoDono))
+            {
+                throw new ArgumentException("Os itens devem ser marcados apenas como doacao ou devolucao ao dono.", nameof(request));
+            }
+
+            List<int> produtoIds = request.Itens
+                .Select(item => item.ProdutoId)
+                .OrderBy(id => id)
+                .ToList();
+
+            Dictionary<int, TipoMovimentacao> tipoPorProdutoId = request.Itens
+                .ToDictionary(item => item.ProdutoId, item => item.Tipo);
+
+            IDbContextTransaction? transaction = null;
+
+            try
+            {
+                if (_context.Database.IsNpgsql())
+                {
+                    transaction = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, cancellationToken);
+                }
+
+                List<ProdutoEstoqueModel> produtos = await ObterProdutosParaMovimentacaoAsync(produtoIds, cancellationToken);
+
+                if (produtos.Count != produtoIds.Count)
+                {
+                    throw new ArgumentException("Um ou mais produtos informados nao foram encontrados.", nameof(request));
+                }
+
+                if (produtos.Any(item => item.LojaId != request.LojaId))
+                {
+                    throw new ArgumentException("Os produtos informados devem pertencer a loja selecionada.", nameof(request));
+                }
+
+                List<ProdutoEstoqueModel> produtosComSituacaoInvalida = produtos
+                    .Where(item => item.Situacao != SituacaoProduto.Estoque)
+                    .OrderBy(item => item.Id)
+                    .ToList();
+
+                if (produtosComSituacaoInvalida.Count > 0)
+                {
+                    throw new ArgumentException(
+                        $"Os produtos [{string.Join(", ", produtosComSituacaoInvalida.Select(item => item.Id))}] nao estao com a situacao esperada Estoque.",
+                        nameof(request));
+                }
+
+                List<MovimentacaoModel> movimentacoes = [];
+
+                foreach (IGrouping<(int FornecedorId, TipoMovimentacao Tipo), ProdutoEstoqueModel> grupo in produtos
+                    .GroupBy(produto => (FornecedorId: produto.FornecedorId, Tipo: tipoPorProdutoId[produto.Id]))
+                    .OrderBy(group => group.Key.FornecedorId)
+                    .ThenBy(group => group.Key.Tipo))
+                {
+                    MovimentacaoModel movimentacao = new()
+                    {
+                        Tipo = grupo.Key.Tipo,
+                        Data = request.Data,
+                        ClienteId = grupo.Key.FornecedorId,
+                        LojaId = request.LojaId,
+                        Produtos = grupo
+                            .OrderBy(produto => produto.Id)
+                            .Select(produto => new MovimentacaoProdutoModel
+                            {
+                                ProdutoId = produto.Id
+                            })
+                            .ToList()
+                    };
+
+                    foreach (ProdutoEstoqueModel produto in grupo)
+                    {
+                        produto.Situacao = SituacoesFinaisPorTipo[grupo.Key.Tipo];
+                    }
+
+                    movimentacoes.Add(movimentacao);
+                }
+
+                await _context.Movimentacoes.AddRangeAsync(movimentacoes, cancellationToken);
+                _ = await _context.SaveChangesAsync(cancellationToken);
+
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync(cancellationToken);
+                }
+
+                return movimentacoes
+                    .OrderBy(movimentacao => movimentacao.ClienteId)
+                    .ThenBy(movimentacao => movimentacao.Tipo)
+                    .Select(movimentacao => new MovimentacaoDto
+                    {
+                        Id = movimentacao.Id,
+                        Tipo = movimentacao.Tipo,
+                        Data = movimentacao.Data,
+                        ClienteId = movimentacao.ClienteId,
+                        LojaId = movimentacao.LojaId,
+                        ProdutoIds = movimentacao.Produtos
+                            .Select(item => item.ProdutoId)
+                            .OrderBy(id => id)
+                            .ToList()
+                    })
+                    .ToList();
+            }
+            catch
+            {
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                }
+
+                throw;
+            }
+            finally
+            {
+                if (transaction is not null)
+                {
+                    await transaction.DisposeAsync();
+                }
+            }
+        }
+
         private async Task<List<ProdutoEstoqueModel>> ObterProdutosParaMovimentacaoAsync(List<int> produtoIds, CancellationToken cancellationToken)
         {
             if (_context.Database.IsNpgsql())

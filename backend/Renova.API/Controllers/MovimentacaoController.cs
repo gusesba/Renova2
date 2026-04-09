@@ -52,6 +52,45 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("doacao-devolucao")]
+        [ProducesResponseType(typeof(MovimentacaoDestinacaoSugestaoDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetDestinacaoDoacaoDevolucao([FromQuery] int lojaId, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                MovimentacaoDestinacaoSugestaoDto resultado = await _movimentacaoService.GetDestinacaoAsync(
+                    lojaId,
+                    new ObterMovimentacoesParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(MovimentacaoDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -68,6 +107,45 @@ namespace Renova.API.Controllers
             try
             {
                 MovimentacaoDto resultado = await _movimentacaoService.CreateAsync(
+                    command,
+                    new CriarMovimentacaoParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Created(string.Empty, resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
+        [HttpPost("doacao-devolucao")]
+        [ProducesResponseType(typeof(IReadOnlyList<MovimentacaoDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PostDestinacaoDoacaoDevolucao([FromBody] CriarMovimentacaoDestinacaoCommand command, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                IReadOnlyList<MovimentacaoDto> resultado = await _movimentacaoService.CreateDestinacaoAsync(
                     command,
                     new CriarMovimentacaoParametros
                     {
