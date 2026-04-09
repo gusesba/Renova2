@@ -15,6 +15,8 @@ namespace Renova.Service.Commands.Cliente
         [Required]
         public int LojaId { get; set; }
 
+        public bool Doacao { get; set; }
+
         public int? UserId { get; set; }
     }
 }

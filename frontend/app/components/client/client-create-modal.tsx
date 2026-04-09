@@ -50,6 +50,33 @@ function FormField({
   );
 }
 
+function ToggleField({
+  checked,
+  label,
+  description,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  description: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 transition hover:border-[var(--border-strong)]">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-4 w-4 rounded border-[var(--border-strong)]"
+      />
+      <div>
+        <p className="text-sm font-semibold text-[var(--foreground)]">{label}</p>
+        <p className="text-sm text-[var(--muted)]">{description}</p>
+      </div>
+    </label>
+  );
+}
+
 export function ClientCreateModal({
   errors,
   isOpen,
@@ -166,6 +193,13 @@ export function ClientCreateModal({
             value={values.userId}
             error={errors.userId}
             onChange={(value) => onChange("userId", value)}
+          />
+
+          <ToggleField
+            checked={values.doacao}
+            label="Doacao"
+            description="Marque quando esse cliente for um cadastro de doacao."
+            onChange={(value) => onChange("doacao", value)}
           />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

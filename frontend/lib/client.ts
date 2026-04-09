@@ -4,6 +4,7 @@ export type ClientListItem = {
   id: number;
   nome: string;
   contato: string;
+  doacao: boolean;
   lojaId: number;
   userId: number | null;
 };
@@ -19,6 +20,7 @@ export type ClientListResponse = {
 export type ClientFormValues = {
   nome: string;
   contato: string;
+  doacao: boolean;
   userId: string;
 };
 
@@ -33,7 +35,7 @@ export type ClientFilters = {
   tamanhoPagina: number;
 };
 
-export type ClientVisibleField = "nome" | "contato" | "userId" | "id";
+export type ClientVisibleField = "nome" | "contato" | "doacao" | "userId" | "id";
 
 export type ClientTableSettings = {
   tamanhoPagina: number;
@@ -49,6 +51,7 @@ type ApiErrorResponse = {
 export const initialClientFormValues: ClientFormValues = {
   nome: "",
   contato: "",
+  doacao: false,
   userId: "",
 };
 
@@ -63,7 +66,7 @@ export const initialClientFilters: ClientFilters = {
 
 export const defaultClientTableSettings: ClientTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["nome", "contato", "userId", "id"],
+  visibleFields: ["nome", "contato", "doacao", "userId", "id"],
 };
 
 export function normalizeNumericValue(value: string) {
@@ -180,6 +183,10 @@ export function extractClientFieldErrors(body: unknown): ClientFieldErrors {
         accumulator.userId = error;
       }
 
+      if (normalizedKey === "doacao" && !accumulator.doacao) {
+        accumulator.doacao = error;
+      }
+
       return accumulator;
     },
     {},
@@ -215,7 +222,7 @@ export function getStoredClientTableSettings(): ClientTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
       ? parsed.visibleFields.filter((field): field is ClientVisibleField =>
-          ["nome", "contato", "userId", "id"].includes(String(field)),
+          ["nome", "contato", "doacao", "userId", "id"].includes(String(field)),
         )
       : defaultClientTableSettings.visibleFields;
 

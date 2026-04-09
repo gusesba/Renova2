@@ -114,6 +114,7 @@ export function ClientPage() {
     mutationFn: async (payload: {
       nome: string;
       contato: string;
+      doacao: boolean;
       lojaId: number;
       userId?: number;
     }) => {
@@ -130,6 +131,7 @@ export function ClientPage() {
       clientId: number;
       nome: string;
       contato: string;
+      doacao: boolean;
       userId?: number;
     }) => {
       if (!token) {
@@ -141,6 +143,7 @@ export function ClientPage() {
         {
           nome: payload.nome,
           contato: payload.contato,
+          doacao: payload.doacao,
           ...(payload.userId ? { userId: payload.userId } : {}),
         },
         token,
@@ -167,6 +170,7 @@ export function ClientPage() {
     setEditFormValues({
       nome: client.nome,
       contato: formatPhoneValue(client.contato),
+      doacao: client.doacao,
       userId: client.userId ? String(client.userId) : "",
     });
     setEditFormErrors({});
@@ -276,6 +280,7 @@ export function ClientPage() {
       const payload = {
         nome: validation.data.nome.trim(),
         contato: normalizeNumericValue(validation.data.contato),
+        doacao: validation.data.doacao,
         lojaId: selectedStoreId,
         ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
       };
@@ -334,6 +339,7 @@ export function ClientPage() {
         clientId: selectedClientId,
         nome: validation.data.nome.trim(),
         contato: normalizeNumericValue(validation.data.contato),
+        doacao: validation.data.doacao,
         ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
       };
 

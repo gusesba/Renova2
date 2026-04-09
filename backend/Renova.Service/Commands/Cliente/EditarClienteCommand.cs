@@ -12,6 +12,8 @@ namespace Renova.Service.Commands.Cliente
         [MinLength(1)]
         public required string Contato { get; set; }
 
+        public bool Doacao { get; set; }
+
         public int? UserId { get; set; }
     }
 }

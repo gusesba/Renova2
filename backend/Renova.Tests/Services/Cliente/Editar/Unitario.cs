@@ -58,13 +58,48 @@ namespace Renova.Tests.Services.Cliente.Editar
             Assert.Equal(cliente.Id, resultado.Id);
             Assert.Equal(command.Nome, resultado.Nome);
             Assert.Equal(command.Contato, resultado.Contato);
+            Assert.False(resultado.Doacao);
             Assert.Equal(cliente.LojaId, resultado.LojaId);
             Assert.Equal(command.UserId, resultado.UserId);
 
             ClienteModel clienteSalvo = await context.Clientes.SingleAsync(clienteAtual => clienteAtual.Id == cliente.Id);
             Assert.Equal(command.Nome, clienteSalvo.Nome);
             Assert.Equal(command.Contato, clienteSalvo.Contato);
+            Assert.False(clienteSalvo.Doacao);
             Assert.Equal(command.UserId, clienteSalvo.UserId);
+        }
+
+        [Fact]
+        // Input: cliente existente com alteracao da flag de doacao
+        // Atualiza a flag no cadastro
+        // Retorna: cliente editado com doacao atualizada
+        public async Task EditAsyncDeveAtualizarDoacaoQuandoInformada()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+
+            EditarClienteCommand command = new()
+            {
+                Nome = "Cliente A",
+                Contato = "44999990000",
+                Doacao = true
+            };
+
+            EditarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId,
+                ClienteId = cliente.Id
+            };
+
+            ClienteService service = new(context);
+            ClienteDto resultado = await service.EditAsync(command, parametros);
+
+            Assert.True(resultado.Doacao);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync(clienteAtual => clienteAtual.Id == cliente.Id);
+            Assert.True(clienteSalvo.Doacao);
         }
 
         [Fact]
@@ -315,12 +350,13 @@ namespace Renova.Tests.Services.Cliente.Editar
             return loja;
         }
 
-        private static async Task<ClienteModel> CriarClienteAsync(RenovaDbContext context, int lojaId, string nome, string contato)
+        private static async Task<ClienteModel> CriarClienteAsync(RenovaDbContext context, int lojaId, string nome, string contato, bool doacao = false)
         {
             ClienteModel cliente = new()
             {
                 Nome = nome,
                 Contato = contato,
+                Doacao = doacao,
                 LojaId = lojaId
             };
 

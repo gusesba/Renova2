@@ -46,6 +46,7 @@ namespace Renova.Tests.Services.Cliente.Criar
             Assert.True(resultado.Id > 0);
             Assert.Equal(command.Nome, resultado.Nome);
             Assert.Equal(command.Contato, resultado.Contato);
+            Assert.False(resultado.Doacao);
             Assert.Equal(command.LojaId, resultado.LojaId);
             Assert.Null(resultado.UserId);
 
@@ -53,8 +54,41 @@ namespace Renova.Tests.Services.Cliente.Criar
             Assert.Equal(resultado.Id, clienteSalvo.Id);
             Assert.Equal(command.Nome, clienteSalvo.Nome);
             Assert.Equal(command.Contato, clienteSalvo.Contato);
+            Assert.False(clienteSalvo.Doacao);
             Assert.Equal(command.LojaId, clienteSalvo.LojaId);
             Assert.Null(clienteSalvo.UserId);
+        }
+
+        [Fact]
+        // Input: payload valido com doacao marcada
+        // Persiste a flag no cliente criado
+        // Retorna: cliente criado com doacao igual a true
+        public async Task CreateAsyncDevePersistirDoacaoQuandoInformada()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+
+            CriarClienteCommand command = new()
+            {
+                Nome = "Cliente Doacao",
+                Contato = "44999990000",
+                Doacao = true,
+                LojaId = loja.Id
+            };
+
+            CriarClienteParametros parametros = new()
+            {
+                UsuarioId = loja.UsuarioId
+            };
+
+            ClienteService service = new(context);
+            ClienteDto resultado = await service.CreateAsync(command, parametros);
+
+            Assert.True(resultado.Doacao);
+
+            ClienteModel clienteSalvo = await context.Clientes.SingleAsync();
+            Assert.True(clienteSalvo.Doacao);
         }
 
         [Fact]

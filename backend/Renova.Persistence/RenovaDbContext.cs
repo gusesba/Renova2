@@ -65,6 +65,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.Contato).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.Doacao).IsRequired().HasDefaultValue(false);
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.UserId).IsRequired(false);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Nome }).IsUnique();

@@ -15,6 +15,7 @@ export const clientSchema = z.object({
       },
       "Informe um contato com 10 ou 11 numeros.",
     ),
+  doacao: z.boolean(),
   userId: z
     .string()
     .trim()
@@ -33,6 +34,10 @@ export function mapClientZodErrors(error: z.ZodError): ClientFieldErrors {
 
     if (field === "contato" && !mapped.contato) {
       mapped.contato = issue.message;
+    }
+
+    if (field === "doacao" && !mapped.doacao) {
+      mapped.doacao = issue.message;
     }
 
     if (field === "userId" && !mapped.userId) {

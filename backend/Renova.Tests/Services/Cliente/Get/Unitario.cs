@@ -32,7 +32,7 @@ namespace Renova.Tests.Services.Cliente.Get
             LojaModel lojaExterna = await CriarLojaAsync(context, outroUsuario.Id, "Loja Externa");
 
             await CriarClienteAsync(context, loja.Id, "Bruno", "44999990000");
-            await CriarClienteAsync(context, loja.Id, "Ana", "44999990001");
+            await CriarClienteAsync(context, loja.Id, "Ana", "44999990001", true);
             await CriarClienteAsync(context, outraLoja.Id, "Carla", "44999990002");
             await CriarClienteAsync(context, lojaExterna.Id, "Daniel", "44999990003");
 
@@ -46,8 +46,16 @@ namespace Renova.Tests.Services.Cliente.Get
             Assert.Equal(10, resultado.TamanhoPagina);
             Assert.Equal(1, resultado.TotalPaginas);
             Assert.Collection(resultado.Itens,
-                cliente => Assert.Equal("Ana", cliente.Nome),
-                cliente => Assert.Equal("Bruno", cliente.Nome));
+                cliente =>
+                {
+                    Assert.Equal("Ana", cliente.Nome);
+                    Assert.True(cliente.Doacao);
+                },
+                cliente =>
+                {
+                    Assert.Equal("Bruno", cliente.Nome);
+                    Assert.False(cliente.Doacao);
+                });
         }
 
         [Fact]
@@ -324,12 +332,13 @@ namespace Renova.Tests.Services.Cliente.Get
             return loja;
         }
 
-        private static async Task<ClienteModel> CriarClienteAsync(RenovaDbContext context, int lojaId, string nome, string contato)
+        private static async Task<ClienteModel> CriarClienteAsync(RenovaDbContext context, int lojaId, string nome, string contato, bool doacao = false)
         {
             ClienteModel cliente = new()
             {
                 Nome = nome,
                 Contato = contato,
+                Doacao = doacao,
                 LojaId = lojaId
             };
 

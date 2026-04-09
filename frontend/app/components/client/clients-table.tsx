@@ -70,6 +70,7 @@ export function ClientsTable({
 }: ClientsTableProps) {
   const showName = visibleFields.includes("nome");
   const showContact = visibleFields.includes("contato");
+  const showDonation = visibleFields.includes("doacao");
   const showUserId = visibleFields.includes("userId");
   const showId = visibleFields.includes("id");
 
@@ -87,6 +88,11 @@ export function ClientsTable({
               {showContact ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Contato
+                </th>
+              ) : null}
+              {showDonation ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Doacao
                 </th>
               ) : null}
               {showUserId ? (
@@ -133,6 +139,9 @@ export function ClientsTable({
                 ) : null}
                 {showContact ? (
                   <ClientTableCell>{formatPhoneValue(client.contato)}</ClientTableCell>
+                ) : null}
+                {showDonation ? (
+                  <ClientTableCell subtle>{client.doacao ? "Sim" : "Nao"}</ClientTableCell>
                 ) : null}
                 {showUserId ? (
                   <ClientTableCell subtle>{client.userId ?? "Nao vinculado"}</ClientTableCell>

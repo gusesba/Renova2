@@ -70,6 +70,7 @@ namespace Renova.Service.Services.Cliente
             {
                 Nome = nomeNormalizado,
                 Contato = contatoNormalizado,
+                Doacao = request.Doacao,
                 LojaId = request.LojaId,
                 UserId = request.UserId
             };
@@ -82,6 +83,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId
             };
@@ -146,6 +148,7 @@ namespace Renova.Service.Services.Cliente
 
             cliente.Nome = nomeNormalizado;
             cliente.Contato = contatoNormalizado;
+            cliente.Doacao = request.Doacao;
             cliente.UserId = request.UserId;
 
             _ = await _context.SaveChangesAsync(cancellationToken);
@@ -155,6 +158,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId
             };
@@ -247,6 +251,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId
             });
