@@ -81,6 +81,10 @@ namespace Renova.API.Controllers
             {
                 return BadRequest(new { mensagem = ex.Message });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(new { mensagem = ex.Message });

@@ -5,6 +5,8 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
@@ -19,6 +21,7 @@ import {
   buildMovementSuggestion,
   formatMovementType,
   getMovementApiMessage,
+  isMissingStorePaymentConfigMessage,
   initialMovementDraftFormValues,
   isProductSituationCompatible,
   movementTypeOptions,
@@ -163,6 +166,8 @@ export function MovementPage() {
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+  const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
+  const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const activeDraft = useMemo(
@@ -442,9 +447,14 @@ export function MovementPage() {
       const response = await createMovementMutation.mutateAsync(draft);
 
       if (!response.ok) {
-        toast.error(
-          getMovementApiMessage(response.body) ?? "Nao foi possivel criar a movimentacao.",
-        );
+        const message = getMovementApiMessage(response.body) ?? "Nao foi possivel criar a movimentacao.";
+
+        if (isMissingStorePaymentConfigMessage(message)) {
+          setIsPaymentConfigRequiredOpen(true);
+          return;
+        }
+
+        toast.error(message);
         return;
       }
 
@@ -817,6 +827,23 @@ export function MovementPage() {
           )}
         </div>
       </div>
+
+      <PaymentConfigRequiredModal
+        isOpen={isPaymentConfigRequiredOpen}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setIsPaymentConfigRequiredOpen(false)}
+        onOpenSettings={() => {
+          setIsPaymentConfigRequiredOpen(false);
+          setIsStoreConfigOpen(true);
+        }}
+      />
+
+      <StoreConfigModal
+        isOpen={isStoreConfigOpen}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setIsStoreConfigOpen(false)}
+      />
     </section>
   );
 }

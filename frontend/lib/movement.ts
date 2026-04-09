@@ -139,6 +139,20 @@ export function getMovementApiMessage(body: unknown): string | null {
   return null;
 }
 
+export function isMissingStorePaymentConfigMessage(message: string | null) {
+  if (!message) {
+    return false;
+  }
+
+  const normalizedMessage = message.trim().toLowerCase();
+
+  return (
+    normalizedMessage.includes("configuracao de repasse") ||
+    normalizedMessage.includes("configuração de repasse") ||
+    normalizedMessage.includes("repasse ao fornecedor")
+  );
+}
+
 function toApiDateStart(value: string) {
   return `${value}T00:00:00`;
 }

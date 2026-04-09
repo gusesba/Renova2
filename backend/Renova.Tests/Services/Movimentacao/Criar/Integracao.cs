@@ -139,6 +139,34 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         }
 
         [Fact]
+        public async Task PostMovimentacaoDeveRetornarBadRequestComMensagemQuandoLojaNaoPossuirConfiguracaoDeRepasse()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-sem-config@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                ProdutoIds = [produto.Id]
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            string body = await response.Content.ReadAsStringAsync();
+            Assert.Contains("configuracao de repasse", body, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public async Task PostMovimentacaoDeveRetornarBadRequestQuandoClienteNaoPertencerALojaInformada()
         {
             await using RenovaApiFactory factory = new();
