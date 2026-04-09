@@ -410,12 +410,12 @@ namespace Renova.Tests.Services.Movimentacao.Criar
 
         private sealed class FakePagamentoService : IPagamentoService
         {
-            public List<Renova.Service.Commands.Pagamento.CriarPagamentoCommand> Commands { get; } = [];
+            public List<global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand> Commands { get; } = [];
 
-            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(Renova.Service.Commands.Pagamento.CriarPagamentoCommand request, CancellationToken cancellationToken = default)
+            public Task<IReadOnlyList<PagamentoDto>> CreateAsync(global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {
                 _ = cancellationToken;
-                Commands.Add(new Renova.Service.Commands.Pagamento.CriarPagamentoCommand
+                Commands.Add(new global::Renova.Service.Commands.Pagamento.CriarPagamentoCommand
                 {
                     MovimentacaoId = request.MovimentacaoId,
                     TipoMovimentacao = request.TipoMovimentacao,

@@ -73,7 +73,7 @@ namespace Renova.Service.Services.Pagamento
                 Data = request.Data
             };
 
-            _ = await _context.Pagamentos.AddRangeAsync([pagamentoCliente, pagamentoFornecedor], cancellationToken);
+            await _context.Pagamentos.AddRangeAsync([pagamentoCliente, pagamentoFornecedor], cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             return
