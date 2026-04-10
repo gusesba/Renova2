@@ -30,6 +30,7 @@ import {
 } from "@/lib/movement";
 import {
   formatDateValue,
+  formatCurrencyValue,
   formatSituacaoValue,
   getProductApiMessage,
   type ProductListItem,
@@ -193,6 +194,10 @@ export function MovementPage() {
     [activeDraftId, drafts],
   );
   const hasPendingMovements = useMemo(() => drafts.some(isDraftPending), [drafts]);
+  const activeDraftTotalPrice = useMemo(
+    () => activeDraft?.products.reduce((total, product) => total + product.preco, 0) ?? 0,
+    [activeDraft],
+  );
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -272,7 +277,8 @@ export function MovementPage() {
             products: [
               ...manualProducts,
               ...borrowedProducts.filter(
-                (product) => !manualProducts.some((manualProduct) => manualProduct.id === product.id),
+                (product) =>
+                  !manualProducts.some((manualProduct) => manualProduct.id === product.id),
               ),
             ],
             autoLinkedBorrowedProductIds: borrowedProducts.map((product) => product.id),
@@ -313,7 +319,9 @@ export function MovementPage() {
       });
 
       if (!response.ok) {
-        throw new Error(getClientApiMessage(response.body) ?? "Nao foi possivel carregar os clientes.");
+        throw new Error(
+          getClientApiMessage(response.body) ?? "Nao foi possivel carregar os clientes.",
+        );
       }
 
       return asClientListResponse(response.body).itens;
@@ -557,7 +565,8 @@ export function MovementPage() {
       const response = await createMovementMutation.mutateAsync(draft);
 
       if (!response.ok) {
-        const message = getMovementApiMessage(response.body) ?? "Nao foi possivel criar a movimentacao.";
+        const message =
+          getMovementApiMessage(response.body) ?? "Nao foi possivel criar a movimentacao.";
 
         if (isMissingStorePaymentConfigMessage(message)) {
           setIsPaymentConfigRequiredOpen(true);
@@ -605,9 +614,9 @@ export function MovementPage() {
                 Criacao simultanea de transicoes
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-                Escolha o cliente, defina o tipo da movimentacao e adicione produtos pelo id. Se
-                um item nao combinar com o tipo atual, a tela sugere abrir outra aba de
-                movimentacao mais apropriada.
+                Escolha o cliente, defina o tipo da movimentacao e adicione produtos pelo id. Se um
+                item nao combinar com o tipo atual, a tela sugere abrir outra aba de movimentacao
+                mais apropriada.
               </p>
             </div>
 
@@ -751,7 +760,9 @@ export function MovementPage() {
                           }}
                         />
                         {activeDraft.errors.clienteId ? (
-                          <p className="mt-2 text-sm text-red-500">{activeDraft.errors.clienteId}</p>
+                          <p className="mt-2 text-sm text-red-500">
+                            {activeDraft.errors.clienteId}
+                          </p>
                         ) : null}
                       </div>
                     </div>
@@ -848,6 +859,18 @@ export function MovementPage() {
                       </span>
                     </div>
 
+                    <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-[linear-gradient(135deg,_#fff6eb_0%,_#ffffff_100%)] px-4 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                        Preview do valor dos itens
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+                        {formatCurrencyValue(activeDraftTotalPrice)}
+                      </p>
+                      <p className="mt-2 text-sm text-[var(--muted)]">
+                        Soma dos precos dos produtos adicionados nesta movimentacao.
+                      </p>
+                    </div>
+
                     {activeDraft.products.length === 0 ? (
                       <div className="mt-5 rounded-[24px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-5 py-10 text-center">
                         <p className="text-lg font-semibold text-[var(--foreground)]">
@@ -890,10 +913,13 @@ export function MovementPage() {
                                   onClick={() =>
                                     updateDraft(activeDraft.id, (draft) => ({
                                       ...draft,
-                                      products: draft.products.filter((item) => item.id !== product.id),
-                                      autoLinkedBorrowedProductIds: draft.autoLinkedBorrowedProductIds.filter(
-                                        (itemId) => itemId !== product.id,
+                                      products: draft.products.filter(
+                                        (item) => item.id !== product.id,
                                       ),
+                                      autoLinkedBorrowedProductIds:
+                                        draft.autoLinkedBorrowedProductIds.filter(
+                                          (itemId) => itemId !== product.id,
+                                        ),
                                       errors: { ...draft.errors, produtoIds: undefined },
                                     }))
                                   }
@@ -910,6 +936,9 @@ export function MovementPage() {
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Fornecedor - {product.fornecedor}
+                                </span>
+                                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
+                                  Preco - {formatCurrencyValue(product.preco)}
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Entrada - {formatDateValue(product.entrada)}
