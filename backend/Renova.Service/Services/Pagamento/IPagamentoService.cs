@@ -8,6 +8,7 @@ namespace Renova.Service.Services.Pagamento
     public interface IPagamentoService
     {
         Task<PaginacaoDto<PagamentoBuscaDto>> GetAllAsync(ObterPagamentosQuery request, ObterPagamentosParametros parametros, CancellationToken cancellationToken = default);
+        Task<PaginacaoDto<PagamentoCreditoBuscaDto>> GetCreditosAsync(ObterPagamentosCreditoQuery request, ObterPagamentosParametros parametros, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default);
         Task<PagamentoCreditoDto> CreateCreditoAsync(CriarPagamentoCreditoCommand request, CriarPagamentoCreditoParametros parametros, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(int lojaId, int usuarioId, CancellationToken cancellationToken = default);

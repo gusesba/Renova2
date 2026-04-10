@@ -45,8 +45,27 @@ export type PaymentCreditResponse = {
   data: string;
 };
 
+export type ExternalPaymentListItem = {
+  id: number;
+  lojaId: number;
+  clienteId: number;
+  cliente: string;
+  tipo: PaymentCreditTypeValue;
+  valorCredito: number;
+  valorDinheiro: number;
+  data: string;
+};
+
 export type PaymentListResponse = {
   itens: PaymentListItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+};
+
+export type ExternalPaymentListResponse = {
+  itens: ExternalPaymentListItem[];
   pagina: number;
   tamanhoPagina: number;
   totalItens: number;
@@ -66,6 +85,17 @@ export type PaymentFilters = {
   tamanhoPagina: number;
 };
 
+export type ExternalPaymentFilters = {
+  dataInicial: string;
+  dataFinal: string;
+  cliente: string;
+  tipo: string;
+  ordenarPor: "data" | "cliente" | "tipo" | "valorCredito" | "valorDinheiro" | "id";
+  direcao: "asc" | "desc";
+  pagina: number;
+  tamanhoPagina: number;
+};
+
 export type PaymentVisibleField =
   | "id"
   | "data"
@@ -78,6 +108,19 @@ export type PaymentVisibleField =
 export type PaymentTableSettings = {
   tamanhoPagina: number;
   visibleFields: PaymentVisibleField[];
+};
+
+export type ExternalPaymentVisibleField =
+  | "id"
+  | "data"
+  | "cliente"
+  | "tipo"
+  | "valorCredito"
+  | "valorDinheiro";
+
+export type ExternalPaymentTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: ExternalPaymentVisibleField[];
 };
 
 export type UpdatedPendingClientItem = {
@@ -132,7 +175,24 @@ export const defaultPaymentTableSettings: PaymentTableSettings = {
   visibleFields: ["id", "data", "cliente", "valor", "natureza", "status", "movimentacaoId"],
 };
 
+export const initialExternalPaymentFilters: ExternalPaymentFilters = {
+  dataInicial: "",
+  dataFinal: "",
+  cliente: "",
+  tipo: "",
+  ordenarPor: "data",
+  direcao: "desc",
+  pagina: 1,
+  tamanhoPagina: 10,
+};
+
+export const defaultExternalPaymentTableSettings: ExternalPaymentTableSettings = {
+  tamanhoPagina: 10,
+  visibleFields: ["id", "data", "cliente", "tipo", "valorCredito", "valorDinheiro"],
+};
+
 const paymentTableSettingsStorageKey = "renova.paymentTableSettings";
+const externalPaymentTableSettingsStorageKey = "renova.externalPaymentTableSettings";
 
 export function asPendingClientsResponse(body: unknown) {
   return body as PendingClientItem[];
@@ -144,6 +204,10 @@ export function asPaymentListResponse(body: unknown) {
 
 export function asPaymentCreditResponse(body: unknown) {
   return body as PaymentCreditResponse;
+}
+
+export function asExternalPaymentListResponse(body: unknown) {
+  return body as ExternalPaymentListResponse;
 }
 
 export function asUpdatePendingResponse(body: unknown) {
@@ -283,6 +347,34 @@ export function buildPaymentQuery(storeId: number, filters: PaymentFilters) {
   return params.toString();
 }
 
+export function buildExternalPaymentQuery(storeId: number, filters: ExternalPaymentFilters) {
+  const params = new URLSearchParams({
+    lojaId: String(storeId),
+    pagina: String(filters.pagina),
+    tamanhoPagina: String(filters.tamanhoPagina),
+    ordenarPor: filters.ordenarPor,
+    direcao: filters.direcao,
+  });
+
+  if (filters.dataInicial) {
+    params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.dataFinal) {
+    params.set("dataFinal", toApiDateEnd(filters.dataFinal));
+  }
+
+  if (filters.cliente.trim()) {
+    params.set("cliente", filters.cliente.trim());
+  }
+
+  if (filters.tipo.trim()) {
+    params.set("tipo", filters.tipo.trim());
+  }
+
+  return params.toString();
+}
+
 export function formatPaymentDate(value: string) {
   const parsed = new Date(value);
 
@@ -340,4 +432,52 @@ export function persistPaymentTableSettings(settings: PaymentTableSettings) {
   }
 
   window.localStorage.setItem(paymentTableSettingsStorageKey, JSON.stringify(settings));
+}
+
+export function getStoredExternalPaymentTableSettings(): ExternalPaymentTableSettings {
+  if (typeof window === "undefined") {
+    return defaultExternalPaymentTableSettings;
+  }
+
+  const rawValue = window.localStorage.getItem(externalPaymentTableSettingsStorageKey);
+
+  if (!rawValue) {
+    return defaultExternalPaymentTableSettings;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Partial<ExternalPaymentTableSettings>;
+    const tamanhoPagina =
+      typeof parsed.tamanhoPagina === "number" &&
+      Number.isInteger(parsed.tamanhoPagina) &&
+      parsed.tamanhoPagina > 0 &&
+      parsed.tamanhoPagina <= 100
+        ? parsed.tamanhoPagina
+        : defaultExternalPaymentTableSettings.tamanhoPagina;
+
+    const visibleFields = Array.isArray(parsed.visibleFields)
+      ? parsed.visibleFields.filter((field): field is ExternalPaymentVisibleField =>
+          ["id", "data", "cliente", "tipo", "valorCredito", "valorDinheiro"].includes(
+            String(field),
+          ),
+        )
+      : defaultExternalPaymentTableSettings.visibleFields;
+
+    return {
+      tamanhoPagina,
+      visibleFields: visibleFields.length
+        ? visibleFields
+        : defaultExternalPaymentTableSettings.visibleFields,
+    };
+  } catch {
+    return defaultExternalPaymentTableSettings;
+  }
+}
+
+export function persistExternalPaymentTableSettings(settings: ExternalPaymentTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(externalPaymentTableSettingsStorageKey, JSON.stringify(settings));
 }

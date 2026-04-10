@@ -15,6 +15,7 @@ const primaryItems: NavItem[] = [
   { label: "Produtos", href: "/dashboard/produto" },
   { label: "Movimentacoes", href: "/dashboard/movimentacao" },
   { label: "Pagamentos", href: "/dashboard/pagamento" },
+  { label: "Pag. externos", href: "/dashboard/pagamento-externo" },
   { label: "Pendencias", href: "/dashboard/pendencia" },
 ];
 

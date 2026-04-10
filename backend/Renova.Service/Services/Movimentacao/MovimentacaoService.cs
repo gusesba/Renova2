@@ -660,6 +660,24 @@ namespace Renova.Service.Services.Movimentacao
                 });
             }
 
+            public Task<PaginacaoDto<PagamentoCreditoBuscaDto>> GetCreditosAsync(
+                ObterPagamentosCreditoQuery request,
+                ObterPagamentosParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                return Task.FromResult(new PaginacaoDto<PagamentoCreditoBuscaDto>
+                {
+                    Itens = [],
+                    Pagina = 1,
+                    TamanhoPagina = 10,
+                    TotalItens = 0,
+                    TotalPaginas = 0
+                });
+            }
+
             public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {
                 _ = request;

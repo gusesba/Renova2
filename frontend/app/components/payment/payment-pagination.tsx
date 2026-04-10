@@ -5,6 +5,7 @@ type PaymentPaginationProps = {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
   onPageChange: (page: number) => void;
+  itemLabel?: string;
 };
 
 export function PaymentPagination({
@@ -14,10 +15,13 @@ export function PaymentPagination({
   hasPreviousPage,
   hasNextPage,
   onPageChange,
+  itemLabel = "pagamento(s) encontrado(s)",
 }: PaymentPaginationProps) {
   return (
     <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border)] px-1 pt-5 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-[var(--muted)]">{totalItems} pagamento(s) encontrado(s)</p>
+      <p className="text-sm text-[var(--muted)]">
+        {totalItems} {itemLabel}
+      </p>
 
       <div className="flex items-center gap-3">
         <button

@@ -23,6 +23,15 @@ namespace Renova.Service.Services.Pagamento
             ["natureza"] = (Expression<Func<PagamentoModel, NaturezaPagamento>>)(pagamento => pagamento.Natureza),
             ["status"] = (Expression<Func<PagamentoModel, StatusPagamento>>)(pagamento => pagamento.Status)
         };
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveisCredito = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<PagamentoCreditoModel, int>>)(pagamento => pagamento.Id),
+            ["data"] = (Expression<Func<PagamentoCreditoModel, DateTime>>)(pagamento => pagamento.Data),
+            ["cliente"] = (Expression<Func<PagamentoCreditoModel, string>>)(pagamento => pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty),
+            ["tipo"] = (Expression<Func<PagamentoCreditoModel, TipoPagamentoCredito>>)(pagamento => pagamento.Tipo),
+            ["valorCredito"] = (Expression<Func<PagamentoCreditoModel, decimal>>)(pagamento => pagamento.ValorCredito),
+            ["valorDinheiro"] = (Expression<Func<PagamentoCreditoModel, decimal>>)(pagamento => pagamento.ValorDinheiro)
+        };
 
         public async Task<PaginacaoDto<PagamentoBuscaDto>> GetAllAsync(
             ObterPagamentosQuery request,
@@ -113,6 +122,68 @@ namespace Renova.Service.Services.Pagamento
                             .ToList()
                         : new List<int>()
                 }
+            });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        public async Task<PaginacaoDto<PagamentoCreditoBuscaDto>> GetCreditosAsync(
+            ObterPagamentosCreditoQuery request,
+            ObterPagamentosParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            IQueryable<PagamentoCreditoModel> query = _context.PagamentosCredito
+                .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
+
+            if (request.DataInicial.HasValue)
+            {
+                DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+                query = query.Where(pagamento => pagamento.Data >= dataInicialUtc);
+            }
+
+            if (request.DataFinal.HasValue)
+            {
+                DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+                query = query.Where(pagamento => pagamento.Data <= dataFinalUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Cliente))
+            {
+                string clienteFiltro = request.Cliente.Trim().ToLowerInvariant();
+                query = query.Where(pagamento => pagamento.Cliente != null && pagamento.Cliente.Nome.ToLower().Contains(clienteFiltro));
+            }
+
+            if (request.Tipo.HasValue)
+            {
+                if (!Enum.IsDefined(request.Tipo.Value))
+                {
+                    throw new ArgumentException("Tipo de pagamento externo informado e invalido.", nameof(request));
+                }
+
+                query = query.Where(pagamento => pagamento.Tipo == request.Tipo.Value);
+            }
+
+            IQueryable<PagamentoCreditoModel> queryOrdenada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveisCredito, "data")
+                .ThenBy(pagamento => pagamento.Id);
+
+            IQueryable<PagamentoCreditoBuscaDto> queryProjetada = queryOrdenada.Select(pagamento => new PagamentoCreditoBuscaDto
+            {
+                Id = pagamento.Id,
+                LojaId = pagamento.LojaId,
+                ClienteId = pagamento.ClienteId,
+                Cliente = pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty,
+                Tipo = pagamento.Tipo,
+                ValorCredito = pagamento.ValorCredito,
+                ValorDinheiro = pagamento.ValorDinheiro,
+                Data = pagamento.Data
             });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
