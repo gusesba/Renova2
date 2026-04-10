@@ -7,6 +7,7 @@ namespace Renova.Domain.Model.Dto
         public int LojaId { get; set; }
         public int ClienteId { get; set; }
         public NaturezaPagamento Natureza { get; set; }
+        public StatusPagamento Status { get; set; }
         public decimal Valor { get; set; }
         public DateTime Data { get; set; }
     }

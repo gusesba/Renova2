@@ -53,6 +53,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = Assert.Single(context.Movimentacoes);
             Assert.Equal(2, context.MovimentacoesProdutos.Count());
             Assert.Equal(3, context.Pagamentos.Count());
+            Assert.Empty(context.ClientesCreditos);
             Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.All(context.ProdutosEstoque.ToList(), item => Assert.Equal(SituacaoProduto.Vendido, item.Situacao));

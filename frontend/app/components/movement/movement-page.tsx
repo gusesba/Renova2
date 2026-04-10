@@ -144,10 +144,12 @@ function TextField({
 function TypeSelect({
   error,
   onChange,
+  options,
   value,
 }: {
   error?: string;
   onChange: (value: string) => void;
+  options: Array<{ label: string; value: number }>;
   value: string;
 }) {
   return (
@@ -162,7 +164,7 @@ function TypeSelect({
         <Select
           ariaLabel="Tipo de movimentacao"
           value={value}
-          options={movementTypeOptions.map((option) => ({
+          options={options.map((option) => ({
             label: option.label,
             value: String(option.value),
           }))}
@@ -689,6 +691,7 @@ export function MovementPage() {
                       <TypeSelect
                         error={activeDraft.errors.tipo}
                         value={activeDraft.tipo}
+                        options={movementTypeOptions}
                         onChange={(value) => handleTypeChange(activeDraft.id, value)}
                       />
 

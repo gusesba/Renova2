@@ -39,11 +39,10 @@ namespace Renova.Tests.Services.Pagamento.Criar
             });
 
             Assert.Equal(2, resultado.Count);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 200m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pendente && item.Valor == 200m && item.ClienteId == cliente.Id);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pendente && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
             Assert.Equal(2, await context.Pagamentos.CountAsync());
-            Assert.Equal(-200m, await ObterCreditoAsync(context, cliente.Id));
-            Assert.Equal(120m, await ObterCreditoAsync(context, produto.FornecedorId));
+            Assert.Equal(0, await context.ClientesCreditos.CountAsync());
         }
 
         [Fact]
@@ -69,10 +68,9 @@ namespace Renova.Tests.Services.Pagamento.Criar
             });
 
             Assert.Equal(2, resultado.Count);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 200m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
-            Assert.Equal(200m, await ObterCreditoAsync(context, cliente.Id));
-            Assert.Equal(-120m, await ObterCreditoAsync(context, produto.FornecedorId));
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pendente && item.Valor == 200m && item.ClienteId == cliente.Id);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pendente && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
+            Assert.Equal(0, await context.ClientesCreditos.CountAsync());
         }
 
         [Fact]
@@ -102,7 +100,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 item.ClienteId == produtoA.FornecedorId &&
                 item.Natureza == NaturezaPagamento.Pagar);
             Assert.Equal(240m, pagamentoFornecedor.Valor);
-            Assert.Equal(240m, await ObterCreditoAsync(context, produtoA.FornecedorId));
+            Assert.Equal(0, await context.ClientesCreditos.CountAsync());
         }
 
         [Fact]
@@ -129,17 +127,15 @@ namespace Renova.Tests.Services.Pagamento.Criar
             });
 
             Assert.Equal(3, resultado.Count);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 400m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 60m && item.ClienteId == produtoA.FornecedorId);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 180m && item.ClienteId == produtoB.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pendente && item.Valor == 400m && item.ClienteId == cliente.Id);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pendente && item.Valor == 60m && item.ClienteId == produtoA.FornecedorId);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pendente && item.Valor == 180m && item.ClienteId == produtoB.FornecedorId);
             Assert.Equal(3, await context.Pagamentos.CountAsync());
-            Assert.Equal(-400m, await ObterCreditoAsync(context, cliente.Id));
-            Assert.Equal(60m, await ObterCreditoAsync(context, produtoA.FornecedorId));
-            Assert.Equal(180m, await ObterCreditoAsync(context, produtoB.FornecedorId));
+            Assert.Equal(0, await context.ClientesCreditos.CountAsync());
         }
 
         [Fact]
-        public async Task CreateAsyncDeveReaproveitarLinhaExistenteDeCreditoDoClienteSomandoONovoSaldo()
+        public async Task CreateAsyncNaoDeveAlterarLinhaExistenteDeCreditoDoCliente()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -167,8 +163,8 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 Data = movimentacao.Data
             });
 
-            Assert.Equal(-150m, await ObterCreditoAsync(context, cliente.Id));
-            Assert.Equal(2, await context.ClientesCreditos.CountAsync());
+            Assert.Equal(50m, await ObterCreditoAsync(context, cliente.Id));
+            Assert.Single(context.ClientesCreditos);
         }
 
         [Fact]

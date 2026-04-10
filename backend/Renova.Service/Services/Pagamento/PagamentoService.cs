@@ -53,6 +53,7 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = request.LojaId,
                 ClienteId = request.ClienteId,
                 Natureza = naturezaCliente,
+                Status = StatusPagamento.Pendente,
                 Valor = valorTotal,
                 Data = request.Data
             };
@@ -73,13 +74,13 @@ namespace Renova.Service.Services.Pagamento
                         LojaId = request.LojaId,
                         ClienteId = grupo.Key,
                         Natureza = naturezaFornecedor,
+                        Status = StatusPagamento.Pendente,
                         Valor = valorFornecedor,
                         Data = request.Data
                     };
                 }));
 
             await _context.Pagamentos.AddRangeAsync(pagamentos, cancellationToken);
-            await AtualizarCreditosAsync(pagamentos, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             return [.. pagamentos.Select(Mapear)];
@@ -151,39 +152,6 @@ namespace Renova.Service.Services.Pagamento
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             return Mapear(pagamentoCredito);
-        }
-
-        private async Task AtualizarCreditosAsync(IEnumerable<PagamentoModel> pagamentos, CancellationToken cancellationToken)
-        {
-            List<PagamentoModel> pagamentosList = [.. pagamentos];
-            List<int> clientesIds = [.. pagamentosList.Select(item => item.ClienteId).Distinct()];
-
-            Dictionary<int, ClienteCreditoModel> creditosPorCliente = await _context.ClientesCreditos
-                .Where(item => clientesIds.Contains(item.ClienteId))
-                .ToDictionaryAsync(item => item.ClienteId, cancellationToken);
-
-            foreach (PagamentoModel pagamento in pagamentosList)
-            {
-                if (!creditosPorCliente.TryGetValue(pagamento.ClienteId, out ClienteCreditoModel? credito))
-                {
-                    credito = new ClienteCreditoModel
-                    {
-                        LojaId = pagamento.LojaId,
-                        ClienteId = pagamento.ClienteId,
-                        Valor = 0m
-                    };
-
-                    creditosPorCliente[pagamento.ClienteId] = credito;
-                    _ = await _context.ClientesCreditos.AddAsync(credito, cancellationToken);
-                }
-
-                credito.Valor += pagamento.Natureza switch
-                {
-                    NaturezaPagamento.Pagar => pagamento.Valor,
-                    NaturezaPagamento.Receber => -pagamento.Valor,
-                    _ => throw new ArgumentOutOfRangeException(nameof(PagamentoModel.Natureza), "Natureza de pagamento desconhecida.")
-                };
-            }
         }
 
         private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
@@ -266,6 +234,7 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = pagamento.LojaId,
                 ClienteId = pagamento.ClienteId,
                 Natureza = pagamento.Natureza,
+                Status = pagamento.Status,
                 Valor = pagamento.Valor,
                 Data = pagamento.Data
             };

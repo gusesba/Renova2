@@ -242,6 +242,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.ClienteId).IsRequired();
                 _ = entity.Property(p => p.Natureza).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.Status).HasConversion<int>().IsRequired();
                 _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
                 _ = entity.HasOne(p => p.Movimentacao)
