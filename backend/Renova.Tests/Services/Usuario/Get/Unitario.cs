@@ -32,9 +32,9 @@ namespace Renova.Tests.Services.Usuario.Get
                 new ObterUsuariosQuery { Busca = "ana" },
                 autenticado.Id);
 
-            Assert.Equal(2, porNome.TotalItens);
-            Assert.Contains(porNome.Itens, usuario => usuario.Nome == "Ana Paula");
-            Assert.Contains(porNome.Itens, usuario => usuario.Nome == "Usuario Autenticado");
+            UsuarioDto usuarioPorNome = Assert.Single(porNome.Itens);
+            Assert.Equal(1, porNome.TotalItens);
+            Assert.Equal("Ana Paula", usuarioPorNome.Nome);
 
             PaginacaoDto<UsuarioDto> porEmail = await service.GetAllAsync(
                 new ObterUsuariosQuery { Busca = "dominio.com" },
