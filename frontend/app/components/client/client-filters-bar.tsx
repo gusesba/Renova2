@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import type { ClientFilters } from "@/lib/client";
 import { GearIcon } from "@/app/components/ui/gear-icon";
 import { Select } from "@/app/components/ui/select";
@@ -75,6 +79,8 @@ export function ClientFiltersBar({
   onOpenSettings,
   onChange,
 }: ClientFiltersBarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -105,40 +111,75 @@ export function ClientFiltersBar({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_220px_180px]">
-        <FilterField
-          label="Nome"
-          value={filters.nome}
-          placeholder="Buscar por nome"
-          onChange={(nome) => onChange({ nome })}
-        />
-        <FilterField
-          label="Contato"
-          value={filters.contato}
-          placeholder="Buscar por contato"
-          onChange={(contato) => onChange({ contato })}
-        />
-        <SelectField
-          label="Ordenar por"
-          value={filters.ordenarPor}
-          options={[
-            { label: "Nome", value: "nome" },
-            { label: "Contato", value: "contato" },
-            { label: "Id", value: "id" },
-          ]}
-          onChange={(ordenarPor) =>
-            onChange({ ordenarPor: ordenarPor as ClientFilters["ordenarPor"] })
-          }
-        />
-        <SelectField
-          label="Direcao"
-          value={filters.direcao}
-          options={[
-            { label: "Crescente", value: "asc" },
-            { label: "Decrescente", value: "desc" },
-          ]}
-          onChange={(direcao) => onChange({ direcao: direcao as ClientFilters["direcao"] })}
-        />
+      <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)]/55">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          aria-expanded={isExpanded}
+          className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-[var(--foreground)]"
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-[var(--primary)]/70" />
+            <span>Filtros e ordenacao</span>
+          </div>
+          <span
+            className={`text-xs text-[var(--muted)] transition-transform duration-300 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+          >
+            ▾
+          </span>
+        </button>
+
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div
+              className={`grid gap-4 border-t border-[var(--border)] px-4 transition-all duration-300 ease-out xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_220px_180px] ${
+                isExpanded ? "py-4 opacity-100" : "py-0 opacity-0"
+              }`}
+            >
+              <FilterField
+                label="Nome"
+                value={filters.nome}
+                placeholder="Buscar por nome"
+                onChange={(nome) => onChange({ nome })}
+              />
+              <FilterField
+                label="Contato"
+                value={filters.contato}
+                placeholder="Buscar por contato"
+                onChange={(contato) => onChange({ contato })}
+              />
+              <SelectField
+                label="Ordenar por"
+                value={filters.ordenarPor}
+                options={[
+                  { label: "Nome", value: "nome" },
+                  { label: "Contato", value: "contato" },
+                  { label: "Id", value: "id" },
+                ]}
+                onChange={(ordenarPor) =>
+                  onChange({ ordenarPor: ordenarPor as ClientFilters["ordenarPor"] })
+                }
+              />
+              <SelectField
+                label="Direcao"
+                value={filters.direcao}
+                options={[
+                  { label: "Crescente", value: "asc" },
+                  { label: "Decrescente", value: "desc" },
+                ]}
+                onChange={(direcao) =>
+                  onChange({ direcao: direcao as ClientFilters["direcao"] })
+                }
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

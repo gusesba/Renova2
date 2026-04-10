@@ -132,7 +132,7 @@ export function ProductFiltersBar({
   onOpenSettings,
   onChange,
 }: ProductFiltersBarProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="space-y-5">
