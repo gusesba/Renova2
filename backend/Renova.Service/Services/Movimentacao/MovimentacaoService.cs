@@ -658,6 +658,25 @@ namespace Renova.Service.Services.Movimentacao
                 _ = cancellationToken;
                 throw new NotSupportedException("Pagamento de credito nao suportado no service no-op.");
             }
+
+            public Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(int lojaId, int usuarioId, CancellationToken cancellationToken = default)
+            {
+                _ = lojaId;
+                _ = usuarioId;
+                _ = cancellationToken;
+                return Task.FromResult<IReadOnlyList<ClientePendenciaDto>>([]);
+            }
+
+            public Task<AtualizarPendenciasDto> UpdatePendenciasAsync(
+                AtualizarPendenciasCommand request,
+                AtualizarPendenciasParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException("Atualizacao de pendencias nao suportada no service no-op.");
+            }
         }
     }
 }

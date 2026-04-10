@@ -12,6 +12,29 @@ namespace Renova.Service.Services.Pagamento
     {
         private readonly RenovaDbContext _context = context;
 
+        public async Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(
+            int lojaId,
+            int usuarioId,
+            CancellationToken cancellationToken = default)
+        {
+            _ = await ObterLojaDoUsuarioAsync(lojaId, usuarioId, cancellationToken);
+
+            return await _context.Clientes
+                .Where(cliente => cliente.LojaId == lojaId
+                    && cliente.Credito != null
+                    && cliente.Credito.Valor != 0)
+                .OrderBy(cliente => cliente.Nome)
+                .ThenBy(cliente => cliente.Id)
+                .Select(cliente => new ClientePendenciaDto
+                {
+                    ClienteId = cliente.Id,
+                    Nome = cliente.Nome,
+                    Contato = cliente.Contato,
+                    Credito = cliente.Credito != null ? cliente.Credito.Valor : 0m
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
         {
             if (request.ProdutoIds.Count == 0)
@@ -154,6 +177,116 @@ namespace Renova.Service.Services.Pagamento
             return Mapear(pagamentoCredito);
         }
 
+        public async Task<AtualizarPendenciasDto> UpdatePendenciasAsync(
+            AtualizarPendenciasCommand request,
+            AtualizarPendenciasParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (request.Data == default)
+            {
+                throw new ArgumentException("Data limite para atualizacao das pendencias e obrigatoria.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+
+            DateTime dataLimite = NormalizarDataLimiteParaFimDoDiaUtc(request.Data);
+            List<PagamentoModel> pagamentosPendentes = await _context.Pagamentos
+                .Include(pagamento => pagamento.Cliente)
+                .Where(pagamento =>
+                    pagamento.LojaId == request.LojaId
+                    && pagamento.Status == StatusPagamento.Pendente
+                    && pagamento.Data <= dataLimite)
+                .OrderBy(pagamento => pagamento.Data)
+                .ThenBy(pagamento => pagamento.Id)
+                .ToListAsync(cancellationToken);
+
+            if (pagamentosPendentes.Count == 0)
+            {
+                return new AtualizarPendenciasDto();
+            }
+
+            List<int> clienteIds = pagamentosPendentes
+                .Select(pagamento => pagamento.ClienteId)
+                .Distinct()
+                .ToList();
+
+            Dictionary<int, ClienteCreditoModel> creditosPorCliente = await _context.ClientesCreditos
+                .Where(credito => credito.LojaId == request.LojaId && clienteIds.Contains(credito.ClienteId))
+                .ToDictionaryAsync(credito => credito.ClienteId, cancellationToken);
+
+            Dictionary<int, AtualizacaoPendenciaClienteDto> atualizacoesPorCliente = [];
+            List<PagamentoCreditoModel> pagamentosCredito = [];
+
+            foreach (PagamentoModel pagamento in pagamentosPendentes)
+            {
+                decimal variacaoCredito = pagamento.Natureza switch
+                {
+                    NaturezaPagamento.Receber => -pagamento.Valor,
+                    NaturezaPagamento.Pagar => pagamento.Valor,
+                    _ => 0m
+                };
+
+                if (!creditosPorCliente.TryGetValue(pagamento.ClienteId, out ClienteCreditoModel? credito))
+                {
+                    credito = new ClienteCreditoModel
+                    {
+                        LojaId = pagamento.LojaId,
+                        ClienteId = pagamento.ClienteId,
+                        Valor = 0m
+                    };
+
+                    creditosPorCliente[pagamento.ClienteId] = credito;
+                    _ = await _context.ClientesCreditos.AddAsync(credito, cancellationToken);
+                }
+
+                credito.Valor += variacaoCredito;
+                pagamento.Status = StatusPagamento.Pago;
+
+                pagamentosCredito.Add(new PagamentoCreditoModel
+                {
+                    LojaId = pagamento.LojaId,
+                    ClienteId = pagamento.ClienteId,
+                    Tipo = variacaoCredito >= 0
+                        ? TipoPagamentoCredito.AdicionarCredito
+                        : TipoPagamentoCredito.ResgatarCredito,
+                    ValorCredito = decimal.Abs(variacaoCredito),
+                    ValorDinheiro = decimal.Abs(variacaoCredito),
+                    Data = dataLimite
+                });
+
+                if (!atualizacoesPorCliente.TryGetValue(pagamento.ClienteId, out AtualizacaoPendenciaClienteDto? atualizacao))
+                {
+                    atualizacao = new AtualizacaoPendenciaClienteDto
+                    {
+                        ClienteId = pagamento.ClienteId,
+                        Nome = pagamento.Cliente?.Nome ?? $"Cliente {pagamento.ClienteId}",
+                        QuantidadeOrdensAtualizadas = 0,
+                        ValorAtualizado = 0m
+                    };
+
+                    atualizacoesPorCliente[pagamento.ClienteId] = atualizacao;
+                }
+
+                atualizacao.QuantidadeOrdensAtualizadas++;
+                atualizacao.ValorAtualizado += variacaoCredito;
+            }
+
+            await _context.PagamentosCredito.AddRangeAsync(pagamentosCredito, cancellationToken);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            List<AtualizacaoPendenciaClienteDto> clientesAtualizados = atualizacoesPorCliente.Values
+                .OrderBy(item => item.Nome)
+                .ThenBy(item => item.ClienteId)
+                .ToList();
+
+            return new AtualizarPendenciasDto
+            {
+                QuantidadeOrdensAtualizadas = pagamentosPendentes.Count,
+                ValorTotalCredito = clientesAtualizados.Sum(item => item.ValorAtualizado),
+                ClientesAtualizados = clientesAtualizados
+            };
+        }
+
         private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
         {
             bool usuarioExiste = await _context.Usuarios
@@ -223,6 +356,21 @@ namespace Renova.Service.Services.Pagamento
                 valorCredito * config.PercentualRepasseFornecedor / config.PercentualRepasseVendedorCredito,
                 2,
                 MidpointRounding.AwayFromZero);
+        }
+
+        private static DateTime NormalizarDataLimiteParaFimDoDiaUtc(DateTime value)
+        {
+            DateTime utcValue = value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+                _ => value
+            };
+
+            return utcValue.TimeOfDay == TimeSpan.Zero
+                ? utcValue.Date.AddDays(1).AddTicks(-1)
+                : utcValue;
         }
 
         private static PagamentoDto Mapear(PagamentoModel pagamento)

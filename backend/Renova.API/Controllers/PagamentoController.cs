@@ -16,6 +16,68 @@ namespace Renova.API.Controllers
     {
         private readonly IPagamentoService _pagamentoService = pagamentoService;
 
+        [HttpGet("pendencia")]
+        [ProducesResponseType(typeof(IReadOnlyList<ClientePendenciaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetPendencias([FromQuery] int lojaId, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                IReadOnlyList<ClientePendenciaDto> resultado = await _pagamentoService.GetPendenciasAsync(
+                    lojaId,
+                    usuarioId.Value,
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
+        [HttpPost("pendencia/atualizar")]
+        [ProducesResponseType(typeof(AtualizarPendenciasDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PostAtualizarPendencias([FromBody] AtualizarPendenciasCommand command, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                AtualizarPendenciasDto resultado = await _pagamentoService.UpdatePendenciasAsync(
+                    command,
+                    new AtualizarPendenciasParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost("credito")]
         [ProducesResponseType(typeof(PagamentoCreditoDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

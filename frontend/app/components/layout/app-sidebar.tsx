@@ -14,6 +14,7 @@ const primaryItems: NavItem[] = [
   { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Produtos", href: "/dashboard/produto" },
   { label: "Movimentacoes", href: "/dashboard/movimentacao" },
+  { label: "Pendencias", href: "/dashboard/pendencia" },
 ];
 
 function HexagonMark() {

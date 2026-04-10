@@ -640,6 +640,28 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 _ = cancellationToken;
                 throw new NotSupportedException();
             }
+
+            public Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(
+                int lojaId,
+                int usuarioId,
+                CancellationToken cancellationToken = default)
+            {
+                _ = lojaId;
+                _ = usuarioId;
+                _ = cancellationToken;
+                return Task.FromResult<IReadOnlyList<ClientePendenciaDto>>([]);
+            }
+
+            public Task<AtualizarPendenciasDto> UpdatePendenciasAsync(
+                AtualizarPendenciasCommand request,
+                AtualizarPendenciasParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException();
+            }
         }
     }
 }
