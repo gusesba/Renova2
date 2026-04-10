@@ -12,7 +12,7 @@ import {
   formatCurrency,
   formatPhone,
   getPaymentApiMessage,
-  getTodayDateInputValue,
+  getPreviousMonthLastDateInputValue,
   type PendingClientItem,
 } from "@/lib/payment";
 import { getAuthToken } from "@/lib/store";
@@ -20,10 +20,22 @@ import { getPendingClients, updatePendingPayments } from "@/services/payment-ser
 
 import { PaymentCreditModal } from "./payment-credit-modal";
 
+function getCreditBadgeClass(value: number) {
+  if (value > 0) {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (value < 0) {
+    return "bg-rose-100 text-rose-700";
+  }
+
+  return "bg-slate-100 text-slate-600";
+}
+
 export function PendingPage() {
   const queryClient = useQueryClient();
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
-  const [dateValue, setDateValue] = useState(() => getTodayDateInputValue());
+  const [dateValue, setDateValue] = useState(() => getPreviousMonthLastDateInputValue());
   const [selectedClient, setSelectedClient] = useState<PendingClientItem | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
@@ -210,7 +222,11 @@ export function PendingPage() {
                         {formatPhone(client.contato)}
                       </td>
                       <td className="px-5 py-4 text-right text-sm font-semibold text-[var(--foreground)]">
-                        {formatCurrency(client.credito)}
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCreditBadgeClass(client.credito)}`}
+                        >
+                          {formatCurrency(client.credito)}
+                        </span>
                       </td>
                       <td className="px-5 py-4 text-right">
                         <button
