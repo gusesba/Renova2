@@ -181,6 +181,7 @@ export function PaymentCreditModal({
   const isSupplierOperation = paymentType === 2;
   const hasEnoughCredit = !isSupplierOperation || parsedCreditValue <= currentCredit;
   const missingConfigForSupplier = isSupplierOperation && !config;
+  const shouldBlockSubmit = isSupplierOperation && (!hasEnoughCredit || missingConfigForSupplier);
 
   if (typeof document === "undefined" || !shouldRender || !client) {
     return null;
@@ -215,12 +216,12 @@ export function PaymentCreditModal({
       return;
     }
 
-    if (nextCredit < 0 || !hasEnoughCredit) {
+    if (isSupplierOperation && (!hasEnoughCredit || nextCredit < 0)) {
       toast.error("O cliente nao possui credito suficiente para essa operacao.");
       return;
     }
 
-    if (missingConfigForSupplier) {
+    if (isSupplierOperation && missingConfigForSupplier) {
       toast.error("Configure o repasse da loja antes de pagar o fornecedor.");
       return;
     }
@@ -417,7 +418,7 @@ export function PaymentCreditModal({
             </div>
           ) : null}
 
-          {!hasEnoughCredit ? (
+          {isSupplierOperation && !hasEnoughCredit ? (
             <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
               O valor informado excede o credito atual do cliente.
             </div>
@@ -434,7 +435,7 @@ export function PaymentCreditModal({
             </button>
             <button
               type="submit"
-              disabled={isSaving || !client || !storeId || nextCredit < 0 || missingConfigForSupplier}
+              disabled={isSaving || !client || !storeId || shouldBlockSubmit}
               className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? "Salvando..." : "Lancar pagamento"}
