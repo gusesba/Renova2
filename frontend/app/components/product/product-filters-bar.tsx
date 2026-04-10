@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { GearIcon } from "@/app/components/ui/gear-icon";
 import { Select } from "@/app/components/ui/select";
 import type { ProductFilters } from "@/lib/product";
@@ -128,6 +132,8 @@ export function ProductFiltersBar({
   onOpenSettings,
   onChange,
 }: ProductFiltersBarProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -158,92 +164,127 @@ export function ProductFiltersBar({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-4">
-        <TextField
-          label="Descricao"
-          value={filters.descricao}
-          placeholder="Buscar por descricao"
-          onChange={(descricao) => onChange({ descricao })}
-        />
-        <TextField
-          label="Produto"
-          value={filters.produto}
-          placeholder="Buscar por produto"
-          onChange={(produto) => onChange({ produto })}
-        />
-        <TextField
-          label="Marca"
-          value={filters.marca}
-          placeholder="Buscar por marca"
-          onChange={(marca) => onChange({ marca })}
-        />
-        <TextField
-          label="Fornecedor"
-          value={filters.fornecedor}
-          placeholder="Buscar por fornecedor"
-          onChange={(fornecedor) => onChange({ fornecedor })}
-        />
-        <TextField
-          label="Tamanho"
-          value={filters.tamanho}
-          placeholder="Buscar por tamanho"
-          onChange={(tamanho) => onChange({ tamanho })}
-        />
-        <TextField
-          label="Cor"
-          value={filters.cor}
-          placeholder="Buscar por cor"
-          onChange={(cor) => onChange({ cor })}
-        />
-        <NumberField
-          label="Preco inicial"
-          value={filters.precoInicial}
-          placeholder="0,00"
-          onChange={(precoInicial) => onChange({ precoInicial })}
-        />
-        <NumberField
-          label="Preco final"
-          value={filters.precoFinal}
-          placeholder="0,00"
-          onChange={(precoFinal) => onChange({ precoFinal })}
-        />
-        <DateField
-          label="Data inicial"
-          value={filters.dataInicial}
-          onChange={(dataInicial) => onChange({ dataInicial })}
-        />
-        <DateField
-          label="Data final"
-          value={filters.dataFinal}
-          onChange={(dataFinal) => onChange({ dataFinal })}
-        />
-        <SelectField
-          label="Ordenar por"
-          value={filters.ordenarPor}
-          options={[
-            { label: "Descricao", value: "descricao" },
-            { label: "Produto", value: "produto" },
-            { label: "Marca", value: "marca" },
-            { label: "Tamanho", value: "tamanho" },
-            { label: "Cor", value: "cor" },
-            { label: "Fornecedor", value: "fornecedor" },
-            { label: "Preco", value: "preco" },
-            { label: "Entrada", value: "entrada" },
-            { label: "Id", value: "id" },
-          ]}
-          onChange={(ordenarPor) =>
-            onChange({ ordenarPor: ordenarPor as ProductFilters["ordenarPor"] })
-          }
-        />
-        <SelectField
-          label="Direcao"
-          value={filters.direcao}
-          options={[
-            { label: "Crescente", value: "asc" },
-            { label: "Decrescente", value: "desc" },
-          ]}
-          onChange={(direcao) => onChange({ direcao: direcao as ProductFilters["direcao"] })}
-        />
+      <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)]/55">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          aria-expanded={isExpanded}
+          className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm font-medium text-[var(--foreground)]"
+        >
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-[var(--primary)]/70" />
+            <span>Filtros e ordenacao</span>
+          </div>
+          <span
+            className={`text-xs text-[var(--muted)] transition-transform duration-300 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+          >
+            ▾
+          </span>
+        </button>
+
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+            isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div
+              className={`grid gap-4 border-t border-[var(--border)] px-4 transition-all duration-300 ease-out xl:grid-cols-4 ${
+                isExpanded ? "py-4 opacity-100" : "py-0 opacity-0"
+              }`}
+            >
+              <TextField
+                label="Descricao"
+                value={filters.descricao}
+                placeholder="Buscar por descricao"
+                onChange={(descricao) => onChange({ descricao })}
+              />
+              <TextField
+                label="Produto"
+                value={filters.produto}
+                placeholder="Buscar por produto"
+                onChange={(produto) => onChange({ produto })}
+              />
+              <TextField
+                label="Marca"
+                value={filters.marca}
+                placeholder="Buscar por marca"
+                onChange={(marca) => onChange({ marca })}
+              />
+              <TextField
+                label="Fornecedor"
+                value={filters.fornecedor}
+                placeholder="Buscar por fornecedor"
+                onChange={(fornecedor) => onChange({ fornecedor })}
+              />
+              <TextField
+                label="Tamanho"
+                value={filters.tamanho}
+                placeholder="Buscar por tamanho"
+                onChange={(tamanho) => onChange({ tamanho })}
+              />
+              <TextField
+                label="Cor"
+                value={filters.cor}
+                placeholder="Buscar por cor"
+                onChange={(cor) => onChange({ cor })}
+              />
+              <NumberField
+                label="Preco inicial"
+                value={filters.precoInicial}
+                placeholder="0,00"
+                onChange={(precoInicial) => onChange({ precoInicial })}
+              />
+              <NumberField
+                label="Preco final"
+                value={filters.precoFinal}
+                placeholder="0,00"
+                onChange={(precoFinal) => onChange({ precoFinal })}
+              />
+              <DateField
+                label="Data inicial"
+                value={filters.dataInicial}
+                onChange={(dataInicial) => onChange({ dataInicial })}
+              />
+              <DateField
+                label="Data final"
+                value={filters.dataFinal}
+                onChange={(dataFinal) => onChange({ dataFinal })}
+              />
+              <SelectField
+                label="Ordenar por"
+                value={filters.ordenarPor}
+                options={[
+                  { label: "Descricao", value: "descricao" },
+                  { label: "Produto", value: "produto" },
+                  { label: "Marca", value: "marca" },
+                  { label: "Tamanho", value: "tamanho" },
+                  { label: "Cor", value: "cor" },
+                  { label: "Fornecedor", value: "fornecedor" },
+                  { label: "Preco", value: "preco" },
+                  { label: "Entrada", value: "entrada" },
+                  { label: "Id", value: "id" },
+                ]}
+                onChange={(ordenarPor) =>
+                  onChange({ ordenarPor: ordenarPor as ProductFilters["ordenarPor"] })
+                }
+              />
+              <SelectField
+                label="Direcao"
+                value={filters.direcao}
+                options={[
+                  { label: "Crescente", value: "asc" },
+                  { label: "Decrescente", value: "desc" },
+                ]}
+                onChange={(direcao) =>
+                  onChange({ direcao: direcao as ProductFilters["direcao"] })
+                }
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
