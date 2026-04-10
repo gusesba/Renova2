@@ -23,6 +23,7 @@ import {
 } from "@/lib/product";
 import { getAuthToken } from "@/lib/store";
 import { getClientDetail } from "@/services/client-service";
+import { Select } from "@/app/components/ui/select";
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
@@ -192,20 +193,21 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
               Situacao
             </span>
-            <select
-              value={filters.situacao}
-              onChange={(event) =>
-                setFilters((current) => ({ ...current, situacao: event.target.value }))
-              }
-              className="h-12 rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)]"
-            >
-              <option value="">Todas</option>
-              {productSituacaoOptions.map((option) => (
-                <option key={option.value} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
+              <Select
+                ariaLabel="Situacao"
+                value={filters.situacao}
+                options={[
+                  { label: "Todas", value: "" },
+                  ...productSituacaoOptions.map((option) => ({
+                    label: option.label,
+                    value: String(option.value),
+                  })),
+                ]}
+                placeholder="Selecionar"
+                onChange={(situacao) => setFilters((current) => ({ ...current, situacao }))}
+              />
+            </div>
           </label>
         </div>
       </div>
