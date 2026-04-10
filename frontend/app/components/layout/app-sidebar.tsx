@@ -9,7 +9,6 @@ type NavItem = {
 };
 
 const primaryItems: NavItem[] = [
-  { label: "Inicio", href: "/dashboard" },
   { label: "Lojas", href: "/dashboard/loja" },
   { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Produtos", href: "/dashboard/produto" },
@@ -32,10 +31,6 @@ function HexagonMark() {
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (href === "/dashboard") {
-    return pathname === href;
-  }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

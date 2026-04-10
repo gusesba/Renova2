@@ -34,7 +34,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     if (shouldRedirectToDashboard) {
-      router.replace("/dashboard");
+      router.replace("/dashboard/loja");
     }
   }, [router, shouldRedirectToAuth, shouldRedirectToDashboard, validSession]);
 

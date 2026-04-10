@@ -108,7 +108,7 @@ export function AuthShell() {
           ? `Login realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`
           : `Cadastro realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`,
       );
-      router.replace("/dashboard");
+      router.replace(mode === "login" ? "/dashboard/produto" : "/dashboard/loja");
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
     }
