@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 import { formatPhoneValue, type ClientListItem, type ClientVisibleField } from "@/lib/client";
 
 type ClientsTableProps = {
   clients: ClientListItem[];
   visibleFields: ClientVisibleField[];
+  getClientDetailsHref: (client: ClientListItem) => string;
   onEditClient: (client: ClientListItem) => void;
   onDeleteClient: (client: ClientListItem) => void;
 };
@@ -62,9 +65,28 @@ function DeleteIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export function ClientsTable({
   clients,
   visibleFields,
+  getClientDetailsHref,
   onEditClient,
   onDeleteClient,
 }: ClientsTableProps) {
@@ -149,6 +171,14 @@ export function ClientsTable({
                 {showId ? <ClientTableCell subtle>#{client.id}</ClientTableCell> : null}
                 <ClientTableCell>
                   <div className="flex items-center gap-2">
+                    <Link
+                      href={getClientDetailsHref(client)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:border-sky-300 hover:bg-sky-100 hover:text-sky-700"
+                      aria-label={`Abrir detalhes do cliente ${client.nome}`}
+                      title={`Abrir detalhes do cliente ${client.nome}`}
+                    >
+                      <EyeIcon />
+                    </Link>
                     <button
                       type="button"
                       onClick={() => onEditClient(client)}

@@ -52,6 +52,50 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("{id:int}/detalhe")]
+        [ProducesResponseType(typeof(ClienteDetalheDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetClienteDetalhe(
+            int id,
+            [FromQuery] ObterClienteDetalheQuery query,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                ClienteDetalheDto resultado = await _clienteService.GetDetailAsync(
+                    query,
+                    new ObterClienteDetalheParametros
+                    {
+                        UsuarioId = usuarioId.Value,
+                        ClienteId = id
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ClienteDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

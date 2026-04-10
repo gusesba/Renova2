@@ -544,6 +544,7 @@ export function ClientPage() {
             <ClientsTable
               clients={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
+              getClientDetailsHref={(client) => `/dashboard/cliente/${client.id}`}
               onEditClient={handleOpenEditModal}
               onDeleteClient={handleOpenDeleteModal}
             />

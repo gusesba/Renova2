@@ -275,6 +275,215 @@ namespace Renova.Service.Services.Cliente
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
+        public async Task<ClienteDetalheDto> GetDetailAsync(
+            ObterClienteDetalheQuery request,
+            ObterClienteDetalheParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            ClienteModel cliente = await _context.Clientes
+                .Include(item => item.User)
+                .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
+                ?? throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
+
+            if (cliente.LojaId != loja.Id)
+            {
+                throw new UnauthorizedAccessException("Cliente informado nao pertence a loja selecionada.");
+            }
+
+            if (request.Situacao.HasValue && !Enum.IsDefined(request.Situacao.Value))
+            {
+                throw new ArgumentException("Situacao informada e invalida.", nameof(request));
+            }
+
+            DateTime? dataInicialUtc = request.DataInicial.HasValue
+                ? NormalizarDateTimeParaUtc(request.DataInicial.Value)
+                : null;
+            DateTime? dataFinalUtc = request.DataFinal.HasValue
+                ? NormalizarDateTimeParaUtc(request.DataFinal.Value)
+                : null;
+
+            IQueryable<ProdutoEstoqueModel> produtosFornecedorQuery = _context.ProdutosEstoque
+                .Where(produto => produto.LojaId == loja.Id && produto.FornecedorId == cliente.Id);
+
+            if (dataInicialUtc.HasValue)
+            {
+                produtosFornecedorQuery = produtosFornecedorQuery.Where(produto => produto.Entrada >= dataInicialUtc.Value);
+            }
+
+            if (dataFinalUtc.HasValue)
+            {
+                produtosFornecedorQuery = produtosFornecedorQuery.Where(produto => produto.Entrada <= dataFinalUtc.Value);
+            }
+
+            if (request.Situacao.HasValue)
+            {
+                produtosFornecedorQuery = produtosFornecedorQuery.Where(produto => produto.Situacao == request.Situacao.Value);
+            }
+
+            IQueryable<ProdutoEstoqueModel> produtosComClienteQuery = _context.ProdutosEstoque
+                .Where(produto => produto.LojaId == loja.Id)
+                .Where(produto => produto.Movimentacoes
+                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                    .Take(1)
+                    .Any(movimentacaoProduto =>
+                        movimentacaoProduto.Movimentacao!.ClienteId == cliente.Id
+                        && (movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Venda
+                            || movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Emprestimo)));
+
+            if (dataInicialUtc.HasValue)
+            {
+                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Movimentacoes
+                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                    .Take(1)
+                    .Any(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data >= dataInicialUtc.Value));
+            }
+
+            if (dataFinalUtc.HasValue)
+            {
+                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Movimentacoes
+                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                    .Take(1)
+                    .Any(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data <= dataFinalUtc.Value));
+            }
+
+            if (request.Situacao.HasValue)
+            {
+                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Situacao == request.Situacao.Value);
+            }
+
+            int quantidadePecasCompradas = await _context.MovimentacoesProdutos
+                .Where(item => item.Movimentacao != null
+                    && item.Movimentacao.LojaId == loja.Id
+                    && item.Movimentacao.ClienteId == cliente.Id
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                .Where(item => !dataInicialUtc.HasValue || item.Movimentacao!.Data >= dataInicialUtc.Value)
+                .Where(item => !dataFinalUtc.HasValue || item.Movimentacao!.Data <= dataFinalUtc.Value)
+                .CountAsync(cancellationToken);
+
+            int quantidadePecasVendidas = await _context.MovimentacoesProdutos
+                .Where(item => item.Movimentacao != null
+                    && item.Movimentacao.LojaId == loja.Id
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                    && item.Produto != null
+                    && item.Produto.FornecedorId == cliente.Id)
+                .Where(item => !dataInicialUtc.HasValue || item.Movimentacao!.Data >= dataInicialUtc.Value)
+                .Where(item => !dataFinalUtc.HasValue || item.Movimentacao!.Data <= dataFinalUtc.Value)
+                .CountAsync(cancellationToken);
+
+            decimal valorAportadoLoja = await _context.PagamentosCredito
+                .Where(item => item.LojaId == loja.Id
+                    && item.ClienteId == cliente.Id
+                    && item.Tipo == TipoPagamentoCredito.AdicionarCredito)
+                .Where(item => !dataInicialUtc.HasValue || item.Data >= dataInicialUtc.Value)
+                .Where(item => !dataFinalUtc.HasValue || item.Data <= dataFinalUtc.Value)
+                .SumAsync(item => (decimal?)item.ValorDinheiro, cancellationToken) ?? 0m;
+
+            decimal valorRetiradoLoja = await _context.PagamentosCredito
+                .Where(item => item.LojaId == loja.Id
+                    && item.ClienteId == cliente.Id
+                    && item.Tipo == TipoPagamentoCredito.ResgatarCredito)
+                .Where(item => !dataInicialUtc.HasValue || item.Data >= dataInicialUtc.Value)
+                .Where(item => !dataFinalUtc.HasValue || item.Data <= dataFinalUtc.Value)
+                .SumAsync(item => (decimal?)item.ValorDinheiro, cancellationToken) ?? 0m;
+
+            List<ProdutoBuscaDto> produtosFornecedor = await produtosFornecedorQuery
+                .OrderByDescending(produto => produto.Entrada)
+                .ThenByDescending(produto => produto.Id)
+                .Select(MapearProdutoBuscaDto())
+                .ToListAsync(cancellationToken);
+
+            List<ProdutoBuscaDto> produtosComCliente = await produtosComClienteQuery
+                .OrderByDescending(produto => produto.Id)
+                .Select(MapearProdutoBuscaDto())
+                .ToListAsync(cancellationToken);
+
+            return new ClienteDetalheDto
+            {
+                Id = cliente.Id,
+                Nome = cliente.Nome,
+                Contato = cliente.Contato,
+                Doacao = cliente.Doacao,
+                LojaId = cliente.LojaId,
+                UserId = cliente.UserId,
+                UserNome = cliente.User != null ? cliente.User.Nome : null,
+                UserEmail = cliente.User != null ? cliente.User.Email : null,
+                QuantidadePecasCompradas = quantidadePecasCompradas,
+                QuantidadePecasVendidas = quantidadePecasVendidas,
+                ValorAportadoLoja = valorAportadoLoja,
+                ValorRetiradoLoja = valorRetiradoLoja,
+                ProdutosFornecedor = produtosFornecedor,
+                ProdutosComCliente = produtosComCliente
+            };
+        }
+
+        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            LojaModel? loja = await _context.Lojas
+                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken);
+
+            if (loja is null || loja.UsuarioId != usuarioId)
+            {
+                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
+            }
+
+            return loja;
+        }
+
+        private static DateTime NormalizarDateTimeParaUtc(DateTime data)
+        {
+            return data.Kind switch
+            {
+                DateTimeKind.Utc => data,
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(data, DateTimeKind.Utc),
+                _ => data.ToUniversalTime()
+            };
+        }
+
+        private static System.Linq.Expressions.Expression<Func<ProdutoEstoqueModel, ProdutoBuscaDto>> MapearProdutoBuscaDto()
+        {
+            return produto => new ProdutoBuscaDto
+            {
+                Id = produto.Id,
+                Preco = produto.Preco,
+                ProdutoId = produto.ProdutoId,
+                Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                MarcaId = produto.MarcaId,
+                Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                TamanhoId = produto.TamanhoId,
+                Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                CorId = produto.CorId,
+                Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                FornecedorId = produto.FornecedorId,
+                Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                Descricao = produto.Descricao,
+                Entrada = produto.Entrada,
+                LojaId = produto.LojaId,
+                Situacao = produto.Situacao,
+                Consignado = produto.Consignado
+            };
+        }
+
         private Task<bool> ClientePossuiProdutosVinculadosAsync(int clienteId, CancellationToken cancellationToken)
         {
             return _context.ProdutosEstoque

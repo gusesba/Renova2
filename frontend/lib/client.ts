@@ -19,6 +19,57 @@ export type ClientListResponse = {
   totalPaginas: number;
 };
 
+export type ClientDetailFilters = {
+  dataInicial: string;
+  dataFinal: string;
+  situacao: string;
+};
+
+export type ClientDetailResponse = ClientListItem & {
+  quantidadePecasCompradas: number;
+  quantidadePecasVendidas: number;
+  valorRetiradoLoja: number;
+  valorAportadoLoja: number;
+  produtosFornecedor: Array<{
+    id: number;
+    preco: number;
+    produtoId: number;
+    produto: string;
+    marcaId: number;
+    marca: string;
+    tamanhoId: number;
+    tamanho: string;
+    corId: number;
+    cor: string;
+    fornecedorId: number;
+    fornecedor: string;
+    descricao: string;
+    entrada: string;
+    lojaId: number;
+    situacao: number;
+    consignado: boolean;
+  }>;
+  produtosComCliente: Array<{
+    id: number;
+    preco: number;
+    produtoId: number;
+    produto: string;
+    marcaId: number;
+    marca: string;
+    tamanhoId: number;
+    tamanho: string;
+    corId: number;
+    cor: string;
+    fornecedorId: number;
+    fornecedor: string;
+    descricao: string;
+    entrada: string;
+    lojaId: number;
+    situacao: number;
+    consignado: boolean;
+  }>;
+};
+
 export type ClientFormValues = {
   nome: string;
   contato: string;
@@ -72,6 +123,12 @@ export const initialClientFilters: ClientFilters = {
   tamanhoPagina: 10,
 };
 
+export const initialClientDetailFilters: ClientDetailFilters = {
+  dataInicial: "",
+  dataFinal: "",
+  situacao: "",
+};
+
 export const defaultClientTableSettings: ClientTableSettings = {
   tamanhoPagina: 10,
   visibleFields: ["nome", "contato", "doacao", "userId", "id"],
@@ -112,6 +169,10 @@ export function asClientResponse(body: unknown) {
   return body as ClientListItem;
 }
 
+export function asClientDetailResponse(body: unknown) {
+  return body as ClientDetailResponse;
+}
+
 export function buildClientQuery(storeId: number, filters: ClientFilters) {
   const params = new URLSearchParams({
     lojaId: String(storeId),
@@ -127,6 +188,34 @@ export function buildClientQuery(storeId: number, filters: ClientFilters) {
 
   if (filters.contato.trim()) {
     params.set("contato", normalizeNumericValue(filters.contato));
+  }
+
+  return params.toString();
+}
+
+function toApiDateStart(value: string) {
+  return `${value}T00:00:00`;
+}
+
+function toApiDateEnd(value: string) {
+  return `${value}T23:59:59.999`;
+}
+
+export function buildClientDetailQuery(storeId: number, filters: ClientDetailFilters) {
+  const params = new URLSearchParams({
+    lojaId: String(storeId),
+  });
+
+  if (filters.dataInicial) {
+    params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.dataFinal) {
+    params.set("dataFinal", toApiDateEnd(filters.dataFinal));
+  }
+
+  if (filters.situacao.trim()) {
+    params.set("situacao", filters.situacao.trim());
   }
 
   return params.toString();
@@ -251,4 +340,25 @@ export function persistClientTableSettings(settings: ClientTableSettings) {
   }
 
   window.localStorage.setItem(clientTableSettingsStorageKey, JSON.stringify(settings));
+}
+
+export function getPreviousMonthRange() {
+  const now = new Date();
+  const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfPreviousMonth = new Date(firstDayOfCurrentMonth.getTime() - 24 * 60 * 60 * 1000);
+  const firstDayOfPreviousMonth = new Date(
+    lastDayOfPreviousMonth.getFullYear(),
+    lastDayOfPreviousMonth.getMonth(),
+    1,
+  );
+
+  const toInputValue = (value: Date) => {
+    const timezoneOffset = value.getTimezoneOffset() * 60_000;
+    return new Date(value.getTime() - timezoneOffset).toISOString().slice(0, 10);
+  };
+
+  return {
+    dataInicial: toInputValue(firstDayOfPreviousMonth),
+    dataFinal: toInputValue(lastDayOfPreviousMonth),
+  };
 }
