@@ -162,6 +162,19 @@ export function formatPaymentStatus(value: number) {
   return paymentStatusOptions.find((option) => option.value === value)?.label ?? `Status ${value}`;
 }
 
+export function getPaymentStatusBadgeClass(value: number) {
+  switch (value) {
+    case 1:
+      return "bg-amber-100 text-amber-800";
+    case 2:
+      return "bg-emerald-100 text-emerald-700";
+    case 3:
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-600";
+  }
+}
+
 export function formatPhone(value: string) {
   const digits = value.replace(/\D+/g, "");
 

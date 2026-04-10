@@ -4,6 +4,7 @@ import {
   formatPaymentDate,
   formatPaymentNature,
   formatPaymentStatus,
+  getPaymentStatusBadgeClass,
   type PaymentListItem,
   type PaymentVisibleField,
 } from "@/lib/payment";
@@ -144,7 +145,15 @@ export function PaymentsTable({
                       </TableCell>
                     ) : null}
                     {showNatureza ? <TableCell>{formatPaymentNature(payment.natureza)}</TableCell> : null}
-                    {showStatus ? <TableCell>{formatPaymentStatus(payment.status)}</TableCell> : null}
+                    {showStatus ? (
+                      <TableCell>
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusBadgeClass(payment.status)}`}
+                        >
+                          {formatPaymentStatus(payment.status)}
+                        </span>
+                      </TableCell>
+                    ) : null}
                     {showMovimentacao ? <TableCell subtle>#{payment.movimentacaoId}</TableCell> : null}
                   </tr>
                   {expanded ? (
