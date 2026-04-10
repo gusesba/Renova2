@@ -70,7 +70,7 @@ function EyeIcon() {
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      className="h-4 w-4"
+      className="h-4 w-4 text-sky-700"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -173,7 +173,7 @@ export function ClientsTable({
                   <div className="flex items-center gap-2">
                     <Link
                       href={getClientDetailsHref(client)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:border-sky-300 hover:bg-sky-100 hover:text-sky-700"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:border-sky-300 hover:bg-sky-100"
                       aria-label={`Abrir detalhes do cliente ${client.nome}`}
                       title={`Abrir detalhes do cliente ${client.nome}`}
                     >
