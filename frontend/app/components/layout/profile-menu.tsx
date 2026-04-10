@@ -143,7 +143,7 @@ export function ProfileMenu({
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[var(--foreground)]">
-            {name ?? "Usuario"}
+            {name?.trim().split(/\s+/)?.[0] ?? "Usuario"}
           </p>
           <p className="truncate text-xs text-[var(--muted)]">{email ?? "Sessao autenticada"}</p>
         </div>
@@ -161,7 +161,9 @@ export function ProfileMenu({
           }`}
         >
           <div className="border-b border-[var(--border)] px-4 py-3">
-            <p className="truncate text-sm font-semibold text-[var(--foreground)]">{name ?? "Usuario"}</p>
+            <p className="truncate text-sm font-semibold text-[var(--foreground)]">
+              {name?.trim().split(/\s+/)?.[0] ?? "Usuario"}
+            </p>
             <p className="truncate text-xs text-[var(--muted)]">{email ?? "Sessao autenticada"}</p>
           </div>
 
