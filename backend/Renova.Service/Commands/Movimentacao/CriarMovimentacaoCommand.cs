@@ -19,8 +19,20 @@ namespace Renova.Service.Commands.Movimentacao
         [Required]
         public int LojaId { get; set; }
 
+        [Range(0, 100)]
+        public decimal DescontoTotal { get; set; }
+
         [Required]
         [MinLength(1)]
-        public required List<int> ProdutoIds { get; set; }
+        public required List<CriarMovimentacaoProdutoCommand> Produtos { get; set; }
+    }
+
+    public class CriarMovimentacaoProdutoCommand
+    {
+        [Required]
+        public int ProdutoId { get; set; }
+
+        [Range(0, 100)]
+        public decimal Desconto { get; set; }
     }
 }

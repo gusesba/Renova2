@@ -25,6 +25,7 @@ import {
   initialMovementDraftFormValues,
   isProductSituationCompatible,
   movementTypeOptions,
+  type MovementDraftProduct,
   type MovementFieldErrors,
   type MovementSuggestion,
 } from "@/lib/movement";
@@ -47,10 +48,11 @@ type MovementDraft = {
   clienteLabel: string;
   clienteSearch: string;
   data: string;
+  descontoTotal: string;
   errors: MovementFieldErrors;
   id: string;
   productIdInput: string;
-  products: ProductListItem[];
+  products: MovementDraftProduct[];
   suggestion: MovementSuggestion | null;
   tipo: string;
 };
@@ -86,10 +88,27 @@ function isDraftPending(draft: MovementDraft) {
     draft.clienteId.trim().length > 0 ||
     draft.clienteLabel.trim().length > 0 ||
     draft.clienteSearch.trim().length > 0 ||
+    draft.descontoTotal !== initialMovementDraftFormValues.descontoTotal ||
     draft.productIdInput.trim().length > 0 ||
     draft.products.length > 0 ||
     draft.suggestion !== null
   );
+}
+
+function parseDiscountValue(value: string) {
+  const normalized = (value || "0").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraftProduct) {
+  if (Number(draft.tipo) !== 1) {
+    return 0;
+  }
+
+  return parseDiscountValue(product.desconto) > 0
+    ? parseDiscountValue(product.desconto)
+    : parseDiscountValue(draft.descontoTotal);
 }
 
 function FieldShell({
@@ -195,7 +214,12 @@ export function MovementPage() {
   );
   const hasPendingMovements = useMemo(() => drafts.some(isDraftPending), [drafts]);
   const activeDraftTotalPrice = useMemo(
-    () => activeDraft?.products.reduce((total, product) => total + product.preco, 0) ?? 0,
+    () =>
+      activeDraft?.products.reduce((total, product) => {
+        const effectiveDiscount = getEffectiveProductDiscount(activeDraft, product);
+
+        return total + product.preco * Math.max(0, 1 - effectiveDiscount / 100);
+      }, 0) ?? 0,
     [activeDraft],
   );
 
@@ -279,10 +303,10 @@ export function MovementPage() {
               ...borrowedProducts.filter(
                 (product) =>
                   !manualProducts.some((manualProduct) => manualProduct.id === product.id),
-              ),
+              ).map((product) => ({ ...product, desconto: "0" })),
             ],
             autoLinkedBorrowedProductIds: borrowedProducts.map((product) => product.id),
-            errors: { ...draft.errors, produtoIds: undefined },
+            errors: { ...draft.errors, produtos: undefined },
           };
         });
       } catch (error) {
@@ -351,7 +375,11 @@ export function MovementPage() {
           data: toUtcStartOfDay(draft.data),
           clienteId: Number(draft.clienteId),
           lojaId: selectedStoreId,
-          produtoIds: draft.products.map((product) => product.id),
+          descontoTotal: Number(draft.descontoTotal.replace(",", ".")) || 0,
+          produtos: draft.products.map((product) => ({
+            produtoId: product.id,
+            desconto: Number(product.desconto.replace(",", ".")) || 0,
+          })),
         },
         token,
       );
@@ -408,7 +436,12 @@ export function MovementPage() {
       ...draft,
       tipo,
       suggestion: null,
-      errors: { ...draft.errors, tipo: undefined, produtoIds: undefined },
+      descontoTotal: tipo === "1" ? draft.descontoTotal : "0",
+      products:
+        tipo === "1"
+          ? draft.products
+          : draft.products.map((product) => ({ ...product, desconto: "0" })),
+      errors: { ...draft.errors, tipo: undefined, descontoTotal: undefined, produtos: undefined },
     }));
   }
 
@@ -441,7 +474,7 @@ export function MovementPage() {
     if (!rawValue) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtoIds: "Informe o id de um produto." },
+        errors: { ...current.errors, produtos: "Informe o id de um produto." },
       }));
       return;
     }
@@ -451,7 +484,7 @@ export function MovementPage() {
     if (!Number.isInteger(parsedId) || parsedId <= 0) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtoIds: "Informe um id numerico valido." },
+        errors: { ...current.errors, produtos: "Informe um id numerico valido." },
       }));
       return;
     }
@@ -481,7 +514,7 @@ export function MovementPage() {
           ...current,
           productIdInput: "",
           suggestion: buildMovementSuggestion(Number(current.tipo), product),
-          errors: { ...current.errors, produtoIds: undefined },
+          errors: { ...current.errors, produtos: undefined },
         }));
         return;
       }
@@ -489,12 +522,12 @@ export function MovementPage() {
       updateDraft(draft.id, (current) => ({
         ...current,
         productIdInput: "",
-        products: [...current.products, product],
+        products: [...current.products, { ...product, desconto: "0" }],
         autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
           (itemId) => itemId !== product.id,
         ),
         suggestion: null,
-        errors: { ...current.errors, produtoIds: undefined },
+        errors: { ...current.errors, produtos: undefined },
       }));
       toast.success(`Produto ${product.id} adicionado na movimentacao.`);
     } catch (error) {
@@ -514,10 +547,11 @@ export function MovementPage() {
     addDraft({
       tipo: String(draft.suggestion.suggestedType),
       data: draft.data,
+      descontoTotal: draft.descontoTotal,
       clienteId: draft.clienteId,
       clienteLabel: draft.clienteLabel,
       clienteSearch: draft.clienteLabel || draft.clienteSearch,
-      products: [draft.suggestion.product],
+      products: [{ ...draft.suggestion.product, desconto: "0" }],
     });
 
     updateDraft(draft.id, (current) => ({
@@ -536,15 +570,33 @@ export function MovementPage() {
       tipo: draft.tipo,
       data: draft.data,
       clienteId: draft.clienteId,
+      descontoTotal: Number(draft.tipo) === 1 ? draft.descontoTotal : "0",
     });
 
     const nextErrors = validation.success ? {} : mapMovementZodErrors(validation.error);
     const incompatibleMessage = buildIncompatibleProductsMessage(draft);
+    const invalidDiscountProduct = draft.products.find((product) => {
+      const productDiscount = parseDiscountValue(product.desconto);
+      if (productDiscount < 0 || productDiscount > 100) {
+        return true;
+      }
+
+      if (Number(draft.tipo) !== 1 && productDiscount !== 0) {
+        return true;
+      }
+
+      return false;
+    });
 
     if (draft.products.length === 0) {
-      nextErrors.produtoIds = "Adicione ao menos um produto nesta movimentacao.";
+      nextErrors.produtos = "Adicione ao menos um produto nesta movimentacao.";
     } else if (incompatibleMessage) {
-      nextErrors.produtoIds = incompatibleMessage;
+      nextErrors.produtos = incompatibleMessage;
+    } else if (invalidDiscountProduct) {
+      nextErrors.produtos =
+        Number(draft.tipo) === 1
+          ? `Revise o desconto do produto ${invalidDiscountProduct.id}. O desconto unitario precisa ficar entre 0% e 100%.`
+          : "Descontos por produto so podem ser usados em movimentacoes de venda.";
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -774,12 +826,12 @@ export function MovementPage() {
                             label="Adicionar produto pelo id"
                             placeholder="Ex.: 152"
                             value={activeDraft.productIdInput}
-                            error={activeDraft.errors.produtoIds}
+                            error={activeDraft.errors.produtos}
                             onChange={(value) =>
                               updateDraft(activeDraft.id, (draft) => ({
                                 ...draft,
                                 productIdInput: value.replace(/[^\d]/g, ""),
-                                errors: { ...draft.errors, produtoIds: undefined },
+                                errors: { ...draft.errors, produtos: undefined },
                               }))
                             }
                           />
@@ -825,22 +877,38 @@ export function MovementPage() {
                       ) : null}
                     </div>
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeDraft(activeDraft.id)}
-                        className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
-                      >
-                        Limpar aba
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSubmit(activeDraft)}
-                        disabled={createMovementMutation.isPending}
-                        className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {createMovementMutation.isPending ? "Salvando..." : "Salvar movimentacao"}
-                      </button>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                      <div className="w-full lg:w-[260px]">
+                        <TextField
+                          label="Desconto total da venda (%)"
+                          value={activeDraft.descontoTotal}
+                          error={activeDraft.errors.descontoTotal}
+                          onChange={(value) =>
+                            updateDraft(activeDraft.id, (draft) => ({
+                              ...draft,
+                              descontoTotal: value.replace(/[^\d.,]/g, ""),
+                              errors: { ...draft.errors, descontoTotal: undefined, produtos: undefined },
+                            }))
+                          }
+                        />
+                      </div>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeDraft(activeDraft.id)}
+                          className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
+                        >
+                          Limpar aba
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSubmit(activeDraft)}
+                          disabled={createMovementMutation.isPending}
+                          className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {createMovementMutation.isPending ? "Salvando..." : "Salvar movimentacao"}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -867,7 +935,9 @@ export function MovementPage() {
                         {formatCurrencyValue(activeDraftTotalPrice)}
                       </p>
                       <p className="mt-2 text-sm text-[var(--muted)]">
-                        Soma dos precos dos produtos adicionados nesta movimentacao.
+                        {Number(activeDraft.tipo) === 1
+                          ? "Preview com o desconto total como padrao por peca, sobrescrito quando a peca tiver desconto proprio."
+                          : "Soma dos precos dos produtos adicionados nesta movimentacao."}
                       </p>
                     </div>
 
@@ -920,7 +990,7 @@ export function MovementPage() {
                                         draft.autoLinkedBorrowedProductIds.filter(
                                           (itemId) => itemId !== product.id,
                                         ),
-                                      errors: { ...draft.errors, produtoIds: undefined },
+                                      errors: { ...draft.errors, produtos: undefined },
                                     }))
                                   }
                                   className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-white text-sm text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
@@ -941,6 +1011,9 @@ export function MovementPage() {
                                   Preco - {formatCurrencyValue(product.preco)}
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
+                                  Desconto - {getEffectiveProductDiscount(activeDraft, product).toFixed(2)}%
+                                </span>
+                                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Entrada - {formatDateValue(product.entrada)}
                                 </span>
                                 <span
@@ -952,6 +1025,24 @@ export function MovementPage() {
                                 >
                                   Situacao - {formatSituacaoValue(product.situacao)}
                                 </span>
+                              </div>
+
+                              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                <TextField
+                                  label="Desconto da peca (%)"
+                                  value={product.desconto}
+                                  onChange={(value) =>
+                                    updateDraft(activeDraft.id, (draft) => ({
+                                      ...draft,
+                                      products: draft.products.map((item) =>
+                                        item.id === product.id
+                                          ? { ...item, desconto: value.replace(/[^\d.,]/g, "") }
+                                          : item,
+                                      ),
+                                      errors: { ...draft.errors, produtos: undefined },
+                                    }))
+                                  }
+                                />
                               </div>
 
                               {!isCompatible ? (

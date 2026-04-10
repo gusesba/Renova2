@@ -34,7 +34,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.Venda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produto.Id],
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
                 Data = movimentacao.Data
             });
 
@@ -63,7 +63,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.DevolucaoVenda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produto.Id],
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
                 Data = movimentacao.Data
             });
 
@@ -92,7 +92,11 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.Venda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id],
+                Produtos =
+                [
+                    new CriarPagamentoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarPagamentoProdutoCommand { ProdutoId = produtoB.Id }
+                ],
                 Data = movimentacao.Data
             });
 
@@ -122,7 +126,11 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.Venda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id],
+                Produtos =
+                [
+                    new CriarPagamentoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarPagamentoProdutoCommand { ProdutoId = produtoB.Id }
+                ],
                 Data = movimentacao.Data
             });
 
@@ -159,7 +167,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.Venda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produto.Id],
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
                 Data = movimentacao.Data
             });
 
@@ -185,11 +193,37 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.Venda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                ProdutoIds = [produto.Id],
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
                 Data = movimentacao.Data
             }));
 
             Assert.Contains("configuracao de repasse", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveAplicarDescontoPorProdutoNoValorDaVendaEFornecedor()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", 200m, "44999990001");
+            MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produto.Id]);
+            _ = await CriarConfigLojaAsync(context, loja.Id, 45m, 60m);
+
+            PagamentoService service = new(context);
+            IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
+            {
+                MovimentacaoId = movimentacao.Id,
+                TipoMovimentacao = TipoMovimentacao.Venda,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id, Desconto = 25m }],
+                Data = movimentacao.Data
+            });
+
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Valor == 150m);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Valor == 90m);
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)

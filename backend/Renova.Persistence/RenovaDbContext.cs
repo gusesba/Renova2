@@ -286,6 +286,7 @@ namespace Renova.Persistence
                 _ = entity.HasKey(p => new { p.MovimentacaoId, p.ProdutoId });
                 _ = entity.Property(p => p.MovimentacaoId).IsRequired();
                 _ = entity.Property(p => p.ProdutoId).IsRequired();
+                _ = entity.Property(p => p.Desconto).HasPrecision(5, 2).IsRequired();
                 _ = entity.HasOne(p => p.Movimentacao)
                     .WithMany(p => p.Produtos)
                     .HasForeignKey(p => p.MovimentacaoId)

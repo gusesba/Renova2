@@ -35,7 +35,11 @@ export async function createMovement(
     data: string;
     clienteId: number;
     lojaId: number;
-    produtoIds: number[];
+    descontoTotal: number;
+    produtos: Array<{
+      produtoId: number;
+      desconto: number;
+    }>;
   },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {

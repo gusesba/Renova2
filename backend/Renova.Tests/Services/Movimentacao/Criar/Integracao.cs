@@ -37,7 +37,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id]
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoB.Id }
+                ]
             });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -80,7 +84,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id]
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoB.Id }
+                ]
             });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -112,7 +120,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -135,7 +143,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = default,
                 ClienteId = 0,
                 LojaId = loja.Id,
-                ProdutoIds = []
+                Produtos = []
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -160,7 +168,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -189,7 +197,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteOutraLoja.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -215,7 +223,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoOutraLoja.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produtoOutraLoja.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -240,7 +248,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -270,7 +278,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -302,7 +310,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteVenda.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -333,7 +341,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -361,7 +369,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteDevolucao.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -392,7 +400,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -420,7 +428,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteDevolucao.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -450,7 +458,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             });
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

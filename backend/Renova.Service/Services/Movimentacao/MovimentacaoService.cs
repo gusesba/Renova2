@@ -139,9 +139,14 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Data da movimentacao e obrigatoria.", nameof(request));
             }
 
-            if (request.ProdutoIds.Count == 0)
+            if (request.Produtos.Count == 0)
             {
                 throw new ArgumentException("Ao menos um produto deve ser informado.", nameof(request));
+            }
+
+            if (request.DescontoTotal is < 0 or > 100)
+            {
+                throw new ArgumentException("Desconto total deve estar entre 0 e 100.", nameof(request));
             }
 
             LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
@@ -155,8 +160,31 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
             }
 
-            List<int> produtoIds = request.ProdutoIds
-                .Distinct()
+            List<CriarMovimentacaoProdutoCommand> produtosSolicitados = request.Produtos
+                .GroupBy(item => item.ProdutoId)
+                .Select(group =>
+                {
+                    if (group.Count() > 1)
+                    {
+                        throw new ArgumentException(
+                            $"O produto {group.Key} foi informado mais de uma vez na movimentacao.",
+                            nameof(request));
+                    }
+
+                    CriarMovimentacaoProdutoCommand item = group.Single();
+                    decimal descontoEfetivo = ObterDescontoEfetivo(request.Tipo, request.DescontoTotal, item.Desconto);
+
+                    return new CriarMovimentacaoProdutoCommand
+                    {
+                        ProdutoId = item.ProdutoId,
+                        Desconto = descontoEfetivo
+                    };
+                })
+                .OrderBy(item => item.ProdutoId)
+                .ToList();
+
+            List<int> produtoIds = produtosSolicitados
+                .Select(item => item.ProdutoId)
                 .ToList();
 
             IDbContextTransaction? transaction = null;
@@ -202,10 +230,11 @@ namespace Renova.Service.Services.Movimentacao
                     Data = request.Data,
                     ClienteId = request.ClienteId,
                     LojaId = request.LojaId,
-                    Produtos = produtoIds
-                        .Select(produtoId => new MovimentacaoProdutoModel
+                    Produtos = produtosSolicitados
+                        .Select(item => new MovimentacaoProdutoModel
                         {
-                            ProdutoId = produtoId
+                            ProdutoId = item.ProdutoId,
+                            Desconto = item.Desconto
                         })
                         .ToList()
                 };
@@ -226,7 +255,13 @@ namespace Renova.Service.Services.Movimentacao
                         TipoMovimentacao = request.Tipo,
                         LojaId = request.LojaId,
                         ClienteId = request.ClienteId,
-                        ProdutoIds = produtoIds,
+                        Produtos = produtosSolicitados
+                            .Select(item => new CriarPagamentoProdutoCommand
+                            {
+                                ProdutoId = item.ProdutoId,
+                                Desconto = item.Desconto
+                            })
+                            .ToList(),
                         Data = request.Data
                     }, cancellationToken);
                 }
@@ -262,6 +297,37 @@ namespace Renova.Service.Services.Movimentacao
                     await transaction.DisposeAsync();
                 }
             }
+        }
+
+        private static decimal ObterDescontoEfetivo(
+            TipoMovimentacao tipoMovimentacao,
+            decimal descontoTotal,
+            decimal descontoProduto)
+        {
+            if (tipoMovimentacao != TipoMovimentacao.Venda)
+            {
+                if (descontoTotal != 0 || descontoProduto != 0)
+                {
+                    throw new ArgumentException("Descontos so podem ser informados em movimentacoes de venda.");
+                }
+
+                return 0m;
+            }
+
+            if (descontoTotal is < 0 or > 100)
+            {
+                throw new ArgumentException("Desconto total deve estar entre 0 e 100.");
+            }
+
+            if (descontoProduto is < 0 or > 100)
+            {
+                throw new ArgumentException("Desconto por produto deve estar entre 0 e 100.");
+            }
+
+            return decimal.Round(
+                descontoProduto > 0 ? descontoProduto : descontoTotal,
+                2,
+                MidpointRounding.AwayFromZero);
         }
 
         public async Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)

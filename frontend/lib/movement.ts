@@ -12,9 +12,14 @@ export type MovementDraftFormValues = {
   tipo: string;
   data: string;
   clienteId: string;
+  descontoTotal: string;
 };
 
-export type MovementFieldErrors = Partial<Record<keyof MovementDraftFormValues | "produtoIds", string>>;
+export type MovementFieldErrors = Partial<Record<keyof MovementDraftFormValues | "produtos", string>>;
+
+export type MovementDraftProduct = ProductListItem & {
+  desconto: string;
+};
 
 export type MovementCreateResponse = {
   id: number;
@@ -92,6 +97,7 @@ export const initialMovementDraftFormValues: MovementDraftFormValues = {
   tipo: "1",
   data: new Date().toISOString().slice(0, 10),
   clienteId: "",
+  descontoTotal: "0",
 };
 
 export const initialMovementFilters: MovementFilters = {

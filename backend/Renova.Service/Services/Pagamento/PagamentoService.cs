@@ -214,7 +214,7 @@ namespace Renova.Service.Services.Pagamento
 
         public async Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
         {
-            if (request.ProdutoIds.Count == 0)
+            if (request.Produtos.Count == 0)
             {
                 throw new ArgumentException("Ao menos um produto deve ser informado para gerar pagamentos.", nameof(request));
             }
@@ -224,11 +224,11 @@ namespace Renova.Service.Services.Pagamento
                 ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
 
             List<ProdutoEstoqueModel> produtos = await _context.ProdutosEstoque
-                .Where(item => request.ProdutoIds.Contains(item.Id))
+                .Where(item => request.Produtos.Select(produto => produto.ProdutoId).Contains(item.Id))
                 .OrderBy(item => item.Id)
                 .ToListAsync(cancellationToken);
 
-            if (produtos.Count != request.ProdutoIds.Distinct().Count())
+            if (produtos.Count != request.Produtos.Select(produto => produto.ProdutoId).Distinct().Count())
             {
                 throw new ArgumentException("Um ou mais produtos informados nao foram encontrados.", nameof(request));
             }
@@ -238,7 +238,29 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Os produtos informados devem pertencer a loja selecionada.", nameof(request));
             }
 
-            decimal valorTotal = produtos.Sum(item => item.Preco);
+            Dictionary<int, decimal> descontosPorProdutoId = request.Produtos
+                .GroupBy(item => item.ProdutoId)
+                .ToDictionary(
+                    group => group.Key,
+                    group =>
+                    {
+                        if (group.Count() > 1)
+                        {
+                            throw new ArgumentException($"O produto {group.Key} foi informado mais de uma vez para gerar pagamentos.", nameof(request));
+                        }
+
+                        decimal desconto = group.Single().Desconto;
+                        if (desconto is < 0 or > 100)
+                        {
+                            throw new ArgumentException("Desconto por produto deve estar entre 0 e 100.", nameof(request));
+                        }
+
+                        return desconto;
+                    });
+
+            decimal valorTotal = produtos.Sum(produto => CalcularValorComDesconto(
+                produto.Preco,
+                descontosPorProdutoId[produto.Id]));
 
             (NaturezaPagamento naturezaCliente, NaturezaPagamento naturezaFornecedor) = request.TipoMovimentacao switch
             {
@@ -254,7 +276,7 @@ namespace Renova.Service.Services.Pagamento
                 ClienteId = request.ClienteId,
                 Natureza = naturezaCliente,
                 Status = StatusPagamento.Pendente,
-                Valor = valorTotal,
+                Valor = decimal.Round(valorTotal, 2, MidpointRounding.AwayFromZero),
                 Data = request.Data
             };
 
@@ -264,7 +286,8 @@ namespace Renova.Service.Services.Pagamento
                 .Select(grupo =>
                 {
                     decimal valorFornecedor = decimal.Round(
-                        grupo.Sum(item => item.Preco) * (config.PercentualRepasseVendedorCredito / 100m),
+                        grupo.Sum(item => CalcularValorComDesconto(item.Preco, descontosPorProdutoId[item.Id]))
+                            * (config.PercentualRepasseVendedorCredito / 100m),
                         2,
                         MidpointRounding.AwayFromZero);
 
@@ -284,6 +307,14 @@ namespace Renova.Service.Services.Pagamento
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             return [.. pagamentos.Select(Mapear)];
+        }
+
+        private static decimal CalcularValorComDesconto(decimal preco, decimal desconto)
+        {
+            return decimal.Round(
+                preco * ((100m - desconto) / 100m),
+                2,
+                MidpointRounding.AwayFromZero);
         }
 
         public async Task<PagamentoCreditoDto> CreateCreditoAsync(

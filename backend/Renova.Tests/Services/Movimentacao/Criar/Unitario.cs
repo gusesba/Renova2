@@ -37,7 +37,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id]
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoB.Id }
+                ]
             };
 
             MovimentacaoService service = new(context);
@@ -87,7 +91,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.Equal(tipo, resultado.Tipo);
@@ -123,7 +127,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.Equal(situacaoEsperadaAoFinal, (await context.ProdutosEstoque.SingleAsync()).Situacao);
@@ -146,7 +150,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteOutraLoja.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Empty(context.Movimentacoes);
@@ -169,7 +173,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoOutraLoja.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produtoOutraLoja.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Empty(context.Movimentacoes);
@@ -193,7 +197,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoValido.Id, produtoInvalido.Id]
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoValido.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoInvalido.Id }
+                ]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Contains(produtoInvalido.Id.ToString(), exception.Message);
@@ -220,7 +228,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = 9999 }));
         }
 
@@ -243,7 +251,12 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produtoA.Id, produtoB.Id, produtoC.Id]
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoA.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoB.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoC.Id }
+                ]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             List<MovimentacaoProdutoModel> relacionamentos = await context.MovimentacoesProdutos
@@ -271,7 +284,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id, Desconto = 10m }],
+                DescontoTotal = 5m
             };
 
             FakePagamentoService pagamentoService = new();
@@ -282,7 +296,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.Equal(TipoMovimentacao.Venda, pagamentoService.Commands[0].TipoMovimentacao);
             Assert.Equal(cliente.Id, pagamentoService.Commands[0].ClienteId);
             Assert.Equal(loja.Id, pagamentoService.Commands[0].LojaId);
-            Assert.Equal([produto.Id], pagamentoService.Commands[0].ProdutoIds);
+            Assert.Equal([produto.Id], pagamentoService.Commands[0].Produtos.Select(item => item.ProdutoId).ToList());
+            Assert.Equal(10m, pagamentoService.Commands[0].Produtos[0].Desconto);
         }
 
         [Fact]
@@ -301,7 +316,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             };
 
             FakePagamentoService pagamentoService = new();
@@ -312,7 +327,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.Equal(TipoMovimentacao.DevolucaoVenda, pagamentoService.Commands[0].TipoMovimentacao);
             Assert.Equal(cliente.Id, pagamentoService.Commands[0].ClienteId);
             Assert.Equal(loja.Id, pagamentoService.Commands[0].LojaId);
-            Assert.Equal([produto.Id], pagamentoService.Commands[0].ProdutoIds);
+            Assert.Equal([produto.Id], pagamentoService.Commands[0].Produtos.Select(item => item.ProdutoId).ToList());
         }
 
         [Fact]
@@ -332,7 +347,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.True(resultado.Id > 0);
@@ -358,7 +373,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteVenda.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Contains(produto.Id.ToString(), exception.Message);
@@ -383,7 +398,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.True(resultado.Id > 0);
@@ -409,7 +424,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteDevolucao.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Contains(produto.Id.ToString(), exception.Message);
@@ -434,7 +449,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = cliente.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.True(resultado.Id > 0);
@@ -460,7 +475,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
                 ClienteId = clienteDevolucao.Id,
                 LojaId = loja.Id,
-                ProdutoIds = [produto.Id]
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
             }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
 
             Assert.Contains(produto.Id.ToString(), exception.Message);
@@ -660,7 +675,11 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                     TipoMovimentacao = request.TipoMovimentacao,
                     LojaId = request.LojaId,
                     ClienteId = request.ClienteId,
-                    ProdutoIds = [.. request.ProdutoIds],
+                    Produtos = [.. request.Produtos.Select(item => new CriarPagamentoProdutoCommand
+                    {
+                        ProdutoId = item.ProdutoId,
+                        Desconto = item.Desconto
+                    })],
                     Data = request.Data
                 });
 
