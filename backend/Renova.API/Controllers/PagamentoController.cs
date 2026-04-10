@@ -5,6 +5,7 @@ using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Pagamento;
 using Renova.Service.Parameters.Pagamento;
+using Renova.Service.Queries.Pagamento;
 using Renova.Service.Services.Pagamento;
 
 namespace Renova.API.Controllers
@@ -15,6 +16,41 @@ namespace Renova.API.Controllers
     public class PagamentoController(IPagamentoService pagamentoService, RenovaDbContext context) : AuthenticatedControllerBase(context)
     {
         private readonly IPagamentoService _pagamentoService = pagamentoService;
+
+        [HttpGet]
+        [ProducesResponseType(typeof(PaginacaoDto<PagamentoBuscaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetPagamentos([FromQuery] ObterPagamentosQuery query, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                PaginacaoDto<PagamentoBuscaDto> resultado = await _pagamentoService.GetAllAsync(
+                    query,
+                    new ObterPagamentosParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
 
         [HttpGet("pendencia")]
         [ProducesResponseType(typeof(IReadOnlyList<ClientePendenciaDto>), StatusCodes.Status200OK)]

@@ -4,13 +4,119 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Pagamento;
+using Renova.Service.Extensions;
 using Renova.Service.Parameters.Pagamento;
+using Renova.Service.Queries.Pagamento;
+using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Pagamento
 {
     public class PagamentoService(RenovaDbContext context) : IPagamentoService
     {
         private readonly RenovaDbContext _context = context;
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<PagamentoModel, int>>)(pagamento => pagamento.Id),
+            ["data"] = (Expression<Func<PagamentoModel, DateTime>>)(pagamento => pagamento.Data),
+            ["cliente"] = (Expression<Func<PagamentoModel, string>>)(pagamento => pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty),
+            ["valor"] = (Expression<Func<PagamentoModel, decimal>>)(pagamento => pagamento.Valor),
+            ["natureza"] = (Expression<Func<PagamentoModel, NaturezaPagamento>>)(pagamento => pagamento.Natureza),
+            ["status"] = (Expression<Func<PagamentoModel, StatusPagamento>>)(pagamento => pagamento.Status)
+        };
+
+        public async Task<PaginacaoDto<PagamentoBuscaDto>> GetAllAsync(
+            ObterPagamentosQuery request,
+            ObterPagamentosParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            IQueryable<PagamentoModel> query = _context.Pagamentos
+                .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
+
+            if (request.DataInicial.HasValue)
+            {
+                DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+                query = query.Where(pagamento => pagamento.Data >= dataInicialUtc);
+            }
+
+            if (request.DataFinal.HasValue)
+            {
+                DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+                query = query.Where(pagamento => pagamento.Data <= dataFinalUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Cliente))
+            {
+                string clienteFiltro = request.Cliente.Trim().ToLowerInvariant();
+                query = query.Where(pagamento => pagamento.Cliente != null && pagamento.Cliente.Nome.ToLower().Contains(clienteFiltro));
+            }
+
+            if (request.MovimentacaoId.HasValue)
+            {
+                query = query.Where(pagamento => pagamento.MovimentacaoId == request.MovimentacaoId.Value);
+            }
+
+            if (request.Natureza.HasValue)
+            {
+                if (!Enum.IsDefined(request.Natureza.Value))
+                {
+                    throw new ArgumentException("Natureza de pagamento informada e invalida.", nameof(request));
+                }
+
+                query = query.Where(pagamento => pagamento.Natureza == request.Natureza.Value);
+            }
+
+            if (request.Status.HasValue)
+            {
+                if (!Enum.IsDefined(request.Status.Value))
+                {
+                    throw new ArgumentException("Status de pagamento informado e invalido.", nameof(request));
+                }
+
+                query = query.Where(pagamento => pagamento.Status == request.Status.Value);
+            }
+
+            IQueryable<PagamentoModel> queryOrdenada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "data")
+                .ThenBy(pagamento => pagamento.Id);
+
+            IQueryable<PagamentoBuscaDto> queryProjetada = queryOrdenada.Select(pagamento => new PagamentoBuscaDto
+            {
+                Id = pagamento.Id,
+                MovimentacaoId = pagamento.MovimentacaoId,
+                LojaId = pagamento.LojaId,
+                ClienteId = pagamento.ClienteId,
+                Cliente = pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty,
+                Natureza = pagamento.Natureza,
+                Status = pagamento.Status,
+                Valor = pagamento.Valor,
+                Data = pagamento.Data,
+                Movimentacao = new MovimentacaoResumoDto
+                {
+                    Id = pagamento.Movimentacao != null ? pagamento.Movimentacao.Id : pagamento.MovimentacaoId,
+                    Tipo = pagamento.Movimentacao != null ? pagamento.Movimentacao.Tipo : default,
+                    Data = pagamento.Movimentacao != null ? pagamento.Movimentacao.Data : default,
+                    ClienteId = pagamento.Movimentacao != null ? pagamento.Movimentacao.ClienteId : 0,
+                    Cliente = pagamento.Movimentacao != null && pagamento.Movimentacao.Cliente != null ? pagamento.Movimentacao.Cliente.Nome : string.Empty,
+                    LojaId = pagamento.Movimentacao != null ? pagamento.Movimentacao.LojaId : pagamento.LojaId,
+                    QuantidadeProdutos = pagamento.Movimentacao != null ? pagamento.Movimentacao.Produtos.Count : 0,
+                    ProdutoIds = pagamento.Movimentacao != null
+                        ? pagamento.Movimentacao.Produtos
+                            .OrderBy(item => item.ProdutoId)
+                            .Select(item => item.ProdutoId)
+                            .ToList()
+                        : new List<int>()
+                }
+            });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
 
         public async Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(
             int lojaId,
@@ -371,6 +477,17 @@ namespace Renova.Service.Services.Pagamento
             return utcValue.TimeOfDay == TimeSpan.Zero
                 ? utcValue.Date.AddDays(1).AddTicks(-1)
                 : utcValue;
+        }
+
+        private static DateTime NormalizarDateTimeParaUtc(DateTime value)
+        {
+            return value.Kind switch
+            {
+                DateTimeKind.Utc => value,
+                DateTimeKind.Local => value.ToUniversalTime(),
+                DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+                _ => value
+            };
         }
 
         private static PagamentoDto Mapear(PagamentoModel pagamento)

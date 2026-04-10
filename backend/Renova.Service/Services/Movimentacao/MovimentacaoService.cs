@@ -10,6 +10,7 @@ using Renova.Service.Extensions;
 using Renova.Service.Parameters.Movimentacao;
 using Renova.Service.Parameters.Pagamento;
 using Renova.Service.Queries.Movimentacao;
+using Renova.Service.Queries.Pagamento;
 using Renova.Service.Services.Pagamento;
 using System.Linq.Expressions;
 
@@ -640,6 +641,24 @@ namespace Renova.Service.Services.Movimentacao
         private sealed class NoOpPagamentoService : IPagamentoService
         {
             public static readonly NoOpPagamentoService Instance = new();
+
+            public Task<PaginacaoDto<PagamentoBuscaDto>> GetAllAsync(
+                ObterPagamentosQuery request,
+                ObterPagamentosParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                return Task.FromResult(new PaginacaoDto<PagamentoBuscaDto>
+                {
+                    Itens = [],
+                    Pagina = 1,
+                    TamanhoPagina = 10,
+                    TotalItens = 0,
+                    TotalPaginas = 0
+                });
+            }
 
             public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {

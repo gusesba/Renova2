@@ -7,6 +7,7 @@ using Renova.Service.Commands.Movimentacao;
 using Renova.Service.Commands.Pagamento;
 using Renova.Service.Parameters.Movimentacao;
 using Renova.Service.Parameters.Pagamento;
+using Renova.Service.Queries.Pagamento;
 using Renova.Service.Services.Movimentacao;
 using Renova.Service.Services.Pagamento;
 using Renova.Tests.Infrastructure;
@@ -613,6 +614,24 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         private sealed class FakePagamentoService : IPagamentoService
         {
             public List<CriarPagamentoCommand> Commands { get; } = [];
+
+            public Task<PaginacaoDto<PagamentoBuscaDto>> GetAllAsync(
+                ObterPagamentosQuery request,
+                ObterPagamentosParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                return Task.FromResult(new PaginacaoDto<PagamentoBuscaDto>
+                {
+                    Itens = [],
+                    Pagina = 1,
+                    TamanhoPagina = 10,
+                    TotalItens = 0,
+                    TotalPaginas = 0
+                });
+            }
 
             public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {
