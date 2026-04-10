@@ -18,15 +18,6 @@ export function PaymentConfigRequiredModal({
 }: PaymentConfigRequiredModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-
-    return () => {
-      setIsMounted(false);
-    };
-  }, []);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -66,7 +57,7 @@ export function PaymentConfigRequiredModal({
     };
   }, [isOpen, onClose, shouldRender]);
 
-  if (!isMounted || !shouldRender) {
+  if (typeof document === "undefined" || !shouldRender) {
     return null;
   }
 

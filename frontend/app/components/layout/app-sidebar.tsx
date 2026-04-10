@@ -14,6 +14,7 @@ const primaryItems: NavItem[] = [
   { label: "Clientes", href: "/dashboard/cliente" },
   { label: "Produtos", href: "/dashboard/produto" },
   { label: "Movimentacoes", href: "/dashboard/movimentacao" },
+  { label: "Pagamentos", href: "/dashboard/pagamento" },
   { label: "Pendencias", href: "/dashboard/pendencia" },
 ];
 
@@ -26,19 +27,6 @@ function HexagonMark() {
         R
       </div>
     </div>
-  );
-}
-
-function SidebarIcon() {
-  return (
-    <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-white text-[var(--muted)]">
-      <span className="grid h-3.5 w-3.5 grid-cols-2 gap-0.5">
-        <span className="rounded-[2px] bg-current/90" />
-        <span className="rounded-[2px] bg-current/65" />
-        <span className="rounded-[2px] bg-current/65" />
-        <span className="rounded-[2px] bg-current/90" />
-      </span>
-    </span>
   );
 }
 

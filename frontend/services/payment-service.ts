@@ -1,4 +1,31 @@
+import { buildPaymentQuery, type PaymentFilters } from "@/lib/payment";
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:5268";
+
+export async function getPayments(
+  token: string,
+  storeId: number,
+  filters: PaymentFilters,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const query = buildPaymentQuery(storeId, filters);
+  const response = await fetch(`${apiBaseUrl}/api/pagamento?${query}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
 
 export async function getPendingClients(
   token: string,

@@ -14,7 +14,6 @@ import {
   formatMovementType,
   getMovementApiMessage,
   type MovementDestinationProduct,
-  type MovementTypeValue,
 } from "@/lib/movement";
 import { formatDateValue, formatSituacaoValue, getProductApiMessage, type ProductListItem } from "@/lib/product";
 import { getAuthToken } from "@/lib/store";
