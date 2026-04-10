@@ -154,6 +154,37 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             Assert.Contains("credito positivo", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public async Task CreateCreditoAsyncDeveNormalizarDataUnspecifiedParaUtc()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria-data-unspecified@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente B", "44999990002");
+
+            PagamentoService service = new(context);
+            PagamentoCreditoDto resultado = await service.CreateCreditoAsync(
+                new CriarPagamentoCreditoCommand
+                {
+                    LojaId = loja.Id,
+                    ClienteId = cliente.Id,
+                    Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ValorCredito = 50m,
+                    Data = new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Unspecified)
+                },
+                new CriarPagamentoCreditoParametros
+                {
+                    UsuarioId = usuario.Id
+                });
+
+            Assert.Equal(DateTimeKind.Utc, resultado.Data.Kind);
+
+            PagamentoCreditoModel pagamento = await context.PagamentosCredito.SingleAsync();
+            Assert.Equal(DateTimeKind.Utc, pagamento.Data.Kind);
+            Assert.Equal(new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc), pagamento.Data);
+        }
+
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)
         {
             UsuarioModel usuario = new()

@@ -52,7 +52,7 @@ namespace Renova.Tests.Services.Pagamento.Pendencia
         }
 
         [Fact]
-        public async Task UpdatePendenciasAsyncDeveConverterPagamentosPendentesEmCreditoEMarcarComoPago()
+        public async Task UpdatePendenciasAsyncDeveConverterPagamentosPendentesEmCreditoEMarcarComoPagoSemGerarPagamentoCredito()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -142,8 +142,7 @@ namespace Renova.Tests.Services.Pagamento.Pendencia
             Assert.Equal(4, await context.Pagamentos.CountAsync(item =>
                 item.Status == StatusPagamento.Pago
                 && (item.Valor == 20m || item.Valor == 35m || item.Valor == 50m || item.Valor == 70m)));
-            Assert.Equal(2, await context.PagamentosCredito.CountAsync(item => item.Tipo == TipoPagamentoCredito.AdicionarCredito));
-            Assert.Equal(1, await context.PagamentosCredito.CountAsync(item => item.Tipo == TipoPagamentoCredito.ResgatarCredito));
+            Assert.Equal(0, await context.PagamentosCredito.CountAsync());
         }
 
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)

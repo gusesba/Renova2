@@ -13,14 +13,18 @@ import {
   formatPhone,
   getPaymentApiMessage,
   getTodayDateInputValue,
+  type PendingClientItem,
 } from "@/lib/payment";
 import { getAuthToken } from "@/lib/store";
 import { getPendingClients, updatePendingPayments } from "@/services/payment-service";
+
+import { PaymentCreditModal } from "./payment-credit-modal";
 
 export function PendingPage() {
   const queryClient = useQueryClient();
   const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [dateValue, setDateValue] = useState(() => getTodayDateInputValue());
+  const [selectedClient, setSelectedClient] = useState<PendingClientItem | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const pendingClientsQuery = useQuery({
@@ -192,6 +196,7 @@ export function PendingPage() {
                     <th className="px-5 py-4 font-medium">Cliente</th>
                     <th className="px-5 py-4 font-medium">Contato</th>
                     <th className="px-5 py-4 font-medium text-right">Credito atual</th>
+                    <th className="px-5 py-4 font-medium text-right">Acoes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,6 +212,15 @@ export function PendingPage() {
                       <td className="px-5 py-4 text-right text-sm font-semibold text-[var(--foreground)]">
                         {formatCurrency(client.credito)}
                       </td>
+                      <td className="px-5 py-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedClient(client)}
+                          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
+                        >
+                          Pagamento
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -215,6 +229,17 @@ export function PendingPage() {
           </div>
         )}
       </div>
+
+      <PaymentCreditModal
+        client={selectedClient}
+        isOpen={Boolean(selectedClient)}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setSelectedClient(null)}
+        onSuccess={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
+        }}
+      />
     </section>
   );
 }

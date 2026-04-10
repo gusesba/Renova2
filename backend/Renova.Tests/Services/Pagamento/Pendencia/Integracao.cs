@@ -53,6 +53,7 @@ namespace Renova.Tests.Services.Pagamento.Pendencia
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             Assert.Equal(-90m, context.ClientesCreditos.Single(item => item.ClienteId == fornecedor.Id).Valor);
             Assert.Equal(StatusPagamento.Pago, context.Pagamentos.Single().Status);
+            Assert.Empty(context.PagamentosCredito);
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)

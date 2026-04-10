@@ -235,6 +235,8 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Valor de credito deve ser maior que zero.", nameof(request));
             }
 
+            DateTime dataPagamentoUtc = NormalizarDateTimeParaUtc(request.Data);
+
             LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
@@ -274,7 +276,7 @@ namespace Renova.Service.Services.Pagamento
                 Tipo = request.Tipo,
                 ValorCredito = valorCredito,
                 ValorDinheiro = valorDinheiro,
-                Data = request.Data
+                Data = dataPagamentoUtc
             };
 
             _ = await _context.PagamentosCredito.AddAsync(pagamentoCredito, cancellationToken);
@@ -321,7 +323,6 @@ namespace Renova.Service.Services.Pagamento
                 .ToDictionaryAsync(credito => credito.ClienteId, cancellationToken);
 
             Dictionary<int, AtualizacaoPendenciaClienteDto> atualizacoesPorCliente = [];
-            List<PagamentoCreditoModel> pagamentosCredito = [];
 
             foreach (PagamentoModel pagamento in pagamentosPendentes)
             {
@@ -348,18 +349,6 @@ namespace Renova.Service.Services.Pagamento
                 credito.Valor += variacaoCredito;
                 pagamento.Status = StatusPagamento.Pago;
 
-                pagamentosCredito.Add(new PagamentoCreditoModel
-                {
-                    LojaId = pagamento.LojaId,
-                    ClienteId = pagamento.ClienteId,
-                    Tipo = variacaoCredito >= 0
-                        ? TipoPagamentoCredito.AdicionarCredito
-                        : TipoPagamentoCredito.ResgatarCredito,
-                    ValorCredito = decimal.Abs(variacaoCredito),
-                    ValorDinheiro = decimal.Abs(variacaoCredito),
-                    Data = dataLimite
-                });
-
                 if (!atualizacoesPorCliente.TryGetValue(pagamento.ClienteId, out AtualizacaoPendenciaClienteDto? atualizacao))
                 {
                     atualizacao = new AtualizacaoPendenciaClienteDto
@@ -377,7 +366,6 @@ namespace Renova.Service.Services.Pagamento
                 atualizacao.ValorAtualizado += variacaoCredito;
             }
 
-            await _context.PagamentosCredito.AddRangeAsync(pagamentosCredito, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             List<AtualizacaoPendenciaClienteDto> clientesAtualizados = atualizacoesPorCliente.Values

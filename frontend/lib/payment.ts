@@ -9,6 +9,8 @@ export type PaymentNatureValue = 1 | 2;
 
 export type PaymentStatusValue = 1 | 2 | 3;
 
+export type PaymentCreditTypeValue = 1 | 2;
+
 export type PaymentMovementSummary = {
   id: number;
   tipo: number;
@@ -31,6 +33,16 @@ export type PaymentListItem = {
   valor: number;
   data: string;
   movimentacao: PaymentMovementSummary;
+};
+
+export type PaymentCreditResponse = {
+  id: number;
+  lojaId: number;
+  clienteId: number;
+  tipo: PaymentCreditTypeValue;
+  valorCredito: number;
+  valorDinheiro: number;
+  data: string;
 };
 
 export type PaymentListResponse = {
@@ -97,6 +109,11 @@ export const paymentStatusOptions: Array<{ label: string; value: PaymentStatusVa
   { value: 3, label: "Cancelado" },
 ];
 
+export const paymentCreditTypeOptions: Array<{ label: string; value: PaymentCreditTypeValue }> = [
+  { value: 1, label: "Pagamento do cliente" },
+  { value: 2, label: "Pagamento para o fornecedor" },
+];
+
 export const initialPaymentFilters: PaymentFilters = {
   dataInicial: "",
   dataFinal: "",
@@ -123,6 +140,10 @@ export function asPendingClientsResponse(body: unknown) {
 
 export function asPaymentListResponse(body: unknown) {
   return body as PaymentListResponse;
+}
+
+export function asPaymentCreditResponse(body: unknown) {
+  return body as PaymentCreditResponse;
 }
 
 export function asUpdatePendingResponse(body: unknown) {
@@ -162,6 +183,12 @@ export function formatPaymentStatus(value: number) {
   return paymentStatusOptions.find((option) => option.value === value)?.label ?? `Status ${value}`;
 }
 
+export function formatPaymentCreditType(value: number) {
+  return (
+    paymentCreditTypeOptions.find((option) => option.value === value)?.label ?? `Tipo ${value}`
+  );
+}
+
 export function getPaymentStatusBadgeClass(value: number) {
   switch (value) {
     case 1:
@@ -173,6 +200,23 @@ export function getPaymentStatusBadgeClass(value: number) {
     default:
       return "bg-slate-100 text-slate-600";
   }
+}
+
+export function calculateSupplierMoneyPreview(
+  creditValue: number,
+  percentualRepasseFornecedor: number,
+  percentualRepasseVendedorCredito: number,
+) {
+  if (percentualRepasseVendedorCredito <= 0) {
+    return 0;
+  }
+
+  return Number(
+    (
+      (creditValue * percentualRepasseFornecedor) /
+      percentualRepasseVendedorCredito
+    ).toFixed(2),
+  );
 }
 
 export function formatPhone(value: string) {
