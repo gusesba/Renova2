@@ -14,6 +14,7 @@ import {
   initialProductFilters,
   persistProductTableSettings,
   type ProductFilters,
+  type ProductRequestMatchItem,
   type ProductListItem,
   type ProductTableSettings,
 } from "@/lib/product";
@@ -25,6 +26,7 @@ import { ProductEditModal } from "./product-edit-modal";
 import { ProductEmptyState } from "./product-empty-state";
 import { ProductFiltersBar } from "./product-filters-bar";
 import { ProductPagination } from "./product-pagination";
+import { ProductRequestMatchModal } from "./product-request-match-modal";
 import { ProductSettingsModal } from "./product-settings-modal";
 import { ProductsTable } from "./products-table";
 
@@ -35,6 +37,9 @@ export function ProductPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isRequestMatchModalOpen, setIsRequestMatchModalOpen] = useState(false);
+  const [requestMatches, setRequestMatches] = useState<ProductRequestMatchItem[]>([]);
+  const [recentlyCreatedProductDescription, setRecentlyCreatedProductDescription] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductListItem | null>(null);
   const [selectedProductName, setSelectedProductName] = useState<string | null>(null);
   const editModalCleanupTimeoutRef = useRef<number | null>(null);
@@ -270,6 +275,17 @@ export function ProductPage() {
         storeId={selectedStoreId}
         storeName={selectedStore?.nome ?? null}
         onClose={() => setIsCreateModalOpen(false)}
+        onProductCreated={(product) => {
+          const matches = product.solicitacoesCompativeis ?? [];
+
+          if (matches.length === 0) {
+            return;
+          }
+
+          setRequestMatches(matches);
+          setRecentlyCreatedProductDescription(product.descricao);
+          setIsRequestMatchModalOpen(true);
+        }}
       />
       <ProductEditModal
         isOpen={isEditModalOpen}
@@ -306,6 +322,16 @@ export function ProductPage() {
           });
 
           toast.success("Configuracoes da tabela atualizadas.");
+        }}
+      />
+      <ProductRequestMatchModal
+        isOpen={isRequestMatchModalOpen}
+        matches={requestMatches}
+        productDescription={recentlyCreatedProductDescription}
+        onClose={() => {
+          setIsRequestMatchModalOpen(false);
+          setRequestMatches([]);
+          setRecentlyCreatedProductDescription(null);
         }}
       />
     </section>

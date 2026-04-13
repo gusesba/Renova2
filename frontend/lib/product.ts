@@ -17,6 +17,19 @@ export type ProductListItem = {
   situacao: number;
   consignado: boolean;
   tipoSugerido?: number;
+  solicitacoesCompativeis?: ProductRequestMatchItem[];
+};
+
+export type ProductRequestMatchItem = {
+  id: number;
+  cliente: string;
+  produto: string;
+  marca: string;
+  tamanho: string;
+  cor: string;
+  descricao: string;
+  precoMinimo: number;
+  precoMaximo: number;
 };
 
 export type ProductCreateResponse = {
@@ -32,6 +45,7 @@ export type ProductCreateResponse = {
   lojaId: number;
   situacao: number;
   consignado: boolean;
+  solicitacoesCompativeis?: ProductRequestMatchItem[];
 };
 
 export type ProductFormValues = {

@@ -14,6 +14,7 @@ using Renova.Service.Services.Movimentacao;
 using Renova.Service.Services.Pagamento;
 using Renova.Service.Services.Produto;
 using Renova.Service.Services.Renova;
+using Renova.Service.Services.Solicitacao;
 using Renova.Service.Services.Usuario;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,7 @@ builder.Services.AddScoped<ILojaService, LojaService>();
 builder.Services.AddScoped<IConfigLojaService, ConfigLojaService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IProdutoService, ProdutoService>();
+builder.Services.AddScoped<ISolicitacaoService, SolicitacaoService>();
 builder.Services.AddScoped<IPagamentoService, PagamentoService>();
 builder.Services.AddScoped<IMovimentacaoService, MovimentacaoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

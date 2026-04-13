@@ -92,7 +92,9 @@ namespace Renova.Service.Services.Produto
             _ = await _context.ProdutosEstoque.AddAsync(produto, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
-            return MapearProdutoDto(produto);
+            ProdutoDto resultado = MapearProdutoDto(produto);
+            resultado.SolicitacoesCompativeis = await ObterSolicitacoesCompativeisCoreAsync(produto, cancellationToken);
+            return resultado;
         }
 
         public async Task<ProdutoDto> EditAsync(EditarProdutoCommand request, EditarProdutoParametros parametros, CancellationToken cancellationToken = default)
@@ -166,7 +168,9 @@ namespace Renova.Service.Services.Produto
 
             _ = await _context.SaveChangesAsync(cancellationToken);
 
-            return MapearProdutoDto(produto);
+            ProdutoDto resultado = MapearProdutoDto(produto);
+            resultado.SolicitacoesCompativeis = await ObterSolicitacoesCompativeisCoreAsync(produto, cancellationToken);
+            return resultado;
         }
 
         public async Task DeleteAsync(ExcluirProdutoParametros parametros, CancellationToken cancellationToken = default)
@@ -470,6 +474,15 @@ namespace Renova.Service.Services.Produto
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<SolicitacaoCompativelDto>> GetSolicitacoesCompativeisAsync(int produtoId, CancellationToken cancellationToken = default)
+        {
+            ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .SingleOrDefaultAsync(item => item.Id == produtoId, cancellationToken)
+                ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
+
+            return await ObterSolicitacoesCompativeisCoreAsync(produto, cancellationToken);
+        }
+
         private async Task<ProdutoAuxiliarDto> CriarAuxiliarAsync<TModel>(
             CriarProdutoAuxiliarCommand request,
             CriarProdutoAuxiliarParametros parametros,
@@ -624,6 +637,34 @@ namespace Renova.Service.Services.Produto
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado
             };
+        }
+
+        private Task<List<SolicitacaoCompativelDto>> ObterSolicitacoesCompativeisCoreAsync(ProdutoEstoqueModel produto, CancellationToken cancellationToken)
+        {
+            return _context.Solicitacoes
+                .Where(solicitacao =>
+                    solicitacao.LojaId == produto.LojaId
+                    && solicitacao.ProdutoId == produto.ProdutoId
+                    && solicitacao.MarcaId == produto.MarcaId
+                    && solicitacao.TamanhoId == produto.TamanhoId
+                    && solicitacao.CorId == produto.CorId
+                    && produto.Preco >= solicitacao.PrecoMinimo
+                    && produto.Preco <= solicitacao.PrecoMaximo)
+                .OrderBy(solicitacao => solicitacao.Descricao)
+                .ThenBy(solicitacao => solicitacao.Id)
+                .Select(solicitacao => new SolicitacaoCompativelDto
+                {
+                    Id = solicitacao.Id,
+                    Cliente = solicitacao.Cliente != null ? solicitacao.Cliente.Nome : string.Empty,
+                    Produto = solicitacao.Produto != null ? solicitacao.Produto.Valor : string.Empty,
+                    Marca = solicitacao.Marca != null ? solicitacao.Marca.Valor : string.Empty,
+                    Tamanho = solicitacao.Tamanho != null ? solicitacao.Tamanho.Valor : string.Empty,
+                    Cor = solicitacao.Cor != null ? solicitacao.Cor.Valor : string.Empty,
+                    Descricao = solicitacao.Descricao,
+                    PrecoMinimo = solicitacao.PrecoMinimo,
+                    PrecoMaximo = solicitacao.PrecoMaximo
+                })
+                .ToListAsync(cancellationToken);
         }
 
         private static DateTime NormalizarDateTimeParaUtc(DateTime value)

@@ -10,6 +10,7 @@ namespace Renova.Domain.Model
         public ICollection<ClienteModel> Clientes { get; set; } = [];
         public ICollection<ClienteCreditoModel> CreditosClientes { get; set; } = [];
         public ICollection<ProdutoEstoqueModel> ProdutosEstoque { get; set; } = [];
+        public ICollection<SolicitacaoModel> Solicitacoes { get; set; } = [];
         public ICollection<MovimentacaoModel> Movimentacoes { get; set; } = [];
         public ICollection<PagamentoModel> Pagamentos { get; set; } = [];
         public ICollection<PagamentoCreditoModel> PagamentosCredito { get; set; } = [];

@@ -1,0 +1,651 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { startTransition, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { SearchableSelect } from "@/app/components/ui/searchable-select";
+import { normalizeDecimalValue, type ProductLookupOption } from "@/lib/product";
+import {
+  asSolicitacaoResponse,
+  extractSolicitacaoFieldErrors,
+  getSolicitacaoApiMessage,
+  initialSolicitacaoFormValues,
+  type SolicitacaoCreateResponse,
+  type SolicitacaoFieldErrors,
+  type SolicitacaoFormValues,
+} from "@/lib/solicitacao";
+import { getAuthToken } from "@/lib/store";
+import { getClients } from "@/services/client-service";
+import {
+  getProductBrandOptions,
+  getProductColorOptions,
+  getProductReferenceOptions,
+  getProductSizeOptions,
+} from "@/services/product-service";
+import { createSolicitacao } from "@/services/solicitacao-service";
+import { mapSolicitacaoZodErrors, solicitacaoSchema } from "@/validations/solicitacao";
+
+type SolicitacaoCreateModalProps = {
+  isOpen: boolean;
+  storeId: number | null;
+  storeName: string | null;
+  onClose: () => void;
+  onSolicitacaoCreated: (solicitacao: SolicitacaoCreateResponse) => void;
+};
+
+type LookupSearchState = {
+  produto: string;
+  marca: string;
+  tamanho: string;
+  cor: string;
+  cliente: string;
+};
+
+function FormField({
+  label,
+  placeholder,
+  value,
+  error,
+  type = "text",
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  error?: string;
+  type?: "text" | "number";
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-sm font-semibold text-[var(--foreground)]">{label}</span>
+      <input
+        type={type}
+        step={type === "number" ? "0.01" : undefined}
+        min={type === "number" ? "0" : undefined}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
+          error
+            ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
+            : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+        }`}
+      />
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+    </label>
+  );
+}
+
+function SearchableField({
+  label,
+  error,
+  disabled,
+  loading,
+  value,
+  selectedLabel,
+  searchValue,
+  placeholder,
+  searchPlaceholder,
+  options,
+  emptyLabel,
+  onSearchChange,
+  onSelect,
+}: {
+  label: string;
+  error?: string;
+  disabled?: boolean;
+  loading: boolean;
+  value: string;
+  selectedLabel: string;
+  searchValue: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  options: ProductLookupOption[];
+  emptyLabel: string;
+  onSearchChange: (value: string) => void;
+  onSelect: (option: ProductLookupOption) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <span className="text-sm font-semibold text-[var(--foreground)]">{label}</span>
+      <SearchableSelect
+        ariaLabel={label}
+        disabled={disabled}
+        emptyLabel={emptyLabel}
+        error={error}
+        loading={loading}
+        options={options.map((option) => ({
+          label: option.label,
+          value: String(option.id),
+        }))}
+        placeholder={placeholder}
+        searchPlaceholder={searchPlaceholder}
+        searchValue={searchValue}
+        selectedLabel={selectedLabel}
+        value={value || null}
+        onSearchChange={onSearchChange}
+        onChange={(option) =>
+          onSelect({
+            id: Number(option.value),
+            label: option.label,
+          })
+        }
+      />
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+    </div>
+  );
+}
+
+export function SolicitacaoCreateModal({
+  isOpen,
+  storeId,
+  storeName,
+  onClose,
+  onSolicitacaoCreated,
+}: SolicitacaoCreateModalProps) {
+  const queryClient = useQueryClient();
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(false);
+  const [values, setValues] = useState<SolicitacaoFormValues>(initialSolicitacaoFormValues);
+  const [errors, setErrors] = useState<SolicitacaoFieldErrors>({});
+  const [lookupSearch, setLookupSearch] = useState<LookupSearchState>({
+    produto: "",
+    marca: "",
+    tamanho: "",
+    cor: "",
+    cliente: "",
+  });
+  const [debouncedLookupSearch, setDebouncedLookupSearch] = useState<LookupSearchState>({
+    produto: "",
+    marca: "",
+    tamanho: "",
+    cor: "",
+    cliente: "",
+  });
+  const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+
+  const createSolicitacaoMutation = useMutation({
+    mutationFn: async (payload: {
+      produtoId: number;
+      marcaId: number;
+      tamanhoId: number;
+      corId: number;
+      clienteId: number;
+      descricao: string;
+      precoMinimo: number;
+      precoMaximo: number;
+      lojaId: number;
+    }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para cadastrar uma solicitacao.");
+      }
+
+      return createSolicitacao(payload, token);
+    },
+  });
+
+  function resetForm() {
+    setValues(initialSolicitacaoFormValues);
+    setErrors({});
+    setLookupSearch({
+      produto: "",
+      marca: "",
+      tamanho: "",
+      cor: "",
+      cliente: "",
+    });
+    setDebouncedLookupSearch({
+      produto: "",
+      marca: "",
+      tamanho: "",
+      cor: "",
+      cliente: "",
+    });
+  }
+
+  function handleClose() {
+    if (createSolicitacaoMutation.isPending) {
+      return;
+    }
+
+    resetForm();
+    onClose();
+  }
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedLookupSearch(lookupSearch);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [lookupSearch]);
+
+  useEffect(() => {
+    let animationFrame = 0;
+    let visibilityFrame = 0;
+    let closeTimeout = 0;
+
+    if (isOpen) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setShouldRender(true);
+        visibilityFrame = window.requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    } else if (shouldRender) {
+      animationFrame = window.requestAnimationFrame(() => {
+        setIsVisible(false);
+      });
+
+      closeTimeout = window.setTimeout(() => {
+        setShouldRender(false);
+      }, 220);
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !createSolicitacaoMutation.isPending) {
+        resetForm();
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(visibilityFrame);
+      window.clearTimeout(closeTimeout);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [createSolicitacaoMutation.isPending, isOpen, onClose, shouldRender]);
+
+  const productOptionsQuery = useQuery({
+    queryKey: ["solicitacao-create-options", "produto", token, storeId, debouncedLookupSearch.produto],
+    queryFn: async () => {
+      if (!token || !storeId) {
+        return [];
+      }
+
+      const response = await getProductReferenceOptions(token, storeId, debouncedLookupSearch.produto);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar os produtos auxiliares.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(isOpen && token && storeId),
+  });
+
+  const brandOptionsQuery = useQuery({
+    queryKey: ["solicitacao-create-options", "marca", token, storeId, debouncedLookupSearch.marca],
+    queryFn: async () => {
+      if (!token || !storeId) {
+        return [];
+      }
+
+      const response = await getProductBrandOptions(token, storeId, debouncedLookupSearch.marca);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar as marcas.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(isOpen && token && storeId),
+  });
+
+  const sizeOptionsQuery = useQuery({
+    queryKey: ["solicitacao-create-options", "tamanho", token, storeId, debouncedLookupSearch.tamanho],
+    queryFn: async () => {
+      if (!token || !storeId) {
+        return [];
+      }
+
+      const response = await getProductSizeOptions(token, storeId, debouncedLookupSearch.tamanho);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar os tamanhos.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(isOpen && token && storeId),
+  });
+
+  const colorOptionsQuery = useQuery({
+    queryKey: ["solicitacao-create-options", "cor", token, storeId, debouncedLookupSearch.cor],
+    queryFn: async () => {
+      if (!token || !storeId) {
+        return [];
+      }
+
+      const response = await getProductColorOptions(token, storeId, debouncedLookupSearch.cor);
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar as cores.");
+      }
+
+      return response.body;
+    },
+    enabled: Boolean(isOpen && token && storeId),
+  });
+
+  const clientOptionsQuery = useQuery({
+    queryKey: ["solicitacao-create-options", "cliente", token, storeId, debouncedLookupSearch.cliente],
+    queryFn: async () => {
+      if (!token || !storeId) {
+        return [];
+      }
+
+      const response = await getClients(token, storeId, {
+        nome: debouncedLookupSearch.cliente,
+        contato: "",
+        ordenarPor: "nome",
+        direcao: "asc",
+        pagina: 1,
+        tamanhoPagina: 20,
+      });
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel carregar os clientes.");
+      }
+
+      const body = response.body as { itens: Array<{ id: number; nome: string }> };
+      return body.itens.map((item) => ({
+        id: item.id,
+        label: item.nome,
+      }));
+    },
+    enabled: Boolean(isOpen && token && storeId),
+  });
+
+  function updateField<K extends keyof SolicitacaoFormValues>(
+    field: K,
+    value: SolicitacaoFormValues[K],
+  ) {
+    setValues((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function updateLookupSearch(field: keyof LookupSearchState, value: string) {
+    setLookupSearch((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function updateRelation(
+    field: "produto" | "marca" | "tamanho" | "cor" | "cliente",
+    option: ProductLookupOption,
+  ) {
+    const idField = `${field}Id` as const;
+    const labelField = `${field}Label` as const;
+
+    setValues((current) => ({
+      ...current,
+      [idField]: String(option.id),
+      [labelField]: option.label,
+    }));
+    setErrors((current) => ({
+      ...current,
+      [idField]: undefined,
+    }));
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!storeId) {
+      toast.error("Selecione uma loja antes de cadastrar solicitacoes.");
+      return;
+    }
+
+    const validation = solicitacaoSchema.safeParse(values);
+
+    if (!validation.success) {
+      setErrors(mapSolicitacaoZodErrors(validation.error));
+      return;
+    }
+
+    setErrors({});
+
+    try {
+      const payload = {
+        produtoId: Number(validation.data.produtoId),
+        marcaId: Number(validation.data.marcaId),
+        tamanhoId: Number(validation.data.tamanhoId),
+        corId: Number(validation.data.corId),
+        clienteId: Number(validation.data.clienteId),
+        descricao: validation.data.descricao.trim(),
+        precoMinimo: Number(normalizeDecimalValue(validation.data.precoMinimo)),
+        precoMaximo: Number(normalizeDecimalValue(validation.data.precoMaximo)),
+        lojaId: storeId,
+      };
+
+      const response = await createSolicitacaoMutation.mutateAsync(payload);
+
+      if (!response.ok) {
+        const apiFieldErrors = extractSolicitacaoFieldErrors(response.body);
+
+        if (Object.keys(apiFieldErrors).length > 0) {
+          setErrors(apiFieldErrors);
+        }
+
+        toast.error(
+          getSolicitacaoApiMessage(response.body) ?? "Nao foi possivel cadastrar a solicitacao.",
+        );
+        return;
+      }
+
+      const createdSolicitacao = asSolicitacaoResponse(response.body);
+
+      startTransition(() => {
+        resetForm();
+        onClose();
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["solicitacoes"] });
+      toast.success("Solicitacao cadastrada com sucesso.");
+      onSolicitacaoCreated(createdSolicitacao);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
+  if (!shouldRender) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <div
+        className={`max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+          isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+              Nova solicitacao
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+              Cadastro rapido na loja ativa
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+              {storeName
+                ? `As novas solicitacoes serao vinculadas a ${storeName}.`
+                : "Selecione uma loja no topo antes de continuar."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+            aria-label="Fechar modal"
+          >
+            x
+          </button>
+        </div>
+
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
+          <div className="grid gap-4 md:grid-cols-2">
+            <SearchableField
+              label="Cliente"
+              error={errors.clienteId}
+              disabled={!storeId}
+              loading={clientOptionsQuery.isLoading}
+              value={values.clienteId}
+              selectedLabel={values.clienteLabel}
+              searchValue={lookupSearch.cliente}
+              placeholder="Selecione o cliente"
+              searchPlaceholder="Pesquisar por nome"
+              options={clientOptionsQuery.data ?? []}
+              emptyLabel={
+                clientOptionsQuery.isError ? "Falha ao carregar clientes." : "Nenhum cliente encontrado."
+              }
+              onSearchChange={(value) => updateLookupSearch("cliente", value)}
+              onSelect={(option) => updateRelation("cliente", option)}
+            />
+            <FormField
+              label="Descricao"
+              placeholder="Ex.: Vestido azul em tecido leve"
+              value={values.descricao}
+              error={errors.descricao}
+              onChange={(value) => {
+                updateField("descricao", value);
+                setErrors((current) => ({ ...current, descricao: undefined }));
+              }}
+            />
+            <SearchableField
+              label="Produto"
+              error={errors.produtoId}
+              disabled={!storeId}
+              loading={productOptionsQuery.isLoading}
+              value={values.produtoId}
+              selectedLabel={values.produtoLabel}
+              searchValue={lookupSearch.produto}
+              placeholder="Selecione o produto"
+              searchPlaceholder="Pesquisar por valor"
+              options={productOptionsQuery.data ?? []}
+              emptyLabel={
+                productOptionsQuery.isError
+                  ? "Falha ao carregar produtos."
+                  : "Nenhum produto auxiliar encontrado."
+              }
+              onSearchChange={(value) => updateLookupSearch("produto", value)}
+              onSelect={(option) => updateRelation("produto", option)}
+            />
+            <SearchableField
+              label="Marca"
+              error={errors.marcaId}
+              disabled={!storeId}
+              loading={brandOptionsQuery.isLoading}
+              value={values.marcaId}
+              selectedLabel={values.marcaLabel}
+              searchValue={lookupSearch.marca}
+              placeholder="Selecione a marca"
+              searchPlaceholder="Pesquisar por valor"
+              options={brandOptionsQuery.data ?? []}
+              emptyLabel={
+                brandOptionsQuery.isError ? "Falha ao carregar marcas." : "Nenhuma marca encontrada."
+              }
+              onSearchChange={(value) => updateLookupSearch("marca", value)}
+              onSelect={(option) => updateRelation("marca", option)}
+            />
+            <SearchableField
+              label="Tamanho"
+              error={errors.tamanhoId}
+              disabled={!storeId}
+              loading={sizeOptionsQuery.isLoading}
+              value={values.tamanhoId}
+              selectedLabel={values.tamanhoLabel}
+              searchValue={lookupSearch.tamanho}
+              placeholder="Selecione o tamanho"
+              searchPlaceholder="Pesquisar por valor"
+              options={sizeOptionsQuery.data ?? []}
+              emptyLabel={
+                sizeOptionsQuery.isError
+                  ? "Falha ao carregar tamanhos."
+                  : "Nenhum tamanho encontrado."
+              }
+              onSearchChange={(value) => updateLookupSearch("tamanho", value)}
+              onSelect={(option) => updateRelation("tamanho", option)}
+            />
+            <SearchableField
+              label="Cor"
+              error={errors.corId}
+              disabled={!storeId}
+              loading={colorOptionsQuery.isLoading}
+              value={values.corId}
+              selectedLabel={values.corLabel}
+              searchValue={lookupSearch.cor}
+              placeholder="Selecione a cor"
+              searchPlaceholder="Pesquisar por valor"
+              options={colorOptionsQuery.data ?? []}
+              emptyLabel={
+                colorOptionsQuery.isError ? "Falha ao carregar cores." : "Nenhuma cor encontrada."
+              }
+              onSearchChange={(value) => updateLookupSearch("cor", value)}
+              onSelect={(option) => updateRelation("cor", option)}
+            />
+            <FormField
+              label="Preco minimo"
+              type="number"
+              placeholder="0,00"
+              value={values.precoMinimo}
+              error={errors.precoMinimo}
+              onChange={(value) => {
+                updateField("precoMinimo", value);
+                setErrors((current) => ({ ...current, precoMinimo: undefined }));
+              }}
+            />
+            <FormField
+              label="Preco maximo"
+              type="number"
+              placeholder="0,00"
+              value={values.precoMaximo}
+              error={errors.precoMaximo}
+              onChange={(value) => {
+                updateField("precoMaximo", value);
+                setErrors((current) => ({ ...current, precoMaximo: undefined }));
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={createSolicitacaoMutation.isPending || !storeId}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {createSolicitacaoMutation.isPending ? "Salvando solicitacao..." : "Salvar solicitacao"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

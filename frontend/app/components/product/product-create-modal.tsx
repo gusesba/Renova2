@@ -24,6 +24,7 @@ import {
   getProductApiMessage,
   initialProductFormValues,
   normalizeDecimalValue,
+  type ProductCreateResponse,
   type ProductFieldErrors,
   type ProductFormValues,
   type ProductLookupOption,
@@ -50,6 +51,7 @@ type ProductCreateModalProps = {
   onClose: () => void;
   storeId: number | null;
   storeName: string | null;
+  onProductCreated?: (product: ProductCreateResponse) => void;
 };
 
 type LookupSearchState = {
@@ -187,6 +189,7 @@ export function ProductCreateModal({
   onClose,
   storeId,
   storeName,
+  onProductCreated,
 }: ProductCreateModalProps) {
   const queryClient = useQueryClient();
   const [shouldRender, setShouldRender] = useState(isOpen);
@@ -769,6 +772,7 @@ export function ProductCreateModal({
 
       await queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`Produto ${createdProduct.descricao} cadastrado com sucesso.`);
+      onProductCreated?.(createdProduct);
     } catch (error) {
       toast.error(
         error instanceof Error

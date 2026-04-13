@@ -1,9 +1,8 @@
 namespace Renova.Domain.Model.Dto
 {
-    public class ProdutoBuscaDto
+    public class SolicitacaoBuscaDto
     {
         public int Id { get; set; }
-        public decimal Preco { get; set; }
         public int ProdutoId { get; set; }
         public required string Produto { get; set; }
         public int MarcaId { get; set; }
@@ -12,14 +11,12 @@ namespace Renova.Domain.Model.Dto
         public required string Tamanho { get; set; }
         public int CorId { get; set; }
         public required string Cor { get; set; }
-        public int FornecedorId { get; set; }
-        public required string Fornecedor { get; set; }
+        public int ClienteId { get; set; }
+        public required string Cliente { get; set; }
         public required string Descricao { get; set; }
-        public DateTime Entrada { get; set; }
+        public decimal PrecoMinimo { get; set; }
+        public decimal PrecoMaximo { get; set; }
         public int LojaId { get; set; }
-        public SituacaoProduto Situacao { get; set; }
-        public bool Consignado { get; set; }
-        public TipoMovimentacao TipoSugerido { get; set; }
-        public IReadOnlyList<SolicitacaoCompativelDto> SolicitacoesCompativeis { get; set; } = [];
+        public IReadOnlyList<ProdutoCompativelDto> ProdutosCompativeis { get; set; } = [];
     }
 }

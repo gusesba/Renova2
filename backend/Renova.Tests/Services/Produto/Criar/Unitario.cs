@@ -46,6 +46,42 @@ namespace Renova.Tests.Services.Produto.Criar
         }
 
         [Fact]
+        public async Task CreateAsyncDeveRetornarSolicitacoesCompativeisQuandoHouverMatch()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoReferenciaModel produto = await context.ProdutosReferencia.SingleAsync(item => item.LojaId == loja.Id);
+            MarcaModel marca = await context.Marcas.SingleAsync(item => item.LojaId == loja.Id);
+            TamanhoModel tamanho = await context.Tamanhos.SingleAsync(item => item.LojaId == loja.Id);
+            CorModel cor = await context.Cores.SingleAsync(item => item.LojaId == loja.Id);
+            ClienteModel cliente = await context.Clientes.SingleAsync(item => item.LojaId == loja.Id);
+
+            _ = context.Solicitacoes.Add(new SolicitacaoModel
+            {
+                ProdutoId = produto.Id,
+                MarcaId = marca.Id,
+                TamanhoId = tamanho.Id,
+                CorId = cor.Id,
+                ClienteId = cliente.Id,
+                Descricao = "Procura vestido azul",
+                PrecoMinimo = 100m,
+                PrecoMaximo = 200m,
+                LojaId = loja.Id
+            });
+            _ = await context.SaveChangesAsync();
+
+            ProdutoService service = new(context);
+            ProdutoDto resultado = await service.CreateAsync(
+                await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true),
+                new CriarProdutoParametros { UsuarioId = loja.UsuarioId });
+
+            SolicitacaoCompativelDto match = Assert.Single(resultado.SolicitacoesCompativeis);
+            Assert.Equal(cliente.Nome, match.Cliente);
+            Assert.Equal("Procura vestido azul", match.Descricao);
+        }
+
+        [Fact]
         public async Task CreateAsyncDevePermitirFornecedorReferenciandoClienteDaMesmaLoja()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();

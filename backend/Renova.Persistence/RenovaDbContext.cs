@@ -17,6 +17,7 @@ namespace Renova.Persistence
         public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<PagamentoCreditoModel> PagamentosCredito { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
+        public DbSet<SolicitacaoModel> Solicitacoes { get; set; }
         public DbSet<ProdutoReferenciaModel> ProdutosReferencia { get; set; }
         public DbSet<MovimentacaoModel> Movimentacoes { get; set; }
         public DbSet<MovimentacaoProdutoModel> MovimentacoesProdutos { get; set; }
@@ -242,6 +243,46 @@ namespace Renova.Persistence
                     .OnDelete(DeleteBehavior.Restrict);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.ProdutosEstoque)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<SolicitacaoModel>(entity =>
+            {
+                _ = entity.ToTable("Solicitacao");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.ProdutoId).IsRequired();
+                _ = entity.Property(p => p.MarcaId).IsRequired();
+                _ = entity.Property(p => p.TamanhoId).IsRequired();
+                _ = entity.Property(p => p.CorId).IsRequired();
+                _ = entity.Property(p => p.ClienteId).IsRequired();
+                _ = entity.Property(p => p.Descricao).HasMaxLength(1000).IsRequired();
+                _ = entity.Property(p => p.PrecoMinimo).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.PrecoMaximo).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasOne(p => p.Produto)
+                    .WithMany()
+                    .HasForeignKey(p => p.ProdutoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Marca)
+                    .WithMany()
+                    .HasForeignKey(p => p.MarcaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Tamanho)
+                    .WithMany()
+                    .HasForeignKey(p => p.TamanhoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Cor)
+                    .WithMany()
+                    .HasForeignKey(p => p.CorId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Cliente)
+                    .WithMany(p => p.Solicitacoes)
+                    .HasForeignKey(p => p.ClienteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Solicitacoes)
                     .HasForeignKey(p => p.LojaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

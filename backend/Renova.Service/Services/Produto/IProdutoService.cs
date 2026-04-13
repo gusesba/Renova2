@@ -13,6 +13,7 @@ namespace Renova.Service.Services.Produto
         Task<ProdutoBuscaDto> GetByIdAsync(ObterProdutoParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoBuscaDto>> GetAllAsync(ObterProdutosQuery request, ObterProdutosParametros parametros, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<ProdutoBuscaDto>> GetEmprestadosDoClienteAsync(ObterProdutosEmprestadosClienteParametros parametros, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<SolicitacaoCompativelDto>> GetSolicitacoesCompativeisAsync(int produtoId, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetCorAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateCorAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetMarcaAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);

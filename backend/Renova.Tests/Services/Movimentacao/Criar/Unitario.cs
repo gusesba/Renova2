@@ -700,6 +700,17 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 });
             }
 
+            public Task<FechamentoLojaDto> GetFechamentoLojaAsync(
+                ObterFechamentoLojaQuery request,
+                ObterPagamentosParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException();
+            }
+
             public Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
             {
                 _ = cancellationToken;
