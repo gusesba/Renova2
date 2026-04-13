@@ -15,5 +15,7 @@ namespace Renova.Service.Commands.ConfigLoja
 
         [Range(1, int.MaxValue)]
         public int TempoPermanenciaProdutoMeses { get; set; }
+
+        public List<SalvarConfigLojaDescontoPermanenciaCommand> DescontosPermanencia { get; set; } = [];
     }
 }

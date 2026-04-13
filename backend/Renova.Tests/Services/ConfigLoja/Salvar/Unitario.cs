@@ -30,7 +30,12 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6
+                TempoPermanenciaProdutoMeses = 6,
+                DescontosPermanencia =
+                [
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 6, PercentualDesconto = 15m }
+                ]
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
@@ -40,11 +45,33 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(45m, resultado.PercentualRepasseFornecedor);
             Assert.Equal(45m, resultado.PercentualRepasseVendedorCredito);
             Assert.Equal(6, resultado.TempoPermanenciaProdutoMeses);
+            Assert.Collection(resultado.DescontosPermanencia,
+                item =>
+                {
+                    Assert.Equal(3, item.APartirDeMeses);
+                    Assert.Equal(10m, item.PercentualDesconto);
+                },
+                item =>
+                {
+                    Assert.Equal(6, item.APartirDeMeses);
+                    Assert.Equal(15m, item.PercentualDesconto);
+                });
             ConfigLojaModel configSalva = await context.ConfiguracoesLoja.SingleAsync();
             Assert.Equal(loja.Id, configSalva.LojaId);
             Assert.Equal(45m, configSalva.PercentualRepasseFornecedor);
             Assert.Equal(45m, configSalva.PercentualRepasseVendedorCredito);
             Assert.Equal(6, configSalva.TempoPermanenciaProdutoMeses);
+            Assert.Collection(configSalva.DescontosPermanencia.OrderBy(item => item.APartirDeMeses),
+                item =>
+                {
+                    Assert.Equal(3, item.APartirDeMeses);
+                    Assert.Equal(10m, item.PercentualDesconto);
+                },
+                item =>
+                {
+                    Assert.Equal(6, item.APartirDeMeses);
+                    Assert.Equal(15m, item.PercentualDesconto);
+                });
         }
 
         [Fact]
@@ -61,7 +88,11 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 50m,
                 PercentualRepasseVendedorCredito = 60m,
-                TempoPermanenciaProdutoMeses = 9
+                TempoPermanenciaProdutoMeses = 9,
+                DescontosPermanencia =
+                [
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 9, PercentualDesconto = 20m }
+                ]
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
@@ -70,10 +101,17 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(50m, resultado.PercentualRepasseFornecedor);
             Assert.Equal(60m, resultado.PercentualRepasseVendedorCredito);
             Assert.Equal(9, resultado.TempoPermanenciaProdutoMeses);
+            Assert.Single(resultado.DescontosPermanencia);
+            Assert.Equal(9, resultado.DescontosPermanencia[0].APartirDeMeses);
+            Assert.Equal(20m, resultado.DescontosPermanencia[0].PercentualDesconto);
             Assert.Single(context.ConfiguracoesLoja);
-            Assert.Equal(50m, (await context.ConfiguracoesLoja.SingleAsync()).PercentualRepasseFornecedor);
-            Assert.Equal(60m, (await context.ConfiguracoesLoja.SingleAsync()).PercentualRepasseVendedorCredito);
-            Assert.Equal(9, (await context.ConfiguracoesLoja.SingleAsync()).TempoPermanenciaProdutoMeses);
+            ConfigLojaModel configAtualizada = await context.ConfiguracoesLoja.SingleAsync();
+            Assert.Equal(50m, configAtualizada.PercentualRepasseFornecedor);
+            Assert.Equal(60m, configAtualizada.PercentualRepasseVendedorCredito);
+            Assert.Equal(9, configAtualizada.TempoPermanenciaProdutoMeses);
+            Assert.Single(configAtualizada.DescontosPermanencia);
+            Assert.Equal(9, configAtualizada.DescontosPermanencia[0].APartirDeMeses);
+            Assert.Equal(20m, configAtualizada.DescontosPermanencia[0].PercentualDesconto);
         }
 
         [Fact]
@@ -160,6 +198,31 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
         }
 
         [Fact]
+        public async Task SaveAsyncDeveImpedirQuandoHouverMesesDuplicadosNosDescontosDePermanencia()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ConfigLojaService service = new(context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6,
+                DescontosPermanencia =
+                [
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 15m }
+                ]
+            }, new SalvarConfigLojaParametros
+            {
+                UsuarioId = loja.UsuarioId
+            }));
+        }
+
+        [Fact]
         public async Task SaveAsyncDeveImpedirAlteracaoQuandoLojaNaoPertencerAoUsuarioAutenticado()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -210,7 +273,15 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses
+                TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses,
+                DescontosPermanencia =
+                [
+                    new ConfigLojaDescontoPermanenciaModel
+                    {
+                        APartirDeMeses = 6,
+                        PercentualDesconto = 12m
+                    }
+                ]
             };
 
             _ = context.ConfiguracoesLoja.Add(config);

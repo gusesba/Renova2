@@ -122,6 +122,32 @@ namespace Renova.Persistence.Migrations
                     b.ToTable("ConfigLoja", (string)null);
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.ConfigLojaDescontoPermanenciaModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("APartirDeMeses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ConfigLojaId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("PercentualDesconto")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfigLojaId", "APartirDeMeses")
+                        .IsUnique();
+
+                    b.ToTable("ConfigLojaDescontoPermanencia", (string)null);
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.CorModel", b =>
                 {
                     b.Property<int>("Id")
@@ -528,7 +554,20 @@ namespace Renova.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("DescontosPermanencia");
+
                     b.Navigation("Loja");
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.ConfigLojaDescontoPermanenciaModel", b =>
+                {
+                    b.HasOne("Renova.Domain.Model.ConfigLojaModel", "ConfigLoja")
+                        .WithMany("DescontosPermanencia")
+                        .HasForeignKey("ConfigLojaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ConfigLoja");
                 });
 
             modelBuilder.Entity("Renova.Domain.Model.CorModel", b =>

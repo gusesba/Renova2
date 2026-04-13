@@ -17,6 +17,7 @@ namespace Renova.Service.Services.ConfigLoja
             _ = await ObterLojaDoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .Include(item => item.DescontosPermanencia)
                 .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
                 ?? throw new KeyNotFoundException("Configuracao da loja nao encontrada.");
 
@@ -45,9 +46,14 @@ namespace Renova.Service.Services.ConfigLoja
                 throw new ArgumentOutOfRangeException(nameof(request), "Tempo de permanencia do produto na loja deve ser de ao menos 1 mes.");
             }
 
+            List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia = request.DescontosPermanencia ?? [];
+
+            ValidarDescontosPermanencia(descontosPermanencia);
+
             _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
+                .Include(item => item.DescontosPermanencia)
                 .SingleOrDefaultAsync(item => item.LojaId == request.LojaId, cancellationToken);
 
             if (config is null)
@@ -57,7 +63,8 @@ namespace Renova.Service.Services.ConfigLoja
                     LojaId = request.LojaId,
                     PercentualRepasseFornecedor = request.PercentualRepasseFornecedor,
                     PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito,
-                    TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses
+                    TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses,
+                    DescontosPermanencia = MapearDescontosPermanencia(descontosPermanencia)
                 };
 
                 _ = await _context.ConfiguracoesLoja.AddAsync(config, cancellationToken);
@@ -67,10 +74,21 @@ namespace Renova.Service.Services.ConfigLoja
                 config.PercentualRepasseFornecedor = request.PercentualRepasseFornecedor;
                 config.PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito;
                 config.TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses;
+                config.DescontosPermanencia.Clear();
+
+                foreach (ConfigLojaDescontoPermanenciaModel desconto in MapearDescontosPermanencia(descontosPermanencia))
+                {
+                    config.DescontosPermanencia.Add(desconto);
+                }
             }
 
             _ = await _context.SaveChangesAsync(cancellationToken);
-            return Mapear(config);
+
+            ConfigLojaModel configPersistida = await _context.ConfiguracoesLoja
+                .Include(item => item.DescontosPermanencia)
+                .SingleAsync(item => item.Id == config.Id, cancellationToken);
+
+            return Mapear(configPersistida);
         }
 
         private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
@@ -99,8 +117,51 @@ namespace Renova.Service.Services.ConfigLoja
                 LojaId = config.LojaId,
                 PercentualRepasseFornecedor = config.PercentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = config.PercentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses
+                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses,
+                DescontosPermanencia = [.. config.DescontosPermanencia
+                    .OrderBy(item => item.APartirDeMeses)
+                    .Select(item => new ConfigLojaDescontoPermanenciaDto
+                    {
+                        APartirDeMeses = item.APartirDeMeses,
+                        PercentualDesconto = item.PercentualDesconto
+                    })]
             };
+        }
+
+        private static void ValidarDescontosPermanencia(List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia)
+        {
+            if (descontosPermanencia.Count == 0)
+            {
+                return;
+            }
+
+            if (descontosPermanencia.Any(item => item.APartirDeMeses < 1))
+            {
+                throw new ArgumentOutOfRangeException(nameof(descontosPermanencia), "Meses para desconto por permanencia devem ser maiores que zero.");
+            }
+
+            if (descontosPermanencia.Any(item => item.PercentualDesconto < 0 || item.PercentualDesconto > 100))
+            {
+                throw new ArgumentOutOfRangeException(nameof(descontosPermanencia), "Percentual de desconto por permanencia deve estar entre 0 e 100.");
+            }
+
+            if (descontosPermanencia
+                .GroupBy(item => item.APartirDeMeses)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException("Nao e permitido informar mais de um desconto para a mesma quantidade de meses.", nameof(descontosPermanencia));
+            }
+        }
+
+        private static List<ConfigLojaDescontoPermanenciaModel> MapearDescontosPermanencia(List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia)
+        {
+            return [.. descontosPermanencia
+                .OrderBy(item => item.APartirDeMeses)
+                .Select(item => new ConfigLojaDescontoPermanenciaModel
+                {
+                    APartirDeMeses = item.APartirDeMeses,
+                    PercentualDesconto = item.PercentualDesconto
+                })];
         }
     }
 }

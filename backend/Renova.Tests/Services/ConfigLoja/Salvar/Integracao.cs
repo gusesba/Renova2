@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Renova.Domain.Model;
@@ -30,7 +31,12 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6
+                TempoPermanenciaProdutoMeses = 6,
+                DescontosPermanencia =
+                [
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 6, PercentualDesconto = 15m }
+                ]
             });
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -40,14 +46,36 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(45m, body.PercentualRepasseFornecedor);
             Assert.Equal(45m, body.PercentualRepasseVendedorCredito);
             Assert.Equal(6, body.TempoPermanenciaProdutoMeses);
+            Assert.Collection(body.DescontosPermanencia,
+                item =>
+                {
+                    Assert.Equal(3, item.APartirDeMeses);
+                    Assert.Equal(10m, item.PercentualDesconto);
+                },
+                item =>
+                {
+                    Assert.Equal(6, item.APartirDeMeses);
+                    Assert.Equal(15m, item.PercentualDesconto);
+                });
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-            ConfigLojaModel config = Assert.Single(context.ConfiguracoesLoja);
+            ConfigLojaModel config = Assert.Single(context.ConfiguracoesLoja.Include(item => item.DescontosPermanencia));
             Assert.Equal(loja.Id, config.LojaId);
             Assert.Equal(45m, config.PercentualRepasseFornecedor);
             Assert.Equal(45m, config.PercentualRepasseVendedorCredito);
             Assert.Equal(6, config.TempoPermanenciaProdutoMeses);
+            Assert.Collection(config.DescontosPermanencia.OrderBy(item => item.APartirDeMeses),
+                item =>
+                {
+                    Assert.Equal(3, item.APartirDeMeses);
+                    Assert.Equal(10m, item.PercentualDesconto);
+                },
+                item =>
+                {
+                    Assert.Equal(6, item.APartirDeMeses);
+                    Assert.Equal(15m, item.PercentualDesconto);
+                });
         }
 
         [Fact]
@@ -133,6 +161,32 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             });
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task PutConfigLojaDeveRetornarBadRequestQuandoHouverMesesDuplicadosNosDescontosDePermanencia()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-desconto@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6,
+                DescontosPermanencia =
+                [
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
+                    new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 15m }
+                ]
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)

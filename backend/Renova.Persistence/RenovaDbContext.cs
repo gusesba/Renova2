@@ -12,6 +12,7 @@ namespace Renova.Persistence
         public DbSet<ClienteModel> Clientes { get; set; }
         public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
+        public DbSet<ConfigLojaDescontoPermanenciaModel> ConfiguracoesLojaDescontosPermanencia { get; set; }
         public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<PagamentoCreditoModel> PagamentosCredito { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
@@ -94,6 +95,21 @@ namespace Renova.Persistence
                 _ = entity.HasOne(p => p.Loja)
                     .WithOne(p => p.ConfigLoja)
                     .HasForeignKey<ConfigLojaModel>(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<ConfigLojaDescontoPermanenciaModel>(entity =>
+            {
+                _ = entity.ToTable("ConfigLojaDescontoPermanencia");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.ConfigLojaId).IsRequired();
+                _ = entity.Property(p => p.APartirDeMeses).IsRequired();
+                _ = entity.Property(p => p.PercentualDesconto).HasPrecision(5, 2).IsRequired();
+                _ = entity.HasIndex(p => new { p.ConfigLojaId, p.APartirDeMeses }).IsUnique();
+                _ = entity.HasOne(p => p.ConfigLoja)
+                    .WithMany(p => p.DescontosPermanencia)
+                    .HasForeignKey(p => p.ConfigLojaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

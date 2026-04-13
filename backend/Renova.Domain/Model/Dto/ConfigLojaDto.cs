@@ -6,5 +6,6 @@ namespace Renova.Domain.Model.Dto
         public decimal PercentualRepasseFornecedor { get; set; }
         public decimal PercentualRepasseVendedorCredito { get; set; }
         public int TempoPermanenciaProdutoMeses { get; set; }
+        public List<ConfigLojaDescontoPermanenciaDto> DescontosPermanencia { get; set; } = [];
     }
 }
