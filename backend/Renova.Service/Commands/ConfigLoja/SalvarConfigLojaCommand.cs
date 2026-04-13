@@ -17,5 +17,6 @@ namespace Renova.Service.Commands.ConfigLoja
         public int TempoPermanenciaProdutoMeses { get; set; }
 
         public List<SalvarConfigLojaDescontoPermanenciaCommand> DescontosPermanencia { get; set; } = [];
+        public List<SalvarConfigLojaFormaPagamentoCommand> FormasPagamento { get; set; } = [];
     }
 }

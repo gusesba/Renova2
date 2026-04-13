@@ -35,6 +35,10 @@ export async function saveStoreConfig(
       aPartirDeMeses: number;
       percentualDesconto: number;
     }[];
+    formasPagamento: {
+      nome: string;
+      percentualAjuste: number;
+    }[];
   },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {

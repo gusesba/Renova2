@@ -18,6 +18,7 @@ namespace Renova.Service.Services.ConfigLoja
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
+                .Include(item => item.FormasPagamento)
                 .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
                 ?? throw new KeyNotFoundException("Configuracao da loja nao encontrada.");
 
@@ -47,13 +48,16 @@ namespace Renova.Service.Services.ConfigLoja
             }
 
             List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia = request.DescontosPermanencia ?? [];
+            List<SalvarConfigLojaFormaPagamentoCommand> formasPagamento = request.FormasPagamento ?? [];
 
             ValidarDescontosPermanencia(descontosPermanencia);
+            ValidarFormasPagamento(formasPagamento);
 
             _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
+                .Include(item => item.FormasPagamento)
                 .SingleOrDefaultAsync(item => item.LojaId == request.LojaId, cancellationToken);
 
             if (config is null)
@@ -64,7 +68,8 @@ namespace Renova.Service.Services.ConfigLoja
                     PercentualRepasseFornecedor = request.PercentualRepasseFornecedor,
                     PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito,
                     TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses,
-                    DescontosPermanencia = MapearDescontosPermanencia(descontosPermanencia)
+                    DescontosPermanencia = MapearDescontosPermanencia(descontosPermanencia),
+                    FormasPagamento = MapearFormasPagamento(formasPagamento)
                 };
 
                 _ = await _context.ConfiguracoesLoja.AddAsync(config, cancellationToken);
@@ -75,10 +80,16 @@ namespace Renova.Service.Services.ConfigLoja
                 config.PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito;
                 config.TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses;
                 config.DescontosPermanencia.Clear();
+                config.FormasPagamento.Clear();
 
                 foreach (ConfigLojaDescontoPermanenciaModel desconto in MapearDescontosPermanencia(descontosPermanencia))
                 {
                     config.DescontosPermanencia.Add(desconto);
+                }
+
+                foreach (ConfigLojaFormaPagamentoModel formaPagamento in MapearFormasPagamento(formasPagamento))
+                {
+                    config.FormasPagamento.Add(formaPagamento);
                 }
             }
 
@@ -86,6 +97,7 @@ namespace Renova.Service.Services.ConfigLoja
 
             ConfigLojaModel configPersistida = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
+                .Include(item => item.FormasPagamento)
                 .SingleAsync(item => item.Id == config.Id, cancellationToken);
 
             return Mapear(configPersistida);
@@ -124,6 +136,13 @@ namespace Renova.Service.Services.ConfigLoja
                     {
                         APartirDeMeses = item.APartirDeMeses,
                         PercentualDesconto = item.PercentualDesconto
+                    })],
+                FormasPagamento = [.. config.FormasPagamento
+                    .OrderBy(item => item.Nome)
+                    .Select(item => new ConfigLojaFormaPagamentoDto
+                    {
+                        Nome = item.Nome,
+                        PercentualAjuste = item.PercentualAjuste
                     })]
             };
         }
@@ -153,6 +172,36 @@ namespace Renova.Service.Services.ConfigLoja
             }
         }
 
+        private static void ValidarFormasPagamento(List<SalvarConfigLojaFormaPagamentoCommand> formasPagamento)
+        {
+            if (formasPagamento.Count == 0)
+            {
+                return;
+            }
+
+            if (formasPagamento.Any(item => string.IsNullOrWhiteSpace(item.Nome)))
+            {
+                throw new ArgumentException("Nome da forma de pagamento e obrigatorio.", nameof(formasPagamento));
+            }
+
+            if (formasPagamento.Any(item => item.Nome.Trim().Length > 100))
+            {
+                throw new ArgumentException("Nome da forma de pagamento deve ter no maximo 100 caracteres.", nameof(formasPagamento));
+            }
+
+            if (formasPagamento.Any(item => item.PercentualAjuste < -100 || item.PercentualAjuste > 100))
+            {
+                throw new ArgumentOutOfRangeException(nameof(formasPagamento), "Percentual da forma de pagamento deve estar entre -100 e 100.");
+            }
+
+            if (formasPagamento
+                .GroupBy(item => item.Nome.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException("Nao e permitido informar formas de pagamento com o mesmo nome.", nameof(formasPagamento));
+            }
+        }
+
         private static List<ConfigLojaDescontoPermanenciaModel> MapearDescontosPermanencia(List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia)
         {
             return [.. descontosPermanencia
@@ -161,6 +210,17 @@ namespace Renova.Service.Services.ConfigLoja
                 {
                     APartirDeMeses = item.APartirDeMeses,
                     PercentualDesconto = item.PercentualDesconto
+                })];
+        }
+
+        private static List<ConfigLojaFormaPagamentoModel> MapearFormasPagamento(List<SalvarConfigLojaFormaPagamentoCommand> formasPagamento)
+        {
+            return [.. formasPagamento
+                .OrderBy(item => item.Nome.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(item => new ConfigLojaFormaPagamentoModel
+                {
+                    Nome = item.Nome.Trim(),
+                    PercentualAjuste = item.PercentualAjuste
                 })];
         }
     }

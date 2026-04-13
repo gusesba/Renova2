@@ -31,6 +31,11 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
                 TempoPermanenciaProdutoMeses = 6,
+                FormasPagamento =
+                [
+                    new SalvarConfigLojaFormaPagamentoCommand { Nome = "Cartao credito", PercentualAjuste = 4.5m },
+                    new SalvarConfigLojaFormaPagamentoCommand { Nome = "Pix", PercentualAjuste = -3m }
+                ],
                 DescontosPermanencia =
                 [
                     new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
@@ -56,7 +61,20 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                     Assert.Equal(6, item.APartirDeMeses);
                     Assert.Equal(15m, item.PercentualDesconto);
                 });
-            ConfigLojaModel configSalva = await context.ConfiguracoesLoja.SingleAsync();
+            Assert.Collection(resultado.FormasPagamento,
+                item =>
+                {
+                    Assert.Equal("Cartao credito", item.Nome);
+                    Assert.Equal(4.5m, item.PercentualAjuste);
+                },
+                item =>
+                {
+                    Assert.Equal("Pix", item.Nome);
+                    Assert.Equal(-3m, item.PercentualAjuste);
+                });
+            ConfigLojaModel configSalva = await context.ConfiguracoesLoja
+                .Include(item => item.FormasPagamento)
+                .SingleAsync();
             Assert.Equal(loja.Id, configSalva.LojaId);
             Assert.Equal(45m, configSalva.PercentualRepasseFornecedor);
             Assert.Equal(45m, configSalva.PercentualRepasseVendedorCredito);
@@ -71,6 +89,17 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 {
                     Assert.Equal(6, item.APartirDeMeses);
                     Assert.Equal(15m, item.PercentualDesconto);
+                });
+            Assert.Collection(configSalva.FormasPagamento.OrderBy(item => item.Nome),
+                item =>
+                {
+                    Assert.Equal("Cartao credito", item.Nome);
+                    Assert.Equal(4.5m, item.PercentualAjuste);
+                },
+                item =>
+                {
+                    Assert.Equal("Pix", item.Nome);
+                    Assert.Equal(-3m, item.PercentualAjuste);
                 });
         }
 
@@ -89,6 +118,10 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 PercentualRepasseFornecedor = 50m,
                 PercentualRepasseVendedorCredito = 60m,
                 TempoPermanenciaProdutoMeses = 9,
+                FormasPagamento =
+                [
+                    new SalvarConfigLojaFormaPagamentoCommand { Nome = "Debito", PercentualAjuste = 2m }
+                ],
                 DescontosPermanencia =
                 [
                     new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 9, PercentualDesconto = 20m }
@@ -104,14 +137,22 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Single(resultado.DescontosPermanencia);
             Assert.Equal(9, resultado.DescontosPermanencia[0].APartirDeMeses);
             Assert.Equal(20m, resultado.DescontosPermanencia[0].PercentualDesconto);
+            Assert.Single(resultado.FormasPagamento);
+            Assert.Equal("Debito", resultado.FormasPagamento[0].Nome);
+            Assert.Equal(2m, resultado.FormasPagamento[0].PercentualAjuste);
             Assert.Single(context.ConfiguracoesLoja);
-            ConfigLojaModel configAtualizada = await context.ConfiguracoesLoja.SingleAsync();
+            ConfigLojaModel configAtualizada = await context.ConfiguracoesLoja
+                .Include(item => item.FormasPagamento)
+                .SingleAsync();
             Assert.Equal(50m, configAtualizada.PercentualRepasseFornecedor);
             Assert.Equal(60m, configAtualizada.PercentualRepasseVendedorCredito);
             Assert.Equal(9, configAtualizada.TempoPermanenciaProdutoMeses);
             Assert.Single(configAtualizada.DescontosPermanencia);
             Assert.Equal(9, configAtualizada.DescontosPermanencia[0].APartirDeMeses);
             Assert.Equal(20m, configAtualizada.DescontosPermanencia[0].PercentualDesconto);
+            Assert.Single(configAtualizada.FormasPagamento);
+            Assert.Equal("Debito", configAtualizada.FormasPagamento[0].Nome);
+            Assert.Equal(2m, configAtualizada.FormasPagamento[0].PercentualAjuste);
         }
 
         [Fact]
@@ -242,6 +283,31 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             }));
         }
 
+        [Fact]
+        public async Task SaveAsyncDeveImpedirQuandoHouverFormasPagamentoDuplicadas()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria-forma@renova.com");
+            ConfigLojaService service = new(context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.SaveAsync(new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6,
+                FormasPagamento =
+                [
+                    new SalvarConfigLojaFormaPagamentoCommand { Nome = "Pix", PercentualAjuste = 0m },
+                    new SalvarConfigLojaFormaPagamentoCommand { Nome = " pix ", PercentualAjuste = 1m }
+                ]
+            }, new SalvarConfigLojaParametros
+            {
+                UsuarioId = loja.UsuarioId
+            }));
+        }
+
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)
         {
             UsuarioModel usuario = new()
@@ -274,6 +340,14 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
                 TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses,
+                FormasPagamento =
+                [
+                    new ConfigLojaFormaPagamentoModel
+                    {
+                        Nome = "Dinheiro",
+                        PercentualAjuste = 0m
+                    }
+                ],
                 DescontosPermanencia =
                 [
                     new ConfigLojaDescontoPermanenciaModel

@@ -9,5 +9,6 @@ namespace Renova.Domain.Model
         public decimal PercentualRepasseVendedorCredito { get; set; }
         public int TempoPermanenciaProdutoMeses { get; set; }
         public List<ConfigLojaDescontoPermanenciaModel> DescontosPermanencia { get; set; } = [];
+        public List<ConfigLojaFormaPagamentoModel> FormasPagamento { get; set; } = [];
     }
 }

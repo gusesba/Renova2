@@ -13,6 +13,7 @@ namespace Renova.Persistence
         public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
         public DbSet<ConfigLojaDescontoPermanenciaModel> ConfiguracoesLojaDescontosPermanencia { get; set; }
+        public DbSet<ConfigLojaFormaPagamentoModel> ConfiguracoesLojaFormasPagamento { get; set; }
         public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<PagamentoCreditoModel> PagamentosCredito { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
@@ -109,6 +110,21 @@ namespace Renova.Persistence
                 _ = entity.HasIndex(p => new { p.ConfigLojaId, p.APartirDeMeses }).IsUnique();
                 _ = entity.HasOne(p => p.ConfigLoja)
                     .WithMany(p => p.DescontosPermanencia)
+                    .HasForeignKey(p => p.ConfigLojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<ConfigLojaFormaPagamentoModel>(entity =>
+            {
+                _ = entity.ToTable("ConfigLojaFormaPagamento");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.ConfigLojaId).IsRequired();
+                _ = entity.Property(p => p.Nome).HasMaxLength(100).IsRequired();
+                _ = entity.Property(p => p.PercentualAjuste).HasPrecision(5, 2).IsRequired();
+                _ = entity.HasIndex(p => new { p.ConfigLojaId, p.Nome }).IsUnique();
+                _ = entity.HasOne(p => p.ConfigLoja)
+                    .WithMany(p => p.FormasPagamento)
                     .HasForeignKey(p => p.ConfigLojaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

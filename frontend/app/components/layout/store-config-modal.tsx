@@ -5,13 +5,17 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { StoreDiscountConfigModal } from "@/app/components/layout/store-discount-config-modal";
+import { StorePaymentMethodConfigModal } from "@/app/components/layout/store-payment-method-config-modal";
 import {
   extractStoreConfigApiMessage,
   initialStoreDiscountValues,
   initialStoreConfigValues,
+  initialStorePaymentMethodValues,
   type StoreDiscountFormValue,
   type StoreConfigFormValues,
+  type StorePaymentMethodFormValue,
 } from "@/lib/store-config";
+import { formatPaymentMethodAdjustment } from "@/lib/store-payment-method";
 import { getAuthToken } from "@/lib/store";
 import { asStoreConfigResponse, getStoreConfig, saveStoreConfig } from "@/services/store-config-service";
 
@@ -34,9 +38,13 @@ export function StoreConfigModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
+  const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
   const [values, setValues] = useState<StoreConfigFormValues>(initialStoreConfigValues);
   const [discountValues, setDiscountValues] = useState<StoreDiscountFormValue[]>(
     initialStoreDiscountValues,
+  );
+  const [paymentMethodValues, setPaymentMethodValues] = useState<StorePaymentMethodFormValue[]>(
+    initialStorePaymentMethodValues,
   );
   const wasOpenRef = useRef(isOpen);
 
@@ -121,6 +129,7 @@ export function StoreConfigModal({
         if (response.status === 404) {
           setValues(initialStoreConfigValues);
           setDiscountValues(initialStoreDiscountValues);
+          setPaymentMethodValues(initialStorePaymentMethodValues);
           return;
         }
 
@@ -145,6 +154,13 @@ export function StoreConfigModal({
             id: crypto.randomUUID(),
             aPartirDeMeses: String(item.aPartirDeMeses),
             percentualDesconto: String(item.percentualDesconto),
+          })),
+        );
+        setPaymentMethodValues(
+          config.formasPagamento.map((item) => ({
+            id: crypto.randomUUID(),
+            nome: item.nome,
+            percentualAjuste: String(item.percentualAjuste),
           })),
         );
       } catch {
@@ -233,6 +249,10 @@ export function StoreConfigModal({
             aPartirDeMeses: Number(item.aPartirDeMeses.trim()),
             percentualDesconto: Number(item.percentualDesconto.replace(",", ".").trim()),
           })),
+          formasPagamento: paymentMethodValues.map((item) => ({
+            nome: item.nome.trim(),
+            percentualAjuste: Number(item.percentualAjuste.replace(",", ".").trim()),
+          })),
         },
         token,
       );
@@ -257,6 +277,13 @@ export function StoreConfigModal({
           id: crypto.randomUUID(),
           aPartirDeMeses: String(item.aPartirDeMeses),
           percentualDesconto: String(item.percentualDesconto),
+        })),
+      );
+      setPaymentMethodValues(
+        config.formasPagamento.map((item) => ({
+          id: crypto.randomUUID(),
+          nome: item.nome,
+          percentualAjuste: String(item.percentualAjuste),
         })),
       );
       toast.success("Configuracao da loja atualizada.");
@@ -443,6 +470,51 @@ export function StoreConfigModal({
             </div>
           </div>
 
+          <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-[var(--foreground)]">
+                  Formas de pagamento
+                </p>
+                <p className="text-sm text-[var(--muted)]">
+                  Configure taxa ou desconto por forma de pagamento.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPaymentMethodModalOpen(true)}
+                disabled={isLoading || isSaving}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Configurar formas de pagamento
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {paymentMethodValues.length === 0 ? (
+                <p className="text-sm text-[var(--muted)]">
+                  Nenhuma forma de pagamento cadastrada.
+                </p>
+              ) : (
+                paymentMethodValues
+                  .slice()
+                  .sort((left, right) => left.nome.localeCompare(right.nome))
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
+                    >
+                      <span>{item.nome}</span>
+                      <span className="font-semibold text-[var(--primary)]">
+                        {formatPaymentMethodAdjustment(item.percentualAjuste)}
+                      </span>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
             {isLoading
               ? "Carregando configuracao atual da loja..."
@@ -476,6 +548,13 @@ export function StoreConfigModal({
         isSavingParent={isSaving}
         onClose={() => setIsDiscountModalOpen(false)}
         onSave={setDiscountValues}
+      />
+      <StorePaymentMethodConfigModal
+        isOpen={isPaymentMethodModalOpen}
+        paymentMethods={paymentMethodValues}
+        isSavingParent={isSaving}
+        onClose={() => setIsPaymentMethodModalOpen(false)}
+        onSave={setPaymentMethodValues}
       />
     </div>,
     document.body,
