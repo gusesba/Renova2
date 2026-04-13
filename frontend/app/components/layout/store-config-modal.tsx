@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { StoreDiscountConfigModal } from "@/app/components/layout/store-discount-config-modal";
 import {
   extractStoreConfigApiMessage,
+  initialStoreDiscountValues,
   initialStoreConfigValues,
+  type StoreDiscountFormValue,
   type StoreConfigFormValues,
 } from "@/lib/store-config";
 import { getAuthToken } from "@/lib/store";
@@ -30,7 +33,11 @@ export function StoreConfigModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [values, setValues] = useState<StoreConfigFormValues>(initialStoreConfigValues);
+  const [discountValues, setDiscountValues] = useState<StoreDiscountFormValue[]>(
+    initialStoreDiscountValues,
+  );
   const wasOpenRef = useRef(isOpen);
 
   useEffect(() => {
@@ -113,6 +120,7 @@ export function StoreConfigModal({
 
         if (response.status === 404) {
           setValues(initialStoreConfigValues);
+          setDiscountValues(initialStoreDiscountValues);
           return;
         }
 
@@ -132,6 +140,13 @@ export function StoreConfigModal({
           percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
           tempoPermanenciaProdutoMeses: String(config.tempoPermanenciaProdutoMeses),
         });
+        setDiscountValues(
+          config.descontosPermanencia.map((item) => ({
+            id: crypto.randomUUID(),
+            aPartirDeMeses: String(item.aPartirDeMeses),
+            percentualDesconto: String(item.percentualDesconto),
+          })),
+        );
       } catch {
         if (isMounted) {
           toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
@@ -214,6 +229,10 @@ export function StoreConfigModal({
           percentualRepasseFornecedor: parsedValue,
           percentualRepasseVendedorCredito: parsedCreditValue,
           tempoPermanenciaProdutoMeses: parsedStayValue,
+          descontosPermanencia: discountValues.map((item) => ({
+            aPartirDeMeses: Number(item.aPartirDeMeses.trim()),
+            percentualDesconto: Number(item.percentualDesconto.replace(",", ".").trim()),
+          })),
         },
         token,
       );
@@ -233,6 +252,13 @@ export function StoreConfigModal({
         percentualRepasseVendedorCredito: String(config.percentualRepasseVendedorCredito),
         tempoPermanenciaProdutoMeses: String(config.tempoPermanenciaProdutoMeses),
       });
+      setDiscountValues(
+        config.descontosPermanencia.map((item) => ({
+          id: crypto.randomUUID(),
+          aPartirDeMeses: String(item.aPartirDeMeses),
+          percentualDesconto: String(item.percentualDesconto),
+        })),
+      );
       toast.success("Configuracao da loja atualizada.");
       onClose();
     } catch {
@@ -249,7 +275,7 @@ export function StoreConfigModal({
       }`}
     >
       <div
-        className={`w-full max-w-xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-3rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -278,7 +304,8 @@ export function StoreConfigModal({
           </button>
         </div>
 
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-[var(--foreground)]">
               Percentual de repasse
@@ -368,13 +395,62 @@ export function StoreConfigModal({
             </p>
           </label>
 
+          <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-[var(--foreground)]">
+                  Descontos por permanencia
+                </p>
+                <p className="text-sm text-[var(--muted)]">
+                  Configure faixas de desconto para produtos com mais tempo em loja.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsDiscountModalOpen(true)}
+                disabled={isLoading || isSaving}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Configurar descontos
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {discountValues.length === 0 ? (
+                <p className="text-sm text-[var(--muted)]">
+                  Nenhuma faixa de desconto cadastrada.
+                </p>
+              ) : (
+                discountValues
+                  .slice()
+                  .sort(
+                    (left, right) =>
+                      Number(left.aPartirDeMeses.trim()) - Number(right.aPartirDeMeses.trim()),
+                  )
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
+                    >
+                      <span>A partir de {item.aPartirDeMeses} meses</span>
+                      <span className="font-semibold text-[var(--primary)]">
+                        {item.percentualDesconto}% de desconto
+                      </span>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
             {isLoading
               ? "Carregando configuracao atual da loja..."
               : "Essa configuracao sera aplicada na criacao das ordens de pagamento da movimentacao."}
           </div>
+          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
@@ -393,6 +469,14 @@ export function StoreConfigModal({
           </div>
         </form>
       </div>
+
+      <StoreDiscountConfigModal
+        isOpen={isDiscountModalOpen}
+        discounts={discountValues}
+        isSavingParent={isSaving}
+        onClose={() => setIsDiscountModalOpen(false)}
+        onSave={setDiscountValues}
+      />
     </div>,
     document.body,
   );

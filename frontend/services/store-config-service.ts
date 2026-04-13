@@ -31,6 +31,10 @@ export async function saveStoreConfig(
     percentualRepasseFornecedor: number;
     percentualRepasseVendedorCredito: number;
     tempoPermanenciaProdutoMeses: number;
+    descontosPermanencia: {
+      aPartirDeMeses: number;
+      percentualDesconto: number;
+    }[];
   },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {

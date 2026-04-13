@@ -9,6 +9,7 @@ export type ConfigLojaResponse = {
   percentualRepasseFornecedor: number;
   percentualRepasseVendedorCredito: number;
   tempoPermanenciaProdutoMeses: number;
+  descontosPermanencia: ConfigLojaDescontoPermanenciaResponse[];
 };
 
 export type StoreConfigFormValues = {
@@ -17,11 +18,24 @@ export type StoreConfigFormValues = {
   tempoPermanenciaProdutoMeses: string;
 };
 
+export type ConfigLojaDescontoPermanenciaResponse = {
+  aPartirDeMeses: number;
+  percentualDesconto: number;
+};
+
+export type StoreDiscountFormValue = {
+  id: string;
+  aPartirDeMeses: string;
+  percentualDesconto: string;
+};
+
 export const initialStoreConfigValues: StoreConfigFormValues = {
   percentualRepasseFornecedor: "",
   percentualRepasseVendedorCredito: "",
   tempoPermanenciaProdutoMeses: "",
 };
+
+export const initialStoreDiscountValues: StoreDiscountFormValue[] = [];
 
 export function extractStoreConfigApiMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") {
