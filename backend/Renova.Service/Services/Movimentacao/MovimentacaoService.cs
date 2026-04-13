@@ -271,6 +271,13 @@ namespace Renova.Service.Services.Movimentacao
                     await transaction.CommitAsync(cancellationToken);
                 }
 
+                decimal? creditoPendenteCliente = request.Tipo == TipoMovimentacao.Venda
+                    ? await _context.ClientesCreditos
+                        .Where(item => item.LojaId == request.LojaId && item.ClienteId == request.ClienteId)
+                        .Select(item => (decimal?)item.Valor)
+                        .SingleOrDefaultAsync(cancellationToken)
+                    : null;
+
                 return new MovimentacaoDto
                 {
                     Id = entity.Id,
@@ -278,6 +285,7 @@ namespace Renova.Service.Services.Movimentacao
                     Data = entity.Data,
                     ClienteId = entity.ClienteId,
                     LojaId = entity.LojaId,
+                    CreditoPendenteCliente = creditoPendenteCliente,
                     ProdutoIds = produtoIds
                 };
             }

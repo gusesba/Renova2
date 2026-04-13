@@ -27,6 +27,7 @@ export type MovementCreateResponse = {
   data: string;
   clienteId: number;
   lojaId: number;
+  creditoPendenteCliente: number | null;
   produtoIds: number[];
 };
 

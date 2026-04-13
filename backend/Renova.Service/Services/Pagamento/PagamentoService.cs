@@ -275,7 +275,9 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = request.LojaId,
                 ClienteId = request.ClienteId,
                 Natureza = naturezaCliente,
-                Status = StatusPagamento.Pendente,
+                Status = request.TipoMovimentacao == TipoMovimentacao.Venda
+                    ? StatusPagamento.Pago
+                    : StatusPagamento.Pendente,
                 Valor = decimal.Round(valorTotal, 2, MidpointRounding.AwayFromZero),
                 Data = request.Data
             };
@@ -302,6 +304,16 @@ namespace Renova.Service.Services.Pagamento
                         Data = request.Data
                     };
                 }));
+
+            if (request.TipoMovimentacao == TipoMovimentacao.Venda)
+            {
+                ClienteCreditoModel credito = await ObterOuCriarCreditoAsync(
+                    request.LojaId,
+                    request.ClienteId,
+                    cancellationToken);
+
+                credito.Valor -= pagamentoCliente.Valor;
+            }
 
             await _context.Pagamentos.AddRangeAsync(pagamentos, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);

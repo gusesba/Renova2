@@ -8,6 +8,7 @@ import { useStoreContext } from "@/app/dashboard/store-context";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
+import { PaymentCreditModal } from "@/app/components/payment/payment-credit-modal";
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
@@ -50,10 +51,12 @@ import {
   extractStoreConfigApiMessage,
   type ConfigLojaResponse,
 } from "@/lib/store-config";
+import type { PendingClientItem } from "@/lib/payment";
 import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
 
 type MovementDraft = {
   autoLinkedBorrowedProductIds: number[];
+  clienteContato: string;
   clienteId: string;
   clienteLabel: string;
   clienteSearch: string;
@@ -78,6 +81,7 @@ function createDraft(id: string): MovementDraft {
     id,
     ...initialMovementDraftFormValues,
     autoLinkedBorrowedProductIds: [],
+    clienteContato: "",
     clienteLabel: "",
     clienteSearch: "",
     data: initialMovementDraftFormValues.data,
@@ -267,6 +271,7 @@ export function MovementPage() {
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
+  const [paymentClient, setPaymentClient] = useState<PendingClientItem | null>(null);
   const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
   const [overdueOwnerReturnPrompt, setOverdueOwnerReturnPrompt] =
     useState<OverdueOwnerReturnPrompt | null>(null);
@@ -537,6 +542,7 @@ export function MovementPage() {
     updateDraft(draftId, (draft) => ({
       ...draft,
       autoLinkedBorrowedProductIds: [],
+      clienteContato: client.contato,
       clienteId: String(client.id),
       clienteLabel: client.nome,
       clienteSearch: client.nome,
@@ -782,6 +788,21 @@ export function MovementPage() {
       toast.success(
         `Movimentacao ${createdMovement.id} criada como ${formatMovementType(createdMovement.tipo)}.`,
       );
+
+      await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
+
+      if (
+        createdMovement.tipo === 1 &&
+        typeof createdMovement.creditoPendenteCliente === "number" &&
+        createdMovement.creditoPendenteCliente < 0
+      ) {
+        setPaymentClient({
+          clienteId: createdMovement.clienteId,
+          nome: draft.clienteLabel,
+          contato: draft.clienteContato,
+          credito: createdMovement.creditoPendenteCliente,
+        });
+      }
 
       if (drafts.length === 1) {
         updateDraft(draft.id, () => createDraft(draft.id));
@@ -1222,6 +1243,18 @@ export function MovementPage() {
         }}
       />
 
+      <PaymentCreditModal
+        client={paymentClient}
+        initialPaymentType={1}
+        isOpen={Boolean(paymentClient)}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setPaymentClient(null)}
+        onSuccess={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
+        }}
+      />
+
       <StoreConfigModal
         isOpen={isStoreConfigOpen}
         storeId={selectedStoreId}
@@ -1246,6 +1279,7 @@ export function MovementPage() {
             tipo: "4",
             data: sourceDraft?.data ?? initialMovementDraftFormValues.data,
             clienteId: sourceDraft?.clienteId ?? "",
+            clienteContato: sourceDraft?.clienteContato ?? "",
             clienteLabel: sourceDraft?.clienteLabel ?? overdueOwnerReturnPrompt.clientName,
             clienteSearch:
               sourceDraft?.clienteLabel ||

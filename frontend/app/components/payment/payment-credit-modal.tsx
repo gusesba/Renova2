@@ -23,6 +23,7 @@ import { asStoreConfigResponse, getStoreConfig } from "@/services/store-config-s
 
 type PaymentCreditModalProps = {
   client: PendingClientItem | null;
+  initialPaymentType?: PaymentCreditTypeValue;
   isOpen: boolean;
   storeId: number | null;
   storeName: string | null;
@@ -32,6 +33,7 @@ type PaymentCreditModalProps = {
 
 export function PaymentCreditModal({
   client,
+  initialPaymentType = 2,
   isOpen,
   storeId,
   storeName,
@@ -92,10 +94,10 @@ export function PaymentCreditModal({
     }
 
     setDateValue(getTodayDateInputValue());
-    setPaymentType(2);
+    setPaymentType(initialPaymentType);
     setCreditValue("");
     setConfigMessage(null);
-  }, [isOpen, client?.clienteId]);
+  }, [initialPaymentType, isOpen, client?.clienteId]);
 
   useEffect(() => {
     if (!isOpen || !storeId) {
