@@ -554,8 +554,6 @@ namespace Renova.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DescontosPermanencia");
-
                     b.Navigation("Loja");
                 });
 
