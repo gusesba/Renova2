@@ -16,6 +16,7 @@ export type ProductListItem = {
   lojaId: number;
   situacao: number;
   consignado: boolean;
+  tipoSugerido?: number;
 };
 
 export type ProductCreateResponse = {

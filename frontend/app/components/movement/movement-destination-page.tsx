@@ -38,6 +38,10 @@ function asDestinationType(value: number): "3" | "4" {
   return value === 3 ? "3" : "4";
 }
 
+function getSuggestedDestinationType(product: ProductListItem): "3" | "4" {
+  return asDestinationType(product.tipoSugerido ?? 4);
+}
+
 function buildAutomaticItems(products: MovementDestinationProduct[]): DestinationItem[] {
   return products.map((product) => ({
     id: product.id,
@@ -227,7 +231,7 @@ export function MovementDestinationPage() {
           id: product.id,
           product,
           source: "manual",
-          tipo: "4",
+          tipo: getSuggestedDestinationType(product),
         },
       ]);
       setManualProductId("");

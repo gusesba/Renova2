@@ -36,6 +36,37 @@ namespace Renova.Tests.Services.Produto.GetProduto
             Assert.Equal("Vestido", body.Produto);
             Assert.Equal("Farm", body.Marca);
             Assert.Equal("Fornecedor Alpha", body.Fornecedor);
+            Assert.Equal(TipoMovimentacao.DevolucaoDono, body.TipoSugerido);
+        }
+
+        [Fact]
+        public async Task GetProdutoDeveRetornarTipoSugeridoComoDoacaoQuandoFornecedorPermitir()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ProdutoEstoqueModel produto = await CriarProdutoCompletoAsync(
+                factory,
+                loja.Id,
+                "Vestido",
+                "Farm",
+                "M",
+                "Azul",
+                "Fornecedor Alpha",
+                "Vestido azul",
+                fornecedorDoacao: true);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/produto/{produto.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            ProdutoBuscaDto? body = await response.Content.ReadFromJsonAsync<ProdutoBuscaDto>();
+            Assert.NotNull(body);
+            Assert.Equal(TipoMovimentacao.Doacao, body.TipoSugerido);
         }
 
         [Fact]
@@ -119,13 +150,19 @@ namespace Renova.Tests.Services.Produto.GetProduto
             string tamanho,
             string cor,
             string fornecedor,
-            string descricao)
+            string descricao,
+            bool fornecedorDoacao = false)
         {
             ProdutoReferenciaModel produtoReferencia = await CriarProdutoReferenciaAsync(factory, lojaId, produto);
             MarcaModel marcaModel = await CriarMarcaAsync(factory, lojaId, marca);
             TamanhoModel tamanhoModel = await CriarTamanhoAsync(factory, lojaId, tamanho);
             CorModel corModel = await CriarCorAsync(factory, lojaId, cor);
-            ClienteModel fornecedorModel = await CriarClienteAsync(factory, lojaId, fornecedor, $"{Guid.NewGuid():N}"[..11]);
+            ClienteModel fornecedorModel = await CriarClienteAsync(
+                factory,
+                lojaId,
+                fornecedor,
+                $"{Guid.NewGuid():N}"[..11],
+                fornecedorDoacao);
 
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -150,7 +187,12 @@ namespace Renova.Tests.Services.Produto.GetProduto
             return entity;
         }
 
-        private static async Task<ClienteModel> CriarClienteAsync(RenovaApiFactory factory, int lojaId, string nome, string contato)
+        private static async Task<ClienteModel> CriarClienteAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            string nome,
+            string contato,
+            bool doacao = false)
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -159,7 +201,8 @@ namespace Renova.Tests.Services.Produto.GetProduto
             {
                 Nome = nome,
                 Contato = contato,
-                LojaId = lojaId
+                LojaId = lojaId,
+                Doacao = doacao
             };
 
             _ = context.Clientes.Add(cliente);

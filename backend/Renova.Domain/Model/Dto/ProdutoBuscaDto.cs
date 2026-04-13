@@ -19,5 +19,6 @@ namespace Renova.Domain.Model.Dto
         public int LojaId { get; set; }
         public SituacaoProduto Situacao { get; set; }
         public bool Consignado { get; set; }
+        public TipoMovimentacao TipoSugerido { get; set; }
     }
 }

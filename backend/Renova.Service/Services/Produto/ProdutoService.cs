@@ -366,7 +366,10 @@ namespace Renova.Service.Services.Produto
                 Entrada = produto.Entrada,
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
-                Consignado = produto.Consignado
+                Consignado = produto.Consignado,
+                TipoSugerido = produto.Fornecedor != null && produto.Fornecedor.Doacao
+                    ? TipoMovimentacao.Doacao
+                    : TipoMovimentacao.DevolucaoDono
             });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
@@ -411,7 +414,10 @@ namespace Renova.Service.Services.Produto
                 Entrada = produto.Entrada,
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
-                Consignado = produto.Consignado
+                Consignado = produto.Consignado,
+                TipoSugerido = produto.Fornecedor != null && produto.Fornecedor.Doacao
+                    ? TipoMovimentacao.Doacao
+                    : TipoMovimentacao.DevolucaoDono
             };
         }
 
