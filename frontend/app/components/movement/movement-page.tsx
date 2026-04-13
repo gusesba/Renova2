@@ -110,13 +110,11 @@ function parseDiscountValue(value: string) {
 }
 
 function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraftProduct) {
-  if (Number(draft.tipo) !== 1) {
-    return 0;
-  }
-
   return parseDiscountValue(product.desconto) > 0
     ? parseDiscountValue(product.desconto)
-    : parseDiscountValue(draft.descontoTotal);
+    : Number(draft.tipo) === 1
+      ? parseDiscountValue(draft.descontoTotal)
+      : 0;
 }
 
 function getMonthsBetweenDates(startDate: string, endDate: string) {
@@ -143,7 +141,7 @@ function getAutomaticDiscountForProduct(
   product: ProductListItem,
   storeConfig: ConfigLojaResponse | null,
 ) {
-  if (!storeConfig || Number(draft.tipo) !== 1 || product.situacao !== 1) {
+  if (!storeConfig || product.situacao !== 1) {
     return null;
   }
 
@@ -457,10 +455,12 @@ export function MovementPage() {
           data: toUtcStartOfDay(draft.data),
           clienteId: Number(draft.clienteId),
           lojaId: selectedStoreId,
-          descontoTotal: Number(draft.descontoTotal.replace(",", ".")) || 0,
+          descontoTotal:
+            Number(draft.tipo) === 1 ? Number(draft.descontoTotal.replace(",", ".")) || 0 : 0,
           produtos: draft.products.map((product) => ({
             produtoId: product.id,
-            desconto: Number(product.desconto.replace(",", ".")) || 0,
+            desconto:
+              Number(draft.tipo) === 1 ? Number(product.desconto.replace(",", ".")) || 0 : 0,
           })),
         },
         token,
@@ -519,10 +519,6 @@ export function MovementPage() {
       tipo,
       suggestion: null,
       descontoTotal: tipo === "1" ? draft.descontoTotal : "0",
-      products:
-        tipo === "1"
-          ? draft.products
-          : draft.products.map((product) => ({ ...product, desconto: "0" })),
       errors: { ...draft.errors, tipo: undefined, descontoTotal: undefined, produtos: undefined },
     }));
   }
@@ -694,15 +690,7 @@ export function MovementPage() {
     const incompatibleMessage = buildIncompatibleProductsMessage(draft);
     const invalidDiscountProduct = draft.products.find((product) => {
       const productDiscount = parseDiscountValue(product.desconto);
-      if (productDiscount < 0 || productDiscount > 100) {
-        return true;
-      }
-
-      if (Number(draft.tipo) !== 1 && productDiscount !== 0) {
-        return true;
-      }
-
-      return false;
+      return productDiscount < 0 || productDiscount > 100;
     });
 
     if (draft.products.length === 0) {
@@ -711,9 +699,7 @@ export function MovementPage() {
       nextErrors.produtos = incompatibleMessage;
     } else if (invalidDiscountProduct) {
       nextErrors.produtos =
-        Number(draft.tipo) === 1
-          ? `Revise o desconto do produto ${invalidDiscountProduct.id}. O desconto unitario precisa ficar entre 0% e 100%.`
-          : "Descontos por produto so podem ser usados em movimentacoes de venda.";
+        `Revise o desconto do produto ${invalidDiscountProduct.id}. O desconto unitario precisa ficar entre 0% e 100%.`;
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -997,7 +983,7 @@ export function MovementPage() {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                       <div className="w-full lg:w-[260px]">
                         <TextField
-                          label="Desconto total da venda (%)"
+                          label="Desconto total da movimentacao (%)"
                           value={activeDraft.descontoTotal}
                           error={activeDraft.errors.descontoTotal}
                           onChange={(value) =>
@@ -1054,7 +1040,7 @@ export function MovementPage() {
                       <p className="mt-2 text-sm text-[var(--muted)]">
                         {Number(activeDraft.tipo) === 1
                           ? "Preview com o desconto total como padrao por peca, sobrescrito quando a peca tiver desconto proprio."
-                          : "Soma dos precos dos produtos adicionados nesta movimentacao."}
+                          : "Preview com desconto unitario quando a peca tiver valor configurado. No envio, movimentacoes sem venda continuam sendo salvas com desconto zerado."}
                       </p>
                     </div>
 
