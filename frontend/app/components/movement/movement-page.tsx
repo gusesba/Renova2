@@ -36,10 +36,18 @@ import {
   getProductApiMessage,
   type ProductListItem,
 } from "@/lib/product";
+import {
+  asStoreConfigResponse,
+  getStoreConfig,
+} from "@/services/store-config-service";
 import { getAuthToken } from "@/lib/store";
 import { createMovement } from "@/services/movement-service";
 import { getClients } from "@/services/client-service";
 import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
+import {
+  extractStoreConfigApiMessage,
+  type ConfigLojaResponse,
+} from "@/lib/store-config";
 import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
 
 type MovementDraft = {
@@ -109,6 +117,54 @@ function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraf
   return parseDiscountValue(product.desconto) > 0
     ? parseDiscountValue(product.desconto)
     : parseDiscountValue(draft.descontoTotal);
+}
+
+function getMonthsBetweenDates(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return 0;
+  }
+
+  let months =
+    (end.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+    (end.getUTCMonth() - start.getUTCMonth());
+
+  if (end.getUTCDate() < start.getUTCDate()) {
+    months -= 1;
+  }
+
+  return Math.max(months, 0);
+}
+
+function getAutomaticDiscountForProduct(
+  draft: MovementDraft,
+  product: ProductListItem,
+  storeConfig: ConfigLojaResponse | null,
+) {
+  if (!storeConfig || Number(draft.tipo) !== 1 || product.situacao !== 1) {
+    return null;
+  }
+
+  const monthsInStore = getMonthsBetweenDates(product.entrada.slice(0, 10), draft.data);
+
+  if (monthsInStore < storeConfig.tempoPermanenciaProdutoMeses) {
+    return null;
+  }
+
+  const matchingDiscount = storeConfig.descontosPermanencia
+    .filter((discount) => monthsInStore >= discount.aPartirDeMeses)
+    .sort((left, right) => right.aPartirDeMeses - left.aPartirDeMeses)[0];
+
+  if (!matchingDiscount || matchingDiscount.percentualDesconto <= 0) {
+    return null;
+  }
+
+  return {
+    monthsInStore,
+    percentualDesconto: matchingDiscount.percentualDesconto,
+  };
 }
 
 function FieldShell({
@@ -353,6 +409,32 @@ export function MovementPage() {
     enabled: Boolean(token && selectedStoreId && activeDraft),
   });
 
+  const storeConfigQuery = useQuery({
+    queryKey: ["store-config", token, selectedStoreId],
+    queryFn: async () => {
+      if (!token || !selectedStoreId) {
+        return null;
+      }
+
+      const response = await getStoreConfig(selectedStoreId, token);
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          extractStoreConfigApiMessage(response.body) ??
+            "Nao foi possivel carregar a configuracao da loja.",
+        );
+      }
+
+      return asStoreConfigResponse(response.body);
+    },
+    enabled: Boolean(token && selectedStoreId),
+    staleTime: 60_000,
+  });
+
   const fetchProductMutation = useMutation({
     mutationFn: async (productId: number) => {
       if (!token) {
@@ -519,10 +601,19 @@ export function MovementPage() {
         return;
       }
 
+      const automaticDiscount = getAutomaticDiscountForProduct(
+        draft,
+        product,
+        storeConfigQuery.data ?? null,
+      );
+      const productDiscount = automaticDiscount
+        ? String(automaticDiscount.percentualDesconto)
+        : "0";
+
       updateDraft(draft.id, (current) => ({
         ...current,
         productIdInput: "",
-        products: [...current.products, { ...product, desconto: "0" }],
+        products: [...current.products, { ...product, desconto: productDiscount }],
         autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
           (itemId) => itemId !== product.id,
         ),
@@ -530,6 +621,12 @@ export function MovementPage() {
         errors: { ...current.errors, produtos: undefined },
       }));
       toast.success(`Produto ${product.id} adicionado na movimentacao.`);
+
+      if (automaticDiscount) {
+        toast.info(
+          `Desconto automatico de ${automaticDiscount.percentualDesconto}% aplicado ao produto ${product.id} por estar ha ${automaticDiscount.monthsInStore} mes(es) na loja.`,
+        );
+      }
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -544,6 +641,15 @@ export function MovementPage() {
       return;
     }
 
+    const automaticDiscount = getAutomaticDiscountForProduct(
+      {
+        ...draft,
+        tipo: String(draft.suggestion.suggestedType),
+      },
+      draft.suggestion.product,
+      storeConfigQuery.data ?? null,
+    );
+
     addDraft({
       tipo: String(draft.suggestion.suggestedType),
       data: draft.data,
@@ -551,13 +657,24 @@ export function MovementPage() {
       clienteId: draft.clienteId,
       clienteLabel: draft.clienteLabel,
       clienteSearch: draft.clienteLabel || draft.clienteSearch,
-      products: [{ ...draft.suggestion.product, desconto: "0" }],
+      products: [
+        {
+          ...draft.suggestion.product,
+          desconto: automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0",
+        },
+      ],
     });
 
     updateDraft(draft.id, (current) => ({
       ...current,
       suggestion: null,
     }));
+
+    if (automaticDiscount) {
+      toast.info(
+        `Desconto automatico de ${automaticDiscount.percentualDesconto}% aplicado ao produto ${draft.suggestion.product.id} por estar ha ${automaticDiscount.monthsInStore} mes(es) na loja.`,
+      );
+    }
   }
 
   async function handleSubmit(draft: MovementDraft) {
