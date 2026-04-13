@@ -128,7 +128,7 @@ export function ProfileMenu({
   }
 
   return (
-    <div ref={containerRef} className="relative z-30 min-w-0">
+    <div ref={containerRef} className="relative z-50 min-w-0">
       <button
         type="button"
         aria-expanded={open}
