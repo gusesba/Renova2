@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
@@ -17,6 +18,7 @@ import {
   type ClientListItem,
 } from "@/lib/client";
 import {
+  asMovementDestinationSuggestionResponse,
   asMovementResponse,
   buildMovementSuggestion,
   formatMovementType,
@@ -41,7 +43,7 @@ import {
   getStoreConfig,
 } from "@/services/store-config-service";
 import { getAuthToken } from "@/lib/store";
-import { createMovement } from "@/services/movement-service";
+import { createMovement, getMovementDestinationSuggestions } from "@/services/movement-service";
 import { getClients } from "@/services/client-service";
 import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
 import {
@@ -63,6 +65,12 @@ type MovementDraft = {
   products: MovementDraftProduct[];
   suggestion: MovementSuggestion | null;
   tipo: string;
+};
+
+type OverdueOwnerReturnPrompt = {
+  clientName: string;
+  draftId: string;
+  products: MovementDraftProduct[];
 };
 
 function createDraft(id: string): MovementDraft {
@@ -260,6 +268,8 @@ export function MovementPage() {
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
+  const [overdueOwnerReturnPrompt, setOverdueOwnerReturnPrompt] =
+    useState<OverdueOwnerReturnPrompt | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const activeDraft = useMemo(
@@ -532,6 +542,40 @@ export function MovementPage() {
       clienteSearch: client.nome,
       errors: { ...draft.errors, clienteId: undefined },
     }));
+  }
+
+  async function checkOverdueOwnerReturnProducts(draftId: string, client: ClientListItem) {
+    if (!token || !selectedStoreId) {
+      return;
+    }
+
+    try {
+      const response = await getMovementDestinationSuggestions(token, selectedStoreId);
+
+      if (!response.ok) {
+        return;
+      }
+
+      if (client.doacao) {
+        return;
+      }
+
+      const overdueProducts = asMovementDestinationSuggestionResponse(response.body).produtos
+        .filter((product) => product.fornecedorId === client.id)
+        .map((product) => ({ ...product, desconto: "0" }));
+
+      if (overdueProducts.length === 0) {
+        return;
+      }
+
+      setOverdueOwnerReturnPrompt({
+        clientName: client.nome,
+        draftId,
+        products: overdueProducts,
+      });
+    } catch {
+      // Nao bloqueia a selecao do cliente se a consulta auxiliar falhar.
+    }
   }
 
   function buildIncompatibleProductsMessage(draft: MovementDraft) {
@@ -912,6 +956,7 @@ export function MovementPage() {
                             }
 
                             handleClientSelect(activeDraft.id, selectedClient);
+                            void checkOverdueOwnerReturnProducts(activeDraft.id, selectedClient);
                           }}
                         />
                         {activeDraft.errors.clienteId ? (
@@ -1182,6 +1227,34 @@ export function MovementPage() {
         storeId={selectedStoreId}
         storeName={selectedStore?.nome ?? null}
         onClose={() => setIsStoreConfigOpen(false)}
+      />
+
+      <MovementOverdueOwnerReturnModal
+        isOpen={Boolean(overdueOwnerReturnPrompt)}
+        clientName={overdueOwnerReturnPrompt?.clientName ?? ""}
+        productCount={overdueOwnerReturnPrompt?.products.length ?? 0}
+        onClose={() => setOverdueOwnerReturnPrompt(null)}
+        onConfirm={() => {
+          if (!overdueOwnerReturnPrompt) {
+            return;
+          }
+
+          const sourceDraft =
+            drafts.find((draft) => draft.id === overdueOwnerReturnPrompt.draftId) ?? activeDraft;
+
+          addDraft({
+            tipo: "4",
+            data: sourceDraft?.data ?? initialMovementDraftFormValues.data,
+            clienteId: sourceDraft?.clienteId ?? "",
+            clienteLabel: sourceDraft?.clienteLabel ?? overdueOwnerReturnPrompt.clientName,
+            clienteSearch:
+              sourceDraft?.clienteLabel ||
+              sourceDraft?.clienteSearch ||
+              overdueOwnerReturnPrompt.clientName,
+            products: overdueOwnerReturnPrompt.products,
+          });
+          setOverdueOwnerReturnPrompt(null);
+        }}
       />
     </section>
   );
