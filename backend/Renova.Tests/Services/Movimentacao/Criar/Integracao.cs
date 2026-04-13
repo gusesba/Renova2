@@ -50,6 +50,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.NotNull(body);
             Assert.True(body.Id > 0);
             Assert.Equal(TipoMovimentacao.Venda, body.Tipo);
+            Assert.Equal(-299.80m, body.CreditoPendenteCliente);
             Assert.Equal(2, body.ProdutoIds.Count);
 
             using IServiceScope scope = factory.Services.CreateScope();
@@ -57,7 +58,10 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             _ = Assert.Single(context.Movimentacoes);
             Assert.Equal(2, context.MovimentacoesProdutos.Count());
             Assert.Equal(3, context.Pagamentos.Count());
-            Assert.Empty(context.ClientesCreditos);
+            ClienteCreditoModel creditoCliente = Assert.Single(context.ClientesCreditos);
+            Assert.Equal(cliente.Id, creditoCliente.ClienteId);
+            Assert.Equal(-299.80m, creditoCliente.Valor);
+            Assert.Contains(context.Pagamentos, item => item.ClienteId == cliente.Id && item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pago && item.Valor == 299.80m);
             Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.Contains(context.Pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.All(context.ProdutosEstoque.ToList(), item => Assert.Equal(SituacaoProduto.Vendido, item.Situacao));
@@ -98,9 +102,44 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             List<PagamentoModel> pagamentos = await context.Pagamentos.OrderBy(item => item.ClienteId).ToListAsync();
 
             Assert.Equal(3, pagamentos.Count);
-            Assert.Contains(pagamentos, item => item.ClienteId == cliente.Id && item.Natureza == NaturezaPagamento.Receber && item.Valor == 299.80m);
+            Assert.Contains(pagamentos, item => item.ClienteId == cliente.Id && item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pago && item.Valor == 299.80m);
             Assert.Contains(pagamentos, item => item.ClienteId == produtoA.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
             Assert.Contains(pagamentos, item => item.ClienteId == produtoB.FornecedorId && item.Natureza == NaturezaPagamento.Pagar && item.Valor == 89.94m);
+            Assert.Equal(-299.80m, await context.ClientesCreditos.Where(item => item.ClienteId == cliente.Id).Select(item => item.Valor).SingleAsync());
+        }
+
+        [Fact]
+        public async Task PostMovimentacaoDeveRetornarCreditoPendenteNuloQuandoMovimentacaoNaoForVenda()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestimo-sem-credito@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Emprestimo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            MovimentacaoDto? body = await response.Content.ReadFromJsonAsync<MovimentacaoDto>();
+            Assert.NotNull(body);
+            Assert.Null(body.CreditoPendenteCliente);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            Assert.Empty(context.Pagamentos);
+            Assert.Empty(context.ClientesCreditos);
         }
 
         [Fact]
