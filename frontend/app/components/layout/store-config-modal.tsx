@@ -17,7 +17,11 @@ import {
 } from "@/lib/store-config";
 import { formatPaymentMethodAdjustment } from "@/lib/store-payment-method";
 import { getAuthToken } from "@/lib/store";
-import { asStoreConfigResponse, getStoreConfig, saveStoreConfig } from "@/services/store-config-service";
+import {
+  asStoreConfigResponse,
+  getStoreConfig,
+  saveStoreConfig,
+} from "@/services/store-config-service";
 
 type StoreConfigModalProps = {
   isOpen: boolean;
@@ -26,12 +30,7 @@ type StoreConfigModalProps = {
   onClose: () => void;
 };
 
-export function StoreConfigModal({
-  isOpen,
-  storeId,
-  storeName,
-  onClose,
-}: StoreConfigModalProps) {
+export function StoreConfigModal({ isOpen, storeId, storeName, onClose }: StoreConfigModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -227,12 +226,10 @@ export function StoreConfigModal({
       return;
     }
 
-    if (
-      !normalizedStayValue ||
-      !Number.isInteger(parsedStayValue) ||
-      parsedStayValue < 1
-    ) {
-      toast.error("Informe um tempo de permanencia valido em meses, com valor inteiro maior ou igual a 1.");
+    if (!normalizedStayValue || !Number.isInteger(parsedStayValue) || parsedStayValue < 1) {
+      toast.error(
+        "Informe um tempo de permanencia valido em meses, com valor inteiro maior ou igual a 1.",
+      );
       return;
     }
 
@@ -333,193 +330,194 @@ export function StoreConfigModal({
 
         <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">
-              Percentual de repasse
-            </span>
-            <div className="relative">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                value={values.percentualRepasseFornecedor}
-                disabled={isLoading || isSaving}
-                onChange={(event) => {
-                  setValues((current) => ({
-                    ...current,
-                    percentualRepasseFornecedor: event.target.value,
-                  }));
-                }}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-                placeholder="Ex.: 45"
-              />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
-                %
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">
+                Percentual de repasse
               </span>
-            </div>
-            <p className="text-sm text-[var(--muted)]">
-              Use valores entre 0 e 100. Exemplo: 45 significa 45% de repasse ao fornecedor.
-            </p>
-          </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={values.percentualRepasseFornecedor}
+                  disabled={isLoading || isSaving}
+                  onChange={(event) => {
+                    setValues((current) => ({
+                      ...current,
+                      percentualRepasseFornecedor: event.target.value,
+                    }));
+                  }}
+                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                  placeholder="Ex.: 45"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                  %
+                </span>
+              </div>
+              <p className="text-sm text-[var(--muted)]">
+                Use valores entre 0 e 100. Exemplo: 45 significa 45% de repasse ao fornecedor.
+              </p>
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">
-              Repasse ao vendedor em credito
-            </span>
-            <div className="relative">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                value={values.percentualRepasseVendedorCredito}
-                disabled={isLoading || isSaving}
-                onChange={(event) => {
-                  setValues((current) => ({
-                    ...current,
-                    percentualRepasseVendedorCredito: event.target.value,
-                  }));
-                }}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-                placeholder="Ex.: 10"
-              />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
-                %
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">
+                Repasse ao vendedor em credito
               </span>
-            </div>
-            <p className="text-sm text-[var(--muted)]">
-              Percentual aplicado quando o vendedor usa o valor pendente em compras na propria loja.
-            </p>
-          </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={values.percentualRepasseVendedorCredito}
+                  disabled={isLoading || isSaving}
+                  onChange={(event) => {
+                    setValues((current) => ({
+                      ...current,
+                      percentualRepasseVendedorCredito: event.target.value,
+                    }));
+                  }}
+                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-12 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                  placeholder="Ex.: 10"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                  %
+                </span>
+              </div>
+              <p className="text-sm text-[var(--muted)]">
+                Percentual aplicado quando o vendedor usa o valor pendente em compras na propria
+                loja.
+              </p>
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">
-              Permanencia do produto na loja
-            </span>
-            <div className="relative">
-              <input
-                type="number"
-                min={1}
-                step="1"
-                value={values.tempoPermanenciaProdutoMeses}
-                disabled={isLoading || isSaving}
-                onChange={(event) => {
-                  setValues((current) => ({
-                    ...current,
-                    tempoPermanenciaProdutoMeses: event.target.value,
-                  }));
-                }}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-20 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-                placeholder="Ex.: 6"
-              />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
-                meses
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">
+                Permanencia do produto na loja
               </span>
-            </div>
-            <p className="text-sm text-[var(--muted)]">
-              Tempo padrao de permanencia do produto na loja, informado em meses inteiros.
-            </p>
-          </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  step="1"
+                  value={values.tempoPermanenciaProdutoMeses}
+                  disabled={isLoading || isSaving}
+                  onChange={(event) => {
+                    setValues((current) => ({
+                      ...current,
+                      tempoPermanenciaProdutoMeses: event.target.value,
+                    }));
+                  }}
+                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-20 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                  placeholder="Ex.: 6"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                  meses
+                </span>
+              </div>
+              <p className="text-sm text-[var(--muted)]">
+                Tempo padrao de permanencia do produto na loja, informado em meses inteiros.
+              </p>
+            </label>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-[var(--foreground)]">
-                  Descontos por permanencia
-                </p>
-                <p className="text-sm text-[var(--muted)]">
-                  Configure faixas de desconto para produtos com mais tempo em loja.
-                </p>
+            <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">
+                    Descontos por permanencia
+                  </p>
+                  <p className="text-sm text-[var(--muted)]">
+                    Configure faixas de desconto para produtos com mais tempo em loja.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsDiscountModalOpen(true)}
+                  disabled={isLoading || isSaving}
+                  className="flex h-14 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Configurar descontos
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsDiscountModalOpen(true)}
-                disabled={isLoading || isSaving}
-                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Configurar descontos
-              </button>
+              <div className="mt-4 space-y-2">
+                {discountValues.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    Nenhuma faixa de desconto cadastrada.
+                  </p>
+                ) : (
+                  discountValues
+                    .slice()
+                    .sort(
+                      (left, right) =>
+                        Number(left.aPartirDeMeses.trim()) - Number(right.aPartirDeMeses.trim()),
+                    )
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
+                      >
+                        <span>A partir de {item.aPartirDeMeses} meses</span>
+                        <span className="font-semibold text-[var(--primary)]">
+                          {item.percentualDesconto}% de desconto
+                        </span>
+                      </div>
+                    ))
+                )}
+              </div>
             </div>
 
-            <div className="mt-4 space-y-2">
-              {discountValues.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">
-                  Nenhuma faixa de desconto cadastrada.
-                </p>
-              ) : (
-                discountValues
-                  .slice()
-                  .sort(
-                    (left, right) =>
-                      Number(left.aPartirDeMeses.trim()) - Number(right.aPartirDeMeses.trim()),
-                  )
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
-                    >
-                      <span>A partir de {item.aPartirDeMeses} meses</span>
-                      <span className="font-semibold text-[var(--primary)]">
-                        {item.percentualDesconto}% de desconto
-                      </span>
-                    </div>
-                  ))
-              )}
-            </div>
-          </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">
+                    Formas de pagamento
+                  </p>
+                  <p className="text-sm text-[var(--muted)]">
+                    Configure taxa ou desconto por forma de pagamento.
+                  </p>
+                </div>
 
-          <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-[var(--foreground)]">
-                  Formas de pagamento
-                </p>
-                <p className="text-sm text-[var(--muted)]">
-                  Configure taxa ou desconto por forma de pagamento.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentMethodModalOpen(true)}
+                  disabled={isLoading || isSaving}
+                  className="flex h-14 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Configurar formas de pagamento
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsPaymentMethodModalOpen(true)}
-                disabled={isLoading || isSaving}
-                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Configurar formas de pagamento
-              </button>
+              <div className="mt-4 space-y-2">
+                {paymentMethodValues.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">
+                    Nenhuma forma de pagamento cadastrada.
+                  </p>
+                ) : (
+                  paymentMethodValues
+                    .slice()
+                    .sort((left, right) => left.nome.localeCompare(right.nome))
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
+                      >
+                        <span>{item.nome}</span>
+                        <span className="font-semibold text-[var(--primary)]">
+                          {formatPaymentMethodAdjustment(item.percentualAjuste)}
+                        </span>
+                      </div>
+                    ))
+                )}
+              </div>
             </div>
 
-            <div className="mt-4 space-y-2">
-              {paymentMethodValues.length === 0 ? (
-                <p className="text-sm text-[var(--muted)]">
-                  Nenhuma forma de pagamento cadastrada.
-                </p>
-              ) : (
-                paymentMethodValues
-                  .slice()
-                  .sort((left, right) => left.nome.localeCompare(right.nome))
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]"
-                    >
-                      <span>{item.nome}</span>
-                      <span className="font-semibold text-[var(--primary)]">
-                        {formatPaymentMethodAdjustment(item.percentualAjuste)}
-                      </span>
-                    </div>
-                  ))
-              )}
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
+              {isLoading
+                ? "Carregando configuracao atual da loja..."
+                : "Essa configuracao sera aplicada na criacao das ordens de pagamento da movimentacao."}
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
-            {isLoading
-              ? "Carregando configuracao atual da loja..."
-              : "Essa configuracao sera aplicada na criacao das ordens de pagamento da movimentacao."}
-          </div>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
