@@ -79,6 +79,64 @@ namespace Renova.Tests.Services.Pagamento.Get
             Assert.Equal(mov1.Id, item.MovimentacaoId);
         }
 
+        [Fact]
+        public async Task GetFechamentoLojaDeveRetornarResumoMensalEHistorico()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "pagamento-fechamento-api@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel clienteVenda = await CriarClienteAsync(factory, loja.Id, "Cliente Venda", "44999990000");
+            ClienteModel fornecedor = await CriarClienteAsync(factory, loja.Id, "Fornecedor A", "44999990001");
+            ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", fornecedor.Id);
+            ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", fornecedor.Id);
+
+            MovimentacaoModel venda = await CriarMovimentacaoAsync(
+                factory,
+                loja.Id,
+                clienteVenda.Id,
+                TipoMovimentacao.Venda,
+                new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc),
+                produtoA.Id,
+                produtoB.Id);
+
+            _ = await CriarPagamentoAsync(
+                factory,
+                venda.Id,
+                loja.Id,
+                clienteVenda.Id,
+                NaturezaPagamento.Receber,
+                StatusPagamento.Pago,
+                240m,
+                new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc));
+
+            _ = await CriarPagamentoAsync(
+                factory,
+                venda.Id,
+                loja.Id,
+                fornecedor.Id,
+                NaturezaPagamento.Pagar,
+                StatusPagamento.Pendente,
+                84m,
+                new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc));
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.GetAsync(
+                $"/api/pagamento/fechamento?lojaId={loja.Id}&dataReferencia=2026-03-01T00:00:00");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            FechamentoLojaDto? body = await response.Content.ReadFromJsonAsync<FechamentoLojaDto>();
+            body = Assert.IsType<FechamentoLojaDto>(body);
+            Assert.Equal(2, body.QuantidadePecasVendidas);
+            Assert.Equal(240m, body.ValorRecebidoClientes);
+            Assert.Equal(84m, body.ValorPagoFornecedores);
+            Assert.Equal(156m, body.Total);
+            Assert.Equal(12, body.Historico.Count);
+        }
+
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", new CadastroCommand

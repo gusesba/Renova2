@@ -128,6 +128,118 @@ namespace Renova.Service.Services.Pagamento
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
+        public async Task<FechamentoLojaDto> GetFechamentoLojaAsync(
+            ObterFechamentoLojaQuery request,
+            ObterPagamentosParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+
+            DateTime dataReferencia = request.DataReferencia.HasValue
+                ? NormalizarDateTimeParaUtc(request.DataReferencia.Value)
+                : DateTime.UtcNow.AddMonths(-1);
+
+            DateTime inicioMesReferencia = new(dataReferencia.Year, dataReferencia.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            DateTime inicioHistorico = inicioMesReferencia.AddMonths(-11);
+            DateTime fimMesReferencia = inicioMesReferencia.AddMonths(1).AddTicks(-1);
+            DateTime fimHistoricoExclusivo = inicioMesReferencia.AddMonths(1);
+
+            List<FechamentoMovimentacaoMensalItem> movimentacoes = await _context.Movimentacoes
+                .Where(movimentacao =>
+                    movimentacao.LojaId == request.LojaId.Value
+                    && movimentacao.Data >= inicioHistorico
+                    && movimentacao.Data < fimHistoricoExclusivo
+                    && (movimentacao.Tipo == TipoMovimentacao.Venda || movimentacao.Tipo == TipoMovimentacao.DevolucaoVenda))
+                .Select(movimentacao => new FechamentoMovimentacaoMensalItem
+                {
+                    Ano = movimentacao.Data.Year,
+                    Mes = movimentacao.Data.Month,
+                    QuantidadePecasVendidas = movimentacao.Tipo == TipoMovimentacao.Venda
+                        ? movimentacao.Produtos.Count
+                        : -movimentacao.Produtos.Count
+                })
+                .ToListAsync(cancellationToken);
+
+            List<FechamentoPagamentoMensalItem> pagamentos = await _context.Pagamentos
+                .Where(pagamento =>
+                    pagamento.LojaId == request.LojaId.Value
+                    && pagamento.Data >= inicioHistorico
+                    && pagamento.Data < fimHistoricoExclusivo
+                    && pagamento.Status != StatusPagamento.Cancelado
+                    && pagamento.Movimentacao != null)
+                .Select(pagamento => new FechamentoPagamentoMensalItem
+                {
+                    Ano = pagamento.Data.Year,
+                    Mes = pagamento.Data.Month,
+                    ValorRecebidoClientes = pagamento.Natureza == NaturezaPagamento.Receber
+                        && pagamento.ClienteId == pagamento.Movimentacao!.ClienteId
+                            ? pagamento.Valor
+                            : 0m,
+                    ValorPagoFornecedores = pagamento.Natureza == NaturezaPagamento.Pagar
+                        && pagamento.ClienteId != pagamento.Movimentacao!.ClienteId
+                            ? pagamento.Valor
+                            : 0m
+                })
+                .ToListAsync(cancellationToken);
+
+            Dictionary<(int Ano, int Mes), int> pecasVendidasPorMes = movimentacoes
+                .GroupBy(item => (item.Ano, item.Mes))
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Sum(item => item.QuantidadePecasVendidas));
+
+            Dictionary<(int Ano, int Mes), (decimal Recebido, decimal Pago)> valoresPorMes = pagamentos
+                .GroupBy(item => (item.Ano, item.Mes))
+                .ToDictionary(
+                    group => group.Key,
+                    group => (
+                        Recebido: decimal.Round(group.Sum(item => item.ValorRecebidoClientes), 2, MidpointRounding.AwayFromZero),
+                        Pago: decimal.Round(group.Sum(item => item.ValorPagoFornecedores), 2, MidpointRounding.AwayFromZero)));
+
+            List<FechamentoLojaMesDto> historico = Enumerable.Range(0, 12)
+                .Select(offset => inicioHistorico.AddMonths(offset))
+                .Select(mes =>
+                {
+                    (int ano, int numeroMes) = (mes.Year, mes.Month);
+                    _ = pecasVendidasPorMes.TryGetValue((ano, numeroMes), out int quantidadePecasVendidas);
+                    _ = valoresPorMes.TryGetValue((ano, numeroMes), out (decimal Recebido, decimal Pago) valores);
+
+                    decimal total = decimal.Round(valores.Recebido - valores.Pago, 2, MidpointRounding.AwayFromZero);
+
+                    return new FechamentoLojaMesDto
+                    {
+                        Ano = ano,
+                        Mes = numeroMes,
+                        InicioPeriodo = mes,
+                        QuantidadePecasVendidas = quantidadePecasVendidas,
+                        ValorRecebidoClientes = valores.Recebido,
+                        ValorPagoFornecedores = valores.Pago,
+                        Total = total
+                    };
+                })
+                .ToList();
+
+            FechamentoLojaMesDto fechamentoMes = historico
+                .Single(item => item.Ano == inicioMesReferencia.Year && item.Mes == inicioMesReferencia.Month);
+
+            return new FechamentoLojaDto
+            {
+                DataReferencia = inicioMesReferencia,
+                InicioPeriodo = inicioMesReferencia,
+                FimPeriodo = fimMesReferencia,
+                QuantidadePecasVendidas = fechamentoMes.QuantidadePecasVendidas,
+                ValorRecebidoClientes = fechamentoMes.ValorRecebidoClientes,
+                ValorPagoFornecedores = fechamentoMes.ValorPagoFornecedores,
+                Total = fechamentoMes.Total,
+                Historico = historico
+            };
+        }
+
         public async Task<PaginacaoDto<PagamentoCreditoBuscaDto>> GetCreditosAsync(
             ObterPagamentosCreditoQuery request,
             ObterPagamentosParametros parametros,
@@ -636,6 +748,26 @@ namespace Renova.Service.Services.Pagamento
                 DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
                 _ => value
             };
+        }
+
+        private sealed class FechamentoMovimentacaoMensalItem
+        {
+            public int Ano { get; set; }
+
+            public int Mes { get; set; }
+
+            public int QuantidadePecasVendidas { get; set; }
+        }
+
+        private sealed class FechamentoPagamentoMensalItem
+        {
+            public int Ano { get; set; }
+
+            public int Mes { get; set; }
+
+            public decimal ValorRecebidoClientes { get; set; }
+
+            public decimal ValorPagoFornecedores { get; set; }
         }
 
         private static PagamentoDto Mapear(PagamentoModel pagamento)

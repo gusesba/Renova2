@@ -734,6 +734,17 @@ namespace Renova.Service.Services.Movimentacao
                 });
             }
 
+            public Task<FechamentoLojaDto> GetFechamentoLojaAsync(
+                ObterFechamentoLojaQuery request,
+                ObterPagamentosParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                return Task.FromResult(new FechamentoLojaDto());
+            }
+
             public Task<PaginacaoDto<PagamentoCreditoBuscaDto>> GetCreditosAsync(
                 ObterPagamentosCreditoQuery request,
                 ObterPagamentosParametros parametros,
