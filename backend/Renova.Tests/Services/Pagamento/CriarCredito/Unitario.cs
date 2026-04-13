@@ -25,6 +25,7 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
             LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ConfigLojaFormaPagamentoModel formaPagamento = await CriarFormaPagamentoAsync(context, loja.Id, "Cartao credito", 4m);
 
             PagamentoService service = new(context);
             PagamentoCreditoDto resultado = await service.CreateCreditoAsync(
@@ -33,6 +34,7 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                     LojaId = loja.Id,
                     ClienteId = cliente.Id,
                     Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ConfigLojaFormaPagamentoId = formaPagamento.Id,
                     ValorCredito = 150m,
                     Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc)
                 },
@@ -42,13 +44,16 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                 });
 
             Assert.Equal(TipoPagamentoCredito.AdicionarCredito, resultado.Tipo);
+            Assert.Equal(formaPagamento.Id, resultado.ConfigLojaFormaPagamentoId);
+            Assert.Equal("Cartao credito", resultado.FormaPagamentoNome);
             Assert.Equal(150m, resultado.ValorCredito);
-            Assert.Equal(150m, resultado.ValorDinheiro);
+            Assert.Equal(156m, resultado.ValorDinheiro);
             Assert.Equal(150m, await ObterCreditoAsync(context, cliente.Id));
 
             PagamentoCreditoModel pagamento = await context.PagamentosCredito.SingleAsync();
+            Assert.Equal(formaPagamento.Id, pagamento.ConfigLojaFormaPagamentoId);
             Assert.Equal(150m, pagamento.ValorCredito);
-            Assert.Equal(150m, pagamento.ValorDinheiro);
+            Assert.Equal(156m, pagamento.ValorDinheiro);
         }
 
         [Fact]
@@ -87,6 +92,36 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             Assert.Equal(120m, resultado.ValorCredito);
             Assert.Equal(90m, resultado.ValorDinheiro);
             Assert.Equal(180m, await ObterCreditoAsync(context, fornecedor.Id));
+        }
+
+        [Fact]
+        public async Task CreateCreditoAsyncDeveAplicarDescontoDaFormaPagamentoNoValorDinheiro()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria-desconto-forma@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ConfigLojaFormaPagamentoModel formaPagamento = await CriarFormaPagamentoAsync(context, loja.Id, "Pix", -5m);
+
+            PagamentoService service = new(context);
+            PagamentoCreditoDto resultado = await service.CreateCreditoAsync(
+                new CriarPagamentoCreditoCommand
+                {
+                    LojaId = loja.Id,
+                    ClienteId = cliente.Id,
+                    Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ConfigLojaFormaPagamentoId = formaPagamento.Id,
+                    ValorCredito = 100m,
+                    Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc)
+                },
+                new CriarPagamentoCreditoParametros
+                {
+                    UsuarioId = usuario.Id
+                });
+
+            Assert.Equal(95m, resultado.ValorDinheiro);
+            Assert.Equal("Pix", resultado.FormaPagamentoNome);
         }
 
         [Fact]
@@ -162,6 +197,7 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             UsuarioModel usuario = await CriarUsuarioAsync(context, "maria-data-unspecified@renova.com");
             LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente B", "44999990002");
+            ConfigLojaFormaPagamentoModel formaPagamento = await CriarFormaPagamentoAsync(context, loja.Id, "Cartao credito", 4m);
 
             PagamentoService service = new(context);
             PagamentoCreditoDto resultado = await service.CreateCreditoAsync(
@@ -170,6 +206,7 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                     LojaId = loja.Id,
                     ClienteId = cliente.Id,
                     Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ConfigLojaFormaPagamentoId = formaPagamento.Id,
                     ValorCredito = 50m,
                     Data = new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Unspecified)
                 },
@@ -183,6 +220,32 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             PagamentoCreditoModel pagamento = await context.PagamentosCredito.SingleAsync();
             Assert.Equal(DateTimeKind.Utc, pagamento.Data.Kind);
             Assert.Equal(new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc), pagamento.Data);
+        }
+
+        [Fact]
+        public async Task CreateCreditoAsyncDeveImpedirPagamentoDoClienteSemFormaPagamento()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria-sem-forma@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+
+            PagamentoService service = new(context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateCreditoAsync(
+                new CriarPagamentoCreditoCommand
+                {
+                    LojaId = loja.Id,
+                    ClienteId = cliente.Id,
+                    Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ValorCredito = 50m,
+                    Data = new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc)
+                },
+                new CriarPagamentoCreditoParametros
+                {
+                    UsuarioId = usuario.Id
+                }));
         }
 
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)
@@ -243,6 +306,39 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             _ = context.ConfiguracoesLoja.Add(config);
             _ = await context.SaveChangesAsync();
             return config;
+        }
+
+        private static async Task<ConfigLojaFormaPagamentoModel> CriarFormaPagamentoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            string nome,
+            decimal percentualAjuste)
+        {
+            ConfigLojaModel config = await context.ConfiguracoesLoja
+                .Include(item => item.FormasPagamento)
+                .SingleOrDefaultAsync(item => item.LojaId == lojaId)
+                ?? new ConfigLojaModel
+                {
+                    LojaId = lojaId,
+                    PercentualRepasseFornecedor = 45m,
+                    PercentualRepasseVendedorCredito = 60m,
+                    TempoPermanenciaProdutoMeses = 6
+                };
+
+            if (config.Id == 0)
+            {
+                _ = context.ConfiguracoesLoja.Add(config);
+            }
+
+            ConfigLojaFormaPagamentoModel formaPagamento = new()
+            {
+                Nome = nome,
+                PercentualAjuste = percentualAjuste
+            };
+
+            config.FormasPagamento.Add(formaPagamento);
+            _ = await context.SaveChangesAsync();
+            return formaPagamento;
         }
 
         private static async Task<decimal> ObterCreditoAsync(RenovaDbContext context, int clienteId)

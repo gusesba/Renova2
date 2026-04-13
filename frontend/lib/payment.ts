@@ -40,6 +40,8 @@ export type PaymentCreditResponse = {
   lojaId: number;
   clienteId: number;
   tipo: PaymentCreditTypeValue;
+  configLojaFormaPagamentoId: number | null;
+  formaPagamentoNome: string | null;
   valorCredito: number;
   valorDinheiro: number;
   data: string;
@@ -51,6 +53,8 @@ export type ExternalPaymentListItem = {
   clienteId: number;
   cliente: string;
   tipo: PaymentCreditTypeValue;
+  configLojaFormaPagamentoId: number | null;
+  formaPagamentoNome: string | null;
   valorCredito: number;
   valorDinheiro: number;
   data: string;
@@ -115,6 +119,7 @@ export type ExternalPaymentVisibleField =
   | "data"
   | "cliente"
   | "tipo"
+  | "formaPagamento"
   | "valorCredito"
   | "valorDinheiro";
 
@@ -188,7 +193,7 @@ export const initialExternalPaymentFilters: ExternalPaymentFilters = {
 
 export const defaultExternalPaymentTableSettings: ExternalPaymentTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "data", "cliente", "tipo", "valorCredito", "valorDinheiro"],
+  visibleFields: ["id", "data", "cliente", "tipo", "formaPagamento", "valorCredito", "valorDinheiro"],
 };
 
 const paymentTableSettingsStorageKey = "renova.paymentTableSettings";
@@ -281,6 +286,13 @@ export function calculateSupplierMoneyPreview(
       percentualRepasseVendedorCredito
     ).toFixed(2),
   );
+}
+
+export function calculateCustomerPaymentMoneyPreview(
+  creditValue: number,
+  percentualAjuste: number,
+) {
+  return Number((creditValue * (1 + percentualAjuste / 100)).toFixed(2));
 }
 
 export function formatPhone(value: string) {
@@ -463,8 +475,8 @@ export function getStoredExternalPaymentTableSettings(): ExternalPaymentTableSet
         : defaultExternalPaymentTableSettings.tamanhoPagina;
 
     const visibleFields = Array.isArray(parsed.visibleFields)
-      ? parsed.visibleFields.filter((field): field is ExternalPaymentVisibleField =>
-          ["id", "data", "cliente", "tipo", "valorCredito", "valorDinheiro"].includes(
+        ? parsed.visibleFields.filter((field): field is ExternalPaymentVisibleField =>
+          ["id", "data", "cliente", "tipo", "formaPagamento", "valorCredito", "valorDinheiro"].includes(
             String(field),
           ),
         )

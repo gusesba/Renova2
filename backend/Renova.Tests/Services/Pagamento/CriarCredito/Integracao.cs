@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Renova.Domain.Model;
@@ -24,6 +25,44 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-pagamento-credito@renova.com");
             LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
             ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ConfigLojaFormaPagamentoModel formaPagamento = await CriarFormaPagamentoAsync(factory, loja.Id, "Cartao credito", 4m);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/pagamento/credito", new CriarPagamentoCreditoCommand
+            {
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                Tipo = TipoPagamentoCredito.AdicionarCredito,
+                ConfigLojaFormaPagamentoId = formaPagamento.Id,
+                ValorCredito = 150m,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc)
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            PagamentoCreditoDto? body = await response.Content.ReadFromJsonAsync<PagamentoCreditoDto>();
+            Assert.NotNull(body);
+            Assert.Equal(150m, body.ValorCredito);
+            Assert.Equal(156m, body.ValorDinheiro);
+            Assert.Equal(formaPagamento.Id, body.ConfigLojaFormaPagamentoId);
+            Assert.Equal("Cartao credito", body.FormaPagamentoNome);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            Assert.Single(context.PagamentosCredito);
+            Assert.Equal(150m, context.ClientesCreditos.Single(item => item.ClienteId == cliente.Id).Valor);
+        }
+
+        [Fact]
+        public async Task PostPagamentoCreditoDeveRetornarBadRequestQuandoPagamentoDoClienteNaoInformarFormaPagamento()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-sem-forma@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -36,17 +75,7 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                 Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc)
             });
 
-            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-            PagamentoCreditoDto? body = await response.Content.ReadFromJsonAsync<PagamentoCreditoDto>();
-            Assert.NotNull(body);
-            Assert.Equal(150m, body.ValorCredito);
-            Assert.Equal(150m, body.ValorDinheiro);
-
-            using IServiceScope scope = factory.Services.CreateScope();
-            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-            Assert.Single(context.PagamentosCredito);
-            Assert.Equal(150m, context.ClientesCreditos.Single(item => item.ClienteId == cliente.Id).Valor);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
@@ -144,6 +173,42 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
             _ = context.ConfiguracoesLoja.Add(config);
             _ = await context.SaveChangesAsync();
             return config;
+        }
+
+        private static async Task<ConfigLojaFormaPagamentoModel> CriarFormaPagamentoAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            string nome,
+            decimal percentualAjuste)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ConfigLojaModel config = await context.ConfiguracoesLoja
+                .Include(item => item.FormasPagamento)
+                .SingleOrDefaultAsync(item => item.LojaId == lojaId)
+                ?? new ConfigLojaModel
+                {
+                    LojaId = lojaId,
+                    PercentualRepasseFornecedor = 45m,
+                    PercentualRepasseVendedorCredito = 60m,
+                    TempoPermanenciaProdutoMeses = 6
+                };
+
+            if (config.Id == 0)
+            {
+                _ = context.ConfiguracoesLoja.Add(config);
+            }
+
+            ConfigLojaFormaPagamentoModel formaPagamento = new()
+            {
+                Nome = nome,
+                PercentualAjuste = percentualAjuste
+            };
+
+            config.FormasPagamento.Add(formaPagamento);
+            _ = await context.SaveChangesAsync();
+            return formaPagamento;
         }
     }
 }

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Select } from "@/app/components/ui/select";
 import {
   asPaymentCreditResponse,
+  calculateCustomerPaymentMoneyPreview,
   calculateSupplierMoneyPreview,
   formatCurrency,
   formatPaymentCreditType,
@@ -45,6 +46,7 @@ export function PaymentCreditModal({
   const [dateValue, setDateValue] = useState(() => getTodayDateInputValue());
   const [paymentType, setPaymentType] = useState<PaymentCreditTypeValue>(2);
   const [creditValue, setCreditValue] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState("");
   const [config, setConfig] = useState<ConfigLojaResponse | null>(null);
   const [configMessage, setConfigMessage] = useState<string | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
@@ -96,6 +98,7 @@ export function PaymentCreditModal({
     setDateValue(getTodayDateInputValue());
     setPaymentType(initialPaymentType);
     setCreditValue("");
+    setPaymentMethodId("");
     setConfigMessage(null);
   }, [initialPaymentType, isOpen, client?.clienteId]);
 
@@ -169,9 +172,30 @@ export function PaymentCreditModal({
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }, [creditValue]);
 
+  useEffect(() => {
+    if (!isOpen || paymentType !== 1) {
+      return;
+    }
+
+    if (!config || config.formasPagamento.length === 0) {
+      setPaymentMethodId("");
+      return;
+    }
+
+    setPaymentMethodId((current) =>
+      current && config.formasPagamento.some((item) => String(item.id ?? "") === current)
+        ? current
+        : String(config.formasPagamento[0]?.id ?? ""),
+    );
+  }, [config, isOpen, paymentType]);
+
   const currentCredit = client?.credito ?? 0;
   const nextCredit =
     paymentType === 1 ? currentCredit + parsedCreditValue : currentCredit - parsedCreditValue;
+  const selectedPaymentMethod =
+    paymentType === 1
+      ? config?.formasPagamento.find((item) => String(item.id) === paymentMethodId) ?? null
+      : null;
   const moneyPreview =
     paymentType === 2 && config
       ? calculateSupplierMoneyPreview(
@@ -179,11 +203,21 @@ export function PaymentCreditModal({
           config.percentualRepasseFornecedor,
           config.percentualRepasseVendedorCredito,
         )
+      : paymentType === 1 && selectedPaymentMethod
+        ? calculateCustomerPaymentMoneyPreview(
+            parsedCreditValue,
+            selectedPaymentMethod.percentualAjuste,
+          )
       : parsedCreditValue;
   const isSupplierOperation = paymentType === 2;
+  const isCustomerOperation = paymentType === 1;
   const hasEnoughCredit = !isSupplierOperation || parsedCreditValue <= currentCredit;
   const missingConfigForSupplier = isSupplierOperation && !config;
-  const shouldBlockSubmit = isSupplierOperation && (!hasEnoughCredit || missingConfigForSupplier);
+  const missingPaymentMethodForCustomer =
+    isCustomerOperation && (!config || config.formasPagamento.length === 0 || !selectedPaymentMethod);
+  const shouldBlockSubmit =
+    (isSupplierOperation && (!hasEnoughCredit || missingConfigForSupplier)) ||
+    missingPaymentMethodForCustomer;
 
   if (typeof document === "undefined" || !shouldRender || !client) {
     return null;
@@ -228,6 +262,11 @@ export function PaymentCreditModal({
       return;
     }
 
+    if (isCustomerOperation && !selectedPaymentMethod) {
+      toast.error("Selecione uma forma de pagamento para o lancamento.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -236,6 +275,7 @@ export function PaymentCreditModal({
           lojaId: storeId,
           clienteId: currentClient.clienteId,
           tipo: paymentType,
+          configLojaFormaPagamentoId: selectedPaymentMethod?.id,
           valorCredito: parsedCreditValue,
           data: toUtcStartOfDay(dateValue),
         },
@@ -356,9 +396,31 @@ export function PaymentCreditModal({
             </label>
           </div>
 
+          {isCustomerOperation ? (
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">
+                Forma de pagamento
+              </span>
+              <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
+                <Select
+                  ariaLabel="Forma de pagamento"
+                  value={paymentMethodId}
+                  options={(config?.formasPagamento ?? []).map((item) => ({
+                    label: `${item.nome} (${item.percentualAjuste > 0 ? "+" : ""}${item.percentualAjuste}%)`,
+                    value: String(item.id),
+                  }))}
+                  onChange={(value) => setPaymentMethodId(value)}
+                />
+              </div>
+              <p className="text-sm text-[var(--muted)]">
+                Selecione a taxa ou desconto que sera aplicada sobre o valor do pagamento.
+              </p>
+            </label>
+          ) : null}
+
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-[var(--foreground)]">
-              {isSupplierOperation ? "Valor em credito" : "Valor em dinheiro"}
+              Valor em credito
             </span>
             <div className="relative">
               <input
@@ -378,14 +440,14 @@ export function PaymentCreditModal({
             <p className="text-sm text-[var(--muted)]">
               {isSupplierOperation
                 ? "Informe quanto sera consumido do credito do sistema para converter em dinheiro ao fornecedor."
-                : "O pagamento do cliente converte dinheiro em credito do sistema na razao de 1 para 1."}
+                : "Informe quanto de credito o cliente recebera. A previa abaixo mostra o valor em dinheiro considerando a taxa ou desconto da forma de pagamento."}
             </p>
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
               <p className="text-sm text-[var(--muted)]">
-                {isSupplierOperation ? "Dinheiro equivalente ao fornecedor" : "Credito gerado"}
+                {isSupplierOperation ? "Dinheiro equivalente ao fornecedor" : "Previa em dinheiro"}
               </p>
               <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">
                 {formatCurrency(moneyPreview)}
@@ -393,7 +455,9 @@ export function PaymentCreditModal({
               <p className="mt-2 text-sm text-[var(--muted)]">
                 {isSupplierOperation && config
                   ? `Calculo: creditos x ${config.percentualRepasseFornecedor}% / ${config.percentualRepasseVendedorCredito}%.`
-                  : "Conversao direta de 1 para 1."}
+                  : isCustomerOperation && selectedPaymentMethod
+                    ? `Calculo: credito x (1 + ${selectedPaymentMethod.percentualAjuste}%).`
+                    : "Conversao direta de credito para dinheiro."}
               </p>
             </div>
 
@@ -405,7 +469,7 @@ export function PaymentCreditModal({
               <p className="mt-2 text-sm text-[var(--muted)]">
                 {isSupplierOperation
                   ? "Debita credito do sistema desse cliente e registra a saida em dinheiro."
-                  : "Adiciona credito do sistema a partir do dinheiro recebido do cliente."}
+                  : "Gera credito para o cliente e registra quanto foi pago em dinheiro com a forma de pagamento selecionada."}
               </p>
             </div>
           </div>
@@ -417,6 +481,12 @@ export function PaymentCreditModal({
           ) : configMessage ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
               {configMessage}
+            </div>
+          ) : null}
+
+          {isCustomerOperation && !configMessage && (!config || config.formasPagamento.length === 0) ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+              Configure ao menos uma forma de pagamento na loja antes de lancar um pagamento do cliente.
             </div>
           ) : null}
 

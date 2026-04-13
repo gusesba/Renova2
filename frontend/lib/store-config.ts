@@ -31,6 +31,7 @@ export type StoreDiscountFormValue = {
 };
 
 export type ConfigLojaFormaPagamentoResponse = {
+  id: number;
   nome: string;
   percentualAjuste: number;
 };

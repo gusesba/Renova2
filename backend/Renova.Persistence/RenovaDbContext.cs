@@ -299,9 +299,11 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.ClienteId).IsRequired();
                 _ = entity.Property(p => p.Tipo).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.ConfigLojaFormaPagamentoId).IsRequired(false);
                 _ = entity.Property(p => p.ValorCredito).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.ValorDinheiro).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.HasIndex(p => p.ConfigLojaFormaPagamentoId);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.PagamentosCredito)
                     .HasForeignKey(p => p.LojaId)
@@ -310,6 +312,10 @@ namespace Renova.Persistence
                     .WithMany(p => p.PagamentosCredito)
                     .HasForeignKey(p => p.ClienteId)
                     .OnDelete(DeleteBehavior.Restrict);
+                _ = entity.HasOne(p => p.ConfigLojaFormaPagamento)
+                    .WithMany()
+                    .HasForeignKey(p => p.ConfigLojaFormaPagamentoId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             _ = modelBuilder.Entity<MovimentacaoProdutoModel>(entity =>

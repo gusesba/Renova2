@@ -110,6 +110,7 @@ export async function createPaymentCredit(
     lojaId: number;
     clienteId: number;
     tipo: number;
+    configLojaFormaPagamentoId?: number;
     valorCredito: number;
     data: string;
   },

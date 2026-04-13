@@ -141,6 +141,7 @@ namespace Renova.Service.Services.ConfigLoja
                     .OrderBy(item => item.Nome)
                     .Select(item => new ConfigLojaFormaPagamentoDto
                     {
+                        Id = item.Id,
                         Nome = item.Nome,
                         PercentualAjuste = item.PercentualAjuste
                     })]

@@ -23,6 +23,7 @@ const fieldOptions: Array<{
   { label: "Data", value: "data", description: "Data registrada no lancamento" },
   { label: "Cliente", value: "cliente", description: "Cliente vinculado ao pagamento externo" },
   { label: "Tipo", value: "tipo", description: "Se o lancamento adiciona ou resgata credito" },
+  { label: "Forma", value: "formaPagamento", description: "Forma de pagamento usada no lancamento" },
   { label: "Valor em credito", value: "valorCredito", description: "Valor movimentado em credito" },
   {
     label: "Valor em dinheiro",

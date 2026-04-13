@@ -46,6 +46,7 @@ export function ExternalPaymentsTable({
   const showData = visibleFields.includes("data");
   const showCliente = visibleFields.includes("cliente");
   const showTipo = visibleFields.includes("tipo");
+  const showFormaPagamento = visibleFields.includes("formaPagamento");
   const showValorCredito = visibleFields.includes("valorCredito");
   const showValorDinheiro = visibleFields.includes("valorDinheiro");
 
@@ -75,6 +76,11 @@ export function ExternalPaymentsTable({
                   Tipo
                 </th>
               ) : null}
+              {showFormaPagamento ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Forma
+                </th>
+              ) : null}
               {showValorCredito ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Credito
@@ -101,29 +107,32 @@ export function ExternalPaymentsTable({
                   {showId ? <TableCell subtle>#{payment.id}</TableCell> : null}
                   {showData ? <TableCell>{formatPaymentDate(payment.data)}</TableCell> : null}
                   {showCliente ? <TableCell>{payment.cliente}</TableCell> : null}
-                    {showTipo ? (
-                      <TableCell>
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getTypeBadgeClass(payment.tipo)}`}
-                        >
-                          {formatPaymentCreditType(payment.tipo)}
-                        </span>
-                      </TableCell>
-                    ) : null}
-                    {showValorCredito ? (
-                      <TableCell>
-                        <span className="font-semibold text-[var(--foreground)]">
-                          {formatCurrency(payment.valorCredito)}
-                        </span>
-                      </TableCell>
-                    ) : null}
-                    {showValorDinheiro ? (
-                      <TableCell>
-                        <span className="font-semibold text-[var(--foreground)]">
-                          {formatCurrency(payment.valorDinheiro)}
-                        </span>
-                      </TableCell>
-                    ) : null}
+                  {showTipo ? (
+                    <TableCell>
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getTypeBadgeClass(payment.tipo)}`}
+                      >
+                        {formatPaymentCreditType(payment.tipo)}
+                      </span>
+                    </TableCell>
+                  ) : null}
+                  {showFormaPagamento ? (
+                    <TableCell>{payment.formaPagamentoNome ?? "-"}</TableCell>
+                  ) : null}
+                  {showValorCredito ? (
+                    <TableCell>
+                      <span className="font-semibold text-[var(--foreground)]">
+                        {formatCurrency(payment.valorCredito)}
+                      </span>
+                    </TableCell>
+                  ) : null}
+                  {showValorDinheiro ? (
+                    <TableCell>
+                      <span className="font-semibold text-[var(--foreground)]">
+                        {formatCurrency(payment.valorDinheiro)}
+                      </span>
+                    </TableCell>
+                  ) : null}
                 </tr>
               );
             })}

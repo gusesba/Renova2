@@ -29,6 +29,7 @@ namespace Renova.Service.Services.Pagamento
             ["data"] = (Expression<Func<PagamentoCreditoModel, DateTime>>)(pagamento => pagamento.Data),
             ["cliente"] = (Expression<Func<PagamentoCreditoModel, string>>)(pagamento => pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty),
             ["tipo"] = (Expression<Func<PagamentoCreditoModel, TipoPagamentoCredito>>)(pagamento => pagamento.Tipo),
+            ["formaPagamento"] = (Expression<Func<PagamentoCreditoModel, string>>)(pagamento => pagamento.ConfigLojaFormaPagamento != null ? pagamento.ConfigLojaFormaPagamento.Nome : string.Empty),
             ["valorCredito"] = (Expression<Func<PagamentoCreditoModel, decimal>>)(pagamento => pagamento.ValorCredito),
             ["valorDinheiro"] = (Expression<Func<PagamentoCreditoModel, decimal>>)(pagamento => pagamento.ValorDinheiro)
         };
@@ -140,6 +141,7 @@ namespace Renova.Service.Services.Pagamento
             _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<PagamentoCreditoModel> query = _context.PagamentosCredito
+                .Include(pagamento => pagamento.ConfigLojaFormaPagamento)
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
 
             if (request.DataInicial.HasValue)
@@ -181,6 +183,8 @@ namespace Renova.Service.Services.Pagamento
                 ClienteId = pagamento.ClienteId,
                 Cliente = pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty,
                 Tipo = pagamento.Tipo,
+                ConfigLojaFormaPagamentoId = pagamento.ConfigLojaFormaPagamentoId,
+                FormaPagamentoNome = pagamento.ConfigLojaFormaPagamento != null ? pagamento.ConfigLojaFormaPagamento.Nome : null,
                 ValorCredito = pagamento.ValorCredito,
                 ValorDinheiro = pagamento.ValorDinheiro,
                 Data = pagamento.Data
@@ -364,10 +368,13 @@ namespace Renova.Service.Services.Pagamento
 
             decimal valorCredito = decimal.Round(request.ValorCredito, 2, MidpointRounding.AwayFromZero);
             ClienteCreditoModel credito = await ObterOuCriarCreditoAsync(request.LojaId, request.ClienteId, cancellationToken);
+            ConfigLojaFormaPagamentoModel? formaPagamento = request.Tipo == TipoPagamentoCredito.AdicionarCredito
+                ? await ObterFormaPagamentoParaAdicaoCreditoAsync(request, cancellationToken)
+                : null;
 
             decimal valorDinheiro = request.Tipo switch
             {
-                TipoPagamentoCredito.AdicionarCredito => valorCredito,
+                TipoPagamentoCredito.AdicionarCredito => CalcularValorAdicaoCredito(valorCredito, formaPagamento),
                 TipoPagamentoCredito.ResgatarCredito => await CalcularValorResgateAsync(
                     request.LojaId,
                     valorCredito,
@@ -388,6 +395,8 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = request.LojaId,
                 ClienteId = request.ClienteId,
                 Tipo = request.Tipo,
+                ConfigLojaFormaPagamentoId = formaPagamento?.Id,
+                ConfigLojaFormaPagamento = formaPagamento,
                 ValorCredito = valorCredito,
                 ValorDinheiro = valorDinheiro,
                 Data = dataPagamentoUtc
@@ -566,6 +575,43 @@ namespace Renova.Service.Services.Pagamento
                 MidpointRounding.AwayFromZero);
         }
 
+        private async Task<ConfigLojaFormaPagamentoModel> ObterFormaPagamentoParaAdicaoCreditoAsync(
+            CriarPagamentoCreditoCommand request,
+            CancellationToken cancellationToken)
+        {
+            if (!request.ConfigLojaFormaPagamentoId.HasValue)
+            {
+                throw new ArgumentException("Forma de pagamento e obrigatoria para pagamento do cliente.", nameof(request));
+            }
+
+            ConfigLojaFormaPagamentoModel formaPagamento = await _context.ConfiguracoesLojaFormasPagamento
+                .Include(item => item.ConfigLoja)
+                .SingleOrDefaultAsync(item => item.Id == request.ConfigLojaFormaPagamentoId.Value, cancellationToken)
+                ?? throw new ArgumentException("Forma de pagamento informada nao foi encontrada.", nameof(request));
+
+            if (formaPagamento.ConfigLoja?.LojaId != request.LojaId)
+            {
+                throw new ArgumentException("Forma de pagamento informada nao pertence a loja selecionada.", nameof(request));
+            }
+
+            return formaPagamento;
+        }
+
+        private static decimal CalcularValorAdicaoCredito(
+            decimal valorCredito,
+            ConfigLojaFormaPagamentoModel? formaPagamento)
+        {
+            if (formaPagamento is null)
+            {
+                throw new ArgumentException("Forma de pagamento e obrigatoria para pagamento do cliente.");
+            }
+
+            return decimal.Round(
+                valorCredito * (1m + (formaPagamento.PercentualAjuste / 100m)),
+                2,
+                MidpointRounding.AwayFromZero);
+        }
+
         private static DateTime NormalizarDataLimiteParaFimDoDiaUtc(DateTime value)
         {
             DateTime utcValue = value.Kind switch
@@ -615,6 +661,8 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = pagamento.LojaId,
                 ClienteId = pagamento.ClienteId,
                 Tipo = pagamento.Tipo,
+                ConfigLojaFormaPagamentoId = pagamento.ConfigLojaFormaPagamentoId,
+                FormaPagamentoNome = pagamento.ConfigLojaFormaPagamento?.Nome,
                 ValorCredito = pagamento.ValorCredito,
                 ValorDinheiro = pagamento.ValorDinheiro,
                 Data = pagamento.Data
