@@ -28,6 +28,8 @@ export type MovementCreateResponse = {
   clienteId: number;
   lojaId: number;
   creditoPendenteCliente: number | null;
+  creditoClienteAntesPagamento: number | null;
+  creditoClienteAtual: number | null;
   produtoIds: number[];
 };
 

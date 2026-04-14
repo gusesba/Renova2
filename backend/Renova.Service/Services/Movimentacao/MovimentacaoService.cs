@@ -239,6 +239,13 @@ namespace Renova.Service.Services.Movimentacao
                         .ToList()
                 };
 
+                decimal? creditoClienteAntesPagamento = request.Tipo == TipoMovimentacao.Venda
+                    ? await _context.ClientesCreditos
+                        .Where(item => item.LojaId == request.LojaId && item.ClienteId == request.ClienteId)
+                        .Select(item => (decimal?)item.Valor)
+                        .SingleOrDefaultAsync(cancellationToken)
+                    : null;
+
                 foreach (ProdutoEstoqueModel produto in produtos)
                 {
                     produto.Situacao = situacaoFinal;
@@ -286,6 +293,8 @@ namespace Renova.Service.Services.Movimentacao
                     ClienteId = entity.ClienteId,
                     LojaId = entity.LojaId,
                     CreditoPendenteCliente = creditoPendenteCliente,
+                    CreditoClienteAntesPagamento = creditoClienteAntesPagamento,
+                    CreditoClienteAtual = creditoPendenteCliente,
                     ProdutoIds = produtoIds
                 };
             }

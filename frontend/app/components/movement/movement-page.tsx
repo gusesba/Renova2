@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-credit-auto-paid-modal";
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
 import { PaymentCreditModal } from "@/app/components/payment/payment-credit-modal";
@@ -74,6 +75,12 @@ type OverdueOwnerReturnPrompt = {
   clientName: string;
   draftId: string;
   products: MovementDraftProduct[];
+};
+
+type CreditAutoPaidPrompt = {
+  creditoAnterior: number;
+  creditoAtual: number;
+  nome: string;
 };
 
 function createDraft(id: string): MovementDraft {
@@ -272,6 +279,7 @@ export function MovementPage() {
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const [paymentClient, setPaymentClient] = useState<PendingClientItem | null>(null);
+  const [creditAutoPaidPrompt, setCreditAutoPaidPrompt] = useState<CreditAutoPaidPrompt | null>(null);
   const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
   const [overdueOwnerReturnPrompt, setOverdueOwnerReturnPrompt] =
     useState<OverdueOwnerReturnPrompt | null>(null);
@@ -793,6 +801,18 @@ export function MovementPage() {
 
       if (
         createdMovement.tipo === 1 &&
+        typeof createdMovement.creditoClienteAntesPagamento === "number" &&
+        typeof createdMovement.creditoClienteAtual === "number" &&
+        createdMovement.creditoClienteAntesPagamento > createdMovement.creditoClienteAtual &&
+        createdMovement.creditoClienteAtual >= 0
+      ) {
+        setCreditAutoPaidPrompt({
+          creditoAnterior: createdMovement.creditoClienteAntesPagamento,
+          creditoAtual: createdMovement.creditoClienteAtual,
+          nome: draft.clienteLabel,
+        });
+      } else if (
+        createdMovement.tipo === 1 &&
         typeof createdMovement.creditoPendenteCliente === "number" &&
         createdMovement.creditoPendenteCliente < 0
       ) {
@@ -1253,6 +1273,12 @@ export function MovementPage() {
         onSuccess={async () => {
           await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
         }}
+      />
+
+      <MovementCreditAutoPaidModal
+        credit={creditAutoPaidPrompt}
+        isOpen={Boolean(creditAutoPaidPrompt)}
+        onClose={() => setCreditAutoPaidPrompt(null)}
       />
 
       <StoreConfigModal
