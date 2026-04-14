@@ -33,6 +33,11 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("Preco deve ser maior que zero.", nameof(request));
             }
 
+            if (request.Quantidade <= 0)
+            {
+                throw new ArgumentException("Quantidade deve ser maior que zero.", nameof(request));
+            }
+
             string descricaoNormalizada = request.Descricao.Trim();
 
             LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
@@ -74,26 +79,29 @@ namespace Renova.Service.Services.Produto
 
             DateTime entrada = request.Entrada == default ? DateTime.UtcNow : request.Entrada;
 
-            ProdutoEstoqueModel produto = new()
-            {
-                Preco = request.Preco,
-                ProdutoId = request.ProdutoId,
-                MarcaId = request.MarcaId,
-                TamanhoId = request.TamanhoId,
-                CorId = request.CorId,
-                FornecedorId = request.FornecedorId,
-                Descricao = descricaoNormalizada,
-                Entrada = entrada,
-                LojaId = request.LojaId,
-                Situacao = request.Situacao,
-                Consignado = request.Consignado
-            };
+            List<ProdutoEstoqueModel> produtos = Enumerable.Range(0, request.Quantidade)
+                .Select(_ => new ProdutoEstoqueModel
+                {
+                    Preco = request.Preco,
+                    ProdutoId = request.ProdutoId,
+                    MarcaId = request.MarcaId,
+                    TamanhoId = request.TamanhoId,
+                    CorId = request.CorId,
+                    FornecedorId = request.FornecedorId,
+                    Descricao = descricaoNormalizada,
+                    Entrada = entrada,
+                    LojaId = request.LojaId,
+                    Situacao = request.Situacao,
+                    Consignado = request.Consignado
+                })
+                .ToList();
 
-            _ = await _context.ProdutosEstoque.AddAsync(produto, cancellationToken);
+            await _context.ProdutosEstoque.AddRangeAsync(produtos, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
-            ProdutoDto resultado = MapearProdutoDto(produto);
-            resultado.SolicitacoesCompativeis = await ObterSolicitacoesCompativeisCoreAsync(produto, cancellationToken);
+            ProdutoEstoqueModel produtoCriado = produtos[0];
+            ProdutoDto resultado = MapearProdutoDto(produtoCriado);
+            resultado.SolicitacoesCompativeis = await ObterSolicitacoesCompativeisCoreAsync(produtoCriado, cancellationToken);
             return resultado;
         }
 

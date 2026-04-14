@@ -13,6 +13,14 @@ export const productSchema = z.object({
       const parsed = Number(normalized);
       return Number.isFinite(parsed) && parsed > 0;
     }, "Informe um preco maior que zero."),
+  quantidade: z
+    .string()
+    .trim()
+    .min(1, "Informe a quantidade.")
+    .refine((value) => {
+      const parsed = Number(value);
+      return Number.isInteger(parsed) && parsed > 0;
+    }, "Informe uma quantidade inteira maior que zero."),
   entrada: z.string().trim().min(1, "Informe a data de entrada."),
   situacao: z.string().trim().min(1, "Selecione a situacao."),
   produtoId: z.string().trim().min(1, "Selecione o produto."),
@@ -34,6 +42,10 @@ export function mapProductZodErrors(error: z.ZodError): ProductFieldErrors {
 
     if (field === "preco" && !mapped.preco) {
       mapped.preco = issue.message;
+    }
+
+    if (field === "quantidade" && !mapped.quantidade) {
+      mapped.quantidade = issue.message;
     }
 
     if (field === "entrada" && !mapped.entrada) {

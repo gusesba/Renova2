@@ -51,6 +51,7 @@ export type ProductCreateResponse = {
 export type ProductFormValues = {
   descricao: string;
   preco: string;
+  quantidade: string;
   entrada: string;
   situacao: string;
   consignado: boolean;
@@ -70,6 +71,7 @@ export type ProductFieldErrors = Partial<
   Record<
     | "descricao"
     | "preco"
+    | "quantidade"
     | "entrada"
     | "situacao"
     | "produtoId"
@@ -164,6 +166,7 @@ export const initialProductFilters: ProductFilters = {
 export const initialProductFormValues: ProductFormValues = {
   descricao: "",
   preco: "",
+  quantidade: "1",
   entrada: new Date().toISOString().slice(0, 10),
   situacao: "1",
   consignado: true,
@@ -344,6 +347,10 @@ export function extractProductFieldErrors(body: unknown): ProductFieldErrors {
 
     if (normalizedKey === "preco" && !accumulator.preco) {
       accumulator.preco = error;
+    }
+
+    if (normalizedKey === "quantidade" && !accumulator.quantidade) {
+      accumulator.quantidade = error;
     }
 
     if (normalizedKey === "entrada" && !accumulator.entrada) {

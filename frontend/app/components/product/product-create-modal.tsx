@@ -224,6 +224,7 @@ export function ProductCreateModal({
   const createProductMutation = useMutation({
     mutationFn: async (payload: {
       preco: number;
+      quantidade: number;
       produtoId: number;
       marcaId: number;
       tamanhoId: number;
@@ -738,6 +739,7 @@ export function ProductCreateModal({
     try {
       const payload = {
         preco: Number(normalizeDecimalValue(validation.data.preco)),
+        quantidade: Number(validation.data.quantidade),
         produtoId: Number(validation.data.produtoId),
         marcaId: Number(validation.data.marcaId),
         tamanhoId: Number(validation.data.tamanhoId),
@@ -771,7 +773,11 @@ export function ProductCreateModal({
       });
 
       await queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success(`Produto ${createdProduct.descricao} cadastrado com sucesso.`);
+      toast.success(
+        payload.quantidade > 1
+          ? `${payload.quantidade} produtos ${createdProduct.descricao} cadastrados com sucesso.`
+          : `Produto ${createdProduct.descricao} cadastrado com sucesso.`,
+      );
       onProductCreated?.(createdProduct);
     } catch (error) {
       toast.error(
@@ -953,6 +959,20 @@ export function ProductCreateModal({
               onChange={(value) => {
                 updateField("preco", value);
                 setErrors((current) => ({ ...current, preco: undefined }));
+              }}
+            />
+            <FormField
+              label="Quantidade"
+              type="number"
+              inputMode="numeric"
+              step="1"
+              min="1"
+              placeholder="1"
+              value={values.quantidade}
+              error={errors.quantidade}
+              onChange={(value) => {
+                updateField("quantidade", value);
+                setErrors((current) => ({ ...current, quantidade: undefined }));
               }}
             />
             <FormField

@@ -158,6 +158,40 @@ namespace Renova.Tests.Services.Produto.Criar
         }
 
         [Fact]
+        public async Task CreateAsyncDeveCriarMaisDeUmProdutoQuandoQuantidadeForMaiorQueUm()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            CriarProdutoCommand command = await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true);
+            command.Quantidade = 3;
+
+            ProdutoService service = new(context);
+            ProdutoDto resultado = await service.CreateAsync(command, new CriarProdutoParametros { UsuarioId = loja.UsuarioId });
+
+            List<ProdutoEstoqueModel> produtosSalvos = await context.ProdutosEstoque
+                .OrderBy(produto => produto.Id)
+                .ToListAsync();
+
+            Assert.Equal(3, produtosSalvos.Count);
+            Assert.Equal(produtosSalvos[0].Id, resultado.Id);
+            Assert.All(produtosSalvos, produto =>
+            {
+                Assert.Equal(command.Preco, produto.Preco);
+                Assert.Equal(command.ProdutoId, produto.ProdutoId);
+                Assert.Equal(command.MarcaId, produto.MarcaId);
+                Assert.Equal(command.TamanhoId, produto.TamanhoId);
+                Assert.Equal(command.CorId, produto.CorId);
+                Assert.Equal(command.FornecedorId, produto.FornecedorId);
+                Assert.Equal(command.Descricao, produto.Descricao);
+                Assert.Equal(command.Entrada, produto.Entrada);
+                Assert.Equal(command.LojaId, produto.LojaId);
+                Assert.Equal(command.Situacao, produto.Situacao);
+                Assert.Equal(command.Consignado, produto.Consignado);
+            });
+        }
+
+        [Fact]
         public async Task CreateAsyncDeveImpedirCriacaoQuandoLojaNaoPertencerAoUsuarioAutenticado()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -255,6 +289,7 @@ namespace Renova.Tests.Services.Produto.Criar
             return new CriarProdutoCommand
             {
                 Preco = 149.90m,
+                Quantidade = 1,
                 ProdutoId = produto.Id,
                 MarcaId = marca.Id,
                 TamanhoId = tamanho.Id,
