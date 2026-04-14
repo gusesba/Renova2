@@ -15,6 +15,7 @@ const primaryItems: NavItem[] = [
   { label: "Solicitacoes", href: "/dashboard/solicitacao" },
   { label: "Movimentacoes", href: "/dashboard/movimentacao" },
   { label: "Pagamentos", href: "/dashboard/pagamento" },
+  { label: "Gastos da loja", href: "/dashboard/gasto-loja" },
   { label: "Pag. externos", href: "/dashboard/pagamento-externo" },
   { label: "Pendencias", href: "/dashboard/pendencia" },
   { label: "Fechamento", href: "/dashboard/fechamento" },

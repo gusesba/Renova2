@@ -1,0 +1,76 @@
+import { formatCurrency, formatPaymentDate } from "@/lib/payment";
+import {
+  formatStoreExpenseNature,
+  type StoreExpenseListItem,
+} from "@/lib/store-expense";
+
+type StoreExpensesTableProps = {
+  expenses: StoreExpenseListItem[];
+};
+
+function getNatureClass(natureza: number) {
+  switch (natureza) {
+    case 1:
+      return "bg-emerald-100 text-emerald-700";
+    case 2:
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-slate-100 text-slate-600";
+  }
+}
+
+export function StoreExpensesTable({ expenses }: StoreExpensesTableProps) {
+  return (
+    <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse bg-white">
+          <thead className="bg-[var(--surface-muted)]">
+            <tr className="text-left">
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Data
+              </th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Natureza
+              </th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Valor
+              </th>
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Descricao
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.map((expense, index) => (
+              <tr
+                key={expense.id}
+                className={
+                  index % 2 === 0
+                    ? "bg-white"
+                    : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
+                }
+              >
+                <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                  {formatPaymentDate(expense.data)}
+                </td>
+                <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getNatureClass(expense.natureza)}`}
+                  >
+                    {formatStoreExpenseNature(expense.natureza)}
+                  </span>
+                </td>
+                <td className="px-4 py-4 text-sm font-semibold text-[var(--foreground)]">
+                  {formatCurrency(expense.valor)}
+                </td>
+                <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                  {expense.descricao?.trim() ? expense.descricao : "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

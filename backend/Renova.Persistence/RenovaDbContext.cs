@@ -14,6 +14,7 @@ namespace Renova.Persistence
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
         public DbSet<ConfigLojaDescontoPermanenciaModel> ConfiguracoesLojaDescontosPermanencia { get; set; }
         public DbSet<ConfigLojaFormaPagamentoModel> ConfiguracoesLojaFormasPagamento { get; set; }
+        public DbSet<GastoLojaModel> GastosLoja { get; set; }
         public DbSet<PagamentoModel> Pagamentos { get; set; }
         public DbSet<PagamentoCreditoModel> PagamentosCredito { get; set; }
         public DbSet<ProdutoEstoqueModel> ProdutosEstoque { get; set; }
@@ -302,6 +303,22 @@ namespace Renova.Persistence
                     .OnDelete(DeleteBehavior.Restrict);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Movimentacoes)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<GastoLojaModel>(entity =>
+            {
+                _ = entity.ToTable("GastoLoja");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.Natureza).HasConversion<int>().IsRequired();
+                _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.Property(p => p.Descricao).HasMaxLength(500).IsRequired(false);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.GastosLoja)
                     .HasForeignKey(p => p.LojaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
