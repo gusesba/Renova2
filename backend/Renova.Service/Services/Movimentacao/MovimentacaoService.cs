@@ -781,6 +781,17 @@ namespace Renova.Service.Services.Movimentacao
                 throw new NotSupportedException("Pagamento de credito nao suportado no service no-op.");
             }
 
+            public Task<PagamentoDto> CreateManualAsync(
+                CriarPagamentoManualCommand request,
+                CriarPagamentoCreditoParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException("Pagamento manual nao suportado no service no-op.");
+            }
+
             public Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(int lojaId, int usuarioId, CancellationToken cancellationToken = default)
             {
                 _ = lojaId;

@@ -136,3 +136,35 @@ export async function createPaymentCredit(
     status: response.status,
   };
 }
+
+export async function createManualPayment(
+  payload: {
+    lojaId: number;
+    clienteId: number;
+    natureza: number;
+    valor: number;
+    data: string;
+    descricao?: string;
+  },
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/pagamento/manual`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}

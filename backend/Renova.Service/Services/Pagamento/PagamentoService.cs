@@ -105,24 +105,25 @@ namespace Renova.Service.Services.Pagamento
                 Cliente = pagamento.Cliente != null ? pagamento.Cliente.Nome : string.Empty,
                 Natureza = pagamento.Natureza,
                 Status = pagamento.Status,
+                Descricao = pagamento.Descricao,
                 Valor = pagamento.Valor,
                 Data = pagamento.Data,
-                Movimentacao = new MovimentacaoResumoDto
-                {
-                    Id = pagamento.Movimentacao != null ? pagamento.Movimentacao.Id : pagamento.MovimentacaoId,
-                    Tipo = pagamento.Movimentacao != null ? pagamento.Movimentacao.Tipo : default,
-                    Data = pagamento.Movimentacao != null ? pagamento.Movimentacao.Data : default,
-                    ClienteId = pagamento.Movimentacao != null ? pagamento.Movimentacao.ClienteId : 0,
-                    Cliente = pagamento.Movimentacao != null && pagamento.Movimentacao.Cliente != null ? pagamento.Movimentacao.Cliente.Nome : string.Empty,
-                    LojaId = pagamento.Movimentacao != null ? pagamento.Movimentacao.LojaId : pagamento.LojaId,
-                    QuantidadeProdutos = pagamento.Movimentacao != null ? pagamento.Movimentacao.Produtos.Count : 0,
-                    ProdutoIds = pagamento.Movimentacao != null
-                        ? pagamento.Movimentacao.Produtos
+                Movimentacao = pagamento.Movimentacao != null
+                    ? new MovimentacaoResumoDto
+                    {
+                        Id = pagamento.Movimentacao.Id,
+                        Tipo = pagamento.Movimentacao.Tipo,
+                        Data = pagamento.Movimentacao.Data,
+                        ClienteId = pagamento.Movimentacao.ClienteId,
+                        Cliente = pagamento.Movimentacao.Cliente != null ? pagamento.Movimentacao.Cliente.Nome : string.Empty,
+                        LojaId = pagamento.Movimentacao.LojaId,
+                        QuantidadeProdutos = pagamento.Movimentacao.Produtos.Count,
+                        ProdutoIds = pagamento.Movimentacao.Produtos
                             .OrderBy(item => item.ProdutoId)
                             .Select(item => item.ProdutoId)
                             .ToList()
-                        : new List<int>()
-                }
+                    }
+                    : null
             });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
@@ -441,6 +442,71 @@ namespace Renova.Service.Services.Pagamento
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             return [.. pagamentos.Select(Mapear)];
+        }
+
+        public async Task<PagamentoDto> CreateManualAsync(
+            CriarPagamentoManualCommand request,
+            CriarPagamentoCreditoParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            if (!Enum.IsDefined(request.Natureza))
+            {
+                throw new ArgumentException("Natureza de pagamento informada e invalida.", nameof(request));
+            }
+
+            if (request.Data == default)
+            {
+                throw new ArgumentException("Data do pagamento e obrigatoria.", nameof(request));
+            }
+
+            if (request.Valor <= 0)
+            {
+                throw new ArgumentException("Valor do pagamento deve ser maior que zero.", nameof(request));
+            }
+
+            if (request.Descricao?.Trim().Length > 500)
+            {
+                throw new ArgumentException("Descricao do pagamento deve ter no maximo 500 caracteres.", nameof(request));
+            }
+
+            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+
+            ClienteModel cliente = await _context.Clientes
+                .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
+                ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
+
+            if (cliente.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
+            }
+
+            decimal valorPagamento = decimal.Round(request.Valor, 2, MidpointRounding.AwayFromZero);
+            DateTime dataPagamentoUtc = NormalizarDateTimeParaUtc(request.Data);
+            ClienteCreditoModel credito = await ObterOuCriarCreditoAsync(request.LojaId, request.ClienteId, cancellationToken);
+
+            credito.Valor += request.Natureza switch
+            {
+                NaturezaPagamento.Pagar => valorPagamento,
+                NaturezaPagamento.Receber => -valorPagamento,
+                _ => 0m
+            };
+
+            PagamentoModel pagamento = new()
+            {
+                MovimentacaoId = null,
+                LojaId = request.LojaId,
+                ClienteId = request.ClienteId,
+                Natureza = request.Natureza,
+                Status = StatusPagamento.Pago,
+                Descricao = string.IsNullOrWhiteSpace(request.Descricao) ? null : request.Descricao.Trim(),
+                Valor = valorPagamento,
+                Data = dataPagamentoUtc
+            };
+
+            _ = await _context.Pagamentos.AddAsync(pagamento, cancellationToken);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            return Mapear(pagamento);
         }
 
         private static decimal CalcularValorComDesconto(decimal preco, decimal desconto)
@@ -786,6 +852,7 @@ namespace Renova.Service.Services.Pagamento
                 ClienteId = pagamento.ClienteId,
                 Natureza = pagamento.Natureza,
                 Status = pagamento.Status,
+                Descricao = pagamento.Descricao,
                 Valor = pagamento.Valor,
                 Data = pagamento.Data
             };

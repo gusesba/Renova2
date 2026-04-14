@@ -80,6 +80,31 @@ namespace Renova.Tests.Services.Pagamento.Get
         }
 
         [Fact]
+        public async Task GetPagamentosDeveRetornarPagamentoManualSemMovimentacao()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "pagamento-manual-get-api@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente Manual", "44999990005");
+            _ = await CriarPagamentoAsync(factory, null, loja.Id, cliente.Id, NaturezaPagamento.Pagar, StatusPagamento.Pago, 25m, new DateTime(2026, 4, 5, 12, 0, 0, DateTimeKind.Utc), "Pagamento manual");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/pagamento?lojaId={loja.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            PaginacaoDto<PagamentoBuscaDto>? body = await response.Content.ReadFromJsonAsync<PaginacaoDto<PagamentoBuscaDto>>();
+            body = Assert.IsType<PaginacaoDto<PagamentoBuscaDto>>(body);
+            PagamentoBuscaDto item = Assert.Single(body.Itens);
+            Assert.Null(item.MovimentacaoId);
+            Assert.Null(item.Movimentacao);
+            Assert.Equal("Pagamento manual", item.Descricao);
+        }
+
+        [Fact]
         public async Task GetFechamentoLojaDeveRetornarResumoMensalEHistorico()
         {
             await using RenovaApiFactory factory = new();
@@ -271,13 +296,14 @@ namespace Renova.Tests.Services.Pagamento.Get
 
         private static async Task<PagamentoModel> CriarPagamentoAsync(
             RenovaApiFactory factory,
-            int movimentacaoId,
+            int? movimentacaoId,
             int lojaId,
             int clienteId,
             NaturezaPagamento natureza,
             StatusPagamento status,
             decimal valor,
-            DateTime data)
+            DateTime data,
+            string? descricao = null)
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -289,6 +315,7 @@ namespace Renova.Tests.Services.Pagamento.Get
                 ClienteId = clienteId,
                 Natureza = natureza,
                 Status = status,
+                Descricao = descricao,
                 Valor = valor,
                 Data = data
             };

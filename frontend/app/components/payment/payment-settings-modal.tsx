@@ -15,6 +15,7 @@ const fieldOptions: Array<{ description: string; label: string; value: PaymentVi
   { label: "Identificador", value: "id", description: "Codigo interno do pagamento" },
   { label: "Data", value: "data", description: "Data registrada no pagamento" },
   { label: "Cliente", value: "cliente", description: "Nome do cliente vinculado" },
+  { label: "Descricao", value: "descricao", description: "Observacao ou contexto do pagamento" },
   { label: "Valor", value: "valor", description: "Valor financeiro da ordem" },
   { label: "Natureza", value: "natureza", description: "Se o pagamento e a receber ou pagar" },
   { label: "Status", value: "status", description: "Situacao atual do pagamento" },

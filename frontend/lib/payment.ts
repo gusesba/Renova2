@@ -24,15 +24,16 @@ export type PaymentMovementSummary = {
 
 export type PaymentListItem = {
   id: number;
-  movimentacaoId: number;
+  movimentacaoId: number | null;
   lojaId: number;
   clienteId: number;
   cliente: string;
   natureza: PaymentNatureValue;
   status: PaymentStatusValue;
+  descricao: string | null;
   valor: number;
   data: string;
-  movimentacao: PaymentMovementSummary;
+  movimentacao: PaymentMovementSummary | null;
 };
 
 export type PaymentCreditResponse = {
@@ -104,6 +105,7 @@ export type PaymentVisibleField =
   | "id"
   | "data"
   | "cliente"
+  | "descricao"
   | "valor"
   | "natureza"
   | "status"
@@ -153,7 +155,7 @@ export const paymentNatureOptions: Array<{ label: string; value: PaymentNatureVa
 
 export const paymentStatusOptions: Array<{ label: string; value: PaymentStatusValue }> = [
   { value: 1, label: "Pendente" },
-  { value: 2, label: "Pago" },
+  { value: 2, label: "Faturado" },
   { value: 3, label: "Cancelado" },
 ];
 
@@ -177,7 +179,7 @@ export const initialPaymentFilters: PaymentFilters = {
 
 export const defaultPaymentTableSettings: PaymentTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "data", "cliente", "valor", "natureza", "status", "movimentacaoId"],
+  visibleFields: ["id", "data", "cliente", "descricao", "valor", "natureza", "status", "movimentacaoId"],
 };
 
 export const initialExternalPaymentFilters: ExternalPaymentFilters = {
@@ -429,8 +431,8 @@ export function getStoredPaymentTableSettings(): PaymentTableSettings {
         : defaultPaymentTableSettings.tamanhoPagina;
 
     const visibleFields = Array.isArray(parsed.visibleFields)
-      ? parsed.visibleFields.filter((field): field is PaymentVisibleField =>
-          ["id", "data", "cliente", "valor", "natureza", "status", "movimentacaoId"].includes(
+        ? parsed.visibleFields.filter((field): field is PaymentVisibleField =>
+          ["id", "data", "cliente", "descricao", "valor", "natureza", "status", "movimentacaoId"].includes(
             String(field),
           ),
         )

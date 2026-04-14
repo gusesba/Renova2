@@ -20,12 +20,14 @@ import { getAuthToken } from "@/lib/store";
 import { getPayments } from "@/services/payment-service";
 
 import { PaymentFiltersBar } from "./payment-filters-bar";
+import { PaymentCreateModal } from "./payment-create-modal";
 import { PaymentPagination } from "./payment-pagination";
 import { PaymentSettingsModal } from "./payment-settings-modal";
 import { PaymentsTable } from "./payments-table";
 
 export function PaymentListPage() {
-  const { isLoadingStores, selectedStoreId } = useStoreContext();
+  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [tableSettings, setTableSettings] = useState<PaymentTableSettings>(() =>
@@ -101,6 +103,7 @@ export function PaymentListPage() {
         <PaymentFiltersBar
           filters={filters}
           isLoading={paymentsQuery.isLoading || isLoadingStores}
+          onOpenCreateModal={() => setIsCreateModalOpen(true)}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           onChange={handleFilterChange}
         />
@@ -171,6 +174,16 @@ export function PaymentListPage() {
           });
 
           toast.success("Configuracoes da tabela atualizadas.");
+        }}
+      />
+
+      <PaymentCreateModal
+        isOpen={isCreateModalOpen}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={async () => {
+          await paymentsQuery.refetch();
         }}
       />
     </section>

@@ -132,6 +132,39 @@ namespace Renova.Tests.Services.Pagamento.Get
         }
 
         [Fact]
+        public async Task GetAllAsyncDeveRetornarPagamentoManualSemMovimentacaoComDescricao()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "pagamentos-manual-get@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente Manual", "44999990003");
+
+            _ = context.Pagamentos.Add(new PagamentoModel
+            {
+                MovimentacaoId = null,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                Natureza = NaturezaPagamento.Pagar,
+                Status = StatusPagamento.Pago,
+                Descricao = "Acerto sem movimentacao",
+                Valor = 33m,
+                Data = new DateTime(2026, 4, 4, 12, 0, 0, DateTimeKind.Utc)
+            });
+            _ = await context.SaveChangesAsync();
+
+            PagamentoService service = new(context);
+            PaginacaoDto<PagamentoBuscaDto> resultado = await service.GetAllAsync(
+                new ObterPagamentosQuery { LojaId = loja.Id },
+                new ObterPagamentosParametros { UsuarioId = usuario.Id });
+
+            PagamentoBuscaDto item = Assert.Single(resultado.Itens);
+            Assert.Null(item.MovimentacaoId);
+            Assert.Null(item.Movimentacao);
+            Assert.Equal("Acerto sem movimentacao", item.Descricao);
+        }
+
+        [Fact]
         public async Task GetFechamentoLojaAsyncDeveRetornarResumoDoMesEHistoricoDeDozeMeses()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();

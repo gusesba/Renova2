@@ -223,5 +223,40 @@ namespace Renova.API.Controllers
                 return Unauthorized(new { mensagem = ex.Message });
             }
         }
+
+        [HttpPost("manual")]
+        [ProducesResponseType(typeof(PagamentoDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PostPagamentoManual([FromBody] CriarPagamentoManualCommand command, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                PagamentoDto resultado = await _pagamentoService.CreateManualAsync(
+                    command,
+                    new CriarPagamentoCreditoParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                return Created(string.Empty, resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
     }
 }

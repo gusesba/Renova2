@@ -58,6 +58,7 @@ export function PaymentsTable({
   const showId = visibleFields.includes("id");
   const showData = visibleFields.includes("data");
   const showCliente = visibleFields.includes("cliente");
+  const showDescricao = visibleFields.includes("descricao");
   const showValor = visibleFields.includes("valor");
   const showNatureza = visibleFields.includes("natureza");
   const showStatus = visibleFields.includes("status");
@@ -88,6 +89,11 @@ export function PaymentsTable({
                   Cliente
                 </th>
               ) : null}
+              {showDescricao ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Descricao
+                </th>
+              ) : null}
               {showValor ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Valor
@@ -113,6 +119,7 @@ export function PaymentsTable({
           <tbody>
             {payments.map((payment, index) => {
               const expanded = expandedIds.includes(payment.id);
+              const hasMovimentacao = Boolean(payment.movimentacao);
 
               return (
                 <>
@@ -128,8 +135,13 @@ export function PaymentsTable({
                       <button
                         type="button"
                         onClick={() => onToggleExpanded(payment.id)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
-                        aria-label={`${expanded ? "Ocultar" : "Exibir"} detalhes do pagamento ${payment.id}`}
+                        disabled={!hasMovimentacao}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45"
+                        aria-label={
+                          hasMovimentacao
+                            ? `${expanded ? "Ocultar" : "Exibir"} detalhes do pagamento ${payment.id}`
+                            : `Pagamento ${payment.id} sem movimentacao vinculada`
+                        }
                       >
                         <ChevronIcon expanded={expanded} />
                       </button>
@@ -137,6 +149,7 @@ export function PaymentsTable({
                     {showId ? <TableCell subtle>#{payment.id}</TableCell> : null}
                     {showData ? <TableCell>{formatPaymentDate(payment.data)}</TableCell> : null}
                     {showCliente ? <TableCell>{payment.cliente}</TableCell> : null}
+                    {showDescricao ? <TableCell>{payment.descricao?.trim() || "-"}</TableCell> : null}
                     {showValor ? (
                       <TableCell>
                         <span className="font-semibold text-[var(--foreground)]">
@@ -154,9 +167,13 @@ export function PaymentsTable({
                         </span>
                       </TableCell>
                     ) : null}
-                    {showMovimentacao ? <TableCell subtle>#{payment.movimentacaoId}</TableCell> : null}
+                    {showMovimentacao ? (
+                      <TableCell subtle>
+                        {payment.movimentacaoId ? `#${payment.movimentacaoId}` : "-"}
+                      </TableCell>
+                    ) : null}
                   </tr>
-                  {expanded ? (
+                  {expanded && payment.movimentacao ? (
                     <tr key={`${payment.id}-expanded`} className="bg-[var(--surface-muted)]">
                       <td colSpan={visibleColumnCount} className="px-4 py-5">
                         <div className="rounded-[20px] border border-[var(--border)] bg-white p-4">

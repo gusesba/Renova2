@@ -742,6 +742,17 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 throw new NotSupportedException();
             }
 
+            public Task<PagamentoDto> CreateManualAsync(
+                CriarPagamentoManualCommand request,
+                CriarPagamentoCreditoParametros parametros,
+                CancellationToken cancellationToken = default)
+            {
+                _ = request;
+                _ = parametros;
+                _ = cancellationToken;
+                throw new NotSupportedException();
+            }
+
             public Task<IReadOnlyList<ClientePendenciaDto>> GetPendenciasAsync(
                 int lojaId,
                 int usuarioId,

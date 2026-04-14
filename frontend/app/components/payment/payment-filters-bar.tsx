@@ -13,6 +13,7 @@ import {
 type PaymentFiltersBarProps = {
   filters: PaymentFilters;
   isLoading: boolean;
+  onOpenCreateModal: () => void;
   onOpenSettings: () => void;
   onChange: (next: Partial<PaymentFilters>) => void;
 };
@@ -103,6 +104,7 @@ function SelectField({
 export function PaymentFiltersBar({
   filters,
   isLoading,
+  onOpenCreateModal,
   onOpenSettings,
   onChange,
 }: PaymentFiltersBarProps) {
@@ -127,6 +129,14 @@ export function PaymentFiltersBar({
             aria-label="Configurar tabela de pagamentos"
           >
             <GearIcon />
+          </button>
+          <button
+            type="button"
+            onClick={onOpenCreateModal}
+            disabled={isLoading}
+            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Novo pagamento
           </button>
         </div>
       </div>
