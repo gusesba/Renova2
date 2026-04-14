@@ -189,7 +189,7 @@ export function ProductFiltersBar({
             isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
           }`}
         >
-          <div className="overflow-hidden">
+          <div className={isExpanded ? "overflow-visible" : "overflow-hidden"}>
             <div
               className={`grid gap-4 border-t border-[var(--border)] px-4 transition-all duration-300 ease-out xl:grid-cols-4 ${
                 isExpanded ? "py-4 opacity-100" : "py-0 opacity-0"
