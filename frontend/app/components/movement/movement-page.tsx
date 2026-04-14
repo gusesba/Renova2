@@ -153,7 +153,7 @@ function getAutomaticDiscountForProduct(
   product: ProductListItem,
   storeConfig: ConfigLojaResponse | null,
 ) {
-  if (!storeConfig || product.situacao !== 1) {
+  if (!storeConfig || !product.consignado || product.situacao !== 1) {
     return null;
   }
 

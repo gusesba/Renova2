@@ -256,6 +256,36 @@ namespace Renova.Tests.Services.Pagamento.Criar
         }
 
         [Fact]
+        public async Task CreateAsyncNaoDeveCriarOrdemDoFornecedorQuandoProdutoNaoForConsignado()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", 200m, "44999990001", consignado: false);
+            MovimentacaoModel movimentacao = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, [produto.Id]);
+
+            PagamentoService service = new(context);
+            IReadOnlyList<PagamentoDto> resultado = await service.CreateAsync(new CriarPagamentoCommand
+            {
+                MovimentacaoId = movimentacao.Id,
+                TipoMovimentacao = TipoMovimentacao.Venda,
+                LojaId = loja.Id,
+                ClienteId = cliente.Id,
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
+                Data = movimentacao.Data
+            });
+
+            PagamentoDto pagamentoCliente = Assert.Single(resultado);
+            Assert.Equal(cliente.Id, pagamentoCliente.ClienteId);
+            Assert.Equal(NaturezaPagamento.Receber, pagamentoCliente.Natureza);
+            Assert.Equal(StatusPagamento.Pago, pagamentoCliente.Status);
+            Assert.Equal(200m, pagamentoCliente.Valor);
+            Assert.Equal(1, await context.Pagamentos.CountAsync());
+            Assert.Equal(-200m, await ObterCreditoAsync(context, cliente.Id));
+        }
+
+        [Fact]
         public async Task CreateAsyncNaoDeveAlterarCreditoDoClienteQuandoMovimentacaoForDevolucaoVenda()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -359,7 +389,14 @@ namespace Renova.Tests.Services.Pagamento.Criar
             return movimentacao;
         }
 
-        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(RenovaDbContext context, int lojaId, string descricao, decimal preco, string contatoFornecedor, int? fornecedorId = null)
+        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            string descricao,
+            decimal preco,
+            string contatoFornecedor,
+            int? fornecedorId = null,
+            bool consignado = true)
         {
             ProdutoReferenciaModel produto = new()
             {
@@ -416,7 +453,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 Entrada = new DateTime(2026, 4, 7, 12, 0, 0, DateTimeKind.Utc),
                 LojaId = lojaId,
                 Situacao = SituacaoProduto.Estoque,
-                Consignado = false
+                Consignado = consignado
             };
 
             _ = context.ProdutosEstoque.Add(item);

@@ -335,10 +335,6 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Ao menos um produto deve ser informado para gerar pagamentos.", nameof(request));
             }
 
-            ConfigLojaModel config = await _context.ConfiguracoesLoja
-                .SingleOrDefaultAsync(item => item.LojaId == request.LojaId, cancellationToken)
-                ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
-
             List<ProdutoEstoqueModel> produtos = await _context.ProdutosEstoque
                 .Where(item => request.Produtos.Select(produto => produto.ProdutoId).Contains(item.Id))
                 .OrderBy(item => item.Id)
@@ -378,6 +374,8 @@ namespace Renova.Service.Services.Pagamento
                 produto.Preco,
                 descontosPorProdutoId[produto.Id]));
 
+            List<ProdutoEstoqueModel> produtosConsignados = [.. produtos.Where(item => item.Consignado)];
+
             (NaturezaPagamento naturezaCliente, NaturezaPagamento naturezaFornecedor) = request.TipoMovimentacao switch
             {
                 TipoMovimentacao.Venda => (NaturezaPagamento.Receber, NaturezaPagamento.Pagar),
@@ -399,27 +397,35 @@ namespace Renova.Service.Services.Pagamento
             };
 
             List<PagamentoModel> pagamentos = [pagamentoCliente];
-            pagamentos.AddRange(produtos
-                .GroupBy(item => item.FornecedorId)
-                .Select(grupo =>
-                {
-                    decimal valorFornecedor = decimal.Round(
-                        grupo.Sum(item => CalcularValorComDesconto(item.Preco, descontosPorProdutoId[item.Id]))
-                            * (config.PercentualRepasseVendedorCredito / 100m),
-                        2,
-                        MidpointRounding.AwayFromZero);
 
-                    return new PagamentoModel
+            if (produtosConsignados.Count > 0)
+            {
+                ConfigLojaModel config = await _context.ConfiguracoesLoja
+                    .SingleOrDefaultAsync(item => item.LojaId == request.LojaId, cancellationToken)
+                    ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
+
+                pagamentos.AddRange(produtosConsignados
+                    .GroupBy(item => item.FornecedorId)
+                    .Select(grupo =>
                     {
-                        MovimentacaoId = request.MovimentacaoId,
-                        LojaId = request.LojaId,
-                        ClienteId = grupo.Key,
-                        Natureza = naturezaFornecedor,
-                        Status = StatusPagamento.Pendente,
-                        Valor = valorFornecedor,
-                        Data = request.Data
-                    };
-                }));
+                        decimal valorFornecedor = decimal.Round(
+                            grupo.Sum(item => CalcularValorComDesconto(item.Preco, descontosPorProdutoId[item.Id]))
+                                * (config.PercentualRepasseVendedorCredito / 100m),
+                            2,
+                            MidpointRounding.AwayFromZero);
+
+                        return new PagamentoModel
+                        {
+                            MovimentacaoId = request.MovimentacaoId,
+                            LojaId = request.LojaId,
+                            ClienteId = grupo.Key,
+                            Natureza = naturezaFornecedor,
+                            Status = StatusPagamento.Pendente,
+                            Valor = valorFornecedor,
+                            Data = request.Data
+                        };
+                    }));
+            }
 
             if (request.TipoMovimentacao == TipoMovimentacao.Venda)
             {

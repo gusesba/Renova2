@@ -217,6 +217,40 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         }
 
         [Fact]
+        public async Task PostMovimentacaoDeveCriarApenasPagamentoDoClienteQuandoProdutoNaoForConsignado()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-sem-repasse@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001", consignado: false);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            PagamentoModel pagamentoCliente = Assert.Single(context.Pagamentos);
+            Assert.Equal(cliente.Id, pagamentoCliente.ClienteId);
+            Assert.Equal(NaturezaPagamento.Receber, pagamentoCliente.Natureza);
+            Assert.Equal(StatusPagamento.Pago, pagamentoCliente.Status);
+            Assert.Equal(149.90m, pagamentoCliente.Valor);
+            Assert.Equal(-149.90m, await context.ClientesCreditos.Where(item => item.ClienteId == cliente.Id).Select(item => item.Valor).SingleAsync());
+        }
+
+        [Fact]
         public async Task PostMovimentacaoDeveRetornarBadRequestQuandoClienteNaoPertencerALojaInformada()
         {
             await using RenovaApiFactory factory = new();
@@ -550,7 +584,13 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             return cliente;
         }
 
-        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(RenovaApiFactory factory, int lojaId, string descricao, string contatoFornecedor, SituacaoProduto situacao = SituacaoProduto.Estoque)
+        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            string descricao,
+            string contatoFornecedor,
+            SituacaoProduto situacao = SituacaoProduto.Estoque,
+            bool consignado = true)
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -605,7 +645,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Entrada = new DateTime(2026, 4, 7, 12, 0, 0, DateTimeKind.Utc),
                 LojaId = lojaId,
                 Situacao = situacao,
-                Consignado = false
+                Consignado = consignado
             };
 
             _ = context.ProdutosEstoque.Add(item);
