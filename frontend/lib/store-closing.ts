@@ -46,11 +46,11 @@ export function getStoreClosingApiMessage(body: unknown): string | null {
   return null;
 }
 
-export function getPreviousMonthInputValue() {
+export function getCurrentMonthInputValue() {
   const now = new Date();
-  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const timezoneOffset = previousMonth.getTimezoneOffset() * 60_000;
-  return new Date(previousMonth.getTime() - timezoneOffset).toISOString().slice(0, 7);
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const timezoneOffset = currentMonth.getTimezoneOffset() * 60_000;
+  return new Date(currentMonth.getTime() - timezoneOffset).toISOString().slice(0, 7);
 }
 
 export function buildStoreClosingQuery(storeId: number, referenceMonth: string) {

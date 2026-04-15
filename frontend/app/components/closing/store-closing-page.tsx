@@ -11,7 +11,7 @@ import {
   asStoreClosingResponse,
   formatClosingMonthLabel,
   formatClosingMonthShortLabel,
-  getPreviousMonthInputValue,
+  getCurrentMonthInputValue,
   getStoreClosingApiMessage,
   type StoreClosingMonthItem,
 } from "@/lib/store-closing";
@@ -19,18 +19,13 @@ import { getStoreClosing } from "@/services/store-closing-service";
 
 const chartSeries = [
   {
-    key: "quantidadePecasVendidas",
-    label: "Pecas vendidas",
-    color: "#1d4ed8",
-  },
-  {
     key: "valorRecebidoClientes",
-    label: "Recebido",
+    label: "Entradas",
     color: "#15803d",
   },
   {
     key: "valorPagoFornecedores",
-    label: "Pago fornecedores",
+    label: "Saidas",
     color: "#b45309",
   },
   {
@@ -68,7 +63,8 @@ function SummaryCard({
   );
 }
 
-function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
+function MonthlySummaryChart({ months }: { months: StoreClosingMonthItem[] }) {
+  const [activeIndex, setActiveIndex] = useState(months.length - 1);
   const moneyMax = Math.max(
     0,
     ...months.flatMap((month) => [
@@ -78,17 +74,17 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
     ]),
   );
   const moneyMin = Math.min(0, ...months.map((month) => month.total));
-  const piecesMax = Math.max(1, ...months.map((month) => Math.max(0, month.quantidadePecasVendidas)));
   const width = 960;
-  const height = 320;
-  const paddingTop = 24;
-  const paddingBottom = 54;
+  const height = 360;
+  const paddingTop = 32;
+  const paddingBottom = 64;
+  const paddingHorizontal = 18;
   const chartHeight = height - paddingTop - paddingBottom;
   const groupWidth = width / months.length;
-  const moneyBarWidth = Math.max(10, Math.min(18, groupWidth * 0.16));
-  const piecesBarWidth = Math.max(8, Math.min(12, groupWidth * 0.12));
+  const moneyBarWidth = Math.max(12, Math.min(22, groupWidth * 0.22));
   const moneyRange = Math.max(1, moneyMax - moneyMin);
   const moneyBaselineY = paddingTop + (moneyMax / moneyRange) * chartHeight;
+  const activeMonth = months[activeIndex] ?? months[months.length - 1];
 
   function getMoneyBarGeometry(value: number) {
     const normalizedHeight = (Math.abs(value) / moneyRange) * chartHeight;
@@ -106,18 +102,26 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
     };
   }
 
-  function getPiecesBarHeight(value: number) {
-    return Math.max(0, (Math.max(0, value) / piecesMax) * chartHeight);
+  function getMoneyPointY(value: number) {
+    return paddingTop + ((moneyMax - value) / moneyRange) * chartHeight;
   }
+
+  const totalLinePath = months
+    .map((month, index) => {
+      const x = index * groupWidth + groupWidth / 2;
+      const y = getMoneyPointY(month.total);
+      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+    })
+    .join(" ");
 
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[760px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5">
+      <div className="min-w-[760px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--foreground)]">Historico de 12 meses</h3>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Grafico mensal</h3>
             <p className="text-sm text-[var(--muted)]">
-              Barras monetarias no eixo esquerdo e pecas vendidas no eixo direito.
+              Barras para entradas e saidas, com linha de total e destaque interativo por mes.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-[var(--muted)]">
@@ -134,6 +138,43 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
           </div>
         </div>
 
+        {activeMonth ? (
+          <div className="mt-5 grid gap-3 rounded-[24px] border border-[var(--border)] bg-white/80 p-4 md:grid-cols-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Mes ativo
+              </p>
+              <p className="mt-2 text-base font-semibold text-[var(--foreground)]">
+                {formatClosingMonthLabel(`${activeMonth.ano}-${String(activeMonth.mes).padStart(2, "0")}`)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Entradas
+              </p>
+              <p className="mt-2 inline-flex rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+                {formatCurrency(activeMonth.valorRecebidoClientes)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Saidas
+              </p>
+              <p className="mt-2 inline-flex rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">
+                {formatCurrency(activeMonth.valorPagoFornecedores)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Total
+              </p>
+              <p className="mt-2 inline-flex rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
+                {formatCurrency(activeMonth.total)}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="mt-6">
           <svg viewBox={`0 0 ${width} ${height}`} className="h-[320px] w-full">
             {[0, 1, 2, 3, 4].map((step) => {
@@ -142,33 +183,66 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
               const y = paddingTop + chartHeight * ratio;
               return (
                 <g key={step}>
-                  <line x1="0" y1={y} x2={width} y2={y} stroke="#e2e8f0" strokeDasharray="4 6" />
-                  <text x="0" y={y - 6} fill="#64748b" fontSize="11">
+                  <line
+                    x1={paddingHorizontal}
+                    y1={y}
+                    x2={width - paddingHorizontal}
+                    y2={y}
+                    stroke={step === 4 ? "#cbd5e1" : "#e2e8f0"}
+                    strokeDasharray={step === 4 ? "0" : "4 6"}
+                  />
+                  <text x={0} y={y - 6} fill="#64748b" fontSize="11">
                     {formatCurrency(value)}
-                  </text>
-                  <text x={width - 4} y={y - 6} fill="#64748b" fontSize="11" textAnchor="end">
-                    {Math.round(piecesMax * (1 - ratio))}
                   </text>
                 </g>
               );
             })}
 
+            <line
+              x1={paddingHorizontal}
+              y1={moneyBaselineY}
+              x2={width - paddingHorizontal}
+              y2={moneyBaselineY}
+              stroke="#94a3b8"
+              strokeOpacity="0.55"
+            />
+
+            {months[activeIndex] ? (
+              <rect
+                x={activeIndex * groupWidth + 6}
+                y={paddingTop - 8}
+                width={groupWidth - 12}
+                height={chartHeight + 16}
+                rx="18"
+                fill="#e2e8f0"
+                opacity="0.45"
+              />
+            ) : null}
+
+            <path
+              d={totalLinePath}
+              fill="none"
+              stroke="#7c3aed"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
             {months.map((month, index) => {
               const groupLeft = index * groupWidth;
-              const moneyBaseX = groupLeft + groupWidth * 0.14;
-              const piecesBaseX = groupLeft + groupWidth * 0.72;
-              const moneyMetrics: MoneyMetricKey[] = [
+              const moneyBaseX = groupLeft + groupWidth * 0.2;
+              const moneyMetrics: Array<Exclude<MoneyMetricKey, "total">> = [
                 "valorRecebidoClientes",
                 "valorPagoFornecedores",
-                "total",
               ];
+              const isActive = index === activeIndex;
 
               return (
                 <g key={`${month.ano}-${month.mes}`}>
                   {moneyMetrics.map((metric, metricIndex) => {
                     const value = month[metric];
                     const geometry = getMoneyBarGeometry(value);
-                    const x = moneyBaseX + metricIndex * (moneyBarWidth + 6);
+                    const x = moneyBaseX + metricIndex * (moneyBarWidth + 10);
                     const color = chartSeries.find((series) => series.key === metric)?.color ?? "#334155";
 
                     return (
@@ -178,27 +252,39 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
                         y={geometry.y}
                         width={moneyBarWidth}
                         height={geometry.height}
-                        rx="4"
+                        rx="8"
                         fill={color}
-                        opacity={metric === "total" ? 0.9 : 0.78}
+                        opacity={isActive ? 0.95 : 0.78}
+                        className="transition-opacity duration-200"
                       />
                     );
                   })}
 
+                  <circle
+                    cx={groupLeft + groupWidth / 2}
+                    cy={getMoneyPointY(month.total)}
+                    r={isActive ? 6 : 4}
+                    fill="#ffffff"
+                    stroke="#7c3aed"
+                    strokeWidth="3"
+                  />
+
                   <rect
-                    x={piecesBaseX}
-                    y={paddingTop + chartHeight - getPiecesBarHeight(month.quantidadePecasVendidas)}
-                    width={piecesBarWidth}
-                    height={getPiecesBarHeight(month.quantidadePecasVendidas)}
-                    rx="4"
-                    fill="#1d4ed8"
+                    x={groupLeft + 8}
+                    y={paddingTop - 8}
+                    width={groupWidth - 16}
+                    height={chartHeight + 44}
+                    rx="18"
+                    fill="transparent"
+                    onMouseEnter={() => setActiveIndex(index)}
                   />
 
                   <text
                     x={groupLeft + groupWidth / 2}
-                    y={height - 18}
-                    fill="#475569"
+                    y={height - 22}
+                    fill={isActive ? "#0f172a" : "#475569"}
                     fontSize="11"
+                    fontWeight={isActive ? "700" : "500"}
                     textAnchor="middle"
                   >
                     {formatClosingMonthShortLabel(month.ano, month.mes)}/{String(month.ano).slice(-2)}
@@ -213,9 +299,79 @@ function StoreClosingChart({ months }: { months: StoreClosingMonthItem[] }) {
   );
 }
 
+function MonthlySummaryTable({ months }: { months: StoreClosingMonthItem[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[760px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Tabela mensal</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Entradas, saidas e total dos ultimos 12 meses, encerrando na referencia escolhida.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
+          <table className="min-w-full border-collapse bg-white">
+            <thead className="bg-[var(--surface-muted)]">
+              <tr>
+                <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Mes
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Entradas
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Saidas
+                </th>
+                <th className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {months.map((month, index) => (
+                <tr
+                  key={`${month.ano}-${month.mes}`}
+                  className={
+                    index % 2 === 0
+                      ? "bg-white"
+                      : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
+                  }
+                >
+                  <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">
+                    {formatClosingMonthShortLabel(month.ano, month.mes)}/{String(month.ano).slice(-2)}
+                  </td>
+                  <td className="px-4 py-4 text-right text-sm font-semibold text-emerald-700">
+                    <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      {formatCurrency(month.valorRecebidoClientes)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-right text-sm font-semibold text-rose-700">
+                    <span className="inline-flex rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                      {formatCurrency(month.valorPagoFornecedores)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-right text-sm font-semibold text-violet-700">
+                    <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+                      {formatCurrency(month.total)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StoreClosingPage() {
   const { isLoadingStores, selectedStoreId } = useStoreContext();
-  const [referenceMonth, setReferenceMonth] = useState(() => getPreviousMonthInputValue());
+  const [referenceMonth, setReferenceMonth] = useState(() => getCurrentMonthInputValue());
+  const [viewMode, setViewMode] = useState<"tabela" | "grafico">("tabela");
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const closingQuery = useQuery({
@@ -246,14 +402,12 @@ export function StoreClosingPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-              Fechamento geral
+              Resumo geral
             </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-              Resumo mensal da loja
-            </h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">Resumo</h1>
             <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
-              O fechamento considera o mes selecionado no resumo e monta o grafico com os 12 meses
-              encerrando nessa referencia.
+              O resumo considera pagamentos externos pela coluna dinheiro e gastos da loja para montar
+              entradas, saidas e total do mes selecionado.
             </p>
           </div>
 
@@ -271,16 +425,16 @@ export function StoreClosingPage() {
         {!selectedStoreId ? (
           <MovementEmptyState
             title="Selecione uma loja"
-            description="O fechamento geral depende da loja ativa no topo da pagina."
+            description="O resumo depende da loja ativa no topo da pagina."
           />
         ) : closingQuery.isLoading || isLoadingStores ? (
           <MovementEmptyState
-            title="Carregando fechamento"
-            description="Consolidando vendas e pagamentos da referencia selecionada."
+            title="Carregando resumo"
+            description="Consolidando entradas e saidas da referencia selecionada."
           />
         ) : closingQuery.isError ? (
           <MovementEmptyState
-            title="Falha ao carregar fechamento"
+            title="Falha ao carregar resumo"
             description={
               closingQuery.error instanceof Error
                 ? closingQuery.error.message
@@ -290,25 +444,46 @@ export function StoreClosingPage() {
         ) : data ? (
           <div className="mt-8 space-y-8">
             <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(148,163,184,0.03))] p-6">
-              <p className="text-sm text-[var(--muted)]">
-                Referencia selecionada:{" "}
-                <span className="font-semibold text-[var(--foreground)]">
-                  {formatClosingMonthLabel(referenceMonth)}
-                </span>
-              </p>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <p className="text-sm text-[var(--muted)]">
+                  Referencia selecionada:{" "}
+                  <span className="font-semibold text-[var(--foreground)]">
+                    {formatClosingMonthLabel(referenceMonth)}
+                  </span>
+                </p>
+                <div className="inline-flex w-fit rounded-2xl border border-[var(--border)] bg-white p-1 shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("tabela")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      viewMode === "tabela"
+                        ? "bg-[var(--foreground)] text-white"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    Tabela
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grafico")}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                      viewMode === "grafico"
+                        ? "bg-[var(--foreground)] text-white"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    Grafico
+                  </button>
+                </div>
+              </div>
               <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                  label="Quantidade de pecas vendidas"
-                  value={String(data.quantidadePecasVendidas)}
-                  tone="neutral"
-                />
-                <SummaryCard
-                  label="Valor recebido de clientes"
+                  label="Entradas"
                   value={formatCurrency(data.valorRecebidoClientes)}
                   tone="positive"
                 />
                 <SummaryCard
-                  label="Valor pago aos fornecedores"
+                  label="Saidas"
                   value={formatCurrency(data.valorPagoFornecedores)}
                   tone="warning"
                 />
@@ -316,7 +491,11 @@ export function StoreClosingPage() {
               </div>
             </div>
 
-            <StoreClosingChart months={data.historico} />
+            {viewMode === "tabela" ? (
+              <MonthlySummaryTable months={data.historico} />
+            ) : (
+              <MonthlySummaryChart months={data.historico} />
+            )}
           </div>
         ) : (
           <MovementEmptyState

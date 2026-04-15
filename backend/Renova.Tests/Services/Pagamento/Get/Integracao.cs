@@ -116,6 +116,8 @@ namespace Renova.Tests.Services.Pagamento.Get
             ClienteModel fornecedor = await CriarClienteAsync(factory, loja.Id, "Fornecedor A", "44999990001");
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(factory, loja.Id, "Produto A", fornecedor.Id);
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(factory, loja.Id, "Produto B", fornecedor.Id);
+            ConfigLojaModel configLoja = await CriarConfigLojaAsync(factory, loja.Id, 80m, 100m);
+            ConfigLojaFormaPagamentoModel formaPagamento = await CriarFormaPagamentoAsync(factory, configLoja.Id, "Pix", 0m);
 
             MovimentacaoModel venda = await CriarMovimentacaoAsync(
                 factory,
@@ -146,6 +148,42 @@ namespace Renova.Tests.Services.Pagamento.Get
                 84m,
                 new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc));
 
+            _ = await CriarPagamentoCreditoAsync(
+                factory,
+                loja.Id,
+                clienteVenda.Id,
+                TipoPagamentoCredito.AdicionarCredito,
+                formaPagamento.Id,
+                240m,
+                240m,
+                new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc));
+
+            _ = await CriarPagamentoCreditoAsync(
+                factory,
+                loja.Id,
+                fornecedor.Id,
+                TipoPagamentoCredito.ResgatarCredito,
+                null,
+                84m,
+                84m,
+                new DateTime(2026, 3, 4, 12, 0, 0, DateTimeKind.Utc));
+
+            _ = await CriarGastoLojaAsync(
+                factory,
+                loja.Id,
+                NaturezaGastoLoja.Recebimento,
+                30m,
+                new DateTime(2026, 3, 10, 12, 0, 0, DateTimeKind.Utc),
+                "Recebimento avulso");
+
+            _ = await CriarGastoLojaAsync(
+                factory,
+                loja.Id,
+                NaturezaGastoLoja.Pagamento,
+                14m,
+                new DateTime(2026, 3, 11, 12, 0, 0, DateTimeKind.Utc),
+                "Pagamento avulso");
+
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
             HttpResponseMessage response = await client.GetAsync(
@@ -156,10 +194,106 @@ namespace Renova.Tests.Services.Pagamento.Get
             FechamentoLojaDto? body = await response.Content.ReadFromJsonAsync<FechamentoLojaDto>();
             body = Assert.IsType<FechamentoLojaDto>(body);
             Assert.Equal(2, body.QuantidadePecasVendidas);
-            Assert.Equal(240m, body.ValorRecebidoClientes);
-            Assert.Equal(84m, body.ValorPagoFornecedores);
-            Assert.Equal(156m, body.Total);
+            Assert.Equal(270m, body.ValorRecebidoClientes);
+            Assert.Equal(98m, body.ValorPagoFornecedores);
+            Assert.Equal(172m, body.Total);
             Assert.Equal(12, body.Historico.Count);
+        }
+
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            decimal percentualRepasseFornecedor,
+            decimal percentualRepasseVendedorCredito)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ConfigLojaModel config = new()
+            {
+                LojaId = lojaId,
+                PercentualRepasseFornecedor = percentualRepasseFornecedor,
+                PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito
+            };
+
+            _ = context.ConfiguracoesLoja.Add(config);
+            _ = await context.SaveChangesAsync();
+            return config;
+        }
+
+        private static async Task<ConfigLojaFormaPagamentoModel> CriarFormaPagamentoAsync(
+            RenovaApiFactory factory,
+            int configLojaId,
+            string nome,
+            decimal percentualAjuste)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            ConfigLojaFormaPagamentoModel formaPagamento = new()
+            {
+                ConfigLojaId = configLojaId,
+                Nome = nome,
+                PercentualAjuste = percentualAjuste
+            };
+
+            _ = context.ConfiguracoesLojaFormasPagamento.Add(formaPagamento);
+            _ = await context.SaveChangesAsync();
+            return formaPagamento;
+        }
+
+        private static async Task<PagamentoCreditoModel> CriarPagamentoCreditoAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            int clienteId,
+            TipoPagamentoCredito tipo,
+            int? configLojaFormaPagamentoId,
+            decimal valorCredito,
+            decimal valorDinheiro,
+            DateTime data)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            PagamentoCreditoModel pagamento = new()
+            {
+                LojaId = lojaId,
+                ClienteId = clienteId,
+                Tipo = tipo,
+                ConfigLojaFormaPagamentoId = configLojaFormaPagamentoId,
+                ValorCredito = valorCredito,
+                ValorDinheiro = valorDinheiro,
+                Data = data
+            };
+
+            _ = context.PagamentosCredito.Add(pagamento);
+            _ = await context.SaveChangesAsync();
+            return pagamento;
+        }
+
+        private static async Task<GastoLojaModel> CriarGastoLojaAsync(
+            RenovaApiFactory factory,
+            int lojaId,
+            NaturezaGastoLoja natureza,
+            decimal valor,
+            DateTime data,
+            string descricao)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            GastoLojaModel gasto = new()
+            {
+                LojaId = lojaId,
+                Natureza = natureza,
+                Valor = valor,
+                Data = data,
+                Descricao = descricao
+            };
+
+            _ = context.GastosLoja.Add(gasto);
+            _ = await context.SaveChangesAsync();
+            return gasto;
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)

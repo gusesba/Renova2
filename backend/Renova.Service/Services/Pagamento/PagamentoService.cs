@@ -166,24 +166,38 @@ namespace Renova.Service.Services.Pagamento
                 })
                 .ToListAsync(cancellationToken);
 
-            List<FechamentoPagamentoMensalItem> pagamentos = await _context.Pagamentos
+            List<FechamentoPagamentoMensalItem> pagamentosCredito = await _context.PagamentosCredito
                 .Where(pagamento =>
                     pagamento.LojaId == request.LojaId.Value
                     && pagamento.Data >= inicioHistorico
-                    && pagamento.Data < fimHistoricoExclusivo
-                    && pagamento.Status != StatusPagamento.Cancelado
-                    && pagamento.Movimentacao != null)
+                    && pagamento.Data < fimHistoricoExclusivo)
                 .Select(pagamento => new FechamentoPagamentoMensalItem
                 {
                     Ano = pagamento.Data.Year,
                     Mes = pagamento.Data.Month,
-                    ValorRecebidoClientes = pagamento.Natureza == NaturezaPagamento.Receber
-                        && pagamento.ClienteId == pagamento.Movimentacao!.ClienteId
-                            ? pagamento.Valor
+                    ValorRecebidoClientes = pagamento.Tipo == TipoPagamentoCredito.AdicionarCredito
+                            ? pagamento.ValorDinheiro
                             : 0m,
-                    ValorPagoFornecedores = pagamento.Natureza == NaturezaPagamento.Pagar
-                        && pagamento.ClienteId != pagamento.Movimentacao!.ClienteId
-                            ? pagamento.Valor
+                    ValorPagoFornecedores = pagamento.Tipo == TipoPagamentoCredito.ResgatarCredito
+                            ? pagamento.ValorDinheiro
+                            : 0m
+                })
+                .ToListAsync(cancellationToken);
+
+            List<FechamentoPagamentoMensalItem> gastosLoja = await _context.GastosLoja
+                .Where(gasto =>
+                    gasto.LojaId == request.LojaId.Value
+                    && gasto.Data >= inicioHistorico
+                    && gasto.Data < fimHistoricoExclusivo)
+                .Select(gasto => new FechamentoPagamentoMensalItem
+                {
+                    Ano = gasto.Data.Year,
+                    Mes = gasto.Data.Month,
+                    ValorRecebidoClientes = gasto.Natureza == NaturezaGastoLoja.Recebimento
+                            ? gasto.Valor
+                            : 0m,
+                    ValorPagoFornecedores = gasto.Natureza == NaturezaGastoLoja.Pagamento
+                            ? gasto.Valor
                             : 0m
                 })
                 .ToListAsync(cancellationToken);
@@ -194,7 +208,8 @@ namespace Renova.Service.Services.Pagamento
                     group => group.Key,
                     group => group.Sum(item => item.QuantidadePecasVendidas));
 
-            Dictionary<(int Ano, int Mes), (decimal Recebido, decimal Pago)> valoresPorMes = pagamentos
+            Dictionary<(int Ano, int Mes), (decimal Recebido, decimal Pago)> valoresPorMes = pagamentosCredito
+                .Concat(gastosLoja)
                 .GroupBy(item => (item.Ano, item.Mes))
                 .ToDictionary(
                     group => group.Key,

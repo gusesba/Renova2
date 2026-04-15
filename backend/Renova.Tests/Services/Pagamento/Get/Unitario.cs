@@ -177,6 +177,25 @@ namespace Renova.Tests.Services.Pagamento.Get
             ProdutoEstoqueModel produtoA = await CriarProdutoAsync(context, loja.Id, "Produto A", fornecedorA.Id);
             ProdutoEstoqueModel produtoB = await CriarProdutoAsync(context, loja.Id, "Produto B", fornecedorB.Id);
             ProdutoEstoqueModel produtoC = await CriarProdutoAsync(context, loja.Id, "Produto C", fornecedorA.Id);
+            ConfigLojaModel configLoja = new()
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 80m,
+                PercentualRepasseVendedorCredito = 100m
+            };
+
+            _ = context.ConfiguracoesLoja.Add(configLoja);
+            _ = await context.SaveChangesAsync();
+
+            ConfigLojaFormaPagamentoModel formaPagamento = new()
+            {
+                ConfigLojaId = configLoja.Id,
+                Nome = "Pix",
+                PercentualAjuste = 0m
+            };
+
+            _ = context.ConfiguracoesLojaFormasPagamento.Add(formaPagamento);
+            _ = await context.SaveChangesAsync();
 
             MovimentacaoModel vendaMarco = await CriarMovimentacaoAsync(
                 context,
@@ -275,6 +294,63 @@ namespace Renova.Tests.Services.Pagamento.Get
                     Data = new DateTime(2026, 2, 11, 12, 0, 0, DateTimeKind.Utc)
                 });
 
+            context.PagamentosCredito.AddRange(
+                new PagamentoCreditoModel
+                {
+                    LojaId = loja.Id,
+                    ClienteId = clienteVenda.Id,
+                    Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ConfigLojaFormaPagamentoId = formaPagamento.Id,
+                    ValorCredito = 300m,
+                    ValorDinheiro = 300m,
+                    Data = new DateTime(2026, 3, 5, 12, 0, 0, DateTimeKind.Utc)
+                },
+                new PagamentoCreditoModel
+                {
+                    LojaId = loja.Id,
+                    ClienteId = fornecedorA.Id,
+                    Tipo = TipoPagamentoCredito.ResgatarCredito,
+                    ValorCredito = 80m,
+                    ValorDinheiro = 80m,
+                    Data = new DateTime(2026, 3, 18, 12, 0, 0, DateTimeKind.Utc)
+                },
+                new PagamentoCreditoModel
+                {
+                    LojaId = loja.Id,
+                    ClienteId = clienteVenda.Id,
+                    Tipo = TipoPagamentoCredito.AdicionarCredito,
+                    ConfigLojaFormaPagamentoId = formaPagamento.Id,
+                    ValorCredito = 150m,
+                    ValorDinheiro = 150m,
+                    Data = new DateTime(2026, 2, 11, 12, 0, 0, DateTimeKind.Utc)
+                });
+
+            context.GastosLoja.AddRange(
+                new GastoLojaModel
+                {
+                    LojaId = loja.Id,
+                    Natureza = NaturezaGastoLoja.Recebimento,
+                    Valor = 40m,
+                    Data = new DateTime(2026, 3, 6, 12, 0, 0, DateTimeKind.Utc),
+                    Descricao = "Recebimento avulso"
+                },
+                new GastoLojaModel
+                {
+                    LojaId = loja.Id,
+                    Natureza = NaturezaGastoLoja.Pagamento,
+                    Valor = 20m,
+                    Data = new DateTime(2026, 3, 7, 12, 0, 0, DateTimeKind.Utc),
+                    Descricao = "Pagamento da loja"
+                },
+                new GastoLojaModel
+                {
+                    LojaId = loja.Id,
+                    Natureza = NaturezaGastoLoja.Pagamento,
+                    Valor = 10m,
+                    Data = new DateTime(2026, 2, 12, 12, 0, 0, DateTimeKind.Utc),
+                    Descricao = "Pagamento fevereiro"
+                });
+
             _ = await context.SaveChangesAsync();
 
             PagamentoService service = new(context);
@@ -291,16 +367,16 @@ namespace Renova.Tests.Services.Pagamento.Get
 
             Assert.Equal(new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), resultado.InicioPeriodo);
             Assert.Equal(1, resultado.QuantidadePecasVendidas);
-            Assert.Equal(300m, resultado.ValorRecebidoClientes);
-            Assert.Equal(150m, resultado.ValorPagoFornecedores);
-            Assert.Equal(150m, resultado.Total);
+            Assert.Equal(340m, resultado.ValorRecebidoClientes);
+            Assert.Equal(100m, resultado.ValorPagoFornecedores);
+            Assert.Equal(240m, resultado.Total);
             Assert.Equal(12, resultado.Historico.Count);
 
             FechamentoLojaMesDto fevereiro = Assert.Single(resultado.Historico.Where(item => item.Ano == 2026 && item.Mes == 2));
             Assert.Equal(1, fevereiro.QuantidadePecasVendidas);
             Assert.Equal(150m, fevereiro.ValorRecebidoClientes);
-            Assert.Equal(0m, fevereiro.ValorPagoFornecedores);
-            Assert.Equal(150m, fevereiro.Total);
+            Assert.Equal(10m, fevereiro.ValorPagoFornecedores);
+            Assert.Equal(140m, fevereiro.Total);
         }
 
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)

@@ -18,7 +18,7 @@ const primaryItems: NavItem[] = [
   { label: "Gastos da loja", href: "/dashboard/gasto-loja" },
   { label: "Pag. externos", href: "/dashboard/pagamento-externo" },
   { label: "Pendencias", href: "/dashboard/pendencia" },
-  { label: "Fechamento", href: "/dashboard/fechamento" },
+  { label: "Resumo", href: "/dashboard/fechamento" },
 ];
 
 function HexagonMark() {
