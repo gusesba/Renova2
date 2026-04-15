@@ -40,7 +40,7 @@ namespace Renova.Service.Services.Produto
 
             string descricaoNormalizada = request.Descricao.Trim();
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
                 .SingleOrDefaultAsync(cliente => cliente.Id == request.FornecedorId, cancellationToken)
@@ -126,7 +126,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
                 .SingleOrDefaultAsync(cliente => cliente.Id == request.FornecedorId, cancellationToken)
@@ -195,7 +195,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
-            _ = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (await ProdutoPossuiRelacionamentosAtivosAsync(produto.Id, cancellationToken))
             {
@@ -293,7 +293,7 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
                 .Where(produto => produto.LojaId == request.LojaId.Value);
@@ -406,7 +406,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(item => item.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
-            _ = await ObterLojaDoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
             return new ProdutoBuscaDto
             {
@@ -437,7 +437,7 @@ namespace Renova.Service.Services.Produto
             ObterProdutosEmprestadosClienteParametros parametros,
             CancellationToken cancellationToken = default)
         {
-            LojaModel loja = await ObterLojaDoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
@@ -502,7 +502,7 @@ namespace Renova.Service.Services.Produto
         {
             string valorNormalizado = request.Valor.Trim();
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             bool valorJaExiste = await dbSet.AnyAsync(
                 entity => EF.Property<int>(entity, "LojaId") == request.LojaId
@@ -539,7 +539,7 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == request.LojaId.Value);
 
@@ -601,25 +601,6 @@ namespace Renova.Service.Services.Produto
                 : source.OrderBy(entity => EF.Property<string>(entity, "Valor"));
 
             return queryOrdenadaPorValor.ThenBy(entity => EF.Property<int>(entity, "Id"));
-        }
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-
-            return loja.UsuarioId != usuarioId
-                ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
-                : loja;
         }
 
         private Task<bool> ProdutoPossuiRelacionamentosAtivosAsync(int produtoId, CancellationToken cancellationToken)

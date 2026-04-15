@@ -71,6 +71,32 @@ namespace Renova.Tests.Services.Loja.Get
         }
 
         [Fact]
+        public async Task GetLojasDeveRetornarLojasQuandoUsuarioForFuncionario()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto donoDaLoja = await CriarUsuarioAutenticadoAsync(client, "dona@renova.com");
+            UsuarioTokenDto funcionario = await CriarUsuarioAutenticadoAsync(client, "funcionario@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, donoDaLoja.Usuario.Id, "Loja Centro");
+
+            await VincularFuncionarioAsync(factory, funcionario.Usuario.Id, loja.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", funcionario.Token);
+
+            HttpResponseMessage response = await client.GetAsync("/api/loja");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            List<LojaDto>? body = await response.Content.ReadFromJsonAsync<List<LojaDto>>();
+
+            Assert.NotNull(body);
+            LojaDto item = Assert.Single(body);
+            Assert.Equal(loja.Id, item.Id);
+            Assert.Equal(loja.Nome, item.Nome);
+        }
+
+        [Fact]
         //Input: requisicao sem usuario autenticado
         //Nao retorna lojas
         //Retorna: unauthorized
@@ -102,7 +128,7 @@ namespace Renova.Tests.Services.Loja.Get
             return Assert.IsType<UsuarioTokenDto>(resultado);
         }
 
-        private static async Task CriarLojaAsync(RenovaApiFactory factory, int usuarioId, string nome)
+        private static async Task<LojaModel> CriarLojaAsync(RenovaApiFactory factory, int usuarioId, string nome)
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
@@ -114,6 +140,21 @@ namespace Renova.Tests.Services.Loja.Get
             };
 
             _ = context.Lojas.Add(loja);
+            _ = await context.SaveChangesAsync();
+
+            return loja;
+        }
+
+        private static async Task VincularFuncionarioAsync(RenovaApiFactory factory, int usuarioId, int lojaId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            _ = context.Funcionarios.Add(new FuncionarioModel
+            {
+                UsuarioId = usuarioId,
+                LojaId = lojaId
+            });
             _ = await context.SaveChangesAsync();
         }
     }

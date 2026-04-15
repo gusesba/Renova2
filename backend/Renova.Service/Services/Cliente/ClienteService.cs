@@ -45,7 +45,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("Data final deve ser maior ou igual a data inicial.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .SingleOrDefaultAsync(item => item.LojaId == request.LojaId.Value, cancellationToken)
@@ -199,21 +199,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("Contato deve conter 10 ou 11 numeros.", nameof(request));
             }
 
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == request.LojaId, cancellationToken);
-
-            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (request.UserId.HasValue)
             {
@@ -269,14 +255,6 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("Contato deve conter 10 ou 11 numeros.", nameof(request));
             }
 
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
             ClienteModel? cliente = await _context.Clientes
                 .SingleOrDefaultAsync(clienteAtual => clienteAtual.Id == parametros.ClienteId, cancellationToken);
 
@@ -285,13 +263,7 @@ namespace Renova.Service.Services.Cliente
                 throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
             }
 
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == cliente.LojaId, cancellationToken);
-
-            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(cliente.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (request.UserId.HasValue)
             {
@@ -338,14 +310,6 @@ namespace Renova.Service.Services.Cliente
 
         public async Task DeleteAsync(ExcluirClienteParametros parametros, CancellationToken cancellationToken = default)
         {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
             ClienteModel? cliente = await _context.Clientes
                 .SingleOrDefaultAsync(clienteAtual => clienteAtual.Id == parametros.ClienteId, cancellationToken);
 
@@ -354,13 +318,7 @@ namespace Renova.Service.Services.Cliente
                 throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
             }
 
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == cliente.LojaId, cancellationToken);
-
-            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(cliente.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (await ClientePossuiProdutosVinculadosAsync(cliente.Id, cancellationToken))
             {
@@ -393,21 +351,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == request.LojaId.Value, cancellationToken);
-
-            if (loja is null || loja.UsuarioId != parametros.UsuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<ClienteModel> query = _context.Clientes
                 .Where(cliente => cliente.LojaId == request.LojaId.Value);
@@ -453,7 +397,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .Include(item => item.User)
@@ -936,27 +880,6 @@ namespace Renova.Service.Services.Cliente
             cell.Style.Font.FontColor = corTitulo;
             cell.Style.Font.FontSize = 12;
             cell.Style.Alignment.WrapText = true;
-        }
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken);
-
-            if (loja is null || loja.UsuarioId != usuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
-
-            return loja;
         }
 
         private static DateTime NormalizarDateTimeParaUtc(DateTime data)

@@ -42,7 +42,7 @@ namespace Renova.Service.Services.Solicitacao
 
             string descricaoNormalizada = request.Descricao.Trim();
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
@@ -113,7 +113,7 @@ namespace Renova.Service.Services.Solicitacao
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<SolicitacaoModel> query = _context.Solicitacoes
                 .Where(solicitacao => solicitacao.LojaId == request.LojaId.Value);
@@ -257,23 +257,5 @@ namespace Renova.Service.Services.Solicitacao
                 .ToListAsync(cancellationToken);
         }
 
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-
-            return loja.UsuarioId != usuarioId
-                ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
-                : loja;
-        }
     }
 }

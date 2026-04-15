@@ -4,6 +4,7 @@ using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Loja;
+using Renova.Service.Extensions;
 using Renova.Service.Parameters.Loja;
 
 namespace Renova.Service.Services.Loja
@@ -53,13 +54,15 @@ namespace Renova.Service.Services.Loja
         {
             string nomeNormalizado = request.Nome.Trim();
 
-            await ValidarUsuarioAutenticadoAsync(parametros.UsuarioId, cancellationToken);
-
-            LojaModel loja = await ObterLojaDoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
+                parametros.LojaId,
+                parametros.UsuarioId,
+                cancellationToken,
+                lancarQuandoLojaNaoExistir: true);
 
             bool lojaJaExiste = await _context.Lojas
                 .AnyAsync(lojaAtual =>
-                    lojaAtual.UsuarioId == parametros.UsuarioId &&
+                    lojaAtual.UsuarioId == loja.UsuarioId &&
                     lojaAtual.Id != loja.Id &&
                     lojaAtual.Nome == nomeNormalizado,
                     cancellationToken);
@@ -82,9 +85,11 @@ namespace Renova.Service.Services.Loja
 
         public async Task DeleteAsync(ExcluirLojaParametros parametros, CancellationToken cancellationToken = default)
         {
-            await ValidarUsuarioAutenticadoAsync(parametros.UsuarioId, cancellationToken);
-
-            LojaModel loja = await ObterLojaDoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
+                parametros.LojaId,
+                parametros.UsuarioId,
+                cancellationToken,
+                lancarQuandoLojaNaoExistir: true);
 
             if (await LojaPossuiRegistrosAtivosAsync(loja.Id, cancellationToken))
             {
@@ -97,10 +102,16 @@ namespace Renova.Service.Services.Loja
 
         public async Task<IReadOnlyList<LojaDto>> GetAllAsync(ObterLojasParametros parametros, CancellationToken cancellationToken = default)
         {
-            await ValidarUsuarioAutenticadoAsync(parametros.UsuarioId, cancellationToken);
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
 
-            return (IReadOnlyList<LojaDto>)await _context.Lojas
-                .Where(loja => loja.UsuarioId == parametros.UsuarioId)
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            return (IReadOnlyList<LojaDto>)await _context.ObterLojasAcessiveisAoUsuario(parametros.UsuarioId)
+                .Distinct()
                 .OrderBy(loja => loja.Nome)
                 .ThenBy(loja => loja.Id)
                 .Select(loja => new LojaDto
@@ -109,35 +120,6 @@ namespace Renova.Service.Services.Loja
                     Nome = loja.Nome
                 })
                 .ToListAsync(cancellationToken);
-        }
-
-        private async Task ValidarUsuarioAutenticadoAsync(int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-        }
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            LojaModel? loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken);
-
-            if (loja is null)
-            {
-                throw new KeyNotFoundException("Loja informada nao foi encontrada.");
-            }
-
-            if (loja.UsuarioId != usuarioId)
-            {
-                throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-            }
-
-            return loja;
         }
 
         private async Task<bool> LojaPossuiRegistrosAtivosAsync(int lojaId, CancellationToken cancellationToken)

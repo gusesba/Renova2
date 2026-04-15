@@ -34,7 +34,7 @@ namespace Renova.Service.Services.GastoLoja
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<GastoLojaModel> query = _context.GastosLoja
                 .Where(gasto => gasto.LojaId == request.LojaId.Value);
@@ -109,7 +109,7 @@ namespace Renova.Service.Services.GastoLoja
                 throw new ArgumentException("Descricao do gasto da loja deve ter no maximo 500 caracteres.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             GastoLojaModel gasto = new()
             {
@@ -132,25 +132,6 @@ namespace Renova.Service.Services.GastoLoja
                 Data = gasto.Data,
                 Descricao = gasto.Descricao
             };
-        }
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel loja = await _context.Lojas
-                .SingleOrDefaultAsync(item => item.Id == lojaId, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-
-            return loja.UsuarioId != usuarioId
-                ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
-                : loja;
         }
 
         private static DateTime NormalizarDateTimeParaUtc(DateTime value)

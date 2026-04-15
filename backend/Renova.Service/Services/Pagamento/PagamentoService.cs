@@ -44,7 +44,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<PagamentoModel> query = _context.Pagamentos
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
@@ -139,7 +139,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             DateTime dataReferencia = request.DataReferencia.HasValue
                 ? NormalizarDateTimeParaUtc(request.DataReferencia.Value)
@@ -266,7 +266,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<PagamentoCreditoModel> query = _context.PagamentosCredito
                 .Include(pagamento => pagamento.ConfigLojaFormaPagamento)
@@ -326,7 +326,7 @@ namespace Renova.Service.Services.Pagamento
             int usuarioId,
             CancellationToken cancellationToken = default)
         {
-            _ = await ObterLojaDoUsuarioAsync(lojaId, usuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, usuarioId, cancellationToken);
 
             return await _context.Clientes
                 .Where(cliente => cliente.LojaId == lojaId
@@ -484,7 +484,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Descricao do pagamento deve ter no maximo 500 caracteres.", nameof(request));
             }
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
@@ -554,7 +554,7 @@ namespace Renova.Service.Services.Pagamento
 
             DateTime dataPagamentoUtc = NormalizarDateTimeParaUtc(request.Data);
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
@@ -617,7 +617,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Data limite para atualizacao das pendencias e obrigatoria.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             DateTime dataLimite = NormalizarDataLimiteParaFimDoDiaUtc(request.Data);
             List<PagamentoModel> pagamentosPendentes = await _context.Pagamentos
@@ -701,25 +701,6 @@ namespace Renova.Service.Services.Pagamento
                 ValorTotalCredito = clientesAtualizados.Sum(item => item.ValorAtualizado),
                 ClientesAtualizados = clientesAtualizados
             };
-        }
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel loja = await _context.Lojas
-                .SingleOrDefaultAsync(item => item.Id == lojaId, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-
-            return loja.UsuarioId != usuarioId
-                ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
-                : loja;
         }
 
         private async Task<ClienteCreditoModel> ObterOuCriarCreditoAsync(int lojaId, int clienteId, CancellationToken cancellationToken)

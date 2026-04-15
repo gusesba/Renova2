@@ -193,6 +193,29 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
         }
 
         [Fact]
+        public async Task PutConfigLojaDeveRetornarOkQuandoUsuarioForFuncionarioDaLoja()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto donoDaLoja = await CriarUsuarioAutenticadoAsync(client, "dona-config@renova.com");
+            UsuarioTokenDto funcionario = await CriarUsuarioAutenticadoAsync(client, "funcionario-config@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, donoDaLoja.Usuario.Id, "Loja Centro");
+            await VincularFuncionarioAsync(factory, funcionario.Usuario.Id, loja.Id);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", funcionario.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync("/api/config-loja", new SalvarConfigLojaCommand
+            {
+                LojaId = loja.Id,
+                PercentualRepasseFornecedor = 45m,
+                PercentualRepasseVendedorCredito = 45m,
+                TempoPermanenciaProdutoMeses = 6
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
         public async Task PutConfigLojaDeveRetornarBadRequestQuandoHouverMesesDuplicadosNosDescontosDePermanencia()
         {
             await using RenovaApiFactory factory = new();
@@ -272,6 +295,19 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             _ = context.Lojas.Add(loja);
             _ = await context.SaveChangesAsync();
             return loja;
+        }
+
+        private static async Task VincularFuncionarioAsync(RenovaApiFactory factory, int usuarioId, int lojaId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            _ = context.Funcionarios.Add(new FuncionarioModel
+            {
+                UsuarioId = usuarioId,
+                LojaId = lojaId
+            });
+            _ = await context.SaveChangesAsync();
         }
     }
 }

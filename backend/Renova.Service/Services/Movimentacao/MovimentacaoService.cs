@@ -53,7 +53,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             IQueryable<MovimentacaoModel> query = _context.Movimentacoes
                 .Where(movimentacao => movimentacao.LojaId == request.LojaId.Value);
@@ -149,7 +149,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Desconto total deve estar entre 0 e 100.", nameof(request));
             }
 
-            LojaModel loja = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
@@ -349,7 +349,7 @@ namespace Renova.Service.Services.Movimentacao
 
         public async Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
         {
-            _ = await ObterLojaDoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
@@ -410,7 +410,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Ao menos um produto deve ser informado.", nameof(request));
             }
 
-            _ = await ObterLojaDoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             List<int> produtoIdsDuplicados = request.Itens
                 .GroupBy(item => item.ProdutoId)
@@ -690,25 +690,6 @@ namespace Renova.Service.Services.Movimentacao
             int ProdutoId,
             TipoMovimentacao Tipo,
             int ClienteId);
-
-        private async Task<LojaModel> ObterLojaDoUsuarioAsync(int lojaId, int usuarioId, CancellationToken cancellationToken)
-        {
-            bool usuarioExiste = await _context.Usuarios
-                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
-
-            if (!usuarioExiste)
-            {
-                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
-            }
-
-            LojaModel loja = await _context.Lojas
-                .SingleOrDefaultAsync(lojaAtual => lojaAtual.Id == lojaId, cancellationToken)
-                ?? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.");
-
-            return loja.UsuarioId != usuarioId
-                ? throw new UnauthorizedAccessException("Loja informada nao pertence ao usuario autenticado.")
-                : loja;
-        }
 
         private static DateTime NormalizarDateTimeParaUtc(DateTime value)
         {

@@ -286,6 +286,31 @@ namespace Renova.Tests.Services.Cliente.Get
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
+        [Fact]
+        public async Task GetClientesDeveRetornarOkQuandoUsuarioForFuncionarioDaLoja()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto donoDaLoja = await CriarUsuarioAutenticadoAsync(client, "dona-cliente@renova.com");
+            UsuarioTokenDto funcionario = await CriarUsuarioAutenticadoAsync(client, "funcionario-cliente@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, donoDaLoja.Usuario.Id, "Loja Centro");
+            await CriarClienteAsync(factory, loja.Id, "Ana", "44999990000");
+            await VincularFuncionarioAsync(factory, funcionario.Usuario.Id, loja.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", funcionario.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/cliente?lojaId={loja.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            PaginacaoDto<ClienteDto>? body = await response.Content.ReadFromJsonAsync<PaginacaoDto<ClienteDto>>();
+
+            Assert.NotNull(body);
+            ClienteDto item = Assert.Single(body.Itens);
+            Assert.Equal("Ana", item.Nome);
+        }
+
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
             CadastroCommand command = new()
@@ -337,6 +362,19 @@ namespace Renova.Tests.Services.Cliente.Get
             _ = await context.SaveChangesAsync();
 
             return cliente;
+        }
+
+        private static async Task VincularFuncionarioAsync(RenovaApiFactory factory, int usuarioId, int lojaId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+
+            _ = context.Funcionarios.Add(new FuncionarioModel
+            {
+                UsuarioId = usuarioId,
+                LojaId = lojaId
+            });
+            _ = await context.SaveChangesAsync();
         }
     }
 }
