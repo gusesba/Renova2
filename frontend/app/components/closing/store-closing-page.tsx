@@ -21,17 +21,17 @@ const chartSeries = [
   {
     key: "valorRecebidoClientes",
     label: "Entradas",
-    color: "#15803d",
+    color: "#047857",
   },
   {
     key: "valorPagoFornecedores",
     label: "Saidas",
-    color: "#b45309",
+    color: "#be123c",
   },
   {
     key: "total",
     label: "Total",
-    color: "#7c3aed",
+    color: "#6d28d9",
   },
 ] as const;
 
