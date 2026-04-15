@@ -9,6 +9,7 @@ namespace Renova.Persistence
         public DbSet<RenovaModel> Renova { get; set; }
         public DbSet<UsuarioModel> Usuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
+        public DbSet<FuncionarioModel> Funcionarios { get; set; }
         public DbSet<ClienteModel> Clientes { get; set; }
         public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
@@ -60,6 +61,23 @@ namespace Renova.Persistence
                 _ = entity.HasOne(p => p.Usuario)
                     .WithMany(p => p.Lojas)
                     .HasForeignKey(p => p.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<FuncionarioModel>(entity =>
+            {
+                _ = entity.ToTable("Funcionario");
+                _ = entity.HasKey(p => new { p.UsuarioId, p.LojaId });
+                _ = entity.Property(p => p.UsuarioId).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasOne(p => p.Usuario)
+                    .WithMany(p => p.Funcionarios)
+                    .HasForeignKey(p => p.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Funcionarios)
+                    .HasForeignKey(p => p.LojaId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

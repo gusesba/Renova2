@@ -9,6 +9,7 @@ using Renova.Persistence;
 using Renova.Service.Services.Auth;
 using Renova.Service.Services.Cliente;
 using Renova.Service.Services.ConfigLoja;
+using Renova.Service.Services.Funcionario;
 using Renova.Service.Services.GastoLoja;
 using Renova.Service.Services.Loja;
 using Renova.Service.Services.Movimentacao;
@@ -50,6 +51,7 @@ builder.Services.AddDbContext<RenovaDbContext>(options =>
 });
 builder.Services.AddScoped<IRenovaService, RenovaService>();
 builder.Services.AddScoped<ILojaService, LojaService>();
+builder.Services.AddScoped<IFuncionarioService, FuncionarioService>();
 builder.Services.AddScoped<IConfigLojaService, ConfigLojaService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IGastoLojaService, GastoLojaService>();
