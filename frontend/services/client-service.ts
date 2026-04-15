@@ -128,3 +128,33 @@ export async function getClientDetail(
     status: response.status,
   };
 }
+
+export async function exportClientClosing(
+  token: string,
+  storeId: number,
+  filters: { dataInicial: string; dataFinal: string },
+): Promise<{ blob: Blob | null; fileName: string | null; ok: boolean; status: number }> {
+  const params = new URLSearchParams({
+    lojaId: String(storeId),
+    dataInicial: `${filters.dataInicial}T00:00:00`,
+    dataFinal: `${filters.dataFinal}T23:59:59.999`,
+  });
+
+  const response = await fetch(`${apiBaseUrl}/api/cliente/fechamento/exportar?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentDisposition = response.headers.get("content-disposition");
+  const fileNameMatch = contentDisposition?.match(/filename=\"?([^\";]+)\"?/i);
+  const fileName = fileNameMatch?.[1] ?? null;
+
+  return {
+    blob: response.ok ? await response.blob() : null,
+    fileName,
+    ok: response.ok,
+    status: response.status,
+  };
+}

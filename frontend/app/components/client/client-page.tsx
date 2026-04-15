@@ -11,6 +11,7 @@ import {
   extractClientFieldErrors,
   getStoredClientTableSettings,
   getClientApiMessage,
+  getPreviousMonthRange,
   initialClientFilters,
   initialClientFormValues,
   formatPhoneValue,
@@ -27,6 +28,7 @@ import { getAuthToken } from "@/lib/store";
 import {
   createClient,
   deleteClient,
+  exportClientClosing,
   getClients,
   updateClient,
 } from "@/services/client-service";
@@ -34,6 +36,7 @@ import { getUserOptions } from "@/services/user-service";
 import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 import { ClientCreateModal } from "./client-create-modal";
+import { ClientClosingModal } from "./client-closing-modal";
 import { ClientDeleteModal } from "./client-delete-modal";
 import { ClientEditModal } from "./client-edit-modal";
 import { ClientEmptyState } from "./client-empty-state";
@@ -51,6 +54,7 @@ export function ClientPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
   const [formValues, setFormValues] = useState<ClientFormValues>(initialClientFormValues);
   const [formErrors, setFormErrors] = useState<ClientFieldErrors>({});
   const [editFormValues, setEditFormValues] = useState<ClientFormValues>(initialClientFormValues);
@@ -70,6 +74,7 @@ export function ClientPage() {
     ...initialClientFilters,
     tamanhoPagina: getStoredClientTableSettings().tamanhoPagina,
   }));
+  const [closingFilters, setClosingFilters] = useState(() => getPreviousMonthRange());
   const [debouncedTextFilters, setDebouncedTextFilters] = useState(() => ({
     nome: initialClientFilters.nome,
     contato: initialClientFilters.contato,
@@ -225,6 +230,20 @@ export function ClientPage() {
     },
   });
 
+  const exportClosingMutation = useMutation({
+    mutationFn: async (payload: { dataInicial: string; dataFinal: string }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para exportar o fechamento.");
+      }
+
+      if (!selectedStoreId) {
+        throw new Error("Selecione uma loja antes de exportar o fechamento.");
+      }
+
+      return exportClientClosing(token, selectedStoreId, payload);
+    },
+  });
+
   function handleOpenModal() {
     setUserSearch("");
     setDebouncedUserSearch("");
@@ -257,6 +276,11 @@ export function ClientPage() {
 
   function handleOpenSettingsModal() {
     setIsSettingsModalOpen(true);
+  }
+
+  function handleOpenClosingModal() {
+    setClosingFilters(getPreviousMonthRange());
+    setIsClosingModalOpen(true);
   }
 
   function handleOpenDeleteModal(client: ClientListItem) {
@@ -304,6 +328,14 @@ export function ClientPage() {
 
   function handleCloseSettingsModal() {
     setIsSettingsModalOpen(false);
+  }
+
+  function handleCloseClosingModal() {
+    if (exportClosingMutation.isPending) {
+      return;
+    }
+
+    setIsClosingModalOpen(false);
   }
 
   function handleFilterChange(next: Partial<ClientFilters>) {
@@ -505,6 +537,47 @@ export function ClientPage() {
     }
   }
 
+  async function handleClosingSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!closingFilters.dataInicial || !closingFilters.dataFinal) {
+      toast.error("Informe a data inicial e a data final do fechamento.");
+      return;
+    }
+
+    if (closingFilters.dataFinal < closingFilters.dataInicial) {
+      toast.error("A data final deve ser maior ou igual a data inicial.");
+      return;
+    }
+
+    try {
+      const response = await exportClosingMutation.mutateAsync(closingFilters);
+
+      if (!response.ok || !response.blob) {
+        toast.error("Nao foi possivel exportar o fechamento dos clientes.");
+        return;
+      }
+
+      const blobUrl = window.URL.createObjectURL(response.blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = response.fileName ?? "fechamento-clientes.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      setIsClosingModalOpen(false);
+      toast.success("Fechamento exportado com sucesso.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
   const listResponse = clientsQuery.data;
   const hasStore = Boolean(selectedStoreId);
 
@@ -516,6 +589,7 @@ export function ClientPage() {
           hasStore={hasStore}
           isLoading={clientsQuery.isLoading || isLoadingStores}
           onAddClient={handleOpenModal}
+          onOpenClosing={handleOpenClosingModal}
           onOpenSettings={handleOpenSettingsModal}
           onChange={handleFilterChange}
         />
@@ -637,6 +711,20 @@ export function ClientPage() {
         isSubmitting={deleteClientMutation.isPending}
         onClose={handleCloseDeleteModal}
         onConfirm={handleDeleteConfirm}
+      />
+      <ClientClosingModal
+        dataInicial={closingFilters.dataInicial}
+        dataFinal={closingFilters.dataFinal}
+        isOpen={isClosingModalOpen}
+        isSubmitting={exportClosingMutation.isPending}
+        onChange={(field, value) =>
+          setClosingFilters((current) => ({
+            ...current,
+            [field]: value,
+          }))
+        }
+        onClose={handleCloseClosingModal}
+        onSubmit={handleClosingSubmit}
       />
       <ClientSettingsModal
         isOpen={isSettingsModalOpen}

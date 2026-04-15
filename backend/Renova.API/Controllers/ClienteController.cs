@@ -96,6 +96,53 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("fechamento/exportar")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ExportarFechamentoClientes(
+            [FromQuery] ExportarFechamentoClientesQuery query,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                byte[] arquivo = await _clienteService.ExportClosingAsync(
+                    query,
+                    new ObterClientesParametros
+                    {
+                        UsuarioId = usuarioId.Value
+                    },
+                    cancellationToken);
+
+                string dataInicial = query.DataInicial!.Value.ToString("yyyyMMdd");
+                string dataFinal = query.DataFinal!.Value.ToString("yyyyMMdd");
+
+                return File(
+                    arquivo,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"fechamento-clientes-{dataInicial}-{dataFinal}.xlsx");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ClienteDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
