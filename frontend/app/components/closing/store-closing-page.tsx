@@ -48,17 +48,47 @@ function SummaryCard({
 }) {
   const toneClass =
     tone === "positive"
-      ? "border-emerald-200 bg-emerald-50/80"
+      ? "border-emerald-300 bg-[linear-gradient(135deg,rgba(16,185,129,0.18),rgba(236,253,245,0.95))] shadow-[0_18px_32px_rgba(16,185,129,0.14)]"
       : tone === "warning"
-        ? "border-amber-200 bg-amber-50/80"
+        ? "border-rose-300 bg-[linear-gradient(135deg,rgba(244,63,94,0.18),rgba(255,241,242,0.95))] shadow-[0_18px_32px_rgba(244,63,94,0.14)]"
         : tone === "accent"
-          ? "border-violet-200 bg-violet-50/80"
-          : "border-slate-200 bg-slate-50/80";
+          ? "border-violet-300 bg-[linear-gradient(135deg,rgba(139,92,246,0.18),rgba(245,243,255,0.96))] shadow-[0_18px_32px_rgba(139,92,246,0.14)]"
+          : "border-slate-200 bg-slate-50/80 shadow-[0_12px_30px_rgba(15,23,42,0.04)]";
+
+  const labelClass =
+    tone === "positive"
+      ? "text-emerald-900/72"
+      : tone === "warning"
+        ? "text-rose-900/72"
+        : tone === "accent"
+          ? "text-violet-900/72"
+          : "text-[var(--muted)]";
+
+  const valueClass =
+    tone === "positive"
+      ? "text-emerald-950"
+      : tone === "warning"
+        ? "text-rose-950"
+        : tone === "accent"
+          ? "text-violet-950"
+          : "text-[var(--foreground)]";
+
+  const chipClass =
+    tone === "positive"
+      ? "bg-emerald-600"
+      : tone === "warning"
+        ? "bg-rose-600"
+        : tone === "accent"
+          ? "bg-violet-600"
+          : "bg-slate-500";
 
   return (
-    <article className={`rounded-[24px] border p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)] ${toneClass}`}>
-      <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground)]">{value}</p>
+    <article className={`rounded-[24px] border p-5 ${toneClass}`}>
+      <div className="flex items-center gap-3">
+        <span className={`h-3 w-3 rounded-full ${chipClass}`} aria-hidden="true" />
+        <p className={`text-sm font-semibold uppercase tracking-[0.14em] ${labelClass}`}>{label}</p>
+      </div>
+      <p className={`mt-4 text-3xl font-semibold tracking-tight ${valueClass}`}>{value}</p>
     </article>
   );
 }
@@ -371,7 +401,7 @@ function MonthlySummaryTable({ months }: { months: StoreClosingMonthItem[] }) {
 export function StoreClosingPage() {
   const { isLoadingStores, selectedStoreId } = useStoreContext();
   const [referenceMonth, setReferenceMonth] = useState(() => getCurrentMonthInputValue());
-  const [viewMode, setViewMode] = useState<"tabela" | "grafico">("tabela");
+  const [viewMode, setViewMode] = useState<"tabela" | "grafico">("grafico");
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const closingQuery = useQuery({
@@ -443,21 +473,33 @@ export function StoreClosingPage() {
           />
         ) : data ? (
           <div className="mt-8 space-y-8">
-            <div className="rounded-[28px] border border-[var(--border)] bg-[linear-gradient(135deg,rgba(15,23,42,0.04),rgba(148,163,184,0.03))] p-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <p className="text-sm text-[var(--muted)]">
-                  Referencia selecionada:{" "}
-                  <span className="font-semibold text-[var(--foreground)]">
-                    {formatClosingMonthLabel(referenceMonth)}
-                  </span>
-                </p>
-                <div className="inline-flex w-fit rounded-2xl border border-[var(--border)] bg-white p-1 shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,#fffaf5_0%,#ffffff_38%,#f8fafc_100%)] p-6 shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white/85 px-5 py-5 shadow-[0_16px_30px_rgba(15,23,42,0.05)]">
+                  <div className="absolute -left-5 top-0 h-20 w-20 rounded-full bg-amber-200/50 blur-2xl" />
+                  <div className="absolute right-0 top-0 h-16 w-16 rounded-full bg-violet-200/40 blur-2xl" />
+                  <div className="relative flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#f97316,#ec4899)] text-base font-bold text-white shadow-[0_16px_28px_rgba(249,115,22,0.28)]">
+                      R
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                        Referencia selecionada
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                        {formatClosingMonthLabel(referenceMonth)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="inline-flex w-fit rounded-[20px] border border-slate-200 bg-white/90 p-1.5 shadow-[0_14px_24px_rgba(15,23,42,0.08)]">
                   <button
                     type="button"
                     onClick={() => setViewMode("tabela")}
-                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
                       viewMode === "tabela"
-                        ? "bg-[var(--foreground)] text-white"
+                        ? "bg-[linear-gradient(135deg,#0f172a,#334155)] text-white shadow-[0_12px_20px_rgba(15,23,42,0.18)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     }`}
                   >
@@ -466,9 +508,9 @@ export function StoreClosingPage() {
                   <button
                     type="button"
                     onClick={() => setViewMode("grafico")}
-                    className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                    className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
                       viewMode === "grafico"
-                        ? "bg-[var(--foreground)] text-white"
+                        ? "bg-[linear-gradient(135deg,#0f172a,#334155)] text-white shadow-[0_12px_20px_rgba(15,23,42,0.18)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     }`}
                   >
@@ -476,7 +518,8 @@ export function StoreClosingPage() {
                   </button>
                 </div>
               </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <SummaryCard
                   label="Entradas"
                   value={formatCurrency(data.valorRecebidoClientes)}
