@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -7,13 +8,15 @@ using Renova.Service.Commands.Produto;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Produto;
 using Renova.Service.Queries.Produto;
+using Renova.Service.Services.Acesso;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Produto
 {
-    public class ProdutoService(RenovaDbContext context) : IProdutoService
+    public class ProdutoService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IProdutoService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<ProdutoEstoqueModel, int>>)(produto => produto.Id),
@@ -40,6 +43,7 @@ namespace Renova.Service.Services.Produto
 
             string descricaoNormalizada = request.Descricao.Trim();
 
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosAdicionar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
@@ -126,6 +130,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
+            await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosEditar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
@@ -195,7 +200,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosExcluir, cancellationToken);
 
             if (await ProdutoPossuiRelacionamentosAtivosAsync(produto.Id, cancellationToken))
             {
@@ -293,7 +298,7 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizar, cancellationToken);
 
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
                 .Where(produto => produto.LojaId == request.LojaId.Value);
@@ -406,7 +411,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(item => item.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizarItem, cancellationToken);
 
             return new ProdutoBuscaDto
             {
@@ -437,6 +442,7 @@ namespace Renova.Service.Services.Produto
             ObterProdutosEmprestadosClienteParametros parametros,
             CancellationToken cancellationToken = default)
         {
+            await _authorizationService.EnsurePermissionAsync(parametros.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosEmprestadosVisualizar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
@@ -502,7 +508,7 @@ namespace Renova.Service.Services.Produto
         {
             string valorNormalizado = request.Valor.Trim();
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, ResolverPermissaoAuxiliarCriacao(nomeEntidade), cancellationToken);
 
             bool valorJaExiste = await dbSet.AnyAsync(
                 entity => EF.Property<int>(entity, "LojaId") == request.LojaId
@@ -539,7 +545,7 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosAuxiliaresVisualizar, cancellationToken);
 
             IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == request.LojaId.Value);
 
@@ -607,6 +613,18 @@ namespace Renova.Service.Services.Produto
         {
             return _context.MovimentacoesProdutos
                 .AnyAsync(movimentacaoProduto => movimentacaoProduto.ProdutoId == produtoId, cancellationToken);
+        }
+
+        private static string ResolverPermissaoAuxiliarCriacao(string nomeEntidade)
+        {
+            return nomeEntidade switch
+            {
+                "Produto" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarReferencia,
+                "Marca" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarMarca,
+                "Tamanho" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarTamanho,
+                "Cor" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarCor,
+                _ => throw new ArgumentOutOfRangeException(nameof(nomeEntidade), "Tipo auxiliar nao suportado.")
+            };
         }
 
         private static ProdutoDto MapearProdutoDto(ProdutoEstoqueModel produto)

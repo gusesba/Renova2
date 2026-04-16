@@ -10,6 +10,7 @@ type ProductFiltersBarProps = {
   filters: ProductFilters;
   hasStore: boolean;
   isLoading: boolean;
+  canAddProduct: boolean;
   onAddProduct: () => void;
   onOpenSettings: () => void;
   onChange: (next: Partial<ProductFilters>) => void;
@@ -128,6 +129,7 @@ export function ProductFiltersBar({
   filters,
   hasStore,
   isLoading,
+  canAddProduct,
   onAddProduct,
   onOpenSettings,
   onChange,
@@ -153,14 +155,16 @@ export function ProductFiltersBar({
           >
             <GearIcon />
           </button>
-          <button
-            type="button"
-            disabled={!hasStore || isLoading}
-            onClick={onAddProduct}
-            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Novo produto
-          </button>
+          {canAddProduct ? (
+            <button
+              type="button"
+              disabled={!hasStore || isLoading}
+              onClick={onAddProduct}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Novo produto
+            </button>
+          ) : null}
         </div>
       </div>
 

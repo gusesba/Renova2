@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -9,12 +10,14 @@ using Renova.Service.Commands.GastoLoja;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.GastoLoja;
 using Renova.Service.Queries.GastoLoja;
+using Renova.Service.Services.Acesso;
 
 namespace Renova.Service.Services.GastoLoja
 {
-    public class GastoLojaService(RenovaDbContext context) : IGastoLojaService
+    public class GastoLojaService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IGastoLojaService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<GastoLojaModel, int>>)(gasto => gasto.Id),
@@ -34,7 +37,7 @@ namespace Renova.Service.Services.GastoLoja
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.GastosLojaVisualizar, cancellationToken);
 
             IQueryable<GastoLojaModel> query = _context.GastosLoja
                 .Where(gasto => gasto.LojaId == request.LojaId.Value);
@@ -109,7 +112,7 @@ namespace Renova.Service.Services.GastoLoja
                 throw new ArgumentException("Descricao do gasto da loja deve ter no maximo 500 caracteres.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.GastosLojaAdicionar, cancellationToken);
 
             GastoLojaModel gasto = new()
             {

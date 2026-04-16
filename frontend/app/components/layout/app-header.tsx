@@ -6,6 +6,7 @@ import { useStoreContext } from "@/app/dashboard/store-context";
 import { ProfileMenu } from "@/app/components/layout/profile-menu";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
 import { Select } from "@/app/components/ui/select";
+import { permissions } from "@/lib/access";
 import { toast } from "sonner";
 
 function SearchIcon() {
@@ -44,8 +45,17 @@ type AppHeaderProps = {
 
 export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
-  const { currentUser, isLoadingStores, selectedStore, selectedStoreId, setSelectedStoreId, stores } =
+  const {
+    currentUser,
+    hasPermission,
+    isLoadingStores,
+    selectedStore,
+    selectedStoreId,
+    setSelectedStoreId,
+    stores,
+  } =
     useStoreContext();
+  const canEditStoreConfig = hasPermission(permissions.configLojaEditar);
 
   const initials =
     currentUser?.nome
@@ -116,6 +126,11 @@ export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
             onOpenSettings={() => {
               if (!selectedStoreId) {
                 toast.error("Selecione uma loja antes de abrir as configuracoes.");
+                return;
+              }
+
+              if (!canEditStoreConfig) {
+                toast.error("Voce nao tem permissao para editar as configuracoes da loja.");
                 return;
               }
 

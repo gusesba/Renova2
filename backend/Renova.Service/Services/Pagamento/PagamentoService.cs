@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -7,13 +8,15 @@ using Renova.Service.Commands.Pagamento;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Pagamento;
 using Renova.Service.Queries.Pagamento;
+using Renova.Service.Services.Acesso;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Pagamento
 {
-    public class PagamentoService(RenovaDbContext context) : IPagamentoService
+    public class PagamentoService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IPagamentoService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<PagamentoModel, int>>)(pagamento => pagamento.Id),
@@ -44,7 +47,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosVisualizar, cancellationToken);
 
             IQueryable<PagamentoModel> query = _context.Pagamentos
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
@@ -139,7 +142,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosFechamentoVisualizar, cancellationToken);
 
             DateTime dataReferencia = request.DataReferencia.HasValue
                 ? NormalizarDateTimeParaUtc(request.DataReferencia.Value)
@@ -266,7 +269,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosCreditoVisualizar, cancellationToken);
 
             IQueryable<PagamentoCreditoModel> query = _context.PagamentosCredito
                 .Include(pagamento => pagamento.ConfigLojaFormaPagamento)
@@ -326,7 +329,7 @@ namespace Renova.Service.Services.Pagamento
             int usuarioId,
             CancellationToken cancellationToken = default)
         {
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, usuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(lojaId, usuarioId, FuncionalidadeCatalogo.PagamentosPendenciasVisualizar, cancellationToken);
 
             return await _context.Clientes
                 .Where(cliente => cliente.LojaId == lojaId
@@ -484,6 +487,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Descricao do pagamento deve ter no maximo 500 caracteres.", nameof(request));
             }
 
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosManuaisAdicionar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
@@ -554,6 +558,13 @@ namespace Renova.Service.Services.Pagamento
 
             DateTime dataPagamentoUtc = NormalizarDateTimeParaUtc(request.Data);
 
+            await _authorizationService.EnsurePermissionAsync(
+                request.LojaId,
+                parametros.UsuarioId,
+                request.Tipo == TipoPagamentoCredito.AdicionarCredito
+                    ? FuncionalidadeCatalogo.PagamentosCreditoAdicionar
+                    : FuncionalidadeCatalogo.PagamentosCreditoResgatar,
+                cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
@@ -617,7 +628,7 @@ namespace Renova.Service.Services.Pagamento
                 throw new ArgumentException("Data limite para atualizacao das pendencias e obrigatoria.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosPendenciasAtualizar, cancellationToken);
 
             DateTime dataLimite = NormalizarDataLimiteParaFimDoDiaUtc(request.Data);
             List<PagamentoModel> pagamentosPendentes = await _context.Pagamentos

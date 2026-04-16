@@ -6,6 +6,8 @@ type ClientsTableProps = {
   clients: ClientListItem[];
   visibleFields: ClientVisibleField[];
   getClientDetailsHref: (client: ClientListItem) => string;
+  canEditClient: boolean;
+  canDeleteClient: boolean;
   onEditClient: (client: ClientListItem) => void;
   onDeleteClient: (client: ClientListItem) => void;
 };
@@ -87,6 +89,8 @@ export function ClientsTable({
   clients,
   visibleFields,
   getClientDetailsHref,
+  canEditClient,
+  canDeleteClient,
   onEditClient,
   onDeleteClient,
 }: ClientsTableProps) {
@@ -179,24 +183,28 @@ export function ClientsTable({
                     >
                       <EyeIcon />
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => onEditClient(client)}
-                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
-                      aria-label={`Editar cliente ${client.nome}`}
-                      title={`Editar cliente ${client.nome}`}
-                    >
-                      <EditIcon />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteClient(client)}
-                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
-                      aria-label={`Excluir cliente ${client.nome}`}
-                      title={`Excluir cliente ${client.nome}`}
-                    >
-                      <DeleteIcon />
-                    </button>
+                    {canEditClient ? (
+                      <button
+                        type="button"
+                        onClick={() => onEditClient(client)}
+                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                        aria-label={`Editar cliente ${client.nome}`}
+                        title={`Editar cliente ${client.nome}`}
+                      >
+                        <EditIcon />
+                      </button>
+                    ) : null}
+                    {canDeleteClient ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteClient(client)}
+                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                        aria-label={`Excluir cliente ${client.nome}`}
+                        title={`Excluir cliente ${client.nome}`}
+                      >
+                        <DeleteIcon />
+                      </button>
+                    ) : null}
                   </div>
                 </ClientTableCell>
               </tr>

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { permissions } from "@/lib/access";
 import {
   asClientListResponse,
   asClientResponse,
@@ -49,7 +50,11 @@ import { useStoreContext } from "@/app/dashboard/store-context";
 
 export function ClientPage() {
   const queryClient = useQueryClient();
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const canAddClient = hasPermission(permissions.clientesAdicionar);
+  const canEditClient = hasPermission(permissions.clientesEditar);
+  const canDeleteClient = hasPermission(permissions.clientesExcluir);
+  const canExportClosing = hasPermission(permissions.clientesExportarFechamento);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -585,6 +590,8 @@ export function ClientPage() {
     <section className="space-y-6">
       <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
         <ClientFiltersBar
+          canAddClient={canAddClient}
+          canExportClosing={canExportClosing}
           filters={filters}
           hasStore={hasStore}
           isLoading={clientsQuery.isLoading || isLoadingStores}
@@ -616,6 +623,8 @@ export function ClientPage() {
         ) : listResponse && listResponse.itens.length > 0 ? (
           <>
             <ClientsTable
+              canDeleteClient={canDeleteClient}
+              canEditClient={canEditClient}
               clients={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
               getClientDetailsHref={(client) => `/dashboard/cliente/${client.id}`}

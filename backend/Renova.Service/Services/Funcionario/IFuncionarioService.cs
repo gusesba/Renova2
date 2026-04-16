@@ -13,6 +13,10 @@ namespace Renova.Service.Services.Funcionario
         Task<IReadOnlyList<FuncionarioDto>> GetAllAsync(
             ObterFuncionariosParametros parametros,
             CancellationToken cancellationToken = default);
+        Task<FuncionarioDto> UpdateCargoAsync(
+            AtualizarFuncionarioCargoCommand request,
+            ExcluirFuncionarioParametros parametros,
+            CancellationToken cancellationToken = default);
         Task DeleteAsync(
             ExcluirFuncionarioParametros parametros,
             CancellationToken cancellationToken = default);

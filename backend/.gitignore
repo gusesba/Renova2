@@ -541,3 +541,5 @@ Renova.Backend/Renova.Backend/Renova.API/obj/
 Renova.Backend/Renova.Backend/Renova.Domain/obj/
 Renova.Backend/Renova.Backend/Renova.Persistence/obj/
 Renova.Backend/Renova.Backend/Renova.Service/obj/
+
+.dotnet/

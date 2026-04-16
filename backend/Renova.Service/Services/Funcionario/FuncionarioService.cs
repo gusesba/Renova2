@@ -3,21 +3,30 @@ using Microsoft.EntityFrameworkCore;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
+using Renova.Domain.Access;
 using Renova.Service.Commands.Funcionario;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Funcionario;
+using Renova.Service.Services.Acesso;
 
 namespace Renova.Service.Services.Funcionario
 {
-    public class FuncionarioService(RenovaDbContext context) : IFuncionarioService
+    public class FuncionarioService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IFuncionarioService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
 
         public async Task<FuncionarioDto> CreateAsync(
             CriarFuncionarioCommand request,
             CriarFuncionarioParametros parametros,
             CancellationToken cancellationToken = default)
         {
+            await _authorizationService.EnsurePermissionAsync(
+                parametros.LojaId,
+                parametros.UsuarioAutenticadoId,
+                FuncionalidadeCatalogo.FuncionariosAdicionar,
+                cancellationToken);
+
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
                 parametros.LojaId,
                 parametros.UsuarioAutenticadoId,
@@ -27,6 +36,10 @@ namespace Renova.Service.Services.Funcionario
             UsuarioModel usuario = await _context.Usuarios
                 .SingleOrDefaultAsync(usuarioAtual => usuarioAtual.Id == request.UsuarioId, cancellationToken)
                 ?? throw new KeyNotFoundException("Usuario informado nao foi encontrado.");
+
+            CargoModel cargo = await _context.Cargos
+                .SingleOrDefaultAsync(item => item.Id == request.CargoId && item.LojaId == loja.Id, cancellationToken)
+                ?? throw new ArgumentException("Cargo informado nao foi encontrado para a loja.");
 
             bool funcionarioJaExiste = await _context.Funcionarios
                 .AnyAsync(funcionario =>
@@ -42,27 +55,28 @@ namespace Renova.Service.Services.Funcionario
             FuncionarioModel funcionario = new()
             {
                 LojaId = loja.Id,
-                UsuarioId = usuario.Id
+                UsuarioId = usuario.Id,
+                CargoId = cargo.Id
             };
 
             _ = await _context.Funcionarios.AddAsync(funcionario, cancellationToken);
             _ = await _context.SaveChangesAsync(cancellationToken);
 
-            return CriarDto(usuario, loja.Id);
+            return CriarDto(usuario, loja.Id, cargo);
         }
 
         public async Task<IReadOnlyList<FuncionarioDto>> GetAllAsync(
             ObterFuncionariosParametros parametros,
             CancellationToken cancellationToken = default)
         {
-            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
+            await _authorizationService.EnsurePermissionAsync(
                 parametros.LojaId,
                 parametros.UsuarioAutenticadoId,
-                cancellationToken,
-                lancarQuandoLojaNaoExistir: true);
+                FuncionalidadeCatalogo.FuncionariosVisualizar,
+                cancellationToken);
 
             return (IReadOnlyList<FuncionarioDto>)await _context.Funcionarios
-                .Where(funcionario => funcionario.LojaId == loja.Id)
+                .Where(funcionario => funcionario.LojaId == parametros.LojaId)
                 .OrderBy(funcionario => funcionario.Usuario!.Nome)
                 .ThenBy(funcionario => funcionario.UsuarioId)
                 .Select(funcionario => new FuncionarioDto
@@ -70,24 +84,54 @@ namespace Renova.Service.Services.Funcionario
                     UsuarioId = funcionario.UsuarioId,
                     Nome = funcionario.Usuario!.Nome,
                     Email = funcionario.Usuario.Email,
-                    LojaId = funcionario.LojaId
+                    LojaId = funcionario.LojaId,
+                    CargoId = funcionario.CargoId,
+                    CargoNome = funcionario.Cargo!.Nome
                 })
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<FuncionarioDto> UpdateCargoAsync(
+            AtualizarFuncionarioCargoCommand request,
+            ExcluirFuncionarioParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            await _authorizationService.EnsurePermissionAsync(
+                parametros.LojaId,
+                parametros.UsuarioAutenticadoId,
+                FuncionalidadeCatalogo.FuncionariosEditar,
+                cancellationToken);
+
+            FuncionarioModel funcionario = await _context.Funcionarios
+                .Include(item => item.Usuario)
+                .SingleOrDefaultAsync(
+                    item => item.LojaId == parametros.LojaId && item.UsuarioId == parametros.UsuarioId,
+                    cancellationToken)
+                ?? throw new KeyNotFoundException("Funcionario informado nao foi encontrado para a loja.");
+
+            CargoModel cargo = await _context.Cargos
+                .SingleOrDefaultAsync(item => item.Id == request.CargoId && item.LojaId == parametros.LojaId, cancellationToken)
+                ?? throw new ArgumentException("Cargo informado nao foi encontrado para a loja.");
+
+            funcionario.CargoId = cargo.Id;
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            return CriarDto(funcionario.Usuario!, funcionario.LojaId, cargo);
         }
 
         public async Task DeleteAsync(
             ExcluirFuncionarioParametros parametros,
             CancellationToken cancellationToken = default)
         {
-            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
+            await _authorizationService.EnsurePermissionAsync(
                 parametros.LojaId,
                 parametros.UsuarioAutenticadoId,
-                cancellationToken,
-                lancarQuandoLojaNaoExistir: true);
+                FuncionalidadeCatalogo.FuncionariosRemover,
+                cancellationToken);
 
             FuncionarioModel funcionario = await _context.Funcionarios
                 .SingleOrDefaultAsync(funcionario =>
-                    funcionario.LojaId == loja.Id &&
+                    funcionario.LojaId == parametros.LojaId &&
                     funcionario.UsuarioId == parametros.UsuarioId,
                     cancellationToken)
                 ?? throw new KeyNotFoundException("Funcionario informado nao foi encontrado para a loja.");
@@ -96,14 +140,16 @@ namespace Renova.Service.Services.Funcionario
             _ = await _context.SaveChangesAsync(cancellationToken);
         }
 
-        private static FuncionarioDto CriarDto(UsuarioModel usuario, int lojaId)
+        private static FuncionarioDto CriarDto(UsuarioModel usuario, int lojaId, CargoModel cargo)
         {
             return new FuncionarioDto
             {
                 UsuarioId = usuario.Id,
                 Nome = usuario.Nome,
                 Email = usuario.Email,
-                LojaId = lojaId
+                LojaId = lojaId,
+                CargoId = cargo.Id,
+                CargoNome = cargo.Nome
             };
         }
     }

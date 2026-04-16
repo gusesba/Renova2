@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -8,13 +9,15 @@ using Renova.Service.Commands.Cliente;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Cliente;
 using Renova.Service.Queries.Cliente;
+using Renova.Service.Services.Acesso;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Cliente
 {
-    public class ClienteService(RenovaDbContext context) : IClienteService
+    public class ClienteService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IClienteService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<ClienteModel, int>>)(cliente => cliente.Id),
@@ -45,7 +48,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("Data final deve ser maior ou igual a data inicial.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesExportarFechamento, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .SingleOrDefaultAsync(item => item.LojaId == request.LojaId.Value, cancellationToken)
@@ -199,6 +202,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("Contato deve conter 10 ou 11 numeros.", nameof(request));
             }
 
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesAdicionar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (request.UserId.HasValue)
@@ -263,6 +267,7 @@ namespace Renova.Service.Services.Cliente
                 throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
             }
 
+            await _authorizationService.EnsurePermissionAsync(cliente.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesEditar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(cliente.LojaId, parametros.UsuarioId, cancellationToken);
 
             if (request.UserId.HasValue)
@@ -318,7 +323,7 @@ namespace Renova.Service.Services.Cliente
                 throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(cliente.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(cliente.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesExcluir, cancellationToken);
 
             if (await ClientePossuiProdutosVinculadosAsync(cliente.Id, cancellationToken))
             {
@@ -351,7 +356,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesVisualizar, cancellationToken);
 
             IQueryable<ClienteModel> query = _context.Clientes
                 .Where(cliente => cliente.LojaId == request.LojaId.Value);
@@ -397,6 +402,7 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesVisualizarDetalhe, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes

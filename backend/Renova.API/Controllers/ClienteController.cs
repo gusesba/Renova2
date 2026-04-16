@@ -48,7 +48,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
 
@@ -92,7 +92,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
 
@@ -139,7 +139,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
 
@@ -179,7 +179,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
 
@@ -225,7 +225,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
 
@@ -265,7 +265,7 @@ namespace Renova.API.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { mensagem = ex.Message });
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
     }

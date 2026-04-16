@@ -1,17 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.Loja;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Loja;
+using Renova.Service.Services.Acesso;
 
 namespace Renova.Service.Services.Loja
 {
-    public class LojaService(RenovaDbContext context) : ILojaService
+    public class LojaService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : ILojaService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private const string MensagemLojaComRegistrosAtivos = "Nao e possivel excluir loja com registros ativos";
 
         public async Task<LojaDto> CreateAsync(CriarLojaCommand request, CriarLojaParametros parametros, CancellationToken cancellationToken = default)
@@ -60,6 +63,8 @@ namespace Renova.Service.Services.Loja
                 cancellationToken,
                 lancarQuandoLojaNaoExistir: true);
 
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.LojasEditar, cancellationToken);
+
             bool lojaJaExiste = await _context.Lojas
                 .AnyAsync(lojaAtual =>
                     lojaAtual.UsuarioId == loja.UsuarioId &&
@@ -90,6 +95,8 @@ namespace Renova.Service.Services.Loja
                 parametros.UsuarioId,
                 cancellationToken,
                 lancarQuandoLojaNaoExistir: true);
+
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.LojasExcluir, cancellationToken);
 
             if (await LojaPossuiRegistrosAtivosAsync(loja.Id, cancellationToken))
             {

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { MovementEmptyState } from "@/app/components/movement/movement-empty-state";
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import {
   asPaymentListResponse,
   defaultPaymentTableSettings,
@@ -26,7 +27,7 @@ import { PaymentSettingsModal } from "./payment-settings-modal";
 import { PaymentsTable } from "./payments-table";
 
 export function PaymentListPage() {
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
@@ -39,6 +40,7 @@ export function PaymentListPage() {
   }));
   const [debouncedCliente, setDebouncedCliente] = useState(initialPaymentFilters.cliente);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const canCreatePayment = hasPermission(permissions.pagamentosManuaisAdicionar);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -101,6 +103,7 @@ export function PaymentListPage() {
     <section className="space-y-6">
       <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
         <PaymentFiltersBar
+          canCreatePayment={canCreatePayment}
           filters={filters}
           isLoading={paymentsQuery.isLoading || isLoadingStores}
           onOpenCreateModal={() => setIsCreateModalOpen(true)}
@@ -177,15 +180,17 @@ export function PaymentListPage() {
         }}
       />
 
-      <PaymentCreateModal
-        isOpen={isCreateModalOpen}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={async () => {
-          await paymentsQuery.refetch();
-        }}
-      />
+      {canCreatePayment ? (
+        <PaymentCreateModal
+          isOpen={isCreateModalOpen}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={async () => {
+            await paymentsQuery.refetch();
+          }}
+        />
+      ) : null}
     </section>
   );
 }

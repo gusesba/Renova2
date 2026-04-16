@@ -5,6 +5,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import { getAuthToken } from "@/lib/store";
 import {
   asSolicitacaoListResponse,
@@ -26,7 +27,7 @@ import { SolicitacaoSettingsModal } from "./solicitacao-settings-modal";
 import { SolicitacoesTable } from "./solicitacoes-table";
 
 export function SolicitacaoPage() {
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [tableSettings, setTableSettings] = useState<SolicitacaoTableSettings>(() =>
@@ -45,6 +46,7 @@ export function SolicitacaoPage() {
     cliente: initialSolicitacaoFilters.cliente,
   }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const canAddSolicitacao = hasPermission(permissions.solicitacoesAdicionar);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -107,6 +109,7 @@ export function SolicitacaoPage() {
     <section className="space-y-6">
       <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
         <SolicitacaoFiltersBar
+          canAddSolicitacao={canAddSolicitacao}
           filters={filters}
           hasStore={hasStore}
           isLoading={solicitacoesQuery.isLoading || isLoadingStores}
@@ -157,19 +160,21 @@ export function SolicitacaoPage() {
         )}
       </div>
 
-      <SolicitacaoCreateModal
-        isOpen={isCreateModalOpen}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSolicitacaoCreated={(solicitacao) => {
-          if (solicitacao.produtosCompativeis.length > 0) {
-            toast.success(
-              `${solicitacao.produtosCompativeis.length} produto(s) compativel(is) encontrado(s).`,
-            );
-          }
-        }}
-      />
+      {canAddSolicitacao ? (
+        <SolicitacaoCreateModal
+          isOpen={isCreateModalOpen}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSolicitacaoCreated={(solicitacao) => {
+            if (solicitacao.produtosCompativeis.length > 0) {
+              toast.success(
+                `${solicitacao.produtosCompativeis.length} produto(s) compativel(is) encontrado(s).`,
+              );
+            }
+          }}
+        />
+      ) : null}
       <SolicitacaoSettingsModal
         isOpen={isSettingsModalOpen}
         settings={tableSettings}

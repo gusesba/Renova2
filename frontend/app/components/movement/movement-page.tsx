@@ -5,6 +5,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
 import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-credit-auto-paid-modal";
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
@@ -271,7 +272,7 @@ function TypeSelect({
 
 export function MovementPage() {
   const queryClient = useQueryClient();
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const draftCounterRef = useRef(2);
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
@@ -284,6 +285,11 @@ export function MovementPage() {
   const [overdueOwnerReturnPrompt, setOverdueOwnerReturnPrompt] =
     useState<OverdueOwnerReturnPrompt | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const canCreateMovement = hasPermission(permissions.movimentacoesAdicionar);
+  const canHandleCredit =
+    hasPermission(permissions.pagamentosCreditoAdicionar) ||
+    hasPermission(permissions.pagamentosCreditoResgatar);
+  const canEditStoreConfig = hasPermission(permissions.configLojaEditar);
 
   const activeDraft = useMemo(
     () => drafts.find((draft) => draft.id === activeDraftId) ?? drafts[0] ?? null,
@@ -924,13 +930,15 @@ export function MovementPage() {
                   })}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => addDraft()}
-                  className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
-                >
-                  Nova aba de movimentacao
-                </button>
+                {canCreateMovement ? (
+                  <button
+                    type="button"
+                    onClick={() => addDraft()}
+                    className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
+                  >
+                    Nova aba de movimentacao
+                  </button>
+                ) : null}
               </div>
 
               {activeDraft ? (
@@ -1025,14 +1033,16 @@ export function MovementPage() {
                             }
                           />
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleAddProduct(activeDraft)}
-                          disabled={fetchProductMutation.isPending}
-                          className="mt-7 flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {fetchProductMutation.isPending ? "Buscando..." : "Buscar e adicionar"}
-                        </button>
+                        {canCreateMovement ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAddProduct(activeDraft)}
+                            disabled={fetchProductMutation.isPending}
+                            className="mt-7 flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {fetchProductMutation.isPending ? "Buscando..." : "Buscar e adicionar"}
+                          </button>
+                        ) : null}
                       </div>
 
                       {activeDraft.suggestion ? (
@@ -1089,14 +1099,16 @@ export function MovementPage() {
                         >
                           Limpar aba
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSubmit(activeDraft)}
-                          disabled={createMovementMutation.isPending}
-                          className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {createMovementMutation.isPending ? "Salvando..." : "Salvar movimentacao"}
-                        </button>
+                        {canCreateMovement ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSubmit(activeDraft)}
+                            disabled={createMovementMutation.isPending}
+                            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {createMovementMutation.isPending ? "Salvando..." : "Salvar movimentacao"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -1263,17 +1275,19 @@ export function MovementPage() {
         }}
       />
 
-      <PaymentCreditModal
-        client={paymentClient}
-        initialPaymentType={1}
-        isOpen={Boolean(paymentClient)}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setPaymentClient(null)}
-        onSuccess={async () => {
-          await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
-        }}
-      />
+      {canHandleCredit ? (
+        <PaymentCreditModal
+          client={paymentClient}
+          initialPaymentType={1}
+          isOpen={Boolean(paymentClient)}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setPaymentClient(null)}
+          onSuccess={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
+          }}
+        />
+      ) : null}
 
       <MovementCreditAutoPaidModal
         credit={creditAutoPaidPrompt}
@@ -1281,12 +1295,14 @@ export function MovementPage() {
         onClose={() => setCreditAutoPaidPrompt(null)}
       />
 
-      <StoreConfigModal
-        isOpen={isStoreConfigOpen}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setIsStoreConfigOpen(false)}
-      />
+      {canEditStoreConfig ? (
+        <StoreConfigModal
+          isOpen={isStoreConfigOpen}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setIsStoreConfigOpen(false)}
+        />
+      ) : null}
 
       <MovementOverdueOwnerReturnModal
         isOpen={Boolean(overdueOwnerReturnPrompt)}

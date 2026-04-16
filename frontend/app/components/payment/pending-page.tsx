@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ClientEmptyState } from "@/app/components/client/client-empty-state";
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import {
   asPendingClientsResponse,
   asUpdatePendingResponse,
@@ -34,10 +35,14 @@ function getCreditBadgeClass(value: number) {
 
 export function PendingPage() {
   const queryClient = useQueryClient();
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [dateValue, setDateValue] = useState(() => getPreviousMonthLastDateInputValue());
   const [selectedClient, setSelectedClient] = useState<PendingClientItem | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const canUpdatePending = hasPermission(permissions.pagamentosPendenciasAtualizar);
+  const canHandleCredit =
+    hasPermission(permissions.pagamentosCreditoAdicionar) ||
+    hasPermission(permissions.pagamentosCreditoResgatar);
 
   const pendingClientsQuery = useQuery({
     queryKey: ["pending-clients", token, selectedStoreId],
@@ -145,14 +150,16 @@ export function PendingPage() {
                 className="h-12 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 text-sm outline-none transition focus:border-[var(--primary)] focus:bg-white"
               />
             </label>
-            <button
-              type="button"
-              onClick={handleUpdatePending}
-              disabled={!hasStore || updatePendingMutation.isPending}
-              className="h-12 rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(106,92,255,0.22)] transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {updatePendingMutation.isPending ? "Atualizando..." : "Atualizar pendencias"}
-            </button>
+            {canUpdatePending ? (
+              <button
+                type="button"
+                onClick={handleUpdatePending}
+                disabled={!hasStore || updatePendingMutation.isPending}
+                className="h-12 rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(106,92,255,0.22)] transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updatePendingMutation.isPending ? "Atualizando..." : "Atualizar pendencias"}
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -229,13 +236,17 @@ export function PendingPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedClient(client)}
-                          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
-                        >
-                          Pagamento
-                        </button>
+                        {canHandleCredit ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedClient(client)}
+                            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
+                          >
+                            Pagamento
+                          </button>
+                        ) : (
+                          <span className="text-sm text-[var(--muted)]">Sem acoes</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -246,16 +257,18 @@ export function PendingPage() {
         )}
       </div>
 
-      <PaymentCreditModal
-        client={selectedClient}
-        isOpen={Boolean(selectedClient)}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setSelectedClient(null)}
-        onSuccess={async () => {
-          await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
-        }}
-      />
+      {canHandleCredit ? (
+        <PaymentCreditModal
+          client={selectedClient}
+          isOpen={Boolean(selectedClient)}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setSelectedClient(null)}
+          onSuccess={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
+          }}
+        />
+      ) : null}
     </section>
   );
 }

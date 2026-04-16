@@ -5,6 +5,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import { getAuthToken } from "@/lib/store";
 import {
   asProductListResponse,
@@ -32,7 +33,10 @@ import { ProductsTable } from "./products-table";
 
 export function ProductPage() {
   const queryClient = useQueryClient();
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const canAddProduct = hasPermission(permissions.produtosAdicionar);
+  const canEditProduct = hasPermission(permissions.produtosEditar);
+  const canDeleteProduct = hasPermission(permissions.produtosExcluir);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -211,6 +215,7 @@ export function ProductPage() {
     <section className="space-y-6">
       <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
         <ProductFiltersBar
+          canAddProduct={canAddProduct}
           filters={filters}
           hasStore={hasStore}
           isLoading={productsQuery.isLoading || isLoadingStores}
@@ -241,6 +246,8 @@ export function ProductPage() {
         ) : listResponse && listResponse.itens.length > 0 ? (
           <>
             <ProductsTable
+              canDeleteProduct={canDeleteProduct}
+              canEditProduct={canEditProduct}
               products={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
               onEditProduct={(product) => {
