@@ -1,0 +1,88 @@
+produtos.adicionar
+Depende fortemente de clientes.visualizar, porque o fornecedor é buscado como cliente no fluxo de cadastro de produto em product-create-modal.tsx (line 472).
+Também depende de produtos.auxiliares.visualizar, porque produto, marca, tamanho e cor são carregados como cadastros auxiliares na mesma tela.
+Depende opcionalmente de clientes.adicionar, porque a mesma tela abre ClientCreateModal para criar fornecedor inline em product-create-modal.tsx (line 1033).
+Depende opcionalmente de produtos.auxiliares.adicionar_referencia, produtos.auxiliares.adicionar_marca, produtos.auxiliares.adicionar_tamanho e produtos.auxiliares.adicionar_cor, porque esses itens podem ser criados durante o cadastro em product-create-modal.tsx (line 259).
+
+produtos.editar
+Tem a mesma dependência operacional de clientes.visualizar e produtos.auxiliares.visualizar, porque o fornecedor e os auxiliares continuam sendo consultados no formulário de edição.
+Se a edição permitir criar fornecedor ou auxiliares no meio do processo, as dependências opcionais são as mesmas do cadastro.
+
+solicitacoes.adicionar
+Depende de clientes.visualizar, porque a solicitação sempre escolhe um cliente via busca em solicitacao-create-modal.tsx (line 345).
+Depende de produtos.auxiliares.visualizar, porque produto, marca, tamanho e cor são escolhidos via cadastros auxiliares em solicitacao-create-modal.tsx (line 230).
+Não depende de produtos.adicionar, porque não cria produto real, só referencia o catálogo auxiliar.
+
+movimentacoes.adicionar
+É a funcionalidade mais dependente do sistema.
+Depende de clientes.visualizar, porque o cliente é buscado por autocomplete em movement-page.tsx (line 415).
+Depende de produtos.visualizar_item, porque a inclusão manual de item usa getProductById em movement-page.tsx (line 465).
+Depende de produtos.emprestados.visualizar, porque ao selecionar cliente o sistema tenta carregar produtos emprestados dele em movement-page.tsx (line 355). Esse é um ponto importante: operacionalmente a movimentação usa esse dado.
+Depende operacionalmente de config_loja.visualizar, porque a tela consulta configuração da loja para validar repasses em movement-page.tsx (line 439).
+Depende opcionalmente de pagamentos.credito.adicionar e/ou pagamentos.credito.resgatar, porque a tela abre o modal de crédito quando o fluxo exige tratamento financeiro em movement-page.tsx (line 1278).
+Depende opcionalmente de config_loja.editar, porque sem configuração válida a tela pode abrir ajuste de configuração para destravar o processo em movement-page.tsx (line 1298).
+
+movimentacoes.destinacao.executar
+Depende de movimentacoes.destinacao.visualizar, porque primeiro a tela precisa listar sugestões antes de executar.
+Depende de produtos.visualizar_item, porque aceita busca manual de produto por id em movement-destination-page.tsx (line 92).
+Depende operacionalmente de config_loja.visualizar, e opcionalmente de config_loja.editar, porque o fluxo abre configuração quando encontra bloqueio de repasse em movement-destination-page.tsx (line 215).
+
+pagamentos.manuais.adicionar
+Depende de clientes.visualizar, porque o pagamento manual busca cliente por autocomplete em payment-create-modal.tsx (line 117).
+Não depende de clientes.adicionar; hoje o fluxo não cria cliente inline nessa tela.
+
+pagamentos.credito.adicionar e pagamentos.credito.resgatar
+Dependem de config_loja.visualizar, porque o modal sempre carrega configuração da loja para calcular repasse e formas de pagamento em payment-credit-modal.tsx (line 91).
+No caso de resgate para fornecedor, a dependência de configuração é crítica, não só conveniente.
+Essas permissões também fazem mais sentido para cargos que já tenham pagamentos.pendencias.visualizar ou movimentacoes.adicionar, porque os pontos naturais de uso ficam nessas telas.
+
+pagamentos.pendencias.atualizar
+Depende funcionalmente de pagamentos.pendencias.visualizar, porque a ação de atualizar só faz sentido na tela de pendências.
+É recomendável combinar com pagamentos.credito.adicionar ou pagamentos.credito.resgatar, porque depois da atualização o operador costuma precisar agir sobre o crédito em pending-page.tsx (line 34).
+
+funcionarios.adicionar e funcionarios.editar
+Dependem de cargos.visualizar, porque para vincular ou trocar funcionário o sistema precisa listar cargos em access-control.tsx (line 106) e usar cargoId em access-control.tsx (line 216).
+Na prática:
+funcionarios.adicionar sem cargos.visualizar fica manco.
+funcionarios.editar sem cargos.visualizar também.
+
+cargos.adicionar e cargos.editar
+Dependem de cargos.visualizar, porque a tela carrega a lista de funcionalidades e cargos existentes via getRoleFunctionalities e getRoles em access-control.tsx (line 106).
+cargos.excluir também faz mais sentido com cargos.visualizar, porque a exclusão acontece na listagem.
+
+Se eu fosse transformar isso em regra de modelagem de cargos, eu adotaria estes pacotes mínimos:
+
+Operador de clientes
+clientes.visualizar, clientes.visualizar_detalhe
+Opcional: clientes.adicionar, clientes.editar, clientes.exportar_fechamento
+
+Operador de produtos
+Obrigatório junto: produtos.visualizar, produtos.visualizar_item, produtos.adicionar
+Recomendado junto: clientes.visualizar, produtos.auxiliares.visualizar
+Opcional avançado: clientes.adicionar, auxiliares de adicionar
+
+Operador de solicitações
+Obrigatório junto: solicitacoes.visualizar, solicitacoes.adicionar
+Recomendado junto: clientes.visualizar, produtos.auxiliares.visualizar
+
+Operador de movimentações
+Obrigatório junto: movimentacoes.visualizar, movimentacoes.adicionar
+Recomendado forte: clientes.visualizar, produtos.visualizar_item, produtos.emprestados.visualizar, config_loja.visualizar
+Opcional avançado: pagamentos.credito.adicionar, pagamentos.credito.resgatar, config_loja.editar
+
+Financeiro
+Obrigatório junto: pagamentos.visualizar, pagamentos.manuais.adicionar, pagamentos.pendencias.visualizar
+Recomendado junto: clientes.visualizar, config_loja.visualizar
+Opcional avançado: pagamentos.pendencias.atualizar, pagamentos.credito.visualizar, pagamentos.credito.adicionar, pagamentos.credito.resgatar, pagamentos.fechamento.visualizar
+
+Administrador de acesso
+Obrigatório junto: cargos.visualizar, funcionarios.visualizar
+Para operar de verdade: cargos.adicionar, cargos.editar, cargos.excluir, funcionarios.adicionar, funcionarios.editar, funcionarios.remover
+
+O ponto principal é este: as dependências mais fortes hoje são produtos -> clientes, movimentacoes -> clientes + produtos + config/pagamentos, solicitacoes -> clientes + auxiliares, pagamentos manuais -> clientes e funcionarios -> cargos.
+
+Se quiser, no próximo passo eu posso transformar essa análise em uma matriz pronta para cadastro de cargos, no formato:
+
+funcionalidade | depende de | nível da dependência | motivo
+
+ou já sugerir cargos padrão como Atendente, Estoquista, Financeiro, Gerente e Administrador.
