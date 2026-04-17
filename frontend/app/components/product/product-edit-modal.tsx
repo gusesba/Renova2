@@ -48,6 +48,7 @@ function getInitialProductFormValues(product: ProductListItem): ProductFormValue
   return {
     descricao: product.descricao,
     preco: String(product.preco),
+    quantidade: "1",
     entrada: toDateInputValue(product.entrada),
     situacao: String(product.situacao),
     consignado: product.consignado,
