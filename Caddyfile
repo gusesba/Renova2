@@ -1,0 +1,4 @@
+api.renovacuritiba.com.br {
+    encode gzip zstd
+    reverse_proxy api:8080
+}
