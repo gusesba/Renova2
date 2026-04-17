@@ -30,6 +30,7 @@ namespace Renova.Tests.Services.Auth.Cadastro
             JwtSettings jwtSettings = JwtTokenAssert.CreateTestingSettings();
             JwtTokenService jwtTokenService = new(Options.Create(jwtSettings));
             AuthService service = new(context, jwtTokenService);
+            DateTime emissaoMinima = DateTime.UtcNow;
 
             CadastroCommand command = new()
             {
@@ -39,6 +40,7 @@ namespace Renova.Tests.Services.Auth.Cadastro
             };
 
             UsuarioTokenDto resultado = await service.CreateAsync(command);
+            DateTime emissaoMaxima = DateTime.UtcNow;
             UsuarioModel salvoNoBanco = await context.Usuarios.SingleAsync();
             _ = JwtTokenAssert.Validate(resultado.Token, jwtSettings);
             JwtSecurityToken jwt = JwtTokenAssert.Read(resultado.Token);
@@ -47,6 +49,7 @@ namespace Renova.Tests.Services.Auth.Cadastro
             Assert.Equal("Maria da Silva", resultado.Usuario.Nome);
             Assert.Equal("maria@renova.com", resultado.Usuario.Email);
             Assert.Equal("maria@renova.com", jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value);
+            Assert.InRange(jwt.ValidTo, emissaoMinima.AddDays(7).AddSeconds(-1), emissaoMaxima.AddDays(7).AddSeconds(1));
             Assert.NotEqual(command.Senha, salvoNoBanco.SenhaHash);
             Assert.False(string.IsNullOrWhiteSpace(salvoNoBanco.SenhaHash));
         }

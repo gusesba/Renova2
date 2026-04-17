@@ -17,7 +17,7 @@ namespace Renova.Tests.Infrastructure
                 SecretKey = "renova-test-secret-key-com-tamanho-minimo-32",
                 Issuer = "Renova.Tests",
                 Audience = "Renova.Tests.Client",
-                ExpirationMinutes = 60
+                ExpirationMinutes = 10080
             };
         }
 
