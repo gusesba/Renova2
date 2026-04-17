@@ -87,6 +87,13 @@ builder.Services.AddSwaggerGen();
 
 WebApplication app = builder.Build();
 
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using IServiceScope scope = app.Services.CreateScope();
+    RenovaDbContext dbContext = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+    dbContext.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     _ = app.MapOpenApi();
