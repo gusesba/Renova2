@@ -1,6 +1,7 @@
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -94,11 +95,19 @@ if (!app.Environment.IsEnvironment("Testing"))
     dbContext.Database.Migrate();
 }
 
+ForwardedHeadersOptions forwardedHeadersOptions = new()
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+
 if (app.Environment.IsDevelopment())
 {
     _ = app.MapOpenApi();
 }
 
+app.UseForwardedHeaders(forwardedHeadersOptions);
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
