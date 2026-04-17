@@ -5,6 +5,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
+import { Select } from "@/app/components/ui/select";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import {
   asEmployeeListResponse,
@@ -390,20 +391,21 @@ function AccessControlContent({
               </div>
               <label className="space-y-2">
                 <span className="text-sm font-medium text-[var(--foreground)]">Cargo</span>
-                <select
-                  value={selectedCargoId}
-                  onChange={(event) => setSelectedCargoId(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none"
-                >
-                  <option value="">Selecione um cargo</option>
-                  {roleOptions.map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}
-                </select>
+                <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
+                  <Select
+                    ariaLabel="Selecionar cargo para novo funcionario"
+                    value={selectedCargoId}
+                    options={roleOptions}
+                    placeholder="Selecione um cargo"
+                    onChange={setSelectedCargoId}
+                  />
+                </div>
               </label>
               <button
                 type="button"
                 onClick={handleAddEmployee}
                 disabled={createEmployeeMutation.isPending || roleOptions.length === 0}
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#294d44] px-4 text-sm font-semibold text-white disabled:opacity-60"
+                className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-2xl bg-[#294d44] px-4 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {createEmployeeMutation.isPending ? "Adicionando..." : "Adicionar funcionario"}
               </button>
@@ -420,8 +422,9 @@ function AccessControlContent({
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">Funcionarios da loja</h2>
                 <p className="text-sm text-[var(--muted)]">O acesso de cada funcionario e definido pelo cargo.</p>
               </div>
-              <div className="overflow-hidden rounded-[24px] border border-[var(--border)]">
-                <table className="min-w-full border-collapse">
+              <div className="rounded-[24px] border border-[var(--border)]">
+                <div className="overflow-x-auto overflow-y-visible rounded-[24px]">
+                  <table className="min-w-full border-collapse">
                   <thead className="bg-[var(--surface-muted)]">
                     <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
                       <th className="px-4 py-4 font-semibold">Usuario</th>
@@ -430,7 +433,7 @@ function AccessControlContent({
                       <th className="px-4 py-4 font-semibold text-right">Acoes</th>
                     </tr>
                   </thead>
-                  <tbody>
+                    <tbody>
                     {employeesQuery.isLoading ? (
                       <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">Carregando funcionarios...</td></tr>
                     ) : employeesQuery.isError ? (
@@ -443,13 +446,14 @@ function AccessControlContent({
                         <td className="px-4 py-4 text-sm text-[var(--muted)]">{employee.email}</td>
                         <td className="px-4 py-4">
                           {canEditEmployees ? (
-                            <select
-                              value={String(employee.cargoId)}
-                              onChange={(event) => void handleChangeEmployeeRole(employee, event.target.value)}
-                              className="h-10 w-full min-w-[180px] rounded-2xl border border-[var(--border)] bg-white px-3 text-sm text-[var(--foreground)] outline-none"
-                            >
-                              {roleOptions.map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}
-                            </select>
+                            <div className="min-w-[180px] rounded-2xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--foreground)]">
+                              <Select
+                                ariaLabel={`Selecionar cargo para ${employee.nome}`}
+                                value={String(employee.cargoId)}
+                                options={roleOptions}
+                                onChange={(value) => void handleChangeEmployeeRole(employee, value)}
+                              />
+                            </div>
                           ) : (
                             <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--foreground)]">{employee.cargoNome}</span>
                           )}
@@ -470,8 +474,9 @@ function AccessControlContent({
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           ) : (
