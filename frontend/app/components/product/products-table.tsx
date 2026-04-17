@@ -9,6 +9,8 @@ import {
 type ProductsTableProps = {
   products: ProductListItem[];
   visibleFields: ProductVisibleField[];
+  canEditProduct: boolean;
+  canDeleteProduct: boolean;
   onEditProduct: (product: ProductListItem) => void;
   onDeleteProduct: (product: ProductListItem) => void;
 };
@@ -83,6 +85,8 @@ function DeleteIcon() {
 export function ProductsTable({
   products,
   visibleFields,
+  canEditProduct,
+  canDeleteProduct,
   onEditProduct,
   onDeleteProduct,
 }: ProductsTableProps) {
@@ -213,24 +217,28 @@ export function ProductsTable({
                 {showId ? <ProductTableCell subtle>#{product.id}</ProductTableCell> : null}
                 <ProductTableCell>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onEditProduct(product)}
-                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
-                      aria-label={`Editar produto ${product.descricao}`}
-                      title={`Editar produto ${product.descricao}`}
-                    >
-                      <EditIcon />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteProduct(product)}
-                      className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
-                      aria-label={`Excluir produto ${product.descricao}`}
-                      title={`Excluir produto ${product.descricao}`}
-                    >
-                      <DeleteIcon />
-                    </button>
+                    {canEditProduct ? (
+                      <button
+                        type="button"
+                        onClick={() => onEditProduct(product)}
+                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                        aria-label={`Editar produto ${product.descricao}`}
+                        title={`Editar produto ${product.descricao}`}
+                      >
+                        <EditIcon />
+                      </button>
+                    ) : null}
+                    {canDeleteProduct ? (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteProduct(product)}
+                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                        aria-label={`Excluir produto ${product.descricao}`}
+                        title={`Excluir produto ${product.descricao}`}
+                      >
+                        <DeleteIcon />
+                      </button>
+                    ) : null}
                   </div>
                 </ProductTableCell>
               </tr>

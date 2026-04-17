@@ -4,6 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
+  asAccessProfile,
+  extractAccessApiMessage,
+  type AccessProfile,
+  type PermissionKey,
+} from "@/lib/access";
+import {
   getAuthToken,
   getAuthUser,
   getStoredSelectedStoreId,
@@ -12,6 +18,7 @@ import {
   type UsuarioResumo,
 } from "@/lib/store";
 import { asStoreListResponse, getStores } from "@/services/store-service";
+import { getStoreAccessProfile } from "@/services/access-service";
 
 type StoreContextValue = {
   stores: LojaResponse[];
@@ -20,6 +27,10 @@ type StoreContextValue = {
   setSelectedStoreId: (storeId: number | null) => void;
   isLoadingStores: boolean;
   currentUser: UsuarioResumo | null;
+  accessProfile: AccessProfile | null;
+  isLoadingAccess: boolean;
+  hasPermission: (permission: PermissionKey) => boolean;
+  hasAnyPermission: (permissionList: PermissionKey[]) => boolean;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -65,6 +76,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       : (stores[0]?.id ?? null);
   }, [selectedStoreIdState, stores]);
 
+  const accessQuery = useQuery({
+    queryKey: ["store-access-profile", token, selectedStoreId],
+    queryFn: async () => {
+      if (!token || !selectedStoreId) {
+        return null;
+      }
+
+      const response = await getStoreAccessProfile(selectedStoreId, token);
+
+      if (!response.ok) {
+        throw new Error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar as permissoes da loja.",
+        );
+      }
+
+      return asAccessProfile(response.body);
+    },
+    enabled: Boolean(token && selectedStoreId),
+  });
+
   useEffect(() => {
     persistSelectedStoreId(selectedStoreId);
   }, [selectedStoreId]);
@@ -83,8 +114,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSelectedStoreId,
       isLoadingStores: storesQuery.isLoading,
       currentUser,
+      accessProfile: accessQuery.data ?? null,
+      isLoadingAccess: accessQuery.isLoading,
+      hasPermission: (permission) =>
+        Boolean((accessQuery.data?.funcionalidades ?? []).includes(permission)),
+      hasAnyPermission: (permissionList) =>
+        permissionList.some((permission) => (accessQuery.data?.funcionalidades ?? []).includes(permission)),
     };
-  }, [currentUser, selectedStoreId, stores, storesQuery.isLoading]);
+  }, [accessQuery.data, accessQuery.isLoading, currentUser, selectedStoreId, stores, storesQuery.isLoading]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

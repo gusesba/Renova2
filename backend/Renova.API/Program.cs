@@ -8,6 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Services.Auth;
+using Renova.Service.Services.Acesso;
+using Renova.Service.Services.Cargo;
 using Renova.Service.Services.Cliente;
 using Renova.Service.Services.ConfigLoja;
 using Renova.Service.Services.Funcionario;
@@ -52,7 +54,9 @@ builder.Services.AddDbContext<RenovaDbContext>(options =>
 });
 builder.Services.AddScoped<IRenovaService, RenovaService>();
 builder.Services.AddScoped<ILojaService, LojaService>();
+builder.Services.AddScoped<ILojaAuthorizationService, LojaAuthorizationService>();
 builder.Services.AddScoped<IFuncionarioService, FuncionarioService>();
+builder.Services.AddScoped<ICargoService, CargoService>();
 builder.Services.AddScoped<IConfigLojaService, ConfigLojaService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IGastoLojaService, GastoLojaService>();

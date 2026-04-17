@@ -1,21 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
 using Renova.Service.Commands.ConfigLoja;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.ConfigLoja;
+using Renova.Service.Services.Acesso;
 
 namespace Renova.Service.Services.ConfigLoja
 {
-    public class ConfigLojaService(RenovaDbContext context) : IConfigLojaService
+    public class ConfigLojaService(RenovaDbContext context, ILojaAuthorizationService? authorizationService = null) : IConfigLojaService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
 
         public async Task<ConfigLojaDto> GetAsync(int lojaId, ObterConfigLojaParametros parametros, CancellationToken cancellationToken = default)
         {
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaVisualizar, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
@@ -54,7 +57,7 @@ namespace Renova.Service.Services.ConfigLoja
             ValidarDescontosPermanencia(descontosPermanencia);
             ValidarFormasPagamento(formasPagamento);
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaEditar, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)

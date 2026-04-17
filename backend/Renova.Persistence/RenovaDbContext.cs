@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 
 namespace Renova.Persistence
@@ -10,6 +11,9 @@ namespace Renova.Persistence
         public DbSet<UsuarioModel> Usuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
         public DbSet<FuncionarioModel> Funcionarios { get; set; }
+        public DbSet<CargoModel> Cargos { get; set; }
+        public DbSet<FuncionalidadeModel> Funcionalidades { get; set; }
+        public DbSet<CargoFuncionalidadeModel> CargosFuncionalidades { get; set; }
         public DbSet<ClienteModel> Clientes { get; set; }
         public DbSet<ClienteCreditoModel> ClientesCreditos { get; set; }
         public DbSet<ConfigLojaModel> ConfiguracoesLoja { get; set; }
@@ -70,7 +74,9 @@ namespace Renova.Persistence
                 _ = entity.HasKey(p => new { p.UsuarioId, p.LojaId });
                 _ = entity.Property(p => p.UsuarioId).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.Property(p => p.CargoId).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasIndex(p => p.CargoId);
                 _ = entity.HasOne(p => p.Usuario)
                     .WithMany(p => p.Funcionarios)
                     .HasForeignKey(p => p.UsuarioId)
@@ -78,6 +84,58 @@ namespace Renova.Persistence
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Funcionarios)
                     .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Cargo)
+                    .WithMany(p => p.Funcionarios)
+                    .HasForeignKey(p => p.CargoId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            _ = modelBuilder.Entity<CargoModel>(entity =>
+            {
+                _ = entity.ToTable("Cargo");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => new { p.LojaId, p.Nome }).IsUnique();
+                _ = entity.HasOne(p => p.Loja)
+                    .WithMany(p => p.Cargos)
+                    .HasForeignKey(p => p.LojaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            _ = modelBuilder.Entity<FuncionalidadeModel>(entity =>
+            {
+                _ = entity.ToTable("Funcionalidade");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedNever();
+                _ = entity.Property(p => p.Chave).HasMaxLength(200).IsRequired();
+                _ = entity.Property(p => p.Grupo).HasMaxLength(100).IsRequired();
+                _ = entity.Property(p => p.Descricao).HasMaxLength(500).IsRequired();
+                _ = entity.HasIndex(p => p.Chave).IsUnique();
+                _ = entity.HasData(FuncionalidadeCatalogo.Itens.Select(item => new FuncionalidadeModel
+                {
+                    Id = item.Id,
+                    Chave = item.Chave,
+                    Grupo = item.Grupo,
+                    Descricao = item.Descricao
+                }));
+            });
+
+            _ = modelBuilder.Entity<CargoFuncionalidadeModel>(entity =>
+            {
+                _ = entity.ToTable("CargoFuncionalidade");
+                _ = entity.HasKey(p => new { p.CargoId, p.FuncionalidadeId });
+                _ = entity.Property(p => p.CargoId).IsRequired();
+                _ = entity.Property(p => p.FuncionalidadeId).IsRequired();
+                _ = entity.HasOne(p => p.Cargo)
+                    .WithMany(p => p.Funcionalidades)
+                    .HasForeignKey(p => p.CargoId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                _ = entity.HasOne(p => p.Funcionalidade)
+                    .WithMany(p => p.Cargos)
+                    .HasForeignKey(p => p.FuncionalidadeId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

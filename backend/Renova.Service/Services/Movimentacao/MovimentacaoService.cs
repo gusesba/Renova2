@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -11,15 +12,25 @@ using Renova.Service.Parameters.Movimentacao;
 using Renova.Service.Parameters.Pagamento;
 using Renova.Service.Queries.Movimentacao;
 using Renova.Service.Queries.Pagamento;
+using Renova.Service.Services.Acesso;
 using Renova.Service.Services.Pagamento;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Movimentacao
 {
-    public class MovimentacaoService(RenovaDbContext context, IPagamentoService? pagamentoService = null) : IMovimentacaoService
+    public class MovimentacaoService(
+        RenovaDbContext context,
+        ILojaAuthorizationService? authorizationService = null,
+        IPagamentoService? pagamentoService = null) : IMovimentacaoService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService ?? NullLojaAuthorizationService.Instance;
         private readonly IPagamentoService _pagamentoService = pagamentoService ?? NoOpPagamentoService.Instance;
+
+        public MovimentacaoService(RenovaDbContext context, IPagamentoService pagamentoService)
+            : this(context, null, pagamentoService)
+        {
+        }
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<MovimentacaoModel, int>>)(movimentacao => movimentacao.Id),
@@ -53,7 +64,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesVisualizar, cancellationToken);
 
             IQueryable<MovimentacaoModel> query = _context.Movimentacoes
                 .Where(movimentacao => movimentacao.LojaId == request.LojaId.Value);
@@ -149,6 +160,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Desconto total deve estar entre 0 e 100.", nameof(request));
             }
 
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesAdicionar, cancellationToken);
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
@@ -349,7 +361,7 @@ namespace Renova.Service.Services.Movimentacao
 
         public async Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
         {
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesDestinacaoVisualizar, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
@@ -410,7 +422,7 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException("Ao menos um produto deve ser informado.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesDestinacaoExecutar, cancellationToken);
 
             List<int> produtoIdsDuplicados = request.Itens
                 .GroupBy(item => item.ProdutoId)

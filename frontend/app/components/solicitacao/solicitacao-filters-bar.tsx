@@ -7,6 +7,7 @@ import { Select } from "@/app/components/ui/select";
 import type { SolicitacaoFilters } from "@/lib/solicitacao";
 
 type SolicitacaoFiltersBarProps = {
+  canAddSolicitacao: boolean;
   filters: SolicitacaoFilters;
   hasStore: boolean;
   isLoading: boolean;
@@ -76,6 +77,7 @@ function SelectField({
 }
 
 export function SolicitacaoFiltersBar({
+  canAddSolicitacao,
   filters,
   hasStore,
   isLoading,
@@ -104,14 +106,16 @@ export function SolicitacaoFiltersBar({
           >
             <GearIcon />
           </button>
-          <button
-            type="button"
-            disabled={!hasStore || isLoading}
-            onClick={onAddSolicitacao}
-            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Nova solicitacao
-          </button>
+          {canAddSolicitacao ? (
+            <button
+              type="button"
+              disabled={!hasStore || isLoading}
+              onClick={onAddSolicitacao}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Nova solicitacao
+            </button>
+          ) : null}
         </div>
       </div>
 

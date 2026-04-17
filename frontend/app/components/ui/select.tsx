@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 
 type SelectOption = {
@@ -16,6 +17,13 @@ type SelectProps = {
   options: SelectOption[];
   placeholder?: string;
   value: string | null;
+};
+
+type DropdownPosition = {
+  left: number;
+  top: number;
+  width: number;
+  maxHeight: number;
 };
 
 function ChevronDownIcon({ open }: { open: boolean }) {
@@ -50,7 +58,10 @@ export function Select({
   const [open, setOpen] = useState(false);
   const [shouldRenderList, setShouldRenderList] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const buttonId = useId();
   const listboxId = useId();
 
@@ -93,8 +104,28 @@ export function Select({
       return;
     }
 
+    function updateDropdownPosition() {
+      const button = buttonRef.current;
+      if (!button) {
+        return;
+      }
+
+      const rect = button.getBoundingClientRect();
+      const viewportPadding = 16;
+      const offset = 12;
+      const availableHeight = window.innerHeight - rect.bottom - offset - viewportPadding;
+
+      setDropdownPosition({
+        left: rect.left,
+        top: rect.bottom + offset,
+        width: rect.width,
+        maxHeight: Math.max(120, Math.min(288, availableHeight)),
+      });
+    }
+
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!containerRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
         setOpen(false);
       }
     }
@@ -105,18 +136,24 @@ export function Select({
       }
     }
 
+    updateDropdownPosition();
     window.addEventListener("mousedown", handlePointerDown);
     window.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
 
     return () => {
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
     };
   }, [open]);
 
   return (
     <div ref={containerRef} className="relative min-w-0">
       <button
+        ref={buttonRef}
         id={buttonId}
         type="button"
         disabled={disabled}
@@ -143,58 +180,68 @@ export function Select({
 
       {open ? <div /> : null}
 
-      {shouldRenderList ? (
-        <div
-          className={`absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-full origin-top overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.12)] transition-all duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isVisible
-              ? "translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none -translate-y-3 scale-95 opacity-0"
-          }`}
-        >
-          {helper ? (
-            <div className="border-b border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
-              {helper}
-            </div>
-          ) : null}
-
-          {options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-[var(--muted)]">{emptyLabel}</div>
-          ) : (
-            <ul
-              id={listboxId}
-              role="listbox"
-              aria-labelledby={buttonId}
-              className="max-h-72 overflow-y-auto py-2"
+      {shouldRenderList && dropdownPosition && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={dropdownRef}
+              className={`fixed z-[250] origin-top overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[0_20px_45px_rgba(15,23,42,0.12)] transition-all duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                isVisible
+                  ? "translate-y-0 scale-100 opacity-100"
+                  : "pointer-events-none -translate-y-3 scale-95 opacity-0"
+              }`}
+              style={{
+                left: dropdownPosition.left,
+                top: dropdownPosition.top,
+                width: dropdownPosition.width,
+              }}
             >
-              {options.map((option) => {
-                const isSelected = option.value === value;
+              {helper ? (
+                <div className="border-b border-[var(--border)] px-4 py-3 text-xs text-[var(--muted)]">
+                  {helper}
+                </div>
+              ) : null}
 
-                return (
-                  <li key={option.value} role="option" aria-selected={isSelected}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onChange(option.value);
-                        setOpen(false);
-                      }}
-                      className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
-                        isSelected
-                          ? "bg-[var(--primary-soft)] font-semibold text-[var(--foreground)]"
-                          : "text-[var(--foreground)]"
-                      }`}
-                    >
-                      <span className="truncate">{option.label}</span>
-                      {isSelected ? (
-                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      ) : null}
+              {options.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-[var(--muted)]">{emptyLabel}</div>
+              ) : (
+                <ul
+                  id={listboxId}
+                  role="listbox"
+                  aria-labelledby={buttonId}
+                  className="overflow-y-auto py-2"
+                  style={{ maxHeight: dropdownPosition.maxHeight }}
+                >
+                  {options.map((option) => {
+                    const isSelected = option.value === value;
+
+                    return (
+                      <li key={option.value} role="option" aria-selected={isSelected}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onChange(option.value);
+                            setOpen(false);
+                          }}
+                          className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
+                            isSelected
+                              ? "bg-[var(--primary-soft)] font-semibold text-[var(--foreground)]"
+                              : "text-[var(--foreground)]"
+                          }`}
+                        >
+                          <span className="truncate">{option.label}</span>
+                          {isSelected ? (
+                            <span className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

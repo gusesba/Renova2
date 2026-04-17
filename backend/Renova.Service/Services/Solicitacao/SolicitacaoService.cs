@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -7,13 +8,15 @@ using Renova.Service.Commands.Solicitacao;
 using Renova.Service.Extensions;
 using Renova.Service.Parameters.Solicitacao;
 using Renova.Service.Queries.Solicitacao;
+using Renova.Service.Services.Acesso;
 using System.Linq.Expressions;
 
 namespace Renova.Service.Services.Solicitacao
 {
-    public class SolicitacaoService(RenovaDbContext context) : ISolicitacaoService
+    public class SolicitacaoService(RenovaDbContext context, ILojaAuthorizationService authorizationService) : ISolicitacaoService
     {
         private readonly RenovaDbContext _context = context;
+        private readonly ILojaAuthorizationService _authorizationService = authorizationService;
 
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
@@ -41,6 +44,8 @@ namespace Renova.Service.Services.Solicitacao
             }
 
             string descricaoNormalizada = request.Descricao.Trim();
+
+            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.SolicitacoesAdicionar, cancellationToken);
 
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
@@ -113,7 +118,7 @@ namespace Renova.Service.Services.Solicitacao
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.SolicitacoesVisualizar, cancellationToken);
 
             IQueryable<SolicitacaoModel> query = _context.Solicitacoes
                 .Where(solicitacao => solicitacao.LojaId == request.LojaId.Value);

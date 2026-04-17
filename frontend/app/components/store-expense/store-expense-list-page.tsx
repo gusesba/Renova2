@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { MovementEmptyState } from "@/app/components/movement/movement-empty-state";
 import { PaymentPagination } from "@/app/components/payment/payment-pagination";
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { permissions } from "@/lib/access";
 import { getAuthToken } from "@/lib/store";
 import {
   asStoreExpenseListResponse,
@@ -18,10 +19,11 @@ import { StoreExpenseCreateModal } from "./store-expense-create-modal";
 import { StoreExpensesTable } from "./store-expenses-table";
 
 export function StoreExpenseListPage() {
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [page, setPage] = useState(initialStoreExpenseFilters.pagina);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const canCreateExpense = hasPermission(permissions.gastosLojaAdicionar);
 
   const expensesQuery = useQuery({
     queryKey: ["store-expenses", token, selectedStoreId, page],
@@ -63,14 +65,16 @@ export function StoreExpenseListPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsCreateModalOpen(true)}
-            disabled={expensesQuery.isLoading || isLoadingStores}
-            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Novo lancamento
-          </button>
+          {canCreateExpense ? (
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={expensesQuery.isLoading || isLoadingStores}
+              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Novo lancamento
+            </button>
+          ) : null}
         </div>
 
         {!hasStore ? (
@@ -113,16 +117,18 @@ export function StoreExpenseListPage() {
         )}
       </div>
 
-      <StoreExpenseCreateModal
-        isOpen={isCreateModalOpen}
-        storeId={selectedStoreId}
-        storeName={selectedStore?.nome ?? null}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={async () => {
-          setPage(1);
-          await expensesQuery.refetch();
-        }}
-      />
+      {canCreateExpense ? (
+        <StoreExpenseCreateModal
+          isOpen={isCreateModalOpen}
+          storeId={selectedStoreId}
+          storeName={selectedStore?.nome ?? null}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={async () => {
+            setPage(1);
+            await expensesQuery.refetch();
+          }}
+        />
+      ) : null}
     </section>
   );
 }

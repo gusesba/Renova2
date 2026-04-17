@@ -22,6 +22,45 @@ namespace Renova.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Renova.Domain.Model.CargoFuncionalidadeModel", b =>
+                {
+                    b.Property<int>("CargoId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FuncionalidadeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CargoId", "FuncionalidadeId");
+
+                    b.HasIndex("FuncionalidadeId");
+
+                    b.ToTable("CargoFuncionalidade", (string)null);
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.CargoModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LojaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LojaId", "Nome")
+                        .IsUnique();
+
+                    b.ToTable("Cargo", (string)null);
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.ClienteCreditoModel", b =>
                 {
                     b.Property<int>("Id")
@@ -200,6 +239,365 @@ namespace Renova.Persistence.Migrations
                     b.ToTable("Cor", (string)null);
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.FuncionalidadeModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Chave")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Grupo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Chave")
+                        .IsUnique();
+
+                    b.ToTable("Funcionalidade", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Chave = "clientes.visualizar",
+                            Descricao = "Listar os clientes da loja.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Chave = "clientes.visualizar_detalhe",
+                            Descricao = "Visualizar o detalhe e historico de um cliente.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Chave = "clientes.adicionar",
+                            Descricao = "Cadastrar novos clientes.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Chave = "clientes.editar",
+                            Descricao = "Editar clientes existentes.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Chave = "clientes.excluir",
+                            Descricao = "Excluir clientes sem relacionamentos ativos.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Chave = "clientes.exportar_fechamento",
+                            Descricao = "Exportar o fechamento de clientes.",
+                            Grupo = "Clientes"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Chave = "produtos.visualizar",
+                            Descricao = "Listar os produtos da loja.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Chave = "produtos.visualizar_item",
+                            Descricao = "Visualizar os dados de um produto.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Chave = "produtos.adicionar",
+                            Descricao = "Cadastrar novos produtos no estoque.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Chave = "produtos.editar",
+                            Descricao = "Editar produtos existentes.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Chave = "produtos.excluir",
+                            Descricao = "Excluir produtos sem movimentacoes.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Chave = "produtos.emprestados.visualizar",
+                            Descricao = "Consultar produtos emprestados por cliente.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Chave = "produtos.auxiliares.visualizar",
+                            Descricao = "Consultar referencias, marcas, tamanhos e cores.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Chave = "produtos.auxiliares.adicionar_referencia",
+                            Descricao = "Cadastrar novas referencias de produto.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Chave = "produtos.auxiliares.adicionar_marca",
+                            Descricao = "Cadastrar novas marcas.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Chave = "produtos.auxiliares.adicionar_tamanho",
+                            Descricao = "Cadastrar novos tamanhos.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Chave = "produtos.auxiliares.adicionar_cor",
+                            Descricao = "Cadastrar novas cores.",
+                            Grupo = "Produtos"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Chave = "solicitacoes.visualizar",
+                            Descricao = "Listar solicitacoes da loja.",
+                            Grupo = "Solicitacoes"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Chave = "solicitacoes.adicionar",
+                            Descricao = "Cadastrar novas solicitacoes.",
+                            Grupo = "Solicitacoes"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Chave = "movimentacoes.visualizar",
+                            Descricao = "Listar movimentacoes da loja.",
+                            Grupo = "Movimentacoes"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            Chave = "movimentacoes.adicionar",
+                            Descricao = "Registrar novas movimentacoes.",
+                            Grupo = "Movimentacoes"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            Chave = "movimentacoes.destinacao.visualizar",
+                            Descricao = "Consultar sugestoes para doacao e devolucao.",
+                            Grupo = "Movimentacoes"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            Chave = "movimentacoes.destinacao.executar",
+                            Descricao = "Executar destinacoes de doacao e devolucao.",
+                            Grupo = "Movimentacoes"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            Chave = "pagamentos.visualizar",
+                            Descricao = "Listar pagamentos da loja.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            Chave = "pagamentos.manuais.adicionar",
+                            Descricao = "Lancar pagamentos manuais.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            Chave = "pagamentos.credito.visualizar",
+                            Descricao = "Listar pagamentos de credito.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            Chave = "pagamentos.credito.adicionar",
+                            Descricao = "Adicionar credito para cliente.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            Chave = "pagamentos.credito.resgatar",
+                            Descricao = "Resgatar credito de cliente.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            Chave = "pagamentos.pendencias.visualizar",
+                            Descricao = "Visualizar pendencias de credito.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            Chave = "pagamentos.pendencias.atualizar",
+                            Descricao = "Atualizar pendencias de credito.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            Chave = "pagamentos.fechamento.visualizar",
+                            Descricao = "Visualizar o fechamento da loja.",
+                            Grupo = "Pagamentos"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            Chave = "gastos_loja.visualizar",
+                            Descricao = "Listar gastos da loja.",
+                            Grupo = "GastosLoja"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            Chave = "gastos_loja.adicionar",
+                            Descricao = "Cadastrar gastos e recebimentos da loja.",
+                            Grupo = "GastosLoja"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            Chave = "lojas.visualizar",
+                            Descricao = "Visualizar as lojas acessiveis.",
+                            Grupo = "Lojas"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            Chave = "lojas.adicionar",
+                            Descricao = "Cadastrar novas lojas.",
+                            Grupo = "Lojas"
+                        },
+                        new
+                        {
+                            Id = 36,
+                            Chave = "lojas.editar",
+                            Descricao = "Editar lojas existentes.",
+                            Grupo = "Lojas"
+                        },
+                        new
+                        {
+                            Id = 37,
+                            Chave = "lojas.excluir",
+                            Descricao = "Excluir lojas sem registros ativos.",
+                            Grupo = "Lojas"
+                        },
+                        new
+                        {
+                            Id = 38,
+                            Chave = "config_loja.visualizar",
+                            Descricao = "Visualizar configuracoes da loja.",
+                            Grupo = "ConfiguracaoLoja"
+                        },
+                        new
+                        {
+                            Id = 39,
+                            Chave = "config_loja.editar",
+                            Descricao = "Editar configuracoes da loja.",
+                            Grupo = "ConfiguracaoLoja"
+                        },
+                        new
+                        {
+                            Id = 40,
+                            Chave = "funcionarios.visualizar",
+                            Descricao = "Listar funcionarios da loja.",
+                            Grupo = "Funcionarios"
+                        },
+                        new
+                        {
+                            Id = 41,
+                            Chave = "funcionarios.adicionar",
+                            Descricao = "Vincular funcionarios a loja.",
+                            Grupo = "Funcionarios"
+                        },
+                        new
+                        {
+                            Id = 42,
+                            Chave = "funcionarios.editar",
+                            Descricao = "Alterar o cargo de funcionarios.",
+                            Grupo = "Funcionarios"
+                        },
+                        new
+                        {
+                            Id = 43,
+                            Chave = "funcionarios.remover",
+                            Descricao = "Remover funcionarios da loja.",
+                            Grupo = "Funcionarios"
+                        },
+                        new
+                        {
+                            Id = 44,
+                            Chave = "cargos.visualizar",
+                            Descricao = "Listar cargos e funcionalidades da loja.",
+                            Grupo = "Cargos"
+                        },
+                        new
+                        {
+                            Id = 45,
+                            Chave = "cargos.adicionar",
+                            Descricao = "Cadastrar novos cargos.",
+                            Grupo = "Cargos"
+                        },
+                        new
+                        {
+                            Id = 46,
+                            Chave = "cargos.editar",
+                            Descricao = "Editar cargos existentes.",
+                            Grupo = "Cargos"
+                        },
+                        new
+                        {
+                            Id = 47,
+                            Chave = "cargos.excluir",
+                            Descricao = "Excluir cargos sem funcionarios vinculados.",
+                            Grupo = "Cargos"
+                        });
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.FuncionarioModel", b =>
                 {
                     b.Property<int>("UsuarioId")
@@ -208,7 +606,12 @@ namespace Renova.Persistence.Migrations
                     b.Property<int>("LojaId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("CargoId")
+                        .HasColumnType("integer");
+
                     b.HasKey("UsuarioId", "LojaId");
+
+                    b.HasIndex("CargoId");
 
                     b.HasIndex("LojaId");
 
@@ -649,6 +1052,36 @@ namespace Renova.Persistence.Migrations
                     b.ToTable("Usuario", (string)null);
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.CargoFuncionalidadeModel", b =>
+                {
+                    b.HasOne("Renova.Domain.Model.CargoModel", "Cargo")
+                        .WithMany("Funcionalidades")
+                        .HasForeignKey("CargoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Renova.Domain.Model.FuncionalidadeModel", "Funcionalidade")
+                        .WithMany("Cargos")
+                        .HasForeignKey("FuncionalidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cargo");
+
+                    b.Navigation("Funcionalidade");
+                });
+
+            modelBuilder.Entity("Renova.Domain.Model.CargoModel", b =>
+                {
+                    b.HasOne("Renova.Domain.Model.LojaModel", "Loja")
+                        .WithMany("Cargos")
+                        .HasForeignKey("LojaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Loja");
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.ClienteCreditoModel", b =>
                 {
                     b.HasOne("Renova.Domain.Model.ClienteModel", "Cliente")
@@ -732,6 +1165,12 @@ namespace Renova.Persistence.Migrations
 
             modelBuilder.Entity("Renova.Domain.Model.FuncionarioModel", b =>
                 {
+                    b.HasOne("Renova.Domain.Model.CargoModel", "Cargo")
+                        .WithMany("Funcionarios")
+                        .HasForeignKey("CargoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Renova.Domain.Model.LojaModel", "Loja")
                         .WithMany("Funcionarios")
                         .HasForeignKey("LojaId")
@@ -743,6 +1182,8 @@ namespace Renova.Persistence.Migrations
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Cargo");
 
                     b.Navigation("Loja");
 
@@ -996,6 +1437,13 @@ namespace Renova.Persistence.Migrations
                     b.Navigation("Loja");
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.CargoModel", b =>
+                {
+                    b.Navigation("Funcionalidades");
+
+                    b.Navigation("Funcionarios");
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.ClienteModel", b =>
                 {
                     b.Navigation("Credito");
@@ -1023,8 +1471,15 @@ namespace Renova.Persistence.Migrations
                     b.Navigation("ProdutosEstoque");
                 });
 
+            modelBuilder.Entity("Renova.Domain.Model.FuncionalidadeModel", b =>
+                {
+                    b.Navigation("Cargos");
+                });
+
             modelBuilder.Entity("Renova.Domain.Model.LojaModel", b =>
                 {
+                    b.Navigation("Cargos");
+
                     b.Navigation("Clientes");
 
                     b.Navigation("ConfigLoja");

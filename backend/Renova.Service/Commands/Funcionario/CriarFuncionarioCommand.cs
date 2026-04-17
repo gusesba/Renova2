@@ -7,5 +7,9 @@ namespace Renova.Service.Commands.Funcionario
         [Required]
         [Range(1, int.MaxValue)]
         public int UsuarioId { get; set; }
+
+        [Required]
+        [Range(1, int.MaxValue)]
+        public int CargoId { get; set; }
     }
 }

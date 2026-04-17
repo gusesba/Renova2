@@ -1,8 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
+import { useStoreContext } from "@/app/dashboard/store-context";
+import { menuPermissionGroups } from "@/lib/access";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 
@@ -12,6 +15,47 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const [isChromeCollapsed, setIsChromeCollapsed] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { hasAnyPermission, isLoadingAccess, selectedStoreId } = useStoreContext();
+  const allowedRoutes = useMemo(
+    () =>
+      Object.entries(menuPermissionGroups)
+        .filter(([href, permissionList]) =>
+          href === "/dashboard/loja"
+            ? true
+            : selectedStoreId && hasAnyPermission(permissionList),
+        )
+        .map(([href]) => href),
+    [hasAnyPermission, selectedStoreId],
+  );
+
+  useEffect(() => {
+    if (!pathname.startsWith("/dashboard") || isLoadingAccess) {
+      return;
+    }
+
+    if (!selectedStoreId) {
+      return;
+    }
+
+    const matchedEntry = Object.entries(menuPermissionGroups).find(([href]) =>
+      pathname === href || pathname.startsWith(`${href}/`),
+    );
+
+    if (!matchedEntry) {
+      return;
+    }
+
+    const [matchedRoute, permissionList] = matchedEntry;
+    const isAllowed = matchedRoute === "/dashboard/loja" || hasAnyPermission(permissionList);
+
+    if (isAllowed) {
+      return;
+    }
+
+    router.replace(allowedRoutes[0] ?? "/dashboard/loja");
+  }, [allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--background)] p-4 lg:p-6">

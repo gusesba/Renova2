@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { menuPermissionGroups } from "@/lib/access";
+import { useStoreContext } from "@/app/dashboard/store-context";
 
 type NavItem = {
   label: string;
@@ -68,6 +70,16 @@ type AppSidebarProps = {
 
 export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
   const pathname = usePathname();
+  const { hasAnyPermission, selectedStoreId } = useStoreContext();
+  const visibleItems = primaryItems.filter((item) => {
+    const requiredPermissions = menuPermissionGroups[item.href];
+
+    if (!requiredPermissions || !selectedStoreId) {
+      return item.href === "/dashboard/loja";
+    }
+
+    return hasAnyPermission(requiredPermissions);
+  });
 
   return (
     <aside
@@ -87,7 +99,7 @@ export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
       </div>
 
       <nav className="mt-10 flex flex-col gap-2">
-        {primaryItems.map((item) => (
+        {visibleItems.map((item) => (
           <SidebarLink key={item.label} item={item} pathname={pathname} />
         ))}
       </nav>
