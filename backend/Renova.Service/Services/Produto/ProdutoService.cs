@@ -226,6 +226,16 @@ namespace Renova.Service.Services.Produto
                 cancellationToken);
         }
 
+        public Task DeleteProdutoAuxiliarAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ExcluirAuxiliarAsync(
+                parametros,
+                _context.ProdutosReferencia,
+                produtoAuxiliarId => _context.ProdutosEstoque.AnyAsync(item => item.ProdutoId == produtoAuxiliarId, cancellationToken),
+                "Produto",
+                cancellationToken);
+        }
+
         public Task<ProdutoAuxiliarDto> CreateMarcaAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
         {
             return CriarAuxiliarAsync(
@@ -237,6 +247,16 @@ namespace Renova.Service.Services.Produto
                     Valor = valor,
                     LojaId = request.LojaId
                 },
+                "Marca",
+                cancellationToken);
+        }
+
+        public Task DeleteMarcaAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ExcluirAuxiliarAsync(
+                parametros,
+                _context.Marcas,
+                produtoAuxiliarId => _context.ProdutosEstoque.AnyAsync(item => item.MarcaId == produtoAuxiliarId, cancellationToken),
                 "Marca",
                 cancellationToken);
         }
@@ -256,6 +276,16 @@ namespace Renova.Service.Services.Produto
                 cancellationToken);
         }
 
+        public Task DeleteTamanhoAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ExcluirAuxiliarAsync(
+                parametros,
+                _context.Tamanhos,
+                produtoAuxiliarId => _context.ProdutosEstoque.AnyAsync(item => item.TamanhoId == produtoAuxiliarId, cancellationToken),
+                "Tamanho",
+                cancellationToken);
+        }
+
         public Task<ProdutoAuxiliarDto> CreateCorAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
         {
             return CriarAuxiliarAsync(
@@ -267,6 +297,16 @@ namespace Renova.Service.Services.Produto
                     Valor = valor,
                     LojaId = request.LojaId
                 },
+                "Cor",
+                cancellationToken);
+        }
+
+        public Task DeleteCorAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default)
+        {
+            return ExcluirAuxiliarAsync(
+                parametros,
+                _context.Cores,
+                produtoAuxiliarId => _context.ProdutosEstoque.AnyAsync(item => item.CorId == produtoAuxiliarId, cancellationToken),
                 "Cor",
                 cancellationToken);
         }
@@ -567,6 +607,39 @@ namespace Renova.Service.Services.Produto
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
+        private async Task ExcluirAuxiliarAsync<TModel>(
+            ExcluirProdutoAuxiliarParametros parametros,
+            DbSet<TModel> dbSet,
+            Func<int, Task<bool>> possuiProdutosVinculados,
+            string nomeEntidade,
+            CancellationToken cancellationToken)
+            where TModel : class
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == parametros.UsuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            TModel entity = await dbSet
+                .SingleOrDefaultAsync(item => EF.Property<int>(item, "Id") == parametros.ProdutoAuxiliarId, cancellationToken)
+                ?? throw new KeyNotFoundException($"{nomeEntidade} informada nao foi encontrada.");
+
+            int lojaId = ObterLojaId(entity);
+
+            await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, ResolverPermissaoAuxiliarExclusao(nomeEntidade), cancellationToken);
+
+            if (await possuiProdutosVinculados(parametros.ProdutoAuxiliarId))
+            {
+                throw new InvalidOperationException($"{nomeEntidade} possui produtos vinculados e nao pode ser excluido.");
+            }
+
+            _ = dbSet.Remove(entity);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+        }
+
         private static IOrderedQueryable<TModel> AplicarOrdenacaoAuxiliar<TModel>(
             IQueryable<TModel> source,
             string? ordenarPor,
@@ -616,6 +689,18 @@ namespace Renova.Service.Services.Produto
         }
 
         private static string ResolverPermissaoAuxiliarCriacao(string nomeEntidade)
+        {
+            return nomeEntidade switch
+            {
+                "Produto" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarReferencia,
+                "Marca" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarMarca,
+                "Tamanho" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarTamanho,
+                "Cor" => FuncionalidadeCatalogo.ProdutosAuxiliaresAdicionarCor,
+                _ => throw new ArgumentOutOfRangeException(nameof(nomeEntidade), "Tipo auxiliar nao suportado.")
+            };
+        }
+
+        private static string ResolverPermissaoAuxiliarExclusao(string nomeEntidade)
         {
             return nomeEntidade switch
             {

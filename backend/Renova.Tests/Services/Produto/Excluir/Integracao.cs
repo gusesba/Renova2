@@ -138,6 +138,55 @@ namespace Renova.Tests.Services.Produto.Excluir
             _ = await context.MovimentacoesProdutos.SingleAsync(item => item.ProdutoId == produto.Id);
         }
 
+        [Fact]
+        public async Task DeleteMarcaAuxiliarDeveRetornarNoContentQuandoNaoHouverProdutosVinculados()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            MarcaModel marca = await CriarMarcaAsync(factory, loja.Id, "Farm");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.DeleteAsync($"/api/produto/marca/{marca.Id}");
+
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            Assert.Empty(context.Marcas);
+        }
+
+        [Fact]
+        public async Task DeleteCorAuxiliarDeveRetornarConflictQuandoExistirProdutoVinculado()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ProdutoReferenciaModel produtoRef = await CriarProdutoReferenciaAsync(factory, loja.Id, "Vestido");
+            MarcaModel marca = await CriarMarcaAsync(factory, loja.Id, "Farm");
+            TamanhoModel tamanho = await CriarTamanhoAsync(factory, loja.Id, "M");
+            CorModel cor = await CriarCorAsync(factory, loja.Id, "Azul");
+            ClienteModel fornecedor = await CriarClienteAsync(factory, loja.Id, "Fornecedor A", "44999990000");
+            _ = await CriarProdutoAsync(factory, loja.Id, produtoRef.Id, marca.Id, tamanho.Id, cor.Id, fornecedor.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.DeleteAsync($"/api/produto/cor/{cor.Id}");
+            JsonElement body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+            Assert.Equal("Cor possui produtos vinculados e nao pode ser excluido.", body.GetProperty("mensagem").GetString());
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            _ = await context.Cores.SingleAsync(item => item.Id == cor.Id);
+        }
+
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
             CadastroCommand command = new()

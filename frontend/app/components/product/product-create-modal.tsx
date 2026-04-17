@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { ClientCreateModal } from "@/app/components/client/client-create-modal";
 import { ProductAuxiliaryCreateModal } from "@/app/components/product/product-auxiliary-create-modal";
+import { ProductAuxiliaryDeleteModal } from "@/app/components/product/product-auxiliary-delete-modal";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import { ThemedCheckbox } from "@/app/components/ui/themed-checkbox";
 import {
@@ -37,6 +38,10 @@ import {
   createProduct,
   createProductReference,
   createProductSize,
+  deleteProductBrand,
+  deleteProductColor,
+  deleteProductReference,
+  deleteProductSize,
   getProductBrandOptions,
   getProductColorOptions,
   getProductReferenceOptions,
@@ -67,6 +72,18 @@ type AuxiliaryField = "produto" | "marca" | "tamanho" | "cor";
 type AuxiliaryModalState = {
   error?: string;
   field: AuxiliaryField;
+  isOpen: boolean;
+  value: string;
+};
+
+type AuxiliaryLookupOption = ProductLookupOption & {
+  onSecondaryAction?: () => void;
+  secondaryActionAriaLabel?: string;
+};
+
+type AuxiliaryDeleteModalState = {
+  field: AuxiliaryField;
+  id: number | null;
   isOpen: boolean;
   value: string;
 };
@@ -144,7 +161,7 @@ function SearchableField({
   searchValue: string;
   placeholder: string;
   searchPlaceholder: string;
-  options: ProductLookupOption[];
+  options: AuxiliaryLookupOption[];
   emptyLabel: string;
   actionLabel?: string;
   onSearchChange: (value: string) => void;
@@ -162,6 +179,8 @@ function SearchableField({
         loading={loading}
         options={options.map((option) => ({
           label: option.label,
+          onSecondaryAction: option.onSecondaryAction,
+          secondaryActionAriaLabel: option.secondaryActionAriaLabel,
           value: String(option.id),
         }))}
         placeholder={placeholder}
@@ -212,6 +231,12 @@ export function ProductCreateModal({
   });
   const [auxiliaryModal, setAuxiliaryModal] = useState<AuxiliaryModalState>({
     field: "produto",
+    isOpen: false,
+    value: "",
+  });
+  const [auxiliaryDeleteModal, setAuxiliaryDeleteModal] = useState<AuxiliaryDeleteModalState>({
+    field: "produto",
+    id: null,
     isOpen: false,
     value: "",
   });
@@ -287,6 +312,28 @@ export function ProductCreateModal({
     },
   });
 
+  const deleteAuxiliaryMutation = useMutation({
+    mutationFn: async (payload: { field: AuxiliaryField; id: number }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para excluir um auxiliar.");
+      }
+
+      if (payload.field === "produto") {
+        return deleteProductReference(payload.id, token);
+      }
+
+      if (payload.field === "marca") {
+        return deleteProductBrand(payload.id, token);
+      }
+
+      if (payload.field === "tamanho") {
+        return deleteProductSize(payload.id, token);
+      }
+
+      return deleteProductColor(payload.id, token);
+    },
+  });
+
   function resetForm() {
     setValues(initialProductFormValues);
     setErrors({});
@@ -306,6 +353,12 @@ export function ProductCreateModal({
     });
     setAuxiliaryModal({
       field: "produto",
+      isOpen: false,
+      value: "",
+    });
+    setAuxiliaryDeleteModal({
+      field: "produto",
+      id: null,
       isOpen: false,
       value: "",
     });
@@ -360,6 +413,7 @@ export function ProductCreateModal({
         event.key === "Escape" &&
         !createProductMutation.isPending &&
         !auxiliaryModal.isOpen &&
+        !auxiliaryDeleteModal.isOpen &&
         !supplierModalOpen
       ) {
         resetForm();
@@ -377,6 +431,7 @@ export function ProductCreateModal({
     };
   }, [
     auxiliaryModal.isOpen,
+    auxiliaryDeleteModal.isOpen,
     isOpen,
     onClose,
     shouldRender,
@@ -558,6 +613,28 @@ export function ProductCreateModal({
     }));
   }
 
+  function openAuxiliaryDeleteModal(field: AuxiliaryField, option: ProductLookupOption) {
+    setAuxiliaryDeleteModal({
+      field,
+      id: option.id,
+      isOpen: true,
+      value: option.label,
+    });
+  }
+
+  function closeAuxiliaryDeleteModal() {
+    if (deleteAuxiliaryMutation.isPending) {
+      return;
+    }
+
+    setAuxiliaryDeleteModal((current) => ({
+      ...current,
+      id: null,
+      isOpen: false,
+      value: "",
+    }));
+  }
+
   function closeSupplierModal() {
     if (createSupplierMutation.isPending) {
       return;
@@ -719,6 +796,70 @@ export function ProductCreateModal({
     }
   }
 
+  async function handleAuxiliaryDeleteConfirm() {
+    if (!auxiliaryDeleteModal.id) {
+      toast.error("Selecione um item auxiliar valido para excluir.");
+      return;
+    }
+
+    try {
+      const response = await deleteAuxiliaryMutation.mutateAsync({
+        field: auxiliaryDeleteModal.field,
+        id: auxiliaryDeleteModal.id,
+      });
+
+      if (!response.ok) {
+        toast.error(
+          getProductApiMessage(response.body) ??
+            `Nao foi possivel excluir ${getAuxiliaryLabel(auxiliaryDeleteModal.field).toLowerCase()}.`,
+        );
+        return;
+      }
+
+      const field = auxiliaryDeleteModal.field;
+      const deletedId = String(auxiliaryDeleteModal.id);
+
+      const idField = `${field}Id` as const;
+      const labelField = `${field}Label` as const;
+
+      setValues((current) =>
+        current[idField] === deletedId
+          ? {
+              ...current,
+              [idField]: "",
+              [labelField]: "",
+            }
+          : current,
+      );
+
+      if (lookupSearch[field] === auxiliaryDeleteModal.value) {
+        updateLookupSearch(field, "");
+        setDebouncedLookupSearch((current) => ({
+          ...current,
+          [field]: "",
+        }));
+      }
+
+      closeAuxiliaryDeleteModal();
+      await queryClient.invalidateQueries({ queryKey: ["product-create-options"] });
+      toast.success(`${getAuxiliaryLabel(field)} excluido com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
+  function withDeleteAction(field: AuxiliaryField, options: ProductLookupOption[]): AuxiliaryLookupOption[] {
+    return options.map((option) => ({
+      ...option,
+      onSecondaryAction: () => openAuxiliaryDeleteModal(field, option),
+      secondaryActionAriaLabel: `Excluir ${getAuxiliaryLabel(field).toLowerCase()} ${option.label}`,
+    }));
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -840,7 +981,7 @@ export function ProductCreateModal({
               searchValue={lookupSearch.produto}
               placeholder="Selecione o produto"
               searchPlaceholder="Pesquisar por valor"
-              options={productOptionsQuery.data ?? []}
+              options={withDeleteAction("produto", productOptionsQuery.data ?? [])}
               emptyLabel={
                 productOptionsQuery.isError
                   ? "Falha ao carregar produtos."
@@ -871,7 +1012,7 @@ export function ProductCreateModal({
               searchValue={lookupSearch.marca}
               placeholder="Selecione a marca"
               searchPlaceholder="Pesquisar por valor"
-              options={brandOptionsQuery.data ?? []}
+              options={withDeleteAction("marca", brandOptionsQuery.data ?? [])}
               emptyLabel={
                 brandOptionsQuery.isError
                   ? "Falha ao carregar marcas."
@@ -917,7 +1058,7 @@ export function ProductCreateModal({
               searchValue={lookupSearch.tamanho}
               placeholder="Selecione o tamanho"
               searchPlaceholder="Pesquisar por valor"
-              options={sizeOptionsQuery.data ?? []}
+              options={withDeleteAction("tamanho", sizeOptionsQuery.data ?? [])}
               emptyLabel={
                 sizeOptionsQuery.isError
                   ? "Falha ao carregar tamanhos."
@@ -938,7 +1079,7 @@ export function ProductCreateModal({
               searchValue={lookupSearch.cor}
               placeholder="Selecione a cor"
               searchPlaceholder="Pesquisar por valor"
-              options={colorOptionsQuery.data ?? []}
+              options={withDeleteAction("cor", colorOptionsQuery.data ?? [])}
               emptyLabel={
                 colorOptionsQuery.isError ? "Falha ao carregar cores." : "Nenhuma cor encontrada."
               }
@@ -1029,6 +1170,14 @@ export function ProductCreateModal({
         }
         onClose={closeAuxiliaryModal}
         onSubmit={handleAuxiliarySubmit}
+      />
+      <ProductAuxiliaryDeleteModal
+        auxiliaryLabel={getAuxiliaryLabel(auxiliaryDeleteModal.field)}
+        auxiliaryName={auxiliaryDeleteModal.value || null}
+        isOpen={auxiliaryDeleteModal.isOpen}
+        isSubmitting={deleteAuxiliaryMutation.isPending}
+        onClose={closeAuxiliaryDeleteModal}
+        onConfirm={handleAuxiliaryDeleteConfirm}
       />
       <ClientCreateModal
         errors={supplierFormErrors}

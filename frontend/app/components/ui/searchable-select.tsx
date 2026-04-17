@@ -4,6 +4,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 type SearchableSelectOption = {
   label: string;
+  onSecondaryAction?: () => void;
+  secondaryActionAriaLabel?: string;
   value: string;
 };
 
@@ -40,6 +42,27 @@ function ChevronDownIcon({ open }: { open: boolean }) {
         strokeLinejoin="round"
         strokeWidth="1.8"
       />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
     </svg>
   );
 }
@@ -175,23 +198,43 @@ export function SearchableSelect({
 
                 return (
                   <li key={option.value} role="option" aria-selected={isSelected}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onChange(option);
-                        setOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
-                        isSelected
-                          ? "bg-[var(--primary-soft)] font-semibold text-[var(--foreground)]"
-                          : "text-[var(--foreground)]"
+                    <div
+                      className={`flex items-center gap-2 px-2 py-1 ${
+                        isSelected ? "bg-[var(--primary-soft)]" : ""
                       }`}
                     >
-                      <span className="truncate">{option.label}</span>
-                      {isSelected ? (
-                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onChange(option);
+                          setOpen(false);
+                        }}
+                        className={`flex min-w-0 flex-1 items-center justify-between gap-3 rounded-2xl px-2 py-2 text-left text-sm transition hover:bg-[var(--surface-muted)] ${
+                          isSelected
+                            ? "font-semibold text-[var(--foreground)]"
+                            : "text-[var(--foreground)]"
+                        }`}
+                      >
+                        <span className="truncate">{option.label}</span>
+                        {isSelected ? (
+                          <span className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+                        ) : null}
+                      </button>
+                      {option.onSecondaryAction ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            option.onSecondaryAction?.();
+                            setOpen(false);
+                          }}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] text-[#b14a37] transition hover:bg-[#ffece7]"
+                          aria-label={option.secondaryActionAriaLabel ?? `Excluir ${option.label}`}
+                          title={option.secondaryActionAriaLabel ?? `Excluir ${option.label}`}
+                        >
+                          <TrashIcon />
+                        </button>
                       ) : null}
-                    </button>
+                    </div>
                   </li>
                 );
               })}

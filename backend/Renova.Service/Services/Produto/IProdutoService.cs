@@ -16,11 +16,15 @@ namespace Renova.Service.Services.Produto
         Task<IReadOnlyList<SolicitacaoCompativelDto>> GetSolicitacoesCompativeisAsync(int produtoId, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetCorAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateCorAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
+        Task DeleteCorAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetMarcaAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateMarcaAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
+        Task DeleteMarcaAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetProdutoAuxiliarAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateProdutoAuxiliarAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
+        Task DeleteProdutoAuxiliarAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ProdutoAuxiliarDto>> GetTamanhoAsync(ObterProdutoAuxiliarQuery request, ObterProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
         Task<ProdutoAuxiliarDto> CreateTamanhoAsync(CriarProdutoAuxiliarCommand request, CriarProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
+        Task DeleteTamanhoAsync(ExcluirProdutoAuxiliarParametros parametros, CancellationToken cancellationToken = default);
     }
 }

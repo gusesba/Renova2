@@ -214,6 +214,30 @@ async function createProductAuxiliar(
   };
 }
 
+async function deleteProductAuxiliar(
+  path: "referencia" | "marca" | "tamanho" | "cor",
+  auxiliaryId: number,
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/produto/${path}/${auxiliaryId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
 export function createProductReference(
   payload: { valor: string; lojaId: number },
   token: string,
@@ -231,6 +255,22 @@ export function createProductSize(payload: { valor: string; lojaId: number }, to
 
 export function createProductColor(payload: { valor: string; lojaId: number }, token: string) {
   return createProductAuxiliar("cor", payload, token);
+}
+
+export function deleteProductReference(auxiliaryId: number, token: string) {
+  return deleteProductAuxiliar("referencia", auxiliaryId, token);
+}
+
+export function deleteProductBrand(auxiliaryId: number, token: string) {
+  return deleteProductAuxiliar("marca", auxiliaryId, token);
+}
+
+export function deleteProductSize(auxiliaryId: number, token: string) {
+  return deleteProductAuxiliar("tamanho", auxiliaryId, token);
+}
+
+export function deleteProductColor(auxiliaryId: number, token: string) {
+  return deleteProductAuxiliar("cor", auxiliaryId, token);
 }
 
 async function getLookupOptions<TItem>({

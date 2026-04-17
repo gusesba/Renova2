@@ -272,6 +272,19 @@ namespace Renova.API.Controllers
                 cancellationToken);
         }
 
+        [HttpDelete("referencia/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> DeleteProdutoAuxiliar(int id, CancellationToken cancellationToken)
+        {
+            return ExcluirAuxiliarAsync(
+                (parametros, token) => _produtoService.DeleteProdutoAuxiliarAsync(parametros, token),
+                id,
+                cancellationToken);
+        }
+
         [HttpPost("marca")]
         [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -294,6 +307,19 @@ namespace Renova.API.Controllers
             return ObterAuxiliarAsync(
                 (request, parametros, token) => _produtoService.GetMarcaAsync(request, parametros, token),
                 query,
+                cancellationToken);
+        }
+
+        [HttpDelete("marca/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> DeleteMarca(int id, CancellationToken cancellationToken)
+        {
+            return ExcluirAuxiliarAsync(
+                (parametros, token) => _produtoService.DeleteMarcaAsync(parametros, token),
+                id,
                 cancellationToken);
         }
 
@@ -322,6 +348,19 @@ namespace Renova.API.Controllers
                 cancellationToken);
         }
 
+        [HttpDelete("tamanho/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> DeleteTamanho(int id, CancellationToken cancellationToken)
+        {
+            return ExcluirAuxiliarAsync(
+                (parametros, token) => _produtoService.DeleteTamanhoAsync(parametros, token),
+                id,
+                cancellationToken);
+        }
+
         [HttpPost("cor")]
         [ProducesResponseType(typeof(ProdutoAuxiliarDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -344,6 +383,19 @@ namespace Renova.API.Controllers
             return ObterAuxiliarAsync(
                 (request, parametros, token) => _produtoService.GetCorAsync(request, parametros, token),
                 query,
+                cancellationToken);
+        }
+
+        [HttpDelete("cor/{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public Task<IActionResult> DeleteCor(int id, CancellationToken cancellationToken)
+        {
+            return ExcluirAuxiliarAsync(
+                (parametros, token) => _produtoService.DeleteCorAsync(parametros, token),
+                id,
                 cancellationToken);
         }
 
@@ -412,6 +464,44 @@ namespace Renova.API.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
+            }
+        }
+
+        private async Task<IActionResult> ExcluirAuxiliarAsync(
+            Func<ExcluirProdutoAuxiliarParametros, CancellationToken, Task> operacao,
+            int id,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                await operacao(
+                    new ExcluirProdutoAuxiliarParametros
+                    {
+                        UsuarioId = usuarioId.Value,
+                        ProdutoAuxiliarId = id
+                    },
+                    cancellationToken);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensagem = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { mensagem = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {

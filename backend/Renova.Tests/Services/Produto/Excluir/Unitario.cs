@@ -106,6 +106,43 @@ namespace Renova.Tests.Services.Produto.Excluir
             _ = await context.MovimentacoesProdutos.SingleAsync(item => item.ProdutoId == produto.Id);
         }
 
+        [Fact]
+        public async Task DeleteProdutoAuxiliarAsyncDeveExcluirReferenciaQuandoNaoHouverProdutosVinculados()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoReferenciaModel referencia = await context.ProdutosReferencia.SingleAsync(item => item.LojaId == loja.Id);
+
+            ProdutoService service = new(context);
+            await service.DeleteProdutoAuxiliarAsync(new ExcluirProdutoAuxiliarParametros
+            {
+                UsuarioId = loja.UsuarioId,
+                ProdutoAuxiliarId = referencia.Id
+            });
+
+            Assert.Empty(context.ProdutosReferencia);
+        }
+
+        [Fact]
+        public async Task DeleteMarcaAsyncDeveImpedirExclusaoQuandoMarcaPossuirProdutosVinculados()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id);
+
+            ProdutoService service = new(context);
+            InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteMarcaAsync(new ExcluirProdutoAuxiliarParametros
+            {
+                UsuarioId = loja.UsuarioId,
+                ProdutoAuxiliarId = produto.MarcaId
+            }));
+
+            Assert.Equal("Marca possui produtos vinculados e nao pode ser excluido.", ex.Message);
+            _ = await context.Marcas.SingleAsync(item => item.Id == produto.MarcaId);
+        }
+
         private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(RenovaDbContext context, int lojaId)
         {
             ProdutoReferenciaModel produto = await context.ProdutosReferencia.SingleAsync(item => item.LojaId == lojaId);
