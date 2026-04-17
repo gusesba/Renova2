@@ -29,7 +29,8 @@ services:
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=renova;Username=postgres;Password=${POSTGRES_PASSWORD:-change-me}
       Cors__AllowedOrigins__0: https://renovacuritiba.com.br
       Cors__AllowedOrigins__1: https://www.renovacuritiba.com.br
-      Cors__AllowedOrigins__2: https://api.renovacuritiba.com.br
+      Cors__AllowedOrigins__2: https://app.renovacuritiba.com.br
+      Cors__AllowedOrigins__3: https://api.renovacuritiba.com.br
     expose:
       - "8080"
     restart: unless-stopped
