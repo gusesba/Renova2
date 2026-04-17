@@ -11,6 +11,7 @@ type ProfileMenuProps = {
   hasActiveStore: boolean;
   initials: string;
   name: string | null;
+  onEditUser: () => void;
   onOpenSettings: () => void;
 };
 
@@ -53,6 +54,7 @@ export function ProfileMenu({
   hasActiveStore,
   initials,
   name,
+  onEditUser,
   onOpenSettings,
 }: ProfileMenuProps) {
   const router = useRouter();
@@ -127,6 +129,11 @@ export function ProfileMenu({
     onOpenSettings();
   }
 
+  function handleEditUser() {
+    setOpen(false);
+    onEditUser();
+  }
+
   return (
     <div ref={containerRef} className="relative z-50 min-w-0">
       <button
@@ -160,12 +167,17 @@ export function ProfileMenu({
               : "pointer-events-none -translate-y-3 scale-95 opacity-0"
           }`}
         >
-          <div className="border-b border-[var(--border)] px-4 py-3">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleEditUser}
+            className="w-full cursor-pointer border-b border-[var(--border)] px-4 py-3 text-left transition hover:bg-[var(--surface-muted)]"
+          >
             <p className="truncate text-sm font-semibold text-[var(--foreground)]">
               {name?.trim().split(/\s+/)?.[0] ?? "Usuario"}
             </p>
             <p className="truncate text-xs text-[var(--muted)]">{email ?? "Sessao autenticada"}</p>
-          </div>
+          </button>
 
           <div className="py-2">
             <button

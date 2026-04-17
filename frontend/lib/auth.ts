@@ -98,6 +98,10 @@ export function persistAuthSession(response: UsuarioTokenResponse) {
   localStorage.setItem("renova.usuario", JSON.stringify(response.usuario));
 }
 
+export function updateAuthUser(usuario: Usuario) {
+  localStorage.setItem("renova.usuario", JSON.stringify(usuario));
+}
+
 export function clearAuthSession() {
   localStorage.removeItem("renova.token");
   localStorage.removeItem("renova.usuario");

@@ -1,7 +1,16 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 
 import {
   asAccessProfile,
@@ -27,6 +36,7 @@ type StoreContextValue = {
   setSelectedStoreId: (storeId: number | null) => void;
   isLoadingStores: boolean;
   currentUser: UsuarioResumo | null;
+  setCurrentUser: Dispatch<SetStateAction<UsuarioResumo | null>>;
   accessProfile: AccessProfile | null;
   isLoadingAccess: boolean;
   hasPermission: (permission: PermissionKey) => boolean;
@@ -39,7 +49,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [token] = useState<string | null>(() =>
     typeof window === "undefined" ? null : getAuthToken(),
   );
-  const [currentUser] = useState<UsuarioResumo | null>(() =>
+  const [currentUser, setCurrentUserState] = useState<UsuarioResumo | null>(() =>
     typeof window === "undefined" ? null : getAuthUser(),
   );
   const [selectedStoreIdState, setSelectedStoreIdState] = useState<number | null>(() =>
@@ -114,6 +124,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSelectedStoreId,
       isLoadingStores: storesQuery.isLoading,
       currentUser,
+      setCurrentUser: setCurrentUserState,
       accessProfile: accessQuery.data ?? null,
       isLoadingAccess: accessQuery.isLoading,
       hasPermission: (permission) =>

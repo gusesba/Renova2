@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { ProfileMenu } from "@/app/components/layout/profile-menu";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { UserEditModal } from "@/app/components/layout/user-edit-modal";
 import { Select } from "@/app/components/ui/select";
 import { permissions } from "@/lib/access";
 import { toast } from "sonner";
@@ -45,10 +46,12 @@ type AppHeaderProps = {
 
 export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
+  const [isUserEditOpen, setIsUserEditOpen] = useState(false);
   const {
     currentUser,
     hasPermission,
     isLoadingStores,
+    setCurrentUser,
     selectedStore,
     selectedStoreId,
     setSelectedStoreId,
@@ -123,6 +126,9 @@ export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
             name={currentUser?.nome ?? null}
             email={currentUser?.email ?? null}
             hasActiveStore={Boolean(selectedStoreId)}
+            onEditUser={() => {
+              setIsUserEditOpen(true);
+            }}
             onOpenSettings={() => {
               if (!selectedStoreId) {
                 toast.error("Selecione uma loja antes de abrir as configuracoes.");
@@ -146,6 +152,17 @@ export function AppHeader({ isCollapsed = false }: AppHeaderProps) {
         storeName={selectedStore?.nome ?? null}
         onClose={() => {
           setIsStoreConfigOpen(false);
+        }}
+      />
+      <UserEditModal
+        isOpen={isUserEditOpen}
+        userId={currentUser?.id ?? null}
+        currentName={currentUser?.nome ?? null}
+        onClose={() => {
+          setIsUserEditOpen(false);
+        }}
+        onSaved={(user) => {
+          setCurrentUser(user);
         }}
       />
     </header>

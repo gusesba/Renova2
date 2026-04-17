@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
+using Renova.Service.Commands.Usuario;
 using Renova.Service.Extensions;
+using Renova.Service.Parameters.Usuario;
 using Renova.Service.Queries.Usuario;
 
 namespace Renova.Service.Services.Usuario
@@ -55,6 +57,44 @@ namespace Renova.Service.Services.Usuario
                 });
 
             return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        public async Task<UsuarioDto> EditAsync(
+            EditarUsuarioCommand command,
+            EditarUsuarioParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            UsuarioModel? usuarioAutenticado = await _context.Usuarios
+                .FirstOrDefaultAsync(usuario => usuario.Id == parametros.UsuarioAutenticadoId, cancellationToken);
+
+            if (usuarioAutenticado is null)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            UsuarioModel? usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(item => item.Id == parametros.UsuarioId, cancellationToken);
+
+            if (usuario is null)
+            {
+                throw new KeyNotFoundException("Usuario nao encontrado.");
+            }
+
+            if (parametros.UsuarioAutenticadoId != parametros.UsuarioId)
+            {
+                throw new UnauthorizedAccessException("Voce nao tem permissao para editar este usuario.");
+            }
+
+            usuario.Nome = command.Nome.Trim();
+
+            _ = await _context.SaveChangesAsync(cancellationToken);
+
+            return new UsuarioDto
+            {
+                Id = usuario.Id,
+                Nome = usuario.Nome,
+                Email = usuario.Email
+            };
         }
     }
 }

@@ -96,12 +96,22 @@ export default function Home() {
             </a>
           </nav>
 
-          <a
-            href="#demo"
-            className="inline-flex items-center justify-center rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold !text-white transition hover:translate-y-[-1px] hover:bg-[#18233b] hover:!text-white"
-          >
-            Ver demonstracao
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://app.renovacuritiba.com.br"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/82 px-5 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:translate-y-[-1px] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+            >
+              Acessar portal
+            </a>
+            <a
+              href="#demo"
+              className="inline-flex items-center justify-center rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold !text-white transition hover:translate-y-[-1px] hover:bg-[#18233b] hover:!text-white"
+            >
+              Ver demonstracao
+            </a>
+          </div>
         </header>
 
         <div className="grid flex-1 items-center gap-16 py-14 lg:grid-cols-[1.02fr_0.98fr] lg:py-20">
