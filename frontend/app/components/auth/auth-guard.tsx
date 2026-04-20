@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
+import { getDashboardRouteForArea, getStoredAccessArea } from "@/lib/access-area";
 import { clearAuthSession, getAuthToken, isTokenValid } from "@/lib/auth";
 
 type AuthGuardProps = {
@@ -34,7 +35,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
 
     if (shouldRedirectToDashboard) {
-      router.replace("/dashboard/loja");
+      router.replace(getDashboardRouteForArea(getStoredAccessArea()));
     }
   }, [router, shouldRedirectToAuth, shouldRedirectToDashboard, validSession]);
 

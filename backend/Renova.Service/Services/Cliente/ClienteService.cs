@@ -24,6 +24,19 @@ namespace Renova.Service.Services.Cliente
             ["nome"] = (Expression<Func<ClienteModel, string>>)(cliente => cliente.Nome),
             ["contato"] = (Expression<Func<ClienteModel, string>>)(cliente => cliente.Contato)
         };
+        private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveisMinhasPecas = new Dictionary<string, LambdaExpression>
+        {
+            ["id"] = (Expression<Func<ProdutoEstoqueModel, int>>)(produto => produto.Id),
+            ["loja"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Loja != null ? produto.Loja.Nome : string.Empty),
+            ["produto"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Produto != null ? produto.Produto.Valor : string.Empty),
+            ["descricao"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Descricao),
+            ["marca"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Marca != null ? produto.Marca.Valor : string.Empty),
+            ["tamanho"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty),
+            ["cor"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Cor != null ? produto.Cor.Valor : string.Empty),
+            ["preco"] = (Expression<Func<ProdutoEstoqueModel, decimal>>)(produto => produto.Preco),
+            ["entrada"] = (Expression<Func<ProdutoEstoqueModel, DateTime>>)(produto => produto.Entrada),
+            ["situacao"] = (Expression<Func<ProdutoEstoqueModel, SituacaoProduto>>)(produto => produto.Situacao)
+        };
 
         private static string? NormalizarObs(string? obs)
         {
@@ -561,6 +574,108 @@ namespace Renova.Service.Services.Cliente
                 ProdutosFornecedor = produtosFornecedor,
                 ProdutosComCliente = produtosComCliente
             };
+        }
+
+        public async Task<PaginacaoDto<ClienteProdutoAreaDto>> GetMyProductsAsync(
+            ObterMinhasPecasQuery request,
+            int usuarioId,
+            CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
+                .Where(produto => produto.Fornecedor != null && produto.Fornecedor.UserId == usuarioId);
+
+            if (!string.IsNullOrWhiteSpace(request.Loja))
+            {
+                string lojaFiltro = request.Loja.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Loja != null && produto.Loja.Nome.ToLower().Contains(lojaFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Produto))
+            {
+                string produtoFiltro = request.Produto.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Produto != null && produto.Produto.Valor.ToLower().Contains(produtoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Descricao))
+            {
+                string descricaoFiltro = request.Descricao.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Descricao.ToLower().Contains(descricaoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Marca))
+            {
+                string marcaFiltro = request.Marca.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Marca != null && produto.Marca.Valor.ToLower().Contains(marcaFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Tamanho))
+            {
+                string tamanhoFiltro = request.Tamanho.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Tamanho != null && produto.Tamanho.Valor.ToLower().Contains(tamanhoFiltro));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Cor))
+            {
+                string corFiltro = request.Cor.Trim().ToLowerInvariant();
+                query = query.Where(produto => produto.Cor != null && produto.Cor.Valor.ToLower().Contains(corFiltro));
+            }
+
+            if (request.PrecoInicial.HasValue)
+            {
+                query = query.Where(produto => produto.Preco >= request.PrecoInicial.Value);
+            }
+
+            if (request.PrecoFinal.HasValue)
+            {
+                query = query.Where(produto => produto.Preco <= request.PrecoFinal.Value);
+            }
+
+            if (request.DataInicial.HasValue)
+            {
+                DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+                query = query.Where(produto => produto.Entrada >= dataInicialUtc);
+            }
+
+            if (request.DataFinal.HasValue)
+            {
+                DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+                query = query.Where(produto => produto.Entrada <= dataFinalUtc);
+            }
+
+            IQueryable<ClienteProdutoAreaDto> queryProjetada = query
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveisMinhasPecas, "entrada")
+                .ThenByDescending(produto => produto.Id)
+                .Select(produto => new ClienteProdutoAreaDto
+                {
+                    Id = produto.Id,
+                    Preco = produto.Preco,
+                    ProdutoId = produto.ProdutoId,
+                    Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                    MarcaId = produto.MarcaId,
+                    Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                    TamanhoId = produto.TamanhoId,
+                    Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                    CorId = produto.CorId,
+                    Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                    FornecedorId = produto.FornecedorId,
+                    Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                    Descricao = produto.Descricao,
+                    Entrada = produto.Entrada,
+                    LojaId = produto.LojaId,
+                    LojaNome = produto.Loja != null ? produto.Loja.Nome : string.Empty,
+                    Situacao = produto.Situacao,
+                    Consignado = produto.Consignado
+                });
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
         private async Task<Dictionary<int, decimal>> CalcularSaldosAntesDoPeriodoAsync(

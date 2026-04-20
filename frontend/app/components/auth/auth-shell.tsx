@@ -6,6 +6,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import {
+  getDashboardRouteForArea,
+  getStoredAccessArea,
+  persistAccessArea,
+  type AccessArea,
+} from "@/lib/access-area";
+import {
   extractApiFieldErrors,
   extractApiMessage,
   initialValues,
@@ -23,6 +29,9 @@ import { AuthRightPanel } from "./right-panel";
 export function AuthShell() {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
+  const [accessArea, setAccessArea] = useState<AccessArea>(() =>
+    typeof window === "undefined" ? "lojista" : getStoredAccessArea(),
+  );
   const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<FieldErrors>({});
 
@@ -56,6 +65,11 @@ export function AuthShell() {
       ...current,
       [field]: undefined,
     }));
+  }
+
+  function handleAccessAreaChange(area: AccessArea) {
+    setAccessArea(area);
+    persistAccessArea(area);
   }
 
   async function submitCurrentMode() {
@@ -108,7 +122,7 @@ export function AuthShell() {
           ? `Login realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`
           : `Cadastro realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`,
       );
-      router.replace(mode === "login" ? "/dashboard/produto" : "/dashboard/loja");
+      router.replace(getDashboardRouteForArea(accessArea));
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
     }
@@ -120,10 +134,12 @@ export function AuthShell() {
         <div className="grid min-h-[640px] lg:grid-cols-[1.05fr_1fr]">
           <AuthLeftPanel />
           <AuthRightPanel
+            accessArea={accessArea}
             errors={errors}
             isSubmitting={authMutation.isPending}
             mode={mode}
             values={values}
+            onAccessAreaChange={handleAccessAreaChange}
             onFieldChange={updateField}
             onModeChange={handleModeChange}
             onSubmit={submitCurrentMode}

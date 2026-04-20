@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { type AccessArea } from "@/lib/access-area";
 import { menuPermissionGroups } from "@/lib/access";
 import { useStoreContext } from "@/app/dashboard/store-context";
 
@@ -65,13 +66,16 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
 }
 
 type AppSidebarProps = {
+  accessArea: AccessArea;
   isCollapsed?: boolean;
 };
 
-export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
+export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps) {
   const pathname = usePathname();
   const { hasAnyPermission, selectedStoreId } = useStoreContext();
-  const visibleItems = primaryItems.filter((item) => {
+  const visibleItems = accessArea === "cliente"
+    ? [{ label: "Area do cliente", href: "/dashboard/area-cliente" }]
+    : primaryItems.filter((item) => {
     const requiredPermissions = menuPermissionGroups[item.href];
 
     if (!requiredPermissions || !selectedStoreId) {
@@ -94,7 +98,9 @@ export function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
         <HexagonMark />
         <div>
           <p className="text-lg font-semibold tracking-tight text-[var(--foreground)]">Renova</p>
-          <p className="text-sm text-[var(--muted)]">Painel principal</p>
+          <p className="text-sm text-[var(--muted)]">
+            {accessArea === "cliente" ? "Area do cliente" : "Painel principal"}
+          </p>
         </div>
       </div>
 

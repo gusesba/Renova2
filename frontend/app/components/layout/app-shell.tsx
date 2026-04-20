@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { getDashboardRouteForArea, getStoredAccessArea, type AccessArea } from "@/lib/access-area";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { menuPermissionGroups } from "@/lib/access";
 import { AppHeader } from "./app-header";
@@ -15,9 +16,13 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const [isChromeCollapsed, setIsChromeCollapsed] = useState(false);
+  const [accessArea, setAccessArea] = useState<AccessArea>(() =>
+    typeof window === "undefined" ? "lojista" : getStoredAccessArea(),
+  );
   const pathname = usePathname();
   const router = useRouter();
   const { hasAnyPermission, isLoadingAccess, selectedStoreId } = useStoreContext();
+
   const allowedRoutes = useMemo(
     () =>
       Object.entries(menuPermissionGroups)
@@ -31,6 +36,14 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   useEffect(() => {
+    if (accessArea === "cliente") {
+      if (pathname !== "/dashboard/area-cliente") {
+        router.replace("/dashboard/area-cliente");
+      }
+
+      return;
+    }
+
     if (!pathname.startsWith("/dashboard") || isLoadingAccess) {
       return;
     }
@@ -55,7 +68,13 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     router.replace(allowedRoutes[0] ?? "/dashboard/loja");
-  }, [allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
+  }, [accessArea, allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
+
+  useEffect(() => {
+    if (accessArea === "lojista" && pathname === "/dashboard/area-cliente") {
+      router.replace(getDashboardRouteForArea(accessArea));
+    }
+  }, [accessArea, pathname, router]);
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--background)] p-4 lg:p-6">
@@ -89,9 +108,13 @@ export function AppShell({ children }: AppShellProps) {
           </span>
         </button>
 
-        <AppSidebar isCollapsed={isChromeCollapsed} />
+        <AppSidebar accessArea={accessArea} isCollapsed={isChromeCollapsed} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--surface-muted)]">
-          <AppHeader isCollapsed={isChromeCollapsed} />
+          <AppHeader
+            accessArea={accessArea}
+            isCollapsed={isChromeCollapsed}
+            onAccessAreaChange={setAccessArea}
+          />
           <main
             className={`min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto transition-[padding] duration-300 ${
               isChromeCollapsed ? "p-16 sm:p-16 lg:p-20" : "p-4 sm:p-6 lg:p-8"
