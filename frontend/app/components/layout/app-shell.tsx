@@ -15,7 +15,7 @@ type AppShellProps = {
 };
 
 export function AppShell({ children }: AppShellProps) {
-  const [isChromeCollapsed, setIsChromeCollapsed] = useState(false);
+  const [isMobileChromeOpen, setIsMobileChromeOpen] = useState(false);
   const [accessArea, setAccessArea] = useState<AccessArea>(() =>
     typeof window === "undefined" ? "lojista" : getStoredAccessArea(),
   );
@@ -78,53 +78,49 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--background)] p-4 lg:p-6">
-      <div
-        className={`relative mx-auto flex h-full w-full max-w-[1600px] overflow-hidden bg-[var(--surface)] transition-all duration-300 ${
-          isChromeCollapsed
-            ? "rounded-[16px] border border-[color:rgba(231,236,245,0.55)] shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
-            : "rounded-[28px] border border-[var(--border)] shadow-[var(--shadow-soft)]"
-        }`}
-      >
+      <div className="relative mx-auto flex h-full w-full max-w-[1600px] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] transition-all duration-300">
         <button
           type="button"
-          onClick={() => setIsChromeCollapsed((current) => !current)}
-          aria-label={isChromeCollapsed ? "Expandir header e sidebar" : "Contrair header e sidebar"}
-          aria-pressed={isChromeCollapsed}
-          className="absolute top-2 left-2 z-20 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-3 lg:left-3"
+          onClick={() => setIsMobileChromeOpen((current) => !current)}
+          aria-label={isMobileChromeOpen ? "Fechar header e menu lateral" : "Abrir header e menu lateral"}
+          aria-expanded={isMobileChromeOpen}
+          className="absolute top-2 left-2 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:hidden"
         >
-          <span
-            className={`transition-transform duration-300 ${isChromeCollapsed ? "rotate-180" : ""}`}
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
-              <path
-                d="M17 17L7 7m0 0h8.5M7 7v8.5"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-            </svg>
-          </span>
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+            <path
+              d={isMobileChromeOpen ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"}
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.8"
+            />
+          </svg>
         </button>
 
-        <AppSidebar accessArea={accessArea} isCollapsed={isChromeCollapsed} />
+        {isMobileChromeOpen ? (
+          <button
+            type="button"
+            aria-label="Fechar header e menu lateral"
+            onClick={() => setIsMobileChromeOpen(false)}
+            className="absolute inset-0 z-30 bg-[rgba(15,23,42,0.36)] backdrop-blur-[2px] lg:hidden"
+          />
+        ) : null}
+
+        <AppSidebar
+          accessArea={accessArea}
+          isMobileOpen={isMobileChromeOpen}
+          onNavigate={() => setIsMobileChromeOpen(false)}
+        />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--surface-muted)]">
           <AppHeader
             accessArea={accessArea}
-            isCollapsed={isChromeCollapsed}
+            isMobileOpen={isMobileChromeOpen}
             onAccessAreaChange={setAccessArea}
+            onNavigate={() => setIsMobileChromeOpen(false)}
           />
-          <main
-            className={`min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto transition-[padding] duration-300 ${
-              isChromeCollapsed ? "p-16 sm:p-16 lg:p-20" : "p-4 sm:p-6 lg:p-8"
-            }`}
-          >
-            <div
-              className={`mx-auto w-full min-w-0 ${
-                isChromeCollapsed ? "max-w-full" : "max-w-[1250px]"
-              }`}
-            >
+          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 transition-[padding] duration-300 sm:p-6 lg:p-8">
+            <div className="mx-auto w-full min-w-0 max-w-[1250px]">
               {children}
             </div>
           </main>

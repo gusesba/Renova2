@@ -46,7 +46,15 @@ function isActivePath(pathname: string, href: string, exact = false) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function SidebarLink({
+  item,
+  pathname,
+  onNavigate,
+}: {
+  item: NavItem;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const active = isActivePath(pathname, item.href, item.exact);
 
   const activeClass = active
@@ -60,6 +68,7 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
   return (
     <Link
       href={item.href}
+      onClick={onNavigate}
       className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm font-medium transition ${activeClass}`}
     >
       <span className={`flex h-10 w-10 items-center justify-center rounded-xl border ${iconClass}`}>
@@ -73,9 +82,16 @@ function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
 type AppSidebarProps = {
   accessArea: AccessArea;
   isCollapsed?: boolean;
+  isMobileOpen?: boolean;
+  onNavigate?: () => void;
 };
 
-export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps) {
+export function AppSidebar({
+  accessArea,
+  isCollapsed = false,
+  isMobileOpen = false,
+  onNavigate,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const { hasAnyPermission, selectedStoreId } = useStoreContext();
   const visibleItems = accessArea === "cliente"
@@ -96,12 +112,14 @@ export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps)
 
   return (
     <aside
-      className={`hidden h-full shrink-0 overflow-hidden border-r border-[var(--border)] bg-[var(--surface)] transition-all duration-300 lg:flex lg:flex-col ${
+      className={`fixed top-[104px] bottom-4 left-4 z-40 flex w-[290px] max-w-[calc(100vw-2rem)] shrink-0 flex-col overflow-y-auto rounded-[24px] border border-[var(--border)] bg-[var(--surface)] px-5 py-6 shadow-[0_24px_60px_rgba(15,23,42,0.22)] transition-all duration-300 lg:static lg:top-auto lg:right-auto lg:bottom-auto lg:left-auto lg:z-auto lg:max-w-none lg:rounded-none lg:border-r lg:border-t-0 lg:border-b-0 lg:border-l-0 lg:shadow-none ${
+        isMobileOpen ? "translate-x-0" : "-translate-x-[110%]"
+      } lg:translate-x-0 ${
         isCollapsed
-          ? "w-0 border-r-0 px-0 py-0 opacity-0"
-          : "w-[290px] overflow-y-auto px-5 py-6 opacity-100"
+          ? "lg:w-0 lg:border-r-0 lg:px-0 lg:py-0 lg:opacity-0"
+          : "lg:w-[290px] lg:opacity-100"
       }`}
-      aria-hidden={isCollapsed}
+      aria-hidden={isCollapsed && !isMobileOpen}
     >
       <div className="flex items-center gap-3 px-2">
         <HexagonMark />
@@ -115,7 +133,12 @@ export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps)
 
       <nav className="mt-10 flex flex-col gap-2">
         {visibleItems.map((item) => (
-          <SidebarLink key={item.label} item={item} pathname={pathname} />
+          <SidebarLink
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            onNavigate={onNavigate}
+          />
         ))}
       </nav>
     </aside>
