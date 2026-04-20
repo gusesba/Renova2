@@ -160,7 +160,7 @@ export function StorePaymentMethodConfigModal({
       }`}
     >
       <div
-        className={`w-full max-w-2xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.24)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.24)] transition duration-250 ease-out sm:max-h-[calc(100vh-3rem)] sm:max-w-2xl lg:max-w-3xl ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -189,7 +189,7 @@ export function StorePaymentMethodConfigModal({
           </button>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
           {draftPaymentMethods.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] px-4 py-5 text-sm text-[var(--muted)]">
               Nenhuma forma cadastrada. Adicione a primeira configuracao.
@@ -264,7 +264,7 @@ export function StorePaymentMethodConfigModal({
           </button>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
