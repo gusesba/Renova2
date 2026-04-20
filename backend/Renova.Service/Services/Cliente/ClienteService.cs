@@ -656,7 +656,29 @@ namespace Renova.Service.Services.Cliente
                 .Select(produto => new ClienteProdutoAreaDto
                 {
                     Id = produto.Id,
-                    Preco = produto.Preco,
+                    Preco = produto.Situacao == SituacaoProduto.Vendido
+                        ? (
+                            produto.Movimentacoes
+                                .Where(item => item.Movimentacao != null && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                                .OrderByDescending(item => item.Movimentacao!.Data)
+                                .ThenByDescending(item => item.MovimentacaoId)
+                                .Select(item => decimal.Round(
+                                    produto.Preco * ((100m - item.Desconto) / 100m),
+                                    2,
+                                    MidpointRounding.AwayFromZero))
+                                .FirstOrDefault() == 0m
+                                    ? produto.Preco
+                                    : produto.Movimentacoes
+                                        .Where(item => item.Movimentacao != null && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                                        .OrderByDescending(item => item.Movimentacao!.Data)
+                                        .ThenByDescending(item => item.MovimentacaoId)
+                                        .Select(item => decimal.Round(
+                                            produto.Preco * ((100m - item.Desconto) / 100m),
+                                            2,
+                                            MidpointRounding.AwayFromZero))
+                                        .FirstOrDefault()
+                        )
+                        : produto.Preco,
                     ProdutoId = produto.ProdutoId,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                     MarcaId = produto.MarcaId,
