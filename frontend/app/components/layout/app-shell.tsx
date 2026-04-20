@@ -37,7 +37,7 @@ export function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     if (accessArea === "cliente") {
-      if (pathname !== "/dashboard/area-cliente") {
+      if (!pathname.startsWith("/dashboard/area-cliente")) {
         router.replace("/dashboard/area-cliente");
       }
 
@@ -71,7 +71,7 @@ export function AppShell({ children }: AppShellProps) {
   }, [accessArea, allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
 
   useEffect(() => {
-    if (accessArea === "lojista" && pathname === "/dashboard/area-cliente") {
+    if (accessArea === "lojista" && pathname.startsWith("/dashboard/area-cliente")) {
       router.replace(getDashboardRouteForArea(accessArea));
     }
   }, [accessArea, pathname, router]);

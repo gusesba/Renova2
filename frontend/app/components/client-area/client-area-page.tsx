@@ -11,6 +11,7 @@ import {
   initialClientAreaFilters,
   persistClientAreaTableSettings,
   type ClientAreaFilters,
+  type ClientAreaScope,
   type ClientAreaTableSettings,
 } from "@/lib/client-area";
 import { getAuthToken } from "@/lib/store";
@@ -34,15 +35,58 @@ function ClientAreaEmptyState({
   );
 }
 
-export function ClientAreaPage() {
+type ClientAreaPageProps = {
+  scope?: ClientAreaScope;
+};
+
+const pageContentByScope: Record<
+  ClientAreaScope,
+  {
+    heroTitle: string;
+    heroDescription: string;
+    metricLabel: string;
+    loadingTitle: string;
+    loadingDescription: string;
+    emptyTitle: string;
+    emptyDescription: string;
+    listTitle: string;
+    listDescription: string;
+  }
+> = {
+  fornecedor: {
+    heroTitle: "Pecas em todas as lojas",
+    heroDescription: "Visualize as pecas em que voce esta vinculado como fornecedor nas lojas acessiveis.",
+    metricLabel: "Pecas localizadas",
+    loadingTitle: "Carregando suas pecas",
+    loadingDescription: "Buscando os vinculos do cliente logado em todas as lojas acessiveis.",
+    emptyTitle: "Nenhuma peca encontrada",
+    emptyDescription: "Seu usuario ainda nao esta vinculado como fornecedor com pecas cadastradas nas lojas acessiveis.",
+    listTitle: "Lista de pecas",
+    listDescription: "Filtre por loja, produto, descricao, atributos, preco e data de entrada.",
+  },
+  cliente: {
+    heroTitle: "Produtos em que voce e cliente",
+    heroDescription: "Visualize as pecas em que voce esta vinculado como cliente nas lojas acessiveis.",
+    metricLabel: "Produtos localizados",
+    loadingTitle: "Carregando seus produtos",
+    loadingDescription: "Buscando os produtos em que o cliente logado aparece como destino da ultima movimentacao.",
+    emptyTitle: "Nenhum produto encontrado",
+    emptyDescription: "Seu usuario ainda nao esta vinculado como cliente em pecas das lojas acessiveis.",
+    listTitle: "Lista de produtos",
+    listDescription: "Filtre por loja, produto, descricao, atributos, preco e data de entrada.",
+  },
+};
+
+export function ClientAreaPage({ scope = "fornecedor" }: ClientAreaPageProps) {
+  const pageContent = pageContentByScope[scope];
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [tableSettings, setTableSettings] = useState<ClientAreaTableSettings>(() =>
-    getStoredClientAreaTableSettings(),
+    getStoredClientAreaTableSettings(scope),
   );
   const [filters, setFilters] = useState<ClientAreaFilters>(() => ({
     ...initialClientAreaFilters,
-    tamanhoPagina: getStoredClientAreaTableSettings().tamanhoPagina,
+    tamanhoPagina: getStoredClientAreaTableSettings(scope).tamanhoPagina,
   }));
   const [debouncedTextFilters, setDebouncedTextFilters] = useState(() => ({
     loja: initialClientAreaFilters.loja,
@@ -94,13 +138,13 @@ export function ClientAreaPage() {
   }
 
   const inventoryQuery = useQuery({
-    queryKey: ["client-area-products", token, queryFilters],
+    queryKey: ["client-area-products", scope, token, queryFilters],
     queryFn: async () => {
       if (!token) {
         return null;
       }
 
-      return getClientAreaInventory(token, queryFilters);
+      return getClientAreaInventory(token, queryFilters, scope);
     },
     enabled: Boolean(token),
   });
@@ -118,16 +162,16 @@ export function ClientAreaPage() {
             </span>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-                Pecas em todas as lojas
+                {pageContent.heroTitle}
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-[var(--muted)]">
-                Visualize as pecas em que voce esta vinculado como fornecedor nas lojas acessiveis.
+                {pageContent.heroDescription}
               </p>
             </div>
           </div>
           <div className="rounded-3xl border border-white/70 bg-white/75 px-5 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-              Pecas localizadas
+              {pageContent.metricLabel}
             </p>
             <p className="mt-1 text-3xl font-semibold text-[var(--foreground)]">
               {products.length}
@@ -140,14 +184,16 @@ export function ClientAreaPage() {
         <ClientAreaFiltersBar
           filters={filters}
           isLoading={inventoryQuery.isLoading}
+          title={pageContent.listTitle}
+          description={pageContent.listDescription}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           onChange={handleFilterChange}
         />
 
         {inventoryQuery.isLoading ? (
           <ClientAreaEmptyState
-            title="Carregando suas pecas"
-            description="Buscando os vinculos do cliente logado em todas as lojas acessiveis."
+            title={pageContent.loadingTitle}
+            description={pageContent.loadingDescription}
           />
         ) : inventoryQuery.isError ? (
           <ClientAreaEmptyState
@@ -160,8 +206,8 @@ export function ClientAreaPage() {
           />
         ) : products.length === 0 ? (
           <ClientAreaEmptyState
-            title="Nenhuma peca encontrada"
-            description="Seu usuario ainda nao esta vinculado como fornecedor com pecas cadastradas nas lojas acessiveis."
+            title={pageContent.emptyTitle}
+            description={pageContent.emptyDescription}
           />
         ) : (
           <>
@@ -193,7 +239,7 @@ export function ClientAreaPage() {
 
           startTransition(() => {
             setTableSettings(normalizedSettings);
-            persistClientAreaTableSettings(normalizedSettings);
+            persistClientAreaTableSettings(normalizedSettings, scope);
             setFilters((current) => ({
               ...current,
               pagina: 1,

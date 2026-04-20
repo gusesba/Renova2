@@ -7,6 +7,8 @@ import { Select } from "@/app/components/ui/select";
 import type { ClientAreaFilters } from "@/lib/client-area";
 
 type ClientAreaFiltersBarProps = {
+  title?: string;
+  description?: string;
   filters: ClientAreaFilters;
   isLoading: boolean;
   onChange: (next: Partial<ClientAreaFilters>) => void;
@@ -123,6 +125,8 @@ function SelectField({
 }
 
 export function ClientAreaFiltersBar({
+  title = "Lista de pecas",
+  description = "Filtre por loja, produto, descricao, atributos, preco e data de entrada.",
   filters,
   isLoading,
   onChange,
@@ -134,10 +138,8 @@ export function ClientAreaFiltersBar({
     <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-[var(--foreground)]">Lista de pecas</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Filtre por loja, produto, descricao, atributos, preco e data de entrada.
-          </p>
+          <h2 className="text-xl font-semibold text-[var(--foreground)]">{title}</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
         </div>
 
         <button

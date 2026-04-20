@@ -9,6 +9,7 @@ import { useStoreContext } from "@/app/dashboard/store-context";
 type NavItem = {
   label: string;
   href: string;
+  exact?: boolean;
 };
 
 const primaryItems: NavItem[] = [
@@ -37,12 +38,16 @@ function HexagonMark() {
   );
 }
 
-function isActivePath(pathname: string, href: string) {
+function isActivePath(pathname: string, href: string, exact = false) {
+  if (exact) {
+    return pathname === href;
+  }
+
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 function SidebarLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = isActivePath(pathname, item.href);
+  const active = isActivePath(pathname, item.href, item.exact);
 
   const activeClass = active
     ? "border-[var(--primary)] bg-[var(--primary-soft)] text-[var(--primary)] shadow-[0_16px_24px_rgba(106,92,255,0.14)]"
@@ -74,7 +79,10 @@ export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps)
   const pathname = usePathname();
   const { hasAnyPermission, selectedStoreId } = useStoreContext();
   const visibleItems = accessArea === "cliente"
-    ? [{ label: "Area do cliente", href: "/dashboard/area-cliente" }]
+    ? [
+        { label: "Pecas como fornecedor", href: "/dashboard/area-cliente", exact: true },
+        { label: "Pecas como cliente", href: "/dashboard/area-cliente/como-cliente" },
+      ]
     : primaryItems.filter((item) => {
     const requiredPermissions = menuPermissionGroups[item.href];
 

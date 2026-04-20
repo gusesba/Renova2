@@ -581,6 +581,46 @@ namespace Renova.Service.Services.Cliente
             int usuarioId,
             CancellationToken cancellationToken = default)
         {
+            await EnsureAuthenticatedUserExistsAsync(usuarioId, cancellationToken);
+
+            IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
+                .Where(produto => produto.Fornecedor != null && produto.Fornecedor.UserId == usuarioId);
+
+            IQueryable<ClienteProdutoAreaDto> queryProjetada = BuildClientAreaProductsQuery(
+                ApplyMyProductsFilters(query, request),
+                request);
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        public async Task<PaginacaoDto<ClienteProdutoAreaDto>> GetMyCustomerProductsAsync(
+            ObterMinhasPecasQuery request,
+            int usuarioId,
+            CancellationToken cancellationToken = default)
+        {
+            await EnsureAuthenticatedUserExistsAsync(usuarioId, cancellationToken);
+
+            IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
+                .Where(produto => produto.Movimentacoes
+                    .Where(item => item.Movimentacao != null)
+                    .OrderByDescending(item => item.Movimentacao!.Data)
+                    .ThenByDescending(item => item.MovimentacaoId)
+                    .Take(1)
+                    .Any(item =>
+                        item.Movimentacao!.Cliente != null
+                        && item.Movimentacao.Cliente.UserId == usuarioId
+                        && (item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                            || item.Movimentacao.Tipo == TipoMovimentacao.Emprestimo)));
+
+            IQueryable<ClienteProdutoAreaDto> queryProjetada = BuildClientAreaProductsQuery(
+                ApplyMyProductsFilters(query, request),
+                request);
+
+            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
+        }
+
+        private async Task EnsureAuthenticatedUserExistsAsync(int usuarioId, CancellationToken cancellationToken)
+        {
             bool usuarioExiste = await _context.Usuarios
                 .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
 
@@ -588,10 +628,12 @@ namespace Renova.Service.Services.Cliente
             {
                 throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
             }
+        }
 
-            IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
-                .Where(produto => produto.Fornecedor != null && produto.Fornecedor.UserId == usuarioId);
-
+        private IQueryable<ProdutoEstoqueModel> ApplyMyProductsFilters(
+            IQueryable<ProdutoEstoqueModel> query,
+            ObterMinhasPecasQuery request)
+        {
             if (!string.IsNullOrWhiteSpace(request.Loja))
             {
                 string lojaFiltro = request.Loja.Trim().ToLowerInvariant();
@@ -650,7 +692,14 @@ namespace Renova.Service.Services.Cliente
                 query = query.Where(produto => produto.Entrada <= dataFinalUtc);
             }
 
-            IQueryable<ClienteProdutoAreaDto> queryProjetada = query
+            return query;
+        }
+
+        private IQueryable<ClienteProdutoAreaDto> BuildClientAreaProductsQuery(
+            IQueryable<ProdutoEstoqueModel> query,
+            ObterMinhasPecasQuery request)
+        {
+            return query
                 .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveisMinhasPecas, "entrada")
                 .ThenByDescending(produto => produto.Id)
                 .Select(produto => new ClienteProdutoAreaDto
@@ -662,21 +711,11 @@ namespace Renova.Service.Services.Cliente
                                 .Where(item => item.Movimentacao != null && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
                                 .OrderByDescending(item => item.Movimentacao!.Data)
                                 .ThenByDescending(item => item.MovimentacaoId)
-                                .Select(item => decimal.Round(
+                                .Select(item => (decimal?)decimal.Round(
                                     produto.Preco * ((100m - item.Desconto) / 100m),
                                     2,
                                     MidpointRounding.AwayFromZero))
-                                .FirstOrDefault() == 0m
-                                    ? produto.Preco
-                                    : produto.Movimentacoes
-                                        .Where(item => item.Movimentacao != null && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
-                                        .OrderByDescending(item => item.Movimentacao!.Data)
-                                        .ThenByDescending(item => item.MovimentacaoId)
-                                        .Select(item => decimal.Round(
-                                            produto.Preco * ((100m - item.Desconto) / 100m),
-                                            2,
-                                            MidpointRounding.AwayFromZero))
-                                        .FirstOrDefault()
+                                .FirstOrDefault() ?? produto.Preco
                         )
                         : produto.Preco,
                     ProdutoId = produto.ProdutoId,
@@ -696,8 +735,6 @@ namespace Renova.Service.Services.Cliente
                     Situacao = produto.Situacao,
                     Consignado = produto.Consignado
                 });
-
-            return await queryProjetada.ToPagedResultAsync(request.Pagina, request.TamanhoPagina, cancellationToken);
         }
 
         private async Task<Dictionary<int, decimal>> CalcularSaldosAntesDoPeriodoAsync(

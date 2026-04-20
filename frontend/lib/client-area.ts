@@ -1,6 +1,8 @@
 import type { ProductListItem } from "@/lib/product";
 import { getClientApiMessage } from "@/lib/client";
-import { getMyClientProducts } from "@/services/client-service";
+import { getMyClientProducts, getMyCustomerProducts } from "@/services/client-service";
+
+export type ClientAreaScope = "fornecedor" | "cliente";
 
 export type ClientAreaProductItem = ProductListItem & {
   storeName: string;
@@ -71,7 +73,10 @@ type ClientAreaInventoryApiResponse = {
   totalPaginas: number;
 };
 
-const clientAreaTableSettingsStorageKey = "renova.clientAreaTableSettings";
+const clientAreaTableSettingsStorageKeys: Record<ClientAreaScope, string> = {
+  fornecedor: "renova.clientAreaTableSettings",
+  cliente: "renova.clientAreaCustomerTableSettings",
+};
 
 export const initialClientAreaFilters: ClientAreaFilters = {
   loja: "",
@@ -159,8 +164,15 @@ export function asClientAreaInventoryResponse(body: unknown): ClientAreaListResp
   };
 }
 
-export async function getClientAreaInventory(token: string, filters: ClientAreaFilters) {
-  const response = await getMyClientProducts(token, filters);
+export async function getClientAreaInventory(
+  token: string,
+  filters: ClientAreaFilters,
+  scope: ClientAreaScope = "fornecedor",
+) {
+  const response =
+    scope === "cliente"
+      ? await getMyCustomerProducts(token, filters)
+      : await getMyClientProducts(token, filters);
 
   if (!response.ok) {
     throw new Error(
@@ -171,12 +183,14 @@ export async function getClientAreaInventory(token: string, filters: ClientAreaF
   return asClientAreaInventoryResponse(response.body);
 }
 
-export function getStoredClientAreaTableSettings(): ClientAreaTableSettings {
+export function getStoredClientAreaTableSettings(
+  scope: ClientAreaScope = "fornecedor",
+): ClientAreaTableSettings {
   if (typeof window === "undefined") {
     return defaultClientAreaTableSettings;
   }
 
-  const rawValue = window.localStorage.getItem(clientAreaTableSettingsStorageKey);
+  const rawValue = window.localStorage.getItem(clientAreaTableSettingsStorageKeys[scope]);
 
   if (!rawValue) {
     return defaultClientAreaTableSettings;
@@ -220,10 +234,13 @@ export function getStoredClientAreaTableSettings(): ClientAreaTableSettings {
   }
 }
 
-export function persistClientAreaTableSettings(settings: ClientAreaTableSettings) {
+export function persistClientAreaTableSettings(
+  settings: ClientAreaTableSettings,
+  scope: ClientAreaScope = "fornecedor",
+) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(clientAreaTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(clientAreaTableSettingsStorageKeys[scope], JSON.stringify(settings));
 }

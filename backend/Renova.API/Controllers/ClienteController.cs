@@ -83,6 +83,37 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("meus-produtos")]
+        [ProducesResponseType(typeof(PaginacaoDto<ClienteProdutoAreaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMeusProdutos([FromQuery] ObterMinhasPecasQuery query, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                PaginacaoDto<ClienteProdutoAreaDto> resultado = await _clienteService.GetMyCustomerProductsAsync(
+                    query,
+                    usuarioId.Value,
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpGet("{id:int}/detalhe")]
         [ProducesResponseType(typeof(ClienteDetalheDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
