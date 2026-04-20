@@ -23,7 +23,7 @@ export async function getUserOptions(
 ): Promise<{ body: ClientUserOption[]; ok: boolean; status: number }> {
   const params = new URLSearchParams({
     pagina: "1",
-    tamanhoPagina: "20",
+    tamanhoPagina: "5",
     ordenarPor: "nome",
     direcao: "asc",
   });

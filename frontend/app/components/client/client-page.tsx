@@ -127,6 +127,8 @@ export function ClientPage() {
     }),
     [debouncedTextFilters.contato, debouncedTextFilters.nome, filters],
   );
+  const trimmedUserSearch = debouncedUserSearch.trim();
+  const trimmedEditUserSearch = debouncedEditUserSearch.trim();
 
   const clientsQuery = useQuery({
     queryKey: ["clients", token, selectedStoreId, queryFilters],
@@ -149,13 +151,13 @@ export function ClientPage() {
   });
 
   const createUserOptionsQuery = useQuery({
-    queryKey: ["client-users", token, debouncedUserSearch],
+    queryKey: ["client-users", token, trimmedUserSearch],
     queryFn: async () => {
       if (!token) {
         return [];
       }
 
-      const response = await getUserOptions(token, debouncedUserSearch);
+      const response = await getUserOptions(token, trimmedUserSearch);
 
       if (!response.ok) {
         throw new Error("Nao foi possivel carregar os usuarios.");
@@ -163,17 +165,17 @@ export function ClientPage() {
 
       return response.body;
     },
-    enabled: Boolean(token && isCreateModalOpen),
+    enabled: Boolean(token && isCreateModalOpen && trimmedUserSearch),
   });
 
   const editUserOptionsQuery = useQuery({
-    queryKey: ["client-users", token, debouncedEditUserSearch],
+    queryKey: ["client-users", token, trimmedEditUserSearch],
     queryFn: async () => {
       if (!token) {
         return [];
       }
 
-      const response = await getUserOptions(token, debouncedEditUserSearch);
+      const response = await getUserOptions(token, trimmedEditUserSearch);
 
       if (!response.ok) {
         throw new Error("Nao foi possivel carregar os usuarios.");
@@ -181,7 +183,7 @@ export function ClientPage() {
 
       return response.body;
     },
-    enabled: Boolean(token && isEditModalOpen),
+    enabled: Boolean(token && isEditModalOpen && trimmedEditUserSearch),
   });
 
   const createClientMutation = useMutation({
@@ -268,8 +270,8 @@ export function ClientPage() {
       doacao: client.doacao,
       userId: client.userId ? String(client.userId) : "",
     });
-    setEditUserSearch(client.userNome ?? "");
-    setDebouncedEditUserSearch(client.userNome ?? "");
+    setEditUserSearch("");
+    setDebouncedEditUserSearch("");
     setSelectedEditUserOption(
       client.userId && client.userNome && client.userEmail
         ? {
@@ -658,12 +660,16 @@ export function ClientPage() {
         errors={formErrors}
         isOpen={isCreateModalOpen}
         isSubmitting={createClientMutation.isPending}
-        isUserLoading={createUserOptionsQuery.isLoading}
+        isUserLoading={Boolean(trimmedUserSearch) && createUserOptionsQuery.isLoading}
         storeName={selectedStore?.nome ?? null}
         userEmptyLabel={
-          createUserOptionsQuery.isError ? "Falha ao carregar usuarios." : "Nenhum usuario encontrado."
+          !trimmedUserSearch
+            ? "Digite para buscar usuarios."
+            : createUserOptionsQuery.isError
+              ? "Falha ao carregar usuarios."
+              : "Nenhum usuario encontrado."
         }
-        userOptions={createUserOptionsQuery.data ?? []}
+        userOptions={trimmedUserSearch ? (createUserOptionsQuery.data ?? []) : []}
         userSearchValue={userSearch}
         userSelectedLabel={
           selectedUserOption ? `${selectedUserOption.nome} - ${selectedUserOption.email}` : undefined
@@ -675,7 +681,7 @@ export function ClientPage() {
           if (field === "userId") {
             const selected = (createUserOptionsQuery.data ?? []).find((user) => user.id === Number(value));
             setSelectedUserOption(selected ?? null);
-            setUserSearch(selected ? `${selected.nome} - ${selected.email}` : "");
+            setUserSearch("");
           }
         }}
         onClose={handleCloseModal}
@@ -691,11 +697,15 @@ export function ClientPage() {
         errors={editFormErrors}
         isOpen={isEditModalOpen}
         isSubmitting={updateClientMutation.isPending}
-        isUserLoading={editUserOptionsQuery.isLoading}
+        isUserLoading={Boolean(trimmedEditUserSearch) && editUserOptionsQuery.isLoading}
         userEmptyLabel={
-          editUserOptionsQuery.isError ? "Falha ao carregar usuarios." : "Nenhum usuario encontrado."
+          !trimmedEditUserSearch
+            ? "Digite para buscar usuarios."
+            : editUserOptionsQuery.isError
+              ? "Falha ao carregar usuarios."
+              : "Nenhum usuario encontrado."
         }
-        userOptions={editUserOptionsQuery.data ?? []}
+        userOptions={trimmedEditUserSearch ? (editUserOptionsQuery.data ?? []) : []}
         userSearchValue={editUserSearch}
         userSelectedLabel={
           selectedEditUserOption
@@ -709,7 +719,7 @@ export function ClientPage() {
           if (field === "userId") {
             const selected = (editUserOptionsQuery.data ?? []).find((user) => user.id === Number(value));
             setSelectedEditUserOption(selected ?? null);
-            setEditUserSearch(selected ? `${selected.nome} - ${selected.email}` : "");
+            setEditUserSearch("");
           }
         }}
         onClose={handleCloseEditModal}

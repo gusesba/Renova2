@@ -81,6 +81,7 @@ function AccessControlContent({
   const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
   const [roleDraft, setRoleDraft] = useState<RoleDraft>({ nome: "", funcionalidadeIds: [] });
   const deferredUserSearch = useDeferredValue(userSearch);
+  const trimmedUserSearch = deferredUserSearch.trim();
 
   const canViewEmployees = hasPermission(permissions.funcionariosVisualizar);
   const canAddEmployees = hasPermission(permissions.funcionariosAdicionar);
@@ -125,13 +126,13 @@ function AccessControlContent({
   });
 
   const userOptionsQuery = useQuery({
-    queryKey: ["employee-user-options", deferredUserSearch, token],
+    queryKey: ["employee-user-options", trimmedUserSearch, token],
     queryFn: async () => {
-      const response = await getUserOptions(token!, deferredUserSearch);
+      const response = await getUserOptions(token!, trimmedUserSearch);
       if (!response.ok) throw new Error("Nao foi possivel carregar os usuarios.");
       return response.body as UserOption[];
     },
-    enabled: Boolean(token && canAddEmployees),
+    enabled: Boolean(token && canAddEmployees && trimmedUserSearch),
   });
 
   const createEmployeeMutation = useMutation({
@@ -379,13 +380,20 @@ function AccessControlContent({
                   searchValue={userSearch}
                   searchPlaceholder="Buscar por nome ou e-mail"
                   placeholder="Escolha um usuario"
-                  loading={userOptionsQuery.isLoading}
-                  emptyLabel="Nenhum usuario disponivel"
-                  options={availableUsers}
+                  loading={Boolean(trimmedUserSearch) && userOptionsQuery.isLoading}
+                  emptyLabel={
+                    !trimmedUserSearch
+                      ? "Digite para buscar usuarios."
+                      : "Nenhum usuario disponivel"
+                  }
+                  options={trimmedUserSearch ? availableUsers : []}
                   onSearchChange={setUserSearch}
                   onChange={(option) => {
                     const user = (userOptionsQuery.data ?? []).find((item) => item.id === Number(option.value));
-                    if (user) setSelectedUser(user);
+                    if (user) {
+                      setSelectedUser(user);
+                      setUserSearch("");
+                    }
                   }}
                 />
               </div>
