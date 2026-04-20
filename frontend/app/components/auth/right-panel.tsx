@@ -30,7 +30,7 @@ export function AuthRightPanel({
   const isLogin = mode === "login";
 
   return (
-    <section className="flex items-center bg-white px-6 py-8 sm:px-10 lg:px-12">
+    <section className="flex items-center bg-white px-5 py-6 sm:px-8 sm:py-8 lg:px-12">
       <div className="mx-auto w-full max-w-md">
         {isLogin ? (
           <LoginForm

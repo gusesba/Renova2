@@ -33,8 +33,8 @@ export function CadastroForm({
 
   return (
     <>
-      <div className="mb-8 space-y-3">
-        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[#5a52eb] sm:text-4xl">
+      <div className="mb-6 space-y-3 sm:mb-8">
+        <h1 className="text-[1.85rem] font-semibold tracking-[-0.03em] text-[#5a52eb] sm:text-4xl">
           Crie sua conta na Renova!
         </h1>
         <p className="text-sm leading-6 text-[#7f79c8] sm:text-base">
@@ -43,7 +43,7 @@ export function CadastroForm({
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit} noValidate>
-        <div className="rounded-[24px] border border-[#d9ddfb] bg-[#f4f6ff] p-2">
+        <div className="rounded-[20px] border border-[#d9ddfb] bg-[#f4f6ff] p-2 sm:rounded-[24px]">
           <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[#7f79c8]">
             Area de acesso
           </p>
@@ -59,7 +59,7 @@ export function CadastroForm({
                   key={item.value}
                   type="button"
                   onClick={() => onAccessAreaChange(item.value)}
-                  className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                  className={`rounded-2xl px-3 py-3 text-sm font-semibold transition sm:px-4 ${
                     active
                       ? "bg-[linear-gradient(90deg,_#6a63f4,_#5a52eb)] text-white shadow-[0_12px_24px_rgba(91,83,235,0.26)]"
                       : "bg-white text-[#6f69bb] hover:bg-[#eef1ff]"
