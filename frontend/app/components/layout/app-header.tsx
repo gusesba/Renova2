@@ -12,21 +12,6 @@ import { Select } from "@/app/components/ui/select";
 import { permissions } from "@/lib/access";
 import { toast } from "sonner";
 
-function BellIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
-      <path
-        d="M15 17H9m9-1V11a6 6 0 10-12 0v5l-1.2 2.1A1 1 0 005.67 20h12.66a1 1 0 00.87-1.49L18 16zm-8 4a2 2 0 004 0"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
 type AppHeaderProps = {
   accessArea: AccessArea;
   isCollapsed?: boolean;
@@ -112,14 +97,6 @@ export function AppHeader({
           className="inline-flex h-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)]"
         >
           {switchAreaLabel}
-        </button>
-
-        <button
-          type="button"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
-          aria-label="Notificacoes"
-        >
-          <BellIcon />
         </button>
 
         <ProfileMenu
