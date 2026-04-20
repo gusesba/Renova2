@@ -4,8 +4,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ClientCreateModal } from "@/app/components/client/client-create-modal";
+import { ProductAuxiliaryCreateModal } from "@/app/components/product/product-auxiliary-create-modal";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
-import { normalizeDecimalValue, type ProductLookupOption } from "@/lib/product";
+import {
+  asClientResponse,
+  extractClientFieldErrors,
+  formatPhoneValue,
+  getClientApiMessage,
+  initialClientFormValues,
+  normalizeNumericValue,
+  type ClientFieldErrors,
+  type ClientFormValues,
+} from "@/lib/client";
+import {
+  getProductApiMessage,
+  normalizeDecimalValue,
+  type ProductLookupOption,
+} from "@/lib/product";
 import {
   asSolicitacaoResponse,
   extractSolicitacaoFieldErrors,
@@ -16,14 +32,19 @@ import {
   type SolicitacaoFormValues,
 } from "@/lib/solicitacao";
 import { getAuthToken } from "@/lib/store";
-import { getClients } from "@/services/client-service";
+import { createClient, getClients } from "@/services/client-service";
 import {
+  createProductBrand,
+  createProductColor,
+  createProductReference,
+  createProductSize,
   getProductBrandOptions,
   getProductColorOptions,
   getProductReferenceOptions,
   getProductSizeOptions,
 } from "@/services/product-service";
 import { createSolicitacao } from "@/services/solicitacao-service";
+import { clientSchema, mapClientZodErrors } from "@/validations/client";
 import { mapSolicitacaoZodErrors, solicitacaoSchema } from "@/validations/solicitacao";
 
 type SolicitacaoCreateModalProps = {
@@ -40,6 +61,15 @@ type LookupSearchState = {
   tamanho: string;
   cor: string;
   cliente: string;
+};
+
+type AuxiliaryField = "produto" | "marca" | "tamanho" | "cor";
+
+type AuxiliaryModalState = {
+  error?: string;
+  field: AuxiliaryField;
+  isOpen: boolean;
+  value: string;
 };
 
 function FormField({
@@ -90,7 +120,9 @@ function SearchableField({
   searchPlaceholder,
   options,
   emptyLabel,
+  actionLabel,
   onSearchChange,
+  onAction,
   onClear,
   onSelect,
 }: {
@@ -105,7 +137,9 @@ function SearchableField({
   searchPlaceholder: string;
   options: ProductLookupOption[];
   emptyLabel: string;
+  actionLabel?: string;
   onSearchChange: (value: string) => void;
+  onAction?: () => void;
   onClear: () => void;
   onSelect: (option: ProductLookupOption) => void;
 }) {
@@ -129,6 +163,8 @@ function SearchableField({
         searchValue={searchValue}
         selectedLabel={selectedLabel}
         value={value || null}
+        actionLabel={actionLabel}
+        onAction={onAction}
         onSearchChange={onSearchChange}
         onChange={(option) =>
           onSelect({
@@ -168,6 +204,14 @@ export function SolicitacaoCreateModal({
     cor: "",
     cliente: "",
   });
+  const [auxiliaryModal, setAuxiliaryModal] = useState<AuxiliaryModalState>({
+    field: "produto",
+    isOpen: false,
+    value: "",
+  });
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [clientFormValues, setClientFormValues] = useState<ClientFormValues>(initialClientFormValues);
+  const [clientFormErrors, setClientFormErrors] = useState<ClientFieldErrors>({});
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const createSolicitacaoMutation = useMutation({
@@ -189,6 +233,49 @@ export function SolicitacaoCreateModal({
     },
   });
 
+  const createAuxiliaryMutation = useMutation({
+    mutationFn: async (payload: { field: AuxiliaryField; value: string; storeId: number }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para cadastrar um auxiliar.");
+      }
+
+      const requestPayload = {
+        valor: payload.value,
+        lojaId: payload.storeId,
+      };
+
+      if (payload.field === "produto") {
+        return createProductReference(requestPayload, token);
+      }
+
+      if (payload.field === "marca") {
+        return createProductBrand(requestPayload, token);
+      }
+
+      if (payload.field === "tamanho") {
+        return createProductSize(requestPayload, token);
+      }
+
+      return createProductColor(requestPayload, token);
+    },
+  });
+
+  const createClientMutation = useMutation({
+    mutationFn: async (payload: {
+      nome: string;
+      contato: string;
+      doacao: boolean;
+      lojaId: number;
+      userId?: number;
+    }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para cadastrar um cliente.");
+      }
+
+      return createClient(payload, token);
+    },
+  });
+
   function resetForm() {
     setValues(initialSolicitacaoFormValues);
     setErrors({});
@@ -206,6 +293,14 @@ export function SolicitacaoCreateModal({
       cor: "",
       cliente: "",
     });
+    setAuxiliaryModal({
+      field: "produto",
+      isOpen: false,
+      value: "",
+    });
+    setClientModalOpen(false);
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
   }
 
   function handleClose() {
@@ -251,6 +346,10 @@ export function SolicitacaoCreateModal({
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape" && !createSolicitacaoMutation.isPending) {
+        if (auxiliaryModal.isOpen || clientModalOpen) {
+          return;
+        }
+
         resetForm();
         onClose();
       }
@@ -264,7 +363,14 @@ export function SolicitacaoCreateModal({
       window.clearTimeout(closeTimeout);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [createSolicitacaoMutation.isPending, isOpen, onClose, shouldRender]);
+  }, [
+    auxiliaryModal.isOpen,
+    clientModalOpen,
+    createSolicitacaoMutation.isPending,
+    isOpen,
+    onClose,
+    shouldRender,
+  ]);
 
   const productOptionsQuery = useQuery({
     queryKey: ["solicitacao-create-options", "produto", token, storeId, debouncedLookupSearch.produto],
@@ -402,6 +508,66 @@ export function SolicitacaoCreateModal({
     }));
   }
 
+  function getAuxiliaryLabel(field: AuxiliaryField) {
+    if (field === "produto") {
+      return "Produto";
+    }
+
+    if (field === "marca") {
+      return "Marca";
+    }
+
+    if (field === "tamanho") {
+      return "Tamanho";
+    }
+
+    return "Cor";
+  }
+
+  function openAuxiliaryModal(field: AuxiliaryField) {
+    setAuxiliaryModal({
+      field,
+      isOpen: true,
+      value: "",
+    });
+  }
+
+  function closeAuxiliaryModal() {
+    if (createAuxiliaryMutation.isPending) {
+      return;
+    }
+
+    setAuxiliaryModal((current) => ({
+      ...current,
+      error: undefined,
+      isOpen: false,
+      value: "",
+    }));
+  }
+
+  function closeClientModal() {
+    if (createClientMutation.isPending) {
+      return;
+    }
+
+    setClientModalOpen(false);
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
+  }
+
+  function updateClientField<K extends keyof ClientFormValues>(field: K, value: ClientFormValues[K]) {
+    const normalizedValue = field === "contato" ? formatPhoneValue(String(value)) : value;
+
+    setClientFormValues((current) => ({
+      ...current,
+      [field]: normalizedValue,
+    }));
+    setClientFormErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }));
+  }
+
   function clearRelation(field: "produto" | "marca" | "tamanho" | "cor" | "cliente") {
     const idField = `${field}Id` as const;
     const labelField = `${field}Label` as const;
@@ -418,6 +584,142 @@ export function SolicitacaoCreateModal({
     }));
 
     updateLookupSearch(field, "");
+  }
+
+  async function handleAuxiliarySubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!storeId) {
+      toast.error("Selecione uma loja antes de criar opcoes.");
+      return;
+    }
+
+    const value = auxiliaryModal.value.trim();
+
+    if (!value) {
+      setAuxiliaryModal((current) => ({
+        ...current,
+        error: "Informe um valor.",
+      }));
+      return;
+    }
+
+    setAuxiliaryModal((current) => ({
+      ...current,
+      error: undefined,
+    }));
+
+    try {
+      const response = await createAuxiliaryMutation.mutateAsync({
+        field: auxiliaryModal.field,
+        value,
+        storeId,
+      });
+
+      if (!response.ok) {
+        const message =
+          getProductApiMessage(response.body) ??
+          `Nao foi possivel cadastrar ${getAuxiliaryLabel(auxiliaryModal.field).toLowerCase()}.`;
+
+        setAuxiliaryModal((current) => ({
+          ...current,
+          error: message,
+        }));
+        toast.error(message);
+        return;
+      }
+
+      const created = response.body as { id: number; valor: string };
+      const field = auxiliaryModal.field;
+
+      updateRelation(field, {
+        id: created.id,
+        label: created.valor,
+      });
+      updateLookupSearch(field, created.valor);
+      setDebouncedLookupSearch((current) => ({
+        ...current,
+        [field]: created.valor,
+      }));
+      setAuxiliaryModal({
+        field,
+        isOpen: false,
+        value: "",
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["solicitacao-create-options"] });
+      toast.success(`${getAuxiliaryLabel(field)} criado com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
+  async function handleClientSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!storeId) {
+      toast.error("Selecione uma loja antes de cadastrar clientes.");
+      return;
+    }
+
+    const validation = clientSchema.safeParse(clientFormValues);
+
+    if (!validation.success) {
+      setClientFormErrors(mapClientZodErrors(validation.error));
+      return;
+    }
+
+    setClientFormErrors({});
+
+    try {
+      const response = await createClientMutation.mutateAsync({
+        nome: validation.data.nome.trim(),
+        contato: normalizeNumericValue(validation.data.contato),
+        doacao: validation.data.doacao,
+        lojaId: storeId,
+        ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
+      });
+
+      if (!response.ok) {
+        const apiErrors = extractClientFieldErrors(response.body);
+
+        if (Object.keys(apiErrors).length > 0) {
+          setClientFormErrors(apiErrors);
+        }
+
+        toast.error(getClientApiMessage(response.body) ?? "Nao foi possivel cadastrar o cliente.");
+        return;
+      }
+
+      const createdClient = asClientResponse(response.body);
+
+      updateRelation("cliente", {
+        id: createdClient.id,
+        label: createdClient.nome,
+      });
+      updateLookupSearch("cliente", createdClient.nome);
+      setDebouncedLookupSearch((current) => ({
+        ...current,
+        cliente: createdClient.nome,
+      }));
+      setClientModalOpen(false);
+      setClientFormValues(initialClientFormValues);
+      setClientFormErrors({});
+
+      await queryClient.invalidateQueries({ queryKey: ["solicitacao-create-options"] });
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(`Cliente ${createdClient.nome} cadastrado com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -541,7 +843,13 @@ export function SolicitacaoCreateModal({
               emptyLabel={
                 clientOptionsQuery.isError ? "Falha ao carregar clientes." : "Nenhum cliente encontrado."
               }
+              actionLabel="Criar novo cliente"
               onSearchChange={(value) => updateLookupSearch("cliente", value)}
+              onAction={() => {
+                setClientFormValues(initialClientFormValues);
+                setClientFormErrors({});
+                setClientModalOpen(true);
+              }}
               onClear={() => clearRelation("cliente")}
               onSelect={(option) => updateRelation("cliente", option)}
             />
@@ -571,7 +879,9 @@ export function SolicitacaoCreateModal({
                   ? "Falha ao carregar produtos."
                   : "Nenhum produto auxiliar encontrado."
               }
+              actionLabel="Criar novo produto"
               onSearchChange={(value) => updateLookupSearch("produto", value)}
+              onAction={() => openAuxiliaryModal("produto")}
               onClear={() => clearRelation("produto")}
               onSelect={(option) => updateRelation("produto", option)}
             />
@@ -589,7 +899,9 @@ export function SolicitacaoCreateModal({
               emptyLabel={
                 brandOptionsQuery.isError ? "Falha ao carregar marcas." : "Nenhuma marca encontrada."
               }
+              actionLabel="Criar nova marca"
               onSearchChange={(value) => updateLookupSearch("marca", value)}
+              onAction={() => openAuxiliaryModal("marca")}
               onClear={() => clearRelation("marca")}
               onSelect={(option) => updateRelation("marca", option)}
             />
@@ -609,7 +921,9 @@ export function SolicitacaoCreateModal({
                   ? "Falha ao carregar tamanhos."
                   : "Nenhum tamanho encontrado."
               }
+              actionLabel="Criar novo tamanho"
               onSearchChange={(value) => updateLookupSearch("tamanho", value)}
+              onAction={() => openAuxiliaryModal("tamanho")}
               onClear={() => clearRelation("tamanho")}
               onSelect={(option) => updateRelation("tamanho", option)}
             />
@@ -627,7 +941,9 @@ export function SolicitacaoCreateModal({
               emptyLabel={
                 colorOptionsQuery.isError ? "Falha ao carregar cores." : "Nenhuma cor encontrada."
               }
+              actionLabel="Criar nova cor"
               onSearchChange={(value) => updateLookupSearch("cor", value)}
+              onAction={() => openAuxiliaryModal("cor")}
               onClear={() => clearRelation("cor")}
               onSelect={(option) => updateRelation("cor", option)}
             />
@@ -662,6 +978,34 @@ export function SolicitacaoCreateModal({
           </div>
         </form>
       </div>
+
+      <ProductAuxiliaryCreateModal
+        error={auxiliaryModal.error}
+        isOpen={auxiliaryModal.isOpen}
+        isSubmitting={createAuxiliaryMutation.isPending}
+        label={getAuxiliaryLabel(auxiliaryModal.field)}
+        storeName={storeName}
+        value={auxiliaryModal.value}
+        onChange={(value) =>
+          setAuxiliaryModal((current) => ({
+            ...current,
+            error: undefined,
+            value,
+          }))
+        }
+        onClose={closeAuxiliaryModal}
+        onSubmit={handleAuxiliarySubmit}
+      />
+      <ClientCreateModal
+        errors={clientFormErrors}
+        isOpen={clientModalOpen}
+        isSubmitting={createClientMutation.isPending}
+        storeName={storeName}
+        values={clientFormValues}
+        onChange={updateClientField}
+        onClose={closeClientModal}
+        onSubmit={handleClientSubmit}
+      />
     </div>
   );
 }
