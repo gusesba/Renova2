@@ -129,7 +129,7 @@ export function AuthShell() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center overflow-y-auto bg-[radial-gradient(circle_at_top_left,_#b7c4ff_0%,_#8f99f3_32%,_#6c63ef_68%,_#5a52eb_100%)] px-3 py-4 sm:px-5 sm:py-8 lg:px-6 lg:py-10">
+    <main className="flex min-h-[100dvh] items-center justify-center overflow-y-auto bg-[radial-gradient(circle_at_top_left,_#b7c4ff_0%,_#8f99f3_32%,_#6c63ef_68%,_#5a52eb_100%)] px-3 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:px-5 sm:pt-[calc(env(safe-area-inset-top,0px)+2rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+2rem)] lg:min-h-screen lg:px-6 lg:py-10">
       <div className="w-full max-w-5xl overflow-hidden rounded-[24px] bg-white shadow-[0_30px_80px_rgba(55,35,143,0.24)] sm:rounded-[32px]">
         <div className="grid min-h-[unset] lg:min-h-[640px] lg:grid-cols-[1.05fr_1fr]">
           <div className="hidden lg:block">

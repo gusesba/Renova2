@@ -77,14 +77,14 @@ export function AppShell({ children }: AppShellProps) {
   }, [accessArea, pathname, router]);
 
   return (
-    <div className="h-screen overflow-hidden bg-[var(--background)] p-4 lg:p-6">
+    <div className="h-[100dvh] overflow-hidden bg-[var(--background)] px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] lg:h-screen lg:p-6">
       <div className="relative mx-auto flex h-full w-full max-w-[1600px] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] transition-all duration-300">
         <button
           type="button"
           onClick={() => setIsMobileChromeOpen((current) => !current)}
           aria-label={isMobileChromeOpen ? "Fechar header e menu lateral" : "Abrir header e menu lateral"}
           aria-expanded={isMobileChromeOpen}
-          className="absolute top-2 left-2 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:hidden"
+          className="absolute top-[max(0.5rem,env(safe-area-inset-top,0px))] left-2 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-2 lg:hidden"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
             <path
