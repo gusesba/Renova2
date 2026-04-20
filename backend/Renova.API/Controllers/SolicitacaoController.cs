@@ -86,5 +86,40 @@ namespace Renova.API.Controllers
                 return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
             }
         }
+
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteSolicitacao(int id, CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                await _solicitacaoService.DeleteAsync(
+                    new ExcluirSolicitacaoParametros
+                    {
+                        UsuarioId = usuarioId.Value,
+                        SolicitacaoId = id
+                    },
+                    cancellationToken);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
+            }
+        }
     }
 }

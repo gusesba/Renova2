@@ -83,6 +83,40 @@ namespace Renova.Tests.Services.Solicitacao
             Assert.Single(solicitacao.ProdutosCompativeis);
         }
 
+        [Fact]
+        public async Task DeleteSolicitacaoDeveRemoverRegistro()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "solicitacao-delete@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoReferenciaModel produto = await CriarProdutoReferenciaAsync(factory, loja.Id, "Vestido");
+            MarcaModel marca = await CriarMarcaAsync(factory, loja.Id, "Farm");
+            TamanhoModel tamanho = await CriarTamanhoAsync(factory, loja.Id, "M");
+            CorModel cor = await CriarCorAsync(factory, loja.Id, "Azul");
+            int solicitacaoId = await CriarSolicitacaoAsync(
+                factory,
+                loja.Id,
+                produto.Id,
+                marca.Id,
+                tamanho.Id,
+                cor.Id,
+                cliente.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.DeleteAsync($"/api/solicitacao/{solicitacaoId}");
+
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            SolicitacaoModel? solicitacao = await context.Solicitacoes.FindAsync(solicitacaoId);
+            Assert.Null(solicitacao);
+        }
+
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/cadastro", new CadastroCommand
@@ -188,7 +222,7 @@ namespace Renova.Tests.Services.Solicitacao
             return entity;
         }
 
-        private static async Task CriarSolicitacaoAsync(
+        private static async Task<int> CriarSolicitacaoAsync(
             RenovaApiFactory factory,
             int lojaId,
             int produtoId,
@@ -199,7 +233,7 @@ namespace Renova.Tests.Services.Solicitacao
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-            _ = context.Solicitacoes.Add(new SolicitacaoModel
+            SolicitacaoModel solicitacao = new()
             {
                 ProdutoId = produtoId,
                 MarcaId = marcaId,
@@ -210,8 +244,10 @@ namespace Renova.Tests.Services.Solicitacao
                 PrecoMinimo = 100m,
                 PrecoMaximo = 200m,
                 LojaId = lojaId
-            });
+            };
+            _ = context.Solicitacoes.Add(solicitacao);
             _ = await context.SaveChangesAsync();
+            return solicitacao.Id;
         }
 
         private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(

@@ -25,6 +25,7 @@ namespace Renova.Domain.Access
 
         public const string SolicitacoesVisualizar = "solicitacoes.visualizar";
         public const string SolicitacoesAdicionar = "solicitacoes.adicionar";
+        public const string SolicitacoesExcluir = "solicitacoes.excluir";
 
         public const string MovimentacoesVisualizar = "movimentacoes.visualizar";
         public const string MovimentacoesAdicionar = "movimentacoes.adicionar";
@@ -109,7 +110,8 @@ namespace Renova.Domain.Access
             new(44, CargosVisualizar, "Cargos", "Listar cargos e funcionalidades da loja."),
             new(45, CargosAdicionar, "Cargos", "Cadastrar novos cargos."),
             new(46, CargosEditar, "Cargos", "Editar cargos existentes."),
-            new(47, CargosExcluir, "Cargos", "Excluir cargos sem funcionarios vinculados.")
+            new(47, CargosExcluir, "Cargos", "Excluir cargos sem funcionarios vinculados."),
+            new(48, SolicitacoesExcluir, "Solicitacoes", "Excluir solicitacoes da loja.")
         ];
 
         public static IReadOnlyList<string> TodasAsChaves { get; } = [.. Itens.Select(item => item.Chave)];

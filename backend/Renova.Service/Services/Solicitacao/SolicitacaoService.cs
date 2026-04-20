@@ -201,6 +201,26 @@ namespace Renova.Service.Services.Solicitacao
             return pagina;
         }
 
+        public async Task DeleteAsync(ExcluirSolicitacaoParametros parametros, CancellationToken cancellationToken = default)
+        {
+            SolicitacaoModel? solicitacao = await _context.Solicitacoes
+                .SingleOrDefaultAsync(item => item.Id == parametros.SolicitacaoId, cancellationToken);
+
+            if (solicitacao is null)
+            {
+                throw new KeyNotFoundException("Solicitacao informada nao foi encontrada.");
+            }
+
+            await _authorizationService.EnsurePermissionAsync(
+                solicitacao.LojaId,
+                parametros.UsuarioId,
+                FuncionalidadeCatalogo.SolicitacoesExcluir,
+                cancellationToken);
+
+            _ = _context.Solicitacoes.Remove(solicitacao);
+            _ = await _context.SaveChangesAsync(cancellationToken);
+        }
+
         private Task<List<ProdutoCompativelDto>> ObterProdutosCompativeisAsync(SolicitacaoModel solicitacao, CancellationToken cancellationToken)
         {
             return ObterProdutosCompativeisAsync(

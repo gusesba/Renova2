@@ -63,3 +63,26 @@ export async function createSolicitacao(
     status: response.status,
   };
 }
+
+export async function deleteSolicitacao(
+  solicitacaoId: number,
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/solicitacao/${solicitacaoId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}

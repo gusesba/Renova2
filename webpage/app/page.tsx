@@ -567,7 +567,7 @@ export default function Home() {
                 <a
                   href="mailto:contato@renova.com.br?subject=Pedido%20de%20orcamento%20-%20Renova"
                   className="inline-flex items-center justify-center rounded-full bg-white px-6 py-4 text-sm font-semibold !text-[var(--primary-strong)] shadow-[0_18px_36px_rgba(255,255,255,0.18)] transition hover:translate-y-[-2px] hover:!text-[var(--primary-strong)]"
-                >
+                  >
                   Solicitar orçamento
                 </a>
                 <a

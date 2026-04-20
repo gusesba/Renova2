@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -14,12 +14,14 @@ import {
   getStoredSolicitacaoTableSettings,
   initialSolicitacaoFilters,
   persistSolicitacaoTableSettings,
+  type SolicitacaoListItem,
   type SolicitacaoFilters,
   type SolicitacaoTableSettings,
 } from "@/lib/solicitacao";
-import { getSolicitacoes } from "@/services/solicitacao-service";
+import { deleteSolicitacao, getSolicitacoes } from "@/services/solicitacao-service";
 
 import { SolicitacaoCreateModal } from "./solicitacao-create-modal";
+import { SolicitacaoDeleteModal } from "./solicitacao-delete-modal";
 import { SolicitacaoEmptyState } from "./solicitacao-empty-state";
 import { SolicitacaoFiltersBar } from "./solicitacao-filters-bar";
 import { SolicitacaoPagination } from "./solicitacao-pagination";
@@ -27,9 +29,13 @@ import { SolicitacaoSettingsModal } from "./solicitacao-settings-modal";
 import { SolicitacoesTable } from "./solicitacoes-table";
 
 export function SolicitacaoPage() {
+  const queryClient = useQueryClient();
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [selectedSolicitacaoId, setSelectedSolicitacaoId] = useState<number | null>(null);
+  const [selectedSolicitacaoDescription, setSelectedSolicitacaoDescription] = useState<string | null>(null);
   const [tableSettings, setTableSettings] = useState<SolicitacaoTableSettings>(() =>
     getStoredSolicitacaoTableSettings(),
   );
@@ -47,6 +53,7 @@ export function SolicitacaoPage() {
   }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canAddSolicitacao = hasPermission(permissions.solicitacoesAdicionar);
+  const canDeleteSolicitacao = hasPermission(permissions.solicitacoesExcluir);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -94,12 +101,79 @@ export function SolicitacaoPage() {
     enabled: Boolean(token && selectedStoreId),
   });
 
+  const deleteSolicitacaoMutation = useMutation({
+    mutationFn: async (solicitacaoId: number) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para excluir uma solicitacao.");
+      }
+
+      return deleteSolicitacao(solicitacaoId, token);
+    },
+  });
+
   function handleFilterChange(next: Partial<SolicitacaoFilters>) {
     setFilters((current) => ({
       ...current,
       ...next,
       pagina: next.pagina ?? 1,
     }));
+  }
+
+  function handleOpenDeleteModal(solicitacao: SolicitacaoListItem) {
+    setSelectedSolicitacaoId(solicitacao.id);
+    setSelectedSolicitacaoDescription(
+      `${solicitacao.produto} para ${solicitacao.cliente}`.trim(),
+    );
+    setIsDeleteModalOpen(true);
+  }
+
+  function handleCloseDeleteModal() {
+    if (deleteSolicitacaoMutation.isPending) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
+    setSelectedSolicitacaoId(null);
+    setSelectedSolicitacaoDescription(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!selectedSolicitacaoId) {
+      toast.error("Selecione uma solicitacao valida para excluir.");
+      return;
+    }
+
+    try {
+      const response = await deleteSolicitacaoMutation.mutateAsync(selectedSolicitacaoId);
+
+      if (!response.ok) {
+        toast.error(
+          getSolicitacaoApiMessage(response.body) ?? "Nao foi possivel excluir a solicitacao.",
+        );
+        return;
+      }
+
+      const deletedSolicitacaoDescription = selectedSolicitacaoDescription;
+
+      startTransition(() => {
+        setIsDeleteModalOpen(false);
+        setSelectedSolicitacaoId(null);
+        setSelectedSolicitacaoDescription(null);
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["solicitacoes"] });
+      toast.success(
+        deletedSolicitacaoDescription
+          ? `Solicitacao ${deletedSolicitacaoDescription} excluida com sucesso.`
+          : "Solicitacao excluida com sucesso.",
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
   }
 
   const listResponse = solicitacoesQuery.data;
@@ -140,6 +214,8 @@ export function SolicitacaoPage() {
         ) : listResponse && listResponse.itens.length > 0 ? (
           <>
             <SolicitacoesTable
+              canDeleteSolicitacao={canDeleteSolicitacao}
+              onDeleteSolicitacao={handleOpenDeleteModal}
               solicitacoes={listResponse.itens}
               visibleFields={tableSettings.visibleFields}
             />
@@ -175,6 +251,13 @@ export function SolicitacaoPage() {
           }}
         />
       ) : null}
+      <SolicitacaoDeleteModal
+        description={selectedSolicitacaoDescription}
+        isOpen={isDeleteModalOpen}
+        isSubmitting={deleteSolicitacaoMutation.isPending}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteConfirm}
+      />
       <SolicitacaoSettingsModal
         isOpen={isSettingsModalOpen}
         settings={tableSettings}

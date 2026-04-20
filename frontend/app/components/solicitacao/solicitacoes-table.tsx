@@ -12,6 +12,8 @@ import {
 type SolicitacoesTableProps = {
   solicitacoes: SolicitacaoListItem[];
   visibleFields: SolicitacaoVisibleField[];
+  canDeleteSolicitacao: boolean;
+  onDeleteSolicitacao: (solicitacao: SolicitacaoListItem) => void;
 };
 
 function Cell({
@@ -28,7 +30,12 @@ function Cell({
   );
 }
 
-export function SolicitacoesTable({ solicitacoes, visibleFields }: SolicitacoesTableProps) {
+export function SolicitacoesTable({
+  solicitacoes,
+  visibleFields,
+  canDeleteSolicitacao,
+  onDeleteSolicitacao,
+}: SolicitacoesTableProps) {
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
 
   function toggleExpanded(id: number) {
@@ -107,6 +114,9 @@ export function SolicitacoesTable({ solicitacoes, visibleFields }: SolicitacoesT
                   Identificador
                 </th>
               ) : null}
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Acoes
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -125,6 +135,7 @@ export function SolicitacoesTable({ solicitacoes, visibleFields }: SolicitacoesT
                   showPrecoMaximo,
                   showMatches,
                   showId,
+                  true,
                 ].filter(Boolean).length;
 
               return (
@@ -160,6 +171,38 @@ export function SolicitacoesTable({ solicitacoes, visibleFields }: SolicitacoesT
                     ) : null}
                     {showMatches ? <Cell>{solicitacao.produtosCompativeis.length}</Cell> : null}
                     {showId ? <Cell subtle>#{solicitacao.id}</Cell> : null}
+                    <Cell>
+                      <div className="flex items-center gap-2">
+                        {canDeleteSolicitacao ? (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteSolicitacao(solicitacao)}
+                            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                            aria-label={`Excluir solicitacao #${solicitacao.id}`}
+                            title={`Excluir solicitacao #${solicitacao.id}`}
+                          >
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 24 24"
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M8 6V4h8v2" />
+                              <path d="M19 6l-1 14H6L5 6" />
+                              <path d="M10 11v6" />
+                              <path d="M14 11v6" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <span className="inline-flex h-10 w-10" aria-hidden="true" />
+                        )}
+                      </div>
+                    </Cell>
                   </tr>
                   {isExpanded ? (
                     <tr>
