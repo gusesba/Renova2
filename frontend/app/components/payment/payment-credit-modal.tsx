@@ -311,7 +311,7 @@ export function PaymentCreditModal({
       }`}
     >
       <div
-        className={`w-full max-w-3xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-3rem)] sm:max-w-3xl ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -339,8 +339,9 @@ export function PaymentCreditModal({
           </button>
         </div>
 
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-3">
+        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+            <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
               <p className="text-sm text-[var(--muted)]">Cliente</p>
               <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">{client.nome}</p>
@@ -362,141 +363,142 @@ export function PaymentCreditModal({
                 {formatCurrency(nextCredit)}
               </p>
             </div>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-2">
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-[var(--foreground)]">
-                Tipo de pagamento
-              </span>
-              <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
-                <Select
-                  ariaLabel="Tipo de pagamento"
-                  value={String(paymentType)}
-                  options={paymentCreditTypeOptions.map((option) => ({
-                    label: option.label,
-                    value: String(option.value),
-                  }))}
-                  onChange={(value) => setPaymentType(Number(value) as PaymentCreditTypeValue)}
-                />
-              </div>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-[var(--foreground)]">
-                Data do pagamento
-              </span>
-              <input
-                type="date"
-                value={dateValue}
-                onChange={(event) => setDateValue(event.target.value)}
-                disabled={isSaving}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-              />
-            </label>
-          </div>
-
-          {isCustomerOperation ? (
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-[var(--foreground)]">
-                Forma de pagamento
-              </span>
-              <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
-                <Select
-                  ariaLabel="Forma de pagamento"
-                  value={paymentMethodId}
-                  options={(config?.formasPagamento ?? []).map((item) => ({
-                    label: `${item.nome} (${item.percentualAjuste > 0 ? "+" : ""}${item.percentualAjuste}%)`,
-                    value: String(item.id),
-                  }))}
-                  onChange={(value) => setPaymentMethodId(value)}
-                />
-              </div>
-              <p className="text-sm text-[var(--muted)]">
-                Selecione a taxa ou desconto que sera aplicada sobre o valor do pagamento.
-              </p>
-            </label>
-          ) : null}
-
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">
-              Valor em credito
-            </span>
-            <div className="relative">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={creditValue}
-                onChange={(event) => setCreditValue(event.target.value)}
-                disabled={isSaving}
-                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-16 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-                placeholder="0,00"
-              />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
-                R$
-              </span>
-            </div>
-            <p className="text-sm text-[var(--muted)]">
-              {isSupplierOperation
-                ? "Informe quanto sera consumido do credito do sistema para converter em dinheiro ao fornecedor."
-                : "Informe quanto de credito o cliente recebera. A previa abaixo mostra o valor em dinheiro considerando a taxa ou desconto da forma de pagamento."}
-            </p>
-          </label>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
-              <p className="text-sm text-[var(--muted)]">
-                {isSupplierOperation ? "Dinheiro equivalente ao fornecedor" : "Previa em dinheiro"}
-              </p>
-              <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">
-                {formatCurrency(moneyPreview)}
-              </p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                {isSupplierOperation && config
-                  ? `Calculo: creditos x ${config.percentualRepasseFornecedor}% / ${config.percentualRepasseVendedorCredito}%.`
-                  : isCustomerOperation && selectedPaymentMethod
-                    ? `Calculo: credito x (1 + ${selectedPaymentMethod.percentualAjuste}%).`
-                    : "Conversao direta de credito para dinheiro."}
-              </p>
             </div>
 
-            <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
-              <p className="text-sm text-[var(--muted)]">Resumo da operacao</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                {formatPaymentCreditType(paymentType)}
-              </p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-[var(--foreground)]">
+                  Tipo de pagamento
+                </span>
+                <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
+                  <Select
+                    ariaLabel="Tipo de pagamento"
+                    value={String(paymentType)}
+                    options={paymentCreditTypeOptions.map((option) => ({
+                      label: option.label,
+                      value: String(option.value),
+                    }))}
+                    onChange={(value) => setPaymentType(Number(value) as PaymentCreditTypeValue)}
+                  />
+                </div>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-[var(--foreground)]">
+                  Data do pagamento
+                </span>
+                <input
+                  type="date"
+                  value={dateValue}
+                  onChange={(event) => setDateValue(event.target.value)}
+                  disabled={isSaving}
+                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                />
+              </label>
+            </div>
+
+            {isCustomerOperation ? (
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold text-[var(--foreground)]">
+                  Forma de pagamento
+                </span>
+                <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
+                  <Select
+                    ariaLabel="Forma de pagamento"
+                    value={paymentMethodId}
+                    options={(config?.formasPagamento ?? []).map((item) => ({
+                      label: `${item.nome} (${item.percentualAjuste > 0 ? "+" : ""}${item.percentualAjuste}%)`,
+                      value: String(item.id),
+                    }))}
+                    onChange={(value) => setPaymentMethodId(value)}
+                  />
+                </div>
+                <p className="text-sm text-[var(--muted)]">
+                  Selecione a taxa ou desconto que sera aplicada sobre o valor do pagamento.
+                </p>
+              </label>
+            ) : null}
+
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">
+                Valor em credito
+              </span>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={creditValue}
+                  onChange={(event) => setCreditValue(event.target.value)}
+                  disabled={isSaving}
+                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 pr-16 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                  placeholder="0,00"
+                />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--muted)]">
+                  R$
+                </span>
+              </div>
+              <p className="text-sm text-[var(--muted)]">
                 {isSupplierOperation
-                  ? "Debita credito do sistema desse cliente e registra a saida em dinheiro."
-                  : "Gera credito para o cliente e registra quanto foi pago em dinheiro com a forma de pagamento selecionada."}
+                  ? "Informe quanto sera consumido do credito do sistema para converter em dinheiro ao fornecedor."
+                  : "Informe quanto de credito o cliente recebera. A previa abaixo mostra o valor em dinheiro considerando a taxa ou desconto da forma de pagamento."}
               </p>
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+                <p className="text-sm text-[var(--muted)]">
+                  {isSupplierOperation ? "Dinheiro equivalente ao fornecedor" : "Previa em dinheiro"}
+                </p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">
+                  {formatCurrency(moneyPreview)}
+                </p>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  {isSupplierOperation && config
+                    ? `Calculo: creditos x ${config.percentualRepasseFornecedor}% / ${config.percentualRepasseVendedorCredito}%.`
+                    : isCustomerOperation && selectedPaymentMethod
+                      ? `Calculo: credito x (1 + ${selectedPaymentMethod.percentualAjuste}%).`
+                      : "Conversao direta de credito para dinheiro."}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+                <p className="text-sm text-[var(--muted)]">Resumo da operacao</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+                  {formatPaymentCreditType(paymentType)}
+                </p>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  {isSupplierOperation
+                    ? "Debita credito do sistema desse cliente e registra a saida em dinheiro."
+                    : "Gera credito para o cliente e registra quanto foi pago em dinheiro com a forma de pagamento selecionada."}
+                </p>
+              </div>
             </div>
+
+            {isLoadingConfig ? (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
+                Carregando configuracao da loja para calcular o repasse.
+              </div>
+            ) : configMessage ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                {configMessage}
+              </div>
+            ) : null}
+
+            {isCustomerOperation && !configMessage && (!config || config.formasPagamento.length === 0) ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                Configure ao menos uma forma de pagamento na loja antes de lancar um pagamento do cliente.
+              </div>
+            ) : null}
+
+            {isSupplierOperation && !hasEnoughCredit ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
+                O valor informado excede o credito atual do cliente.
+              </div>
+            ) : null}
           </div>
 
-          {isLoadingConfig ? (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
-              Carregando configuracao da loja para calcular o repasse.
-            </div>
-          ) : configMessage ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-              {configMessage}
-            </div>
-          ) : null}
-
-          {isCustomerOperation && !configMessage && (!config || config.formasPagamento.length === 0) ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-              Configure ao menos uma forma de pagamento na loja antes de lancar um pagamento do cliente.
-            </div>
-          ) : null}
-
-          {isSupplierOperation && !hasEnoughCredit ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
-              O valor informado excede o credito atual do cliente.
-            </div>
-          ) : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}

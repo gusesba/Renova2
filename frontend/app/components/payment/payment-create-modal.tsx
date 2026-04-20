@@ -237,7 +237,7 @@ export function PaymentCreateModal({
       }`}
     >
       <div
-        className={`w-full max-w-3xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-3rem)] sm:max-w-3xl ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -266,8 +266,9 @@ export function PaymentCreateModal({
           </button>
         </div>
 
-        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-5 md:grid-cols-2">
+        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+            <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
               <span className="mb-2 block text-sm font-semibold text-[var(--foreground)]">
                 Cliente
@@ -356,52 +357,53 @@ export function PaymentCreateModal({
                 Faturado
               </div>
             </label>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Descricao</span>
+              <textarea
+                value={descricao}
+                onChange={(event) => setDescricao(event.target.value)}
+                disabled={isSaving}
+                rows={4}
+                maxLength={500}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                placeholder="Descreva o motivo ou contexto do pagamento"
+              />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+                <p className="text-sm text-[var(--muted)]">Cliente selecionado</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+                  {selectedClient?.nome ?? "Nenhum cliente selecionado"}
+                </p>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  {selectedClient ? formatPhoneValue(selectedClient.contato) : "Escolha um cliente da loja ativa."}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+                <p className="text-sm text-[var(--muted)]">Efeito imediato no credito</p>
+                <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+                  {creditEffectLabel}
+                </p>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Este lancamento nao cria nem exige movimentacao vinculada.
+                </p>
+              </div>
+            </div>
+
+            {clientsQuery.isError ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                {clientsQuery.error instanceof Error
+                  ? clientsQuery.error.message
+                  : "Nao foi possivel carregar os clientes."}
+              </div>
+            ) : null}
           </div>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">Descricao</span>
-            <textarea
-              value={descricao}
-              onChange={(event) => setDescricao(event.target.value)}
-              disabled={isSaving}
-              rows={4}
-              maxLength={500}
-              className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
-              placeholder="Descreva o motivo ou contexto do pagamento"
-            />
-          </label>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
-              <p className="text-sm text-[var(--muted)]">Cliente selecionado</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                {selectedClient?.nome ?? "Nenhum cliente selecionado"}
-              </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                {selectedClient ? formatPhoneValue(selectedClient.contato) : "Escolha um cliente da loja ativa."}
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
-              <p className="text-sm text-[var(--muted)]">Efeito imediato no credito</p>
-              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                {creditEffectLabel}
-              </p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                Este lancamento nao cria nem exige movimentacao vinculada.
-              </p>
-            </div>
-          </div>
-
-          {clientsQuery.isError ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-              {clientsQuery.error instanceof Error
-                ? clientsQuery.error.message
-                : "Nao foi possivel carregar os clientes."}
-            </div>
-          ) : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
