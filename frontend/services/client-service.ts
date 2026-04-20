@@ -28,7 +28,14 @@ export async function getClients(
 }
 
 export async function createClient(
-  payload: { nome: string; contato: string; doacao: boolean; lojaId: number; userId?: number },
+  payload: {
+    nome: string;
+    contato: string;
+    obs?: string;
+    doacao: boolean;
+    lojaId: number;
+    userId?: number;
+  },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {
   const response = await fetch(`${apiBaseUrl}/api/cliente`, {
@@ -54,7 +61,7 @@ export async function createClient(
 
 export async function updateClient(
   clientId: number,
-  payload: { nome: string; contato: string; doacao: boolean; userId?: number },
+  payload: { nome: string; contato: string; obs?: string; doacao: boolean; userId?: number },
   token: string,
 ): Promise<{ body: unknown; ok: boolean; status: number }> {
   const response = await fetch(`${apiBaseUrl}/api/cliente/${clientId}`, {

@@ -25,6 +25,16 @@ namespace Renova.Service.Services.Cliente
             ["contato"] = (Expression<Func<ClienteModel, string>>)(cliente => cliente.Contato)
         };
 
+        private static string? NormalizarObs(string? obs)
+        {
+            if (string.IsNullOrWhiteSpace(obs))
+            {
+                return null;
+            }
+
+            return obs.Trim();
+        }
+
         public async Task<byte[]> ExportClosingAsync(
             ExportarFechamentoClientesQuery request,
             ObterClientesParametros parametros,
@@ -228,6 +238,7 @@ namespace Renova.Service.Services.Cliente
             {
                 Nome = nomeNormalizado,
                 Contato = contatoNormalizado,
+                Obs = NormalizarObs(request.Obs),
                 Doacao = request.Doacao,
                 LojaId = request.LojaId,
                 UserId = request.UserId
@@ -241,6 +252,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Obs = cliente.Obs,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId,
@@ -295,6 +307,7 @@ namespace Renova.Service.Services.Cliente
 
             cliente.Nome = nomeNormalizado;
             cliente.Contato = contatoNormalizado;
+            cliente.Obs = NormalizarObs(request.Obs);
             cliente.Doacao = request.Doacao;
             cliente.UserId = request.UserId;
 
@@ -305,6 +318,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Obs = cliente.Obs,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId,
@@ -382,6 +396,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Obs = cliente.Obs,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId,
@@ -533,6 +548,7 @@ namespace Renova.Service.Services.Cliente
                 Id = cliente.Id,
                 Nome = cliente.Nome,
                 Contato = cliente.Contato,
+                Obs = cliente.Obs,
                 Doacao = cliente.Doacao,
                 LojaId = cliente.LojaId,
                 UserId = cliente.UserId,

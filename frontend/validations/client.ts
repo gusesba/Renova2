@@ -15,6 +15,7 @@ export const clientSchema = z.object({
       },
       "Informe um contato com 10 ou 11 numeros.",
     ),
+  obs: z.string().trim().max(1000, "A observacao deve ter no maximo 1000 caracteres."),
   doacao: z.boolean(),
   userId: z
     .string()
@@ -34,6 +35,10 @@ export function mapClientZodErrors(error: z.ZodError): ClientFieldErrors {
 
     if (field === "contato" && !mapped.contato) {
       mapped.contato = issue.message;
+    }
+
+    if (field === "obs" && !mapped.obs) {
+      mapped.obs = issue.message;
     }
 
     if (field === "doacao" && !mapped.doacao) {

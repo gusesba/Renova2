@@ -4,6 +4,7 @@ export type ClientListItem = {
   id: number;
   nome: string;
   contato: string;
+  obs: string | null;
   doacao: boolean;
   lojaId: number;
   userId: number | null;
@@ -73,6 +74,7 @@ export type ClientDetailResponse = ClientListItem & {
 export type ClientFormValues = {
   nome: string;
   contato: string;
+  obs: string;
   doacao: boolean;
   userId: string;
 };
@@ -94,7 +96,7 @@ export type ClientFilters = {
   tamanhoPagina: number;
 };
 
-export type ClientVisibleField = "nome" | "contato" | "doacao" | "userId" | "id";
+export type ClientVisibleField = "nome" | "contato" | "obs" | "doacao" | "userId" | "id";
 
 export type ClientTableSettings = {
   tamanhoPagina: number;
@@ -110,6 +112,7 @@ type ApiErrorResponse = {
 export const initialClientFormValues: ClientFormValues = {
   nome: "",
   contato: "",
+  obs: "",
   doacao: false,
   userId: "",
 };
@@ -131,7 +134,7 @@ export const initialClientDetailFilters: ClientDetailFilters = {
 
 export const defaultClientTableSettings: ClientTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["nome", "contato", "doacao", "userId", "id"],
+  visibleFields: ["nome", "contato", "obs", "doacao", "userId", "id"],
 };
 
 export function normalizeNumericValue(value: string) {
@@ -276,6 +279,10 @@ export function extractClientFieldErrors(body: unknown): ClientFieldErrors {
         accumulator.contato = error;
       }
 
+      if (normalizedKey === "obs" && !accumulator.obs) {
+        accumulator.obs = error;
+      }
+
       if (normalizedKey === "userid" && !accumulator.userId) {
         accumulator.userId = error;
       }
@@ -319,7 +326,7 @@ export function getStoredClientTableSettings(): ClientTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
       ? parsed.visibleFields.filter((field): field is ClientVisibleField =>
-          ["nome", "contato", "doacao", "userId", "id"].includes(String(field)),
+          ["nome", "contato", "obs", "doacao", "userId", "id"].includes(String(field)),
         )
       : defaultClientTableSettings.visibleFields;
 

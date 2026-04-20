@@ -57,6 +57,38 @@ function FormField({
   );
 }
 
+function TextareaField({
+  label,
+  placeholder,
+  value,
+  error,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-sm font-semibold text-[var(--foreground)]">{label}</span>
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        rows={4}
+        onChange={(event) => onChange(event.target.value)}
+        className={`w-full rounded-2xl border bg-white px-4 py-3 text-sm text-[var(--foreground)] outline-none transition ${
+          error
+            ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
+            : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+        }`}
+      />
+      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+    </label>
+  );
+}
+
 function ToggleField({
   checked,
   label,
@@ -199,6 +231,14 @@ export function ClientCreateModal({
               onChange={(value) => onChange("contato", value)}
             />
           </div>
+
+          <TextareaField
+            label="Obs (opcional)"
+            placeholder="Anotacoes sobre cliente"
+            value={values.obs}
+            error={errors.obs}
+            onChange={(value) => onChange("obs", value)}
+          />
 
           {onUserSearchChange ? (
             <div className="space-y-2">

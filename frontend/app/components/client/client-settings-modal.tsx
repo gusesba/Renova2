@@ -14,6 +14,7 @@ type ClientSettingsModalProps = {
 const fieldOptions: Array<{ description: string; label: string; value: ClientVisibleField }> = [
   { label: "Cliente", value: "nome", description: "Nome principal do cadastro" },
   { label: "Contato", value: "contato", description: "Telefone, email ou referencia" },
+  { label: "Obs", value: "obs", description: "Observacoes opcionais do cadastro" },
   { label: "Doacao", value: "doacao", description: "Indica se o cliente e de doacao" },
   { label: "UserId", value: "userId", description: "Conta vinculada no sistema" },
   { label: "Identificador", value: "id", description: "Codigo interno do cliente" },

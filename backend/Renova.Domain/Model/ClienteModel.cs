@@ -5,6 +5,7 @@ namespace Renova.Domain.Model
         public int Id { get; set; }
         public required string Nome { get; set; }
         public required string Contato { get; set; }
+        public string? Obs { get; set; }
         public bool Doacao { get; set; }
         public int LojaId { get; set; }
         public LojaModel? Loja { get; set; }
