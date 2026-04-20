@@ -11,6 +11,7 @@ import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
 import { PaymentCreditModal } from "@/app/components/payment/payment-credit-modal";
+import { ProductCreateModal } from "@/app/components/product/product-create-modal";
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
@@ -277,6 +278,7 @@ export function MovementPage() {
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+  const [isCreateProductModalOpen, setIsCreateProductModalOpen] = useState(false);
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const [paymentClient, setPaymentClient] = useState<PendingClientItem | null>(null);
@@ -286,6 +288,7 @@ export function MovementPage() {
     useState<OverdueOwnerReturnPrompt | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateMovement = hasPermission(permissions.movimentacoesAdicionar);
+  const canAddProduct = hasPermission(permissions.produtosAdicionar);
   const canHandleCredit =
     hasPermission(permissions.pagamentosCreditoAdicionar) ||
     hasPermission(permissions.pagamentosCreditoResgatar);
@@ -696,6 +699,59 @@ export function MovementPage() {
     }
   }
 
+  function appendProductToDraft(draftId: string, product: ProductListItem) {
+    const targetDraft = drafts.find((draft) => draft.id === draftId);
+
+    if (!targetDraft) {
+      return;
+    }
+
+    if (selectedStoreId && product.lojaId !== selectedStoreId) {
+      toast.error("O produto cadastrado pertence a outra loja.");
+      return;
+    }
+
+    if (targetDraft.products.some((item) => item.id === product.id)) {
+      toast.error(`O produto ${product.id} ja foi adicionado nesta movimentacao.`);
+      return;
+    }
+
+    if (!isProductSituationCompatible(Number(targetDraft.tipo), product.situacao)) {
+      updateDraft(draftId, (current) => ({
+        ...current,
+        productIdInput: "",
+        suggestion: buildMovementSuggestion(Number(current.tipo), product),
+        errors: { ...current.errors, produtos: undefined },
+      }));
+      return;
+    }
+
+    const automaticDiscount = getAutomaticDiscountForProduct(
+      targetDraft,
+      product,
+      storeConfigQuery.data ?? null,
+    );
+    const productDiscount = automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0";
+
+    updateDraft(draftId, (current) => ({
+      ...current,
+      productIdInput: "",
+      products: [...current.products, { ...product, desconto: productDiscount }],
+      autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
+        (itemId) => itemId !== product.id,
+      ),
+      suggestion: null,
+      errors: { ...current.errors, produtos: undefined },
+    }));
+    toast.success(`Produto ${product.id} adicionado na movimentacao.`);
+
+    if (automaticDiscount) {
+      toast.info(
+        `Desconto automatico de ${automaticDiscount.percentualDesconto}% aplicado ao produto ${product.id} por estar ha ${automaticDiscount.monthsInStore} mes(es) na loja.`,
+      );
+    }
+  }
+
   function acceptSuggestion(draft: MovementDraft) {
     if (!draft.suggestion?.suggestedType) {
       return;
@@ -1034,14 +1090,25 @@ export function MovementPage() {
                           />
                         </div>
                         {canCreateMovement ? (
-                          <button
-                            type="button"
-                            onClick={() => handleAddProduct(activeDraft)}
-                            disabled={fetchProductMutation.isPending}
-                            className="mt-7 flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {fetchProductMutation.isPending ? "Buscando..." : "Buscar e adicionar"}
-                          </button>
+                          <div className="mt-7 flex shrink-0 flex-col gap-3 sm:flex-row">
+                            {canAddProduct ? (
+                              <button
+                                type="button"
+                                onClick={() => setIsCreateProductModalOpen(true)}
+                                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
+                              >
+                                Novo produto
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => handleAddProduct(activeDraft)}
+                              disabled={fetchProductMutation.isPending}
+                              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {fetchProductMutation.isPending ? "Buscando..." : "Buscar e adicionar"}
+                            </button>
+                          </div>
                         ) : null}
                       </div>
 
@@ -1303,6 +1370,38 @@ export function MovementPage() {
           onClose={() => setIsStoreConfigOpen(false)}
         />
       ) : null}
+
+      <ProductCreateModal
+        isOpen={isCreateProductModalOpen}
+        storeId={selectedStoreId}
+        storeName={selectedStore?.nome ?? null}
+        onClose={() => setIsCreateProductModalOpen(false)}
+        onProductCreated={(createdProduct) => {
+          const draftId = activeDraftId;
+
+          void (async () => {
+            try {
+              const response = await getProductById(createdProduct.id, token ?? "");
+
+              if (!response.ok) {
+                toast.error(
+                  getProductApiMessage(response.body) ??
+                    "Produto foi criado, mas nao foi possivel adiciona-lo na movimentacao.",
+                );
+                return;
+              }
+
+              appendProductToDraft(draftId, response.body as ProductListItem);
+            } catch (error) {
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Produto foi criado, mas nao foi possivel adiciona-lo na movimentacao.",
+              );
+            }
+          })();
+        }}
+      />
 
       <MovementOverdueOwnerReturnModal
         isOpen={Boolean(overdueOwnerReturnPrompt)}
