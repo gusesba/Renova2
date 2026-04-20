@@ -245,6 +245,7 @@ export function ProductCreateModal({
     useState<ClientFormValues>(initialClientFormValues);
   const [supplierFormErrors, setSupplierFormErrors] = useState<ClientFieldErrors>({});
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const trimmedSupplierSearch = debouncedLookupSearch.fornecedor.trim();
 
   const createProductMutation = useMutation({
     mutationFn: async (payload: {
@@ -517,18 +518,14 @@ export function ProductCreateModal({
       "fornecedor",
       token,
       storeId,
-      debouncedLookupSearch.fornecedor,
+      trimmedSupplierSearch,
     ],
     queryFn: async () => {
       if (!token || !storeId) {
         return [];
       }
 
-      const response = await getProductSupplierOptions(
-        token,
-        storeId,
-        debouncedLookupSearch.fornecedor,
-      );
+      const response = await getProductSupplierOptions(token, storeId, trimmedSupplierSearch);
 
       if (!response.ok) {
         throw new Error("Nao foi possivel carregar os fornecedores.");
@@ -536,7 +533,7 @@ export function ProductCreateModal({
 
       return response.body;
     },
-    enabled: Boolean(isOpen && token && storeId),
+    enabled: Boolean(isOpen && token && storeId && trimmedSupplierSearch),
   });
 
   function updateField<K extends keyof ProductFormValues>(field: K, value: ProductFormValues[K]) {
@@ -1023,31 +1020,36 @@ export function ProductCreateModal({
               onAction={() => openAuxiliaryModal("marca")}
               onSelect={(option) => updateRelation("marca", option)}
             />
-            <SearchableField
-              label="Fornecedor"
-              error={errors.fornecedorId}
-              disabled={!storeId}
-              loading={supplierOptionsQuery.isLoading}
-              value={values.fornecedorId}
-              selectedLabel={values.fornecedorLabel}
-              searchValue={lookupSearch.fornecedor}
-              placeholder="Selecione o fornecedor"
-              searchPlaceholder="Pesquisar por nome"
-              options={supplierOptionsQuery.data ?? []}
-              emptyLabel={
-                supplierOptionsQuery.isError
-                  ? "Falha ao carregar fornecedores."
-                  : "Nenhum fornecedor encontrado."
-              }
-              actionLabel="Criar novo fornecedor"
-              onSearchChange={(value) => updateLookupSearch("fornecedor", value)}
+              <SearchableField
+                label="Fornecedor"
+                error={errors.fornecedorId}
+                disabled={!storeId}
+                loading={Boolean(trimmedSupplierSearch) && supplierOptionsQuery.isLoading}
+                value={values.fornecedorId}
+                selectedLabel={values.fornecedorLabel}
+                searchValue={lookupSearch.fornecedor}
+                placeholder="Selecione o fornecedor"
+                searchPlaceholder="Pesquisar por nome"
+                options={trimmedSupplierSearch ? (supplierOptionsQuery.data ?? []) : []}
+                emptyLabel={
+                  !trimmedSupplierSearch
+                    ? "Digite para buscar clientes."
+                    : supplierOptionsQuery.isError
+                      ? "Falha ao carregar fornecedores."
+                      : "Nenhum fornecedor encontrado."
+                }
+                actionLabel="Criar novo fornecedor"
+                onSearchChange={(value) => updateLookupSearch("fornecedor", value)}
               onAction={() => {
                 setSupplierFormValues(initialClientFormValues);
                 setSupplierFormErrors({});
                 setSupplierModalOpen(true);
               }}
-              onSelect={(option) => updateRelation("fornecedor", option)}
-            />
+                onSelect={(option) => {
+                  updateRelation("fornecedor", option);
+                  updateLookupSearch("fornecedor", "");
+                }}
+              />
             <SearchableField
               label="Tamanho"
               error={errors.tamanhoId}

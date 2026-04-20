@@ -71,7 +71,7 @@ function getInitialLookupSearchState(product: ProductListItem): LookupSearchStat
     marca: product.marca,
     tamanho: product.tamanho,
     cor: product.cor,
-    fornecedor: product.fornecedor,
+    fornecedor: "",
   };
 }
 
@@ -277,6 +277,7 @@ function ProductEditModalContent({
   const [debouncedLookupSearch, setDebouncedLookupSearch] = useState<LookupSearchState>(() =>
     getInitialLookupSearchState(product),
   );
+  const trimmedSupplierSearch = debouncedLookupSearch.fornecedor.trim();
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -357,20 +358,20 @@ function ProductEditModalContent({
   });
 
   const supplierOptionsQuery = useQuery({
-    queryKey: ["product-edit-options", "fornecedor", token, storeId, debouncedLookupSearch.fornecedor],
+    queryKey: ["product-edit-options", "fornecedor", token, storeId, trimmedSupplierSearch],
     queryFn: async () => {
       if (!token || !storeId) {
         return [];
       }
 
-      const response = await getProductSupplierOptions(token, storeId, debouncedLookupSearch.fornecedor);
+      const response = await getProductSupplierOptions(token, storeId, trimmedSupplierSearch);
       if (!response.ok) {
         throw new Error("Nao foi possivel carregar os fornecedores.");
       }
 
       return response.body;
     },
-    enabled: Boolean(token && storeId),
+    enabled: Boolean(token && storeId && trimmedSupplierSearch),
   });
 
   const updateProductMutation = useMutation({
@@ -611,16 +612,23 @@ function ProductEditModalContent({
               label="Fornecedor"
               error={errors.fornecedorId}
               disabled={!storeId}
-              loading={supplierOptionsQuery.isLoading}
+              loading={Boolean(trimmedSupplierSearch) && supplierOptionsQuery.isLoading}
               value={values.fornecedorId}
               selectedLabel={values.fornecedorLabel}
               searchValue={lookupSearch.fornecedor}
               placeholder="Selecione o fornecedor"
               searchPlaceholder="Pesquisar por nome"
-              options={supplierOptionsQuery.data ?? []}
-              emptyLabel="Nenhum fornecedor encontrado."
+              options={trimmedSupplierSearch ? (supplierOptionsQuery.data ?? []) : []}
+              emptyLabel={
+                !trimmedSupplierSearch
+                  ? "Digite para buscar clientes."
+                  : "Nenhum fornecedor encontrado."
+              }
               onSearchChange={(value) => updateLookupSearch("fornecedor", value)}
-              onSelect={(option) => updateRelation("fornecedor", option)}
+              onSelect={(option) => {
+                updateRelation("fornecedor", option);
+                updateLookupSearch("fornecedor", "");
+              }}
             />
             <SearchableField
               label="Tamanho"

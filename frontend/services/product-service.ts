@@ -379,7 +379,7 @@ export function getProductSupplierOptions(token: string, storeId: number, search
   const params = new URLSearchParams({
     lojaId: String(storeId),
     pagina: "1",
-    tamanhoPagina: "20",
+    tamanhoPagina: "5",
     ordenarPor: "nome",
     direcao: "asc",
   });

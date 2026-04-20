@@ -113,9 +113,10 @@ export function PaymentCreateModal({
   }, [clienteSearch]);
 
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+  const trimmedClientSearch = debouncedClientSearch.trim();
 
   const clientsQuery = useQuery({
-    queryKey: ["manual-payment-clients", token, storeId, debouncedClientSearch],
+    queryKey: ["manual-payment-clients", token, storeId, trimmedClientSearch],
     queryFn: async () => {
       if (!token || !storeId) {
         return [];
@@ -123,8 +124,8 @@ export function PaymentCreateModal({
 
       const response = await getClients(token, storeId, {
         ...initialClientFilters,
-        nome: debouncedClientSearch,
-        tamanhoPagina: 20,
+        nome: trimmedClientSearch,
+        tamanhoPagina: 5,
       });
 
       if (!response.ok) {
@@ -135,7 +136,7 @@ export function PaymentCreateModal({
 
       return asClientListResponse(response.body).itens;
     },
-    enabled: Boolean(token && storeId && isOpen),
+    enabled: Boolean(token && storeId && isOpen && trimmedClientSearch),
   });
 
   const clientOptions = useMemo(
@@ -277,13 +278,21 @@ export function PaymentCreateModal({
                 ariaLabel="Cliente do pagamento"
                 disabled={!storeId}
                 emptyLabel={
-                  clientsQuery.isError ? "Falha ao carregar os clientes." : "Nenhum cliente encontrado."
+                  !trimmedClientSearch
+                    ? "Digite para buscar clientes."
+                    : clientsQuery.isError
+                      ? "Falha ao carregar os clientes."
+                      : "Nenhum cliente encontrado."
                 }
-                loading={clientsQuery.isLoading}
-                options={clientOptions.map((option) => ({
-                  label: option.label,
-                  value: option.value,
-                }))}
+                loading={Boolean(trimmedClientSearch) && clientsQuery.isLoading}
+                options={
+                  trimmedClientSearch
+                    ? clientOptions.map((option) => ({
+                        label: option.label,
+                        value: option.value,
+                      }))
+                    : []
+                }
                 placeholder="Selecione um cliente"
                 searchPlaceholder="Pesquisar por nome"
                 searchValue={clienteSearch}
@@ -298,7 +307,7 @@ export function PaymentCreateModal({
 
                   setClienteId(String(client.id));
                   setClienteLabel(client.nome);
-                  setClienteSearch(client.nome);
+                  setClienteSearch("");
                 }}
               />
             </div>

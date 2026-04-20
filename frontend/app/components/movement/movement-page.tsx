@@ -414,9 +414,10 @@ export function MovementPage() {
       cancelled = true;
     };
   }, [activeDraft?.clienteId, activeDraft?.id, selectedStoreId, token]);
+  const trimmedClientSearch = debouncedClientSearch.trim();
 
   const clientOptionsQuery = useQuery({
-    queryKey: ["movement-clients", token, selectedStoreId, debouncedClientSearch],
+    queryKey: ["movement-clients", token, selectedStoreId, trimmedClientSearch],
     queryFn: async () => {
       if (!token || !selectedStoreId) {
         return [];
@@ -424,8 +425,8 @@ export function MovementPage() {
 
       const response = await getClients(token, selectedStoreId, {
         ...initialClientFilters,
-        nome: debouncedClientSearch,
-        tamanhoPagina: 20,
+        nome: trimmedClientSearch,
+        tamanhoPagina: 5,
       });
 
       if (!response.ok) {
@@ -436,7 +437,7 @@ export function MovementPage() {
 
       return asClientListResponse(response.body).itens;
     },
-    enabled: Boolean(token && selectedStoreId && activeDraft),
+    enabled: Boolean(token && selectedStoreId && activeDraft && trimmedClientSearch),
   });
 
   const storeConfigQuery = useQuery({
@@ -562,7 +563,7 @@ export function MovementPage() {
       clienteContato: client.contato,
       clienteId: String(client.id),
       clienteLabel: client.nome,
-      clienteSearch: client.nome,
+      clienteSearch: "",
       errors: { ...draft.errors, clienteId: undefined },
     }));
   }
@@ -1030,16 +1031,25 @@ export function MovementPage() {
                           ariaLabel="Cliente da movimentacao"
                           disabled={!hasStore}
                           emptyLabel={
-                            clientOptionsQuery.isError
-                              ? "Falha ao carregar os clientes."
-                              : "Nenhum cliente encontrado."
+                            !trimmedClientSearch
+                              ? "Digite para buscar clientes."
+                              : clientOptionsQuery.isError
+                                ? "Falha ao carregar os clientes."
+                                : "Nenhum cliente encontrado."
                           }
                           error={activeDraft.errors.clienteId}
-                          loading={clientOptionsQuery.isLoading || isLoadingStores}
-                          options={clientOptions.map((option) => ({
-                            label: option.label,
-                            value: option.value,
-                          }))}
+                          loading={
+                            isLoadingStores ||
+                            (Boolean(trimmedClientSearch) && clientOptionsQuery.isLoading)
+                          }
+                          options={
+                            trimmedClientSearch
+                              ? clientOptions.map((option) => ({
+                                  label: option.label,
+                                  value: option.value,
+                                }))
+                              : []
+                          }
                           placeholder="Selecione um cliente"
                           searchPlaceholder="Pesquisar por nome"
                           searchValue={activeDraft.clienteSearch}
