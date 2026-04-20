@@ -53,6 +53,41 @@ export const permissions = {
 
 export type PermissionKey = (typeof permissions)[keyof typeof permissions];
 
+export const requiredPermissionDependencies: Partial<Record<PermissionKey, PermissionKey[]>> = {
+  [permissions.produtosAdicionar]: [
+    permissions.clientesVisualizar,
+    permissions.produtosAuxiliaresVisualizar,
+  ],
+  [permissions.produtosEditar]: [
+    permissions.clientesVisualizar,
+    permissions.produtosAuxiliaresVisualizar,
+  ],
+  [permissions.solicitacoesAdicionar]: [
+    permissions.clientesVisualizar,
+    permissions.produtosAuxiliaresVisualizar,
+  ],
+  [permissions.movimentacoesAdicionar]: [
+    permissions.clientesVisualizar,
+    permissions.produtosVisualizarItem,
+    permissions.produtosEmprestadosVisualizar,
+    permissions.configLojaVisualizar,
+  ],
+  [permissions.movimentacoesDestinacaoExecutar]: [
+    permissions.movimentacoesDestinacaoVisualizar,
+    permissions.produtosVisualizarItem,
+    permissions.configLojaVisualizar,
+  ],
+  [permissions.pagamentosManuaisAdicionar]: [permissions.clientesVisualizar],
+  [permissions.pagamentosCreditoAdicionar]: [permissions.configLojaVisualizar],
+  [permissions.pagamentosCreditoResgatar]: [permissions.configLojaVisualizar],
+  [permissions.pagamentosPendenciasAtualizar]: [permissions.pagamentosPendenciasVisualizar],
+  [permissions.funcionariosAdicionar]: [permissions.cargosVisualizar],
+  [permissions.funcionariosEditar]: [permissions.cargosVisualizar],
+  [permissions.cargosAdicionar]: [permissions.cargosVisualizar],
+  [permissions.cargosEditar]: [permissions.cargosVisualizar],
+  [permissions.cargosExcluir]: [permissions.cargosVisualizar],
+};
+
 export type EmployeeListItem = {
   usuarioId: number;
   nome: string;

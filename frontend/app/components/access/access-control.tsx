@@ -14,7 +14,9 @@ import {
   extractAccessApiMessage,
   getAuthToken,
   permissions,
+  requiredPermissionDependencies,
   type EmployeeListItem,
+  type PermissionKey,
   type RoleFunctionality,
   type RoleItem,
 } from "@/lib/access";
@@ -60,6 +62,41 @@ function getGroupedFunctionalities(items: RoleFunctionality[]) {
       return acc;
     }, {}),
   ).sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function collectDependencyIds(
+  functionalityKey: PermissionKey,
+  functionalityIdByKey: Map<PermissionKey, number>,
+  visited = new Set<PermissionKey>(),
+): number[] {
+  if (visited.has(functionalityKey)) return [];
+  visited.add(functionalityKey);
+
+  const dependencyKeys = requiredPermissionDependencies[functionalityKey] ?? [];
+
+  return dependencyKeys.flatMap((dependencyKey) => {
+    const dependencyId = functionalityIdByKey.get(dependencyKey);
+    if (!dependencyId) return [];
+    return [dependencyId, ...collectDependencyIds(dependencyKey, functionalityIdByKey, visited)];
+  });
+}
+
+function collectDependentIds(
+  functionalityKey: PermissionKey,
+  reverseDependencyKeys: Map<PermissionKey, PermissionKey[]>,
+  functionalityIdByKey: Map<PermissionKey, number>,
+  visited = new Set<PermissionKey>(),
+): number[] {
+  if (visited.has(functionalityKey)) return [];
+  visited.add(functionalityKey);
+
+  const dependentKeys = reverseDependencyKeys.get(functionalityKey) ?? [];
+
+  return dependentKeys.flatMap((dependentKey) => {
+    const dependentId = functionalityIdByKey.get(dependentKey);
+    if (!dependentId) return [];
+    return [dependentId, ...collectDependentIds(dependentKey, reverseDependencyKeys, functionalityIdByKey, visited)];
+  });
 }
 
 export function AccessControl() {
@@ -178,6 +215,32 @@ function AccessControlContent({
     [rolesQuery.data],
   );
   const groupedFunctionalities = useMemo(() => getGroupedFunctionalities(functionalitiesQuery.data ?? []), [functionalitiesQuery.data]);
+  const functionalityIdByKey = useMemo(
+    () =>
+      new Map(
+        (functionalitiesQuery.data ?? []).map((item) => [item.chave, item.id] as const),
+      ),
+    [functionalitiesQuery.data],
+  );
+  const functionalityKeyById = useMemo(
+    () =>
+      new Map(
+        (functionalitiesQuery.data ?? []).map((item) => [item.id, item.chave] as const),
+      ),
+    [functionalitiesQuery.data],
+  );
+  const reverseDependencyKeys = useMemo(() => {
+    const entries = Object.entries(requiredPermissionDependencies) as [PermissionKey, PermissionKey[]][];
+    const reverseMap = new Map<PermissionKey, PermissionKey[]>();
+
+    entries.forEach(([functionalityKey, dependencyKeys]) => {
+      dependencyKeys.forEach((dependencyKey) => {
+        reverseMap.set(dependencyKey, [...(reverseMap.get(dependencyKey) ?? []), functionalityKey]);
+      });
+    });
+
+    return reverseMap;
+  }, []);
   const selectedFunctionalityIds = useMemo(() => new Set(roleDraft.funcionalidadeIds), [roleDraft.funcionalidadeIds]);
 
   async function invalidateAccess() {
@@ -200,12 +263,29 @@ function AccessControlContent({
   }
 
   function toggleFunctionality(id: number) {
-    setRoleDraft((current) => ({
-      ...current,
-      funcionalidadeIds: current.funcionalidadeIds.includes(id)
-        ? current.funcionalidadeIds.filter((item) => item !== id)
-        : [...current.funcionalidadeIds, id],
-    }));
+    const functionalityKey = functionalityKeyById.get(id);
+    if (!functionalityKey) return;
+
+    setRoleDraft((current) => {
+      const nextIds = new Set(current.funcionalidadeIds);
+
+      if (nextIds.has(id)) {
+        nextIds.delete(id);
+        collectDependentIds(functionalityKey, reverseDependencyKeys, functionalityIdByKey).forEach((dependentId) => {
+          nextIds.delete(dependentId);
+        });
+      } else {
+        nextIds.add(id);
+        collectDependencyIds(functionalityKey, functionalityIdByKey).forEach((dependencyId) => {
+          nextIds.add(dependencyId);
+        });
+      }
+
+      return {
+        ...current,
+        funcionalidadeIds: [...nextIds],
+      };
+    });
   }
 
   async function handleAddEmployee() {
