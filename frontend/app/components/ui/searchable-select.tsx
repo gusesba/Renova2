@@ -12,12 +12,14 @@ type SearchableSelectOption = {
 type SearchableSelectProps = {
   actionLabel?: string;
   ariaLabel: string;
+  clearAriaLabel?: string;
   disabled?: boolean;
   emptyLabel?: string;
   error?: string;
   loading?: boolean;
   onAction?: () => void;
   onChange: (option: SearchableSelectOption) => void;
+  onClear?: () => void;
   onSearchChange: (value: string) => void;
   options: SearchableSelectOption[];
   placeholder?: string;
@@ -70,12 +72,14 @@ function TrashIcon() {
 export function SearchableSelect({
   actionLabel,
   ariaLabel,
+  clearAriaLabel,
   disabled = false,
   emptyLabel = "Nenhum resultado encontrado",
   error,
   loading = false,
   onAction,
   onChange,
+  onClear,
   onSearchChange,
   options,
   placeholder = "Selecionar",
@@ -124,6 +128,7 @@ export function SearchableSelect({
   }, [open]);
 
   const currentLabel = selectedOption?.label ?? selectedLabel ?? "";
+  const canClear = Boolean(currentLabel && onClear && !disabled);
 
   return (
     <div ref={containerRef} className="relative min-w-0">
@@ -149,7 +154,30 @@ export function SearchableSelect({
         <span className={currentLabel ? "truncate text-[var(--foreground)]" : "truncate text-[var(--muted)]"}>
           {currentLabel || placeholder}
         </span>
-        <span className="shrink-0 text-[var(--muted)]">
+        <span className="flex shrink-0 items-center gap-2 text-[var(--muted)]">
+          {canClear ? (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={clearAriaLabel ?? `Limpar ${ariaLabel}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onClear?.();
+                setOpen(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onClear?.();
+                  setOpen(false);
+                }
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-base leading-none transition hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
+            >
+              ×
+            </span>
+          ) : null}
           <ChevronDownIcon open={open} />
         </span>
       </button>

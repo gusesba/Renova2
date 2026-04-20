@@ -91,6 +91,7 @@ function SearchableField({
   options,
   emptyLabel,
   onSearchChange,
+  onClear,
   onSelect,
 }: {
   label: string;
@@ -105,6 +106,7 @@ function SearchableField({
   options: ProductLookupOption[];
   emptyLabel: string;
   onSearchChange: (value: string) => void;
+  onClear: () => void;
   onSelect: (option: ProductLookupOption) => void;
 }) {
   return (
@@ -120,6 +122,8 @@ function SearchableField({
           label: option.label,
           value: String(option.id),
         }))}
+        clearAriaLabel={`Limpar ${label}`}
+        onClear={onClear}
         placeholder={placeholder}
         searchPlaceholder={searchPlaceholder}
         searchValue={searchValue}
@@ -398,6 +402,24 @@ export function SolicitacaoCreateModal({
     }));
   }
 
+  function clearRelation(field: "produto" | "marca" | "tamanho" | "cor" | "cliente") {
+    const idField = `${field}Id` as const;
+    const labelField = `${field}Label` as const;
+
+    setValues((current) => ({
+      ...current,
+      [idField]: "",
+      [labelField]: "",
+    }));
+
+    setErrors((current) => ({
+      ...current,
+      [idField]: undefined,
+    }));
+
+    updateLookupSearch(field, "");
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -520,6 +542,7 @@ export function SolicitacaoCreateModal({
                 clientOptionsQuery.isError ? "Falha ao carregar clientes." : "Nenhum cliente encontrado."
               }
               onSearchChange={(value) => updateLookupSearch("cliente", value)}
+              onClear={() => clearRelation("cliente")}
               onSelect={(option) => updateRelation("cliente", option)}
             />
             <FormField
@@ -549,6 +572,7 @@ export function SolicitacaoCreateModal({
                   : "Nenhum produto auxiliar encontrado."
               }
               onSearchChange={(value) => updateLookupSearch("produto", value)}
+              onClear={() => clearRelation("produto")}
               onSelect={(option) => updateRelation("produto", option)}
             />
             <SearchableField
@@ -566,6 +590,7 @@ export function SolicitacaoCreateModal({
                 brandOptionsQuery.isError ? "Falha ao carregar marcas." : "Nenhuma marca encontrada."
               }
               onSearchChange={(value) => updateLookupSearch("marca", value)}
+              onClear={() => clearRelation("marca")}
               onSelect={(option) => updateRelation("marca", option)}
             />
             <SearchableField
@@ -585,6 +610,7 @@ export function SolicitacaoCreateModal({
                   : "Nenhum tamanho encontrado."
               }
               onSearchChange={(value) => updateLookupSearch("tamanho", value)}
+              onClear={() => clearRelation("tamanho")}
               onSelect={(option) => updateRelation("tamanho", option)}
             />
             <SearchableField
@@ -602,6 +628,7 @@ export function SolicitacaoCreateModal({
                 colorOptionsQuery.isError ? "Falha ao carregar cores." : "Nenhuma cor encontrada."
               }
               onSearchChange={(value) => updateLookupSearch("cor", value)}
+              onClear={() => clearRelation("cor")}
               onSelect={(option) => updateRelation("cor", option)}
             />
             <FormField
