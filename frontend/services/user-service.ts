@@ -20,6 +20,7 @@ type UpdateUserPayload = {
 export async function getUserOptions(
   token: string,
   search: string,
+  storeId?: number,
 ): Promise<{ body: ClientUserOption[]; ok: boolean; status: number }> {
   const params = new URLSearchParams({
     pagina: "1",
@@ -30,6 +31,10 @@ export async function getUserOptions(
 
   if (search.trim()) {
     params.set("busca", search.trim());
+  }
+
+  if (storeId) {
+    params.set("lojaId", String(storeId));
   }
 
   const response = await fetch(`${apiBaseUrl}/api/usuario?${params.toString()}`, {

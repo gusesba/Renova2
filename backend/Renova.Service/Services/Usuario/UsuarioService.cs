@@ -38,6 +38,16 @@ namespace Renova.Service.Services.Usuario
 
             IQueryable<UsuarioModel> query = _context.Usuarios.AsQueryable();
 
+            if (request.LojaId.HasValue)
+            {
+                LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
+                    request.LojaId.Value,
+                    usuarioAutenticadoId,
+                    cancellationToken);
+
+                query = query.Where(usuario => usuario.Id != loja.UsuarioId);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Busca))
             {
                 string buscaNormalizada = request.Busca.Trim().ToLowerInvariant();

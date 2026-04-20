@@ -45,6 +45,32 @@ namespace Renova.Tests.Services.Usuario.Get
         }
 
         [Fact]
+        public async Task GetAllAsyncDeveExcluirDonoDaLojaQuandoLojaIdForInformada()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel dono = await CriarUsuarioAsync(context, "Dono Loja", "dono@renova.com");
+            UsuarioModel funcionario = await CriarUsuarioAsync(context, "Ana Paula", "ana@renova.com");
+            _ = await CriarUsuarioAsync(context, "Bruno Costa", "bruno@renova.com");
+
+            _ = context.Lojas.Add(new LojaModel
+            {
+                Nome = "Loja Centro",
+                UsuarioId = dono.Id
+            });
+            _ = await context.SaveChangesAsync();
+
+            UsuarioService service = new(context);
+
+            PaginacaoDto<UsuarioDto> resultado = await service.GetAllAsync(
+                new ObterUsuariosQuery { LojaId = context.Lojas.Single().Id },
+                funcionario.Id);
+
+            Assert.DoesNotContain(resultado.Itens, item => item.Id == dono.Id);
+            Assert.Contains(resultado.Itens, item => item.Id == funcionario.Id);
+        }
+
+        [Fact]
         public async Task GetAllAsyncDeveAplicarPaginacaoEOrdenacaoQuandoInformadas()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();

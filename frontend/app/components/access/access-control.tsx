@@ -163,13 +163,13 @@ function AccessControlContent({
   });
 
   const userOptionsQuery = useQuery({
-    queryKey: ["employee-user-options", trimmedUserSearch, token],
+    queryKey: ["employee-user-options", selectedStore?.id, trimmedUserSearch, token],
     queryFn: async () => {
-      const response = await getUserOptions(token!, trimmedUserSearch);
+      const response = await getUserOptions(token!, trimmedUserSearch, selectedStore?.id);
       if (!response.ok) throw new Error("Nao foi possivel carregar os usuarios.");
       return response.body as UserOption[];
     },
-    enabled: Boolean(token && canAddEmployees && trimmedUserSearch),
+    enabled: Boolean(token && selectedStore && canAddEmployees && trimmedUserSearch),
   });
 
   const createEmployeeMutation = useMutation({

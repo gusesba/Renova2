@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 
 using Renova.Domain.Model.Dto;
 using Renova.Service.Commands.Auth;
+using Renova.Service.Commands.Loja;
 using Renova.Tests.Infrastructure;
 
 namespace Renova.Tests.Services.Usuario.Get
@@ -34,6 +35,37 @@ namespace Renova.Tests.Services.Usuario.Get
         }
 
         [Fact]
+        public async Task GetUsuariosDeveExcluirDonoDaLojaQuandoLojaIdForInformada()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto dono = await CriarUsuarioAutenticadoAsync(client, "Dono Loja", "dono@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", dono.Token);
+
+            LojaDto loja = await CriarLojaAsync(client, "Loja Centro");
+
+            UsuarioTokenDto funcionario = await CriarUsuarioAutenticadoAsync(client, "Ana Paula", "ana@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", funcionario.Token);
+
+            HttpResponseMessage response = await client.GetAsync($"/api/usuario?lojaId={loja.Id}");
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", dono.Token);
+
+            response = await client.GetAsync($"/api/usuario?lojaId={loja.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            PaginacaoDto<UsuarioDto>? body = await response.Content.ReadFromJsonAsync<PaginacaoDto<UsuarioDto>>();
+
+            Assert.NotNull(body);
+            Assert.DoesNotContain(body.Itens, item => item.Id == dono.Usuario.Id);
+            Assert.Contains(body.Itens, item => item.Id == funcionario.Usuario.Id);
+        }
+
+        [Fact]
         public async Task GetUsuariosDeveRetornarUnauthorizedQuandoUsuarioNaoEstiverAutenticado()
         {
             await using RenovaApiFactory factory = new();
@@ -59,6 +91,19 @@ namespace Renova.Tests.Services.Usuario.Get
 
             UsuarioTokenDto? resultado = await response.Content.ReadFromJsonAsync<UsuarioTokenDto>();
             return Assert.IsType<UsuarioTokenDto>(resultado);
+        }
+
+        private static async Task<LojaDto> CriarLojaAsync(HttpClient client, string nome)
+        {
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/loja", new CriarLojaCommand
+            {
+                Nome = nome
+            });
+
+            _ = response.EnsureSuccessStatusCode();
+
+            LojaDto? resultado = await response.Content.ReadFromJsonAsync<LojaDto>();
+            return Assert.IsType<LojaDto>(resultado);
         }
     }
 }
