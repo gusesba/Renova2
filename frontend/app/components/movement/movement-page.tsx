@@ -1,7 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { startTransition, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
@@ -108,6 +109,19 @@ function toUtcStartOfDay(value: string) {
 
 function getDraftTitle(index: number, draft: MovementDraft) {
   return `Mov. ${index + 1} - ${formatMovementType(Number(draft.tipo))}`;
+}
+
+function parsePrefilledProductIds(value: string | null) {
+  if (!value) {
+    return [];
+  }
+
+  return [...new Set(
+    value
+      .split(",")
+      .map((item) => Number(item.trim()))
+      .filter((item) => Number.isInteger(item) && item > 0),
+  )];
 }
 
 function isDraftPending(draft: MovementDraft) {
@@ -273,8 +287,10 @@ function TypeSelect({
 
 export function MovementPage() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const draftCounterRef = useRef(2);
+  const prefillAppliedRef = useRef(false);
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
@@ -325,6 +341,7 @@ export function MovementPage() {
       setDrafts([createDraft("draft-1")]);
       setActiveDraftId("draft-1");
     });
+    prefillAppliedRef.current = false;
   }, [selectedStoreId]);
 
   useEffect(() => {
@@ -514,6 +531,123 @@ export function MovementPage() {
   function updateDraft(draftId: string, updater: (draft: MovementDraft) => MovementDraft) {
     setDrafts((current) => current.map((draft) => (draft.id === draftId ? updater(draft) : draft)));
   }
+
+  const applyPrefilledProducts = useEffectEvent((products: ProductListItem[]) => {
+    updateDraft("draft-1", (current) => {
+      const existingIds = new Set(current.products.map((product) => product.id));
+      const compatibleProducts = products.filter((product) =>
+        isProductSituationCompatible(Number(current.tipo), product.situacao),
+      );
+
+      if (compatibleProducts.every((product) => existingIds.has(product.id))) {
+        return current;
+      }
+
+      const nextProducts = [...current.products];
+
+      for (const product of compatibleProducts) {
+        if (existingIds.has(product.id)) {
+          continue;
+        }
+
+        const automaticDiscount = getAutomaticDiscountForProduct(
+          current,
+          product,
+          storeConfigQuery.data ?? null,
+        );
+
+        nextProducts.push({
+          ...product,
+          desconto: automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0",
+        });
+        existingIds.add(product.id);
+      }
+
+      return {
+        ...current,
+        productIdInput: "",
+        products: nextProducts,
+        autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
+          (itemId) => !existingIds.has(itemId),
+        ),
+        errors: { ...current.errors, produtos: undefined },
+      };
+    });
+  });
+
+  useEffect(() => {
+    if (prefillAppliedRef.current || !token || !selectedStoreId) {
+      return;
+    }
+
+    const clientId = searchParams.get("clienteId");
+    const clientName = searchParams.get("clienteNome") ?? "";
+    const clientContact = searchParams.get("clienteContato") ?? "";
+    const type = searchParams.get("tipo");
+    const productIds = parsePrefilledProductIds(searchParams.get("produtoIds"));
+
+    if (!clientId && !type && productIds.length === 0) {
+      prefillAppliedRef.current = true;
+      return;
+    }
+
+    const normalizedType =
+      type && ["1", "2", "3", "4", "5", "6"].includes(type) ? type : initialMovementDraftFormValues.tipo;
+
+    prefillAppliedRef.current = true;
+
+    startTransition(() => {
+      setDrafts([
+        {
+          ...createDraft("draft-1"),
+          tipo: normalizedType,
+          clienteId: clientId ?? "",
+          clienteContato: clientContact,
+          clienteLabel: clientName,
+          clienteSearch: clientName,
+        },
+      ]);
+      setActiveDraftId("draft-1");
+    });
+
+    if (productIds.length === 0) {
+      return;
+    }
+
+    void (async () => {
+      const loadedProducts: ProductListItem[] = [];
+
+      for (const productId of productIds) {
+        try {
+          const response = await getProductById(productId, token);
+
+          if (!response.ok) {
+            toast.error(
+              getProductApiMessage(response.body) ??
+                `Nao foi possivel carregar o produto ${productId} enviado pelo atalho.`,
+            );
+            continue;
+          }
+
+          loadedProducts.push(response.body as ProductListItem);
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : `Nao foi possivel carregar o produto ${productId} enviado pelo atalho.`,
+          );
+        }
+      }
+
+      if (loadedProducts.length === 0) {
+        return;
+      }
+
+      applyPrefilledProducts(loadedProducts);
+
+      toast.success(`${loadedProducts.length} produto(s) carregado(s) no rascunho.`);
+    })();
+  }, [searchParams, selectedStoreId, token]);
 
   function addDraft(partial?: Partial<MovementDraft>) {
     const nextId = `draft-${draftCounterRef.current++}`;

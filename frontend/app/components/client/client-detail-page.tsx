@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -116,6 +117,7 @@ function ProductsSnapshot({
 }
 
 export function ClientDetailPage({ clientId }: { clientId: number }) {
+  const router = useRouter();
   const { isLoadingStores, selectedStoreId } = useStoreContext();
   const previousMonthRange = useMemo(() => getPreviousMonthRange(), []);
   const [filters, setFilters] = useState<ClientDetailFilters>({
@@ -145,6 +147,25 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
   });
 
   const detail = detailQuery.data;
+  const soldProductsWithClient = useMemo(
+    () => detail?.produtosComCliente.filter((product) => product.situacao === 2) ?? [],
+    [detail],
+  );
+  const returnSaleHref = useMemo(() => {
+    if (!detail || soldProductsWithClient.length === 0) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      clienteId: String(detail.id),
+      clienteNome: detail.nome,
+      clienteContato: detail.contato,
+      tipo: "5",
+      produtoIds: soldProductsWithClient.map((product) => String(product.id)).join(","),
+    });
+
+    return `/dashboard/movimentacao/nova?${params.toString()}`;
+  }, [detail, soldProductsWithClient]);
 
   return (
     <section className="space-y-6">
@@ -210,6 +231,16 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             </div>
           </label>
         </div>
+
+        {returnSaleHref ? (
+          <button
+            type="button"
+            onClick={() => router.push(returnSaleHref)}
+            className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Devolver produtos vendidos
+          </button>
+        ) : null}
       </div>
 
       {!selectedStoreId ? (
