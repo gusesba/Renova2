@@ -7,40 +7,23 @@ import { normalizeDecimalValue } from "@/lib/product";
 
 export const solicitacaoSchema = z
   .object({
-    descricao: z.string().trim().min(1, "Informe a descricao da solicitacao."),
-    precoMinimo: z
-      .string()
-      .trim()
-      .min(1, "Informe o preco minimo.")
-      .refine((value) => {
-        const parsed = Number(normalizeDecimalValue(value));
-        return Number.isFinite(parsed) && parsed > 0;
-      }, "Informe um preco minimo maior que zero."),
+    descricao: z.string(),
     precoMaximo: z
       .string()
       .trim()
-      .min(1, "Informe o preco maximo.")
       .refine((value) => {
+        if (!value) {
+          return true;
+        }
+
         const parsed = Number(normalizeDecimalValue(value));
         return Number.isFinite(parsed) && parsed > 0;
       }, "Informe um preco maximo maior que zero."),
-    produtoId: z.string().trim().min(1, "Selecione o produto."),
-    marcaId: z.string().trim().min(1, "Selecione a marca."),
-    tamanhoId: z.string().trim().min(1, "Selecione o tamanho."),
-    corId: z.string().trim().min(1, "Selecione a cor."),
-    clienteId: z.string().trim().min(1, "Selecione o cliente."),
-  })
-  .superRefine((value, context) => {
-    const precoMinimo = Number(normalizeDecimalValue(value.precoMinimo));
-    const precoMaximo = Number(normalizeDecimalValue(value.precoMaximo));
-
-    if (Number.isFinite(precoMinimo) && Number.isFinite(precoMaximo) && precoMaximo < precoMinimo) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "O preco maximo deve ser maior ou igual ao preco minimo.",
-        path: ["precoMaximo"],
-      });
-    }
+    produtoId: z.string(),
+    marcaId: z.string(),
+    tamanhoId: z.string(),
+    corId: z.string(),
+    clienteId: z.string(),
   });
 
 export function mapSolicitacaoZodErrors(error: z.ZodError): SolicitacaoFieldErrors {
@@ -51,10 +34,6 @@ export function mapSolicitacaoZodErrors(error: z.ZodError): SolicitacaoFieldErro
 
     if (field === "descricao" && !mapped.descricao) {
       mapped.descricao = issue.message;
-    }
-
-    if (field === "precoMinimo" && !mapped.precoMinimo) {
-      mapped.precoMinimo = issue.message;
     }
 
     if (field === "precoMaximo" && !mapped.precoMaximo) {

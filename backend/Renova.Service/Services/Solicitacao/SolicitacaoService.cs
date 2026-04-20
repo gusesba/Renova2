@@ -21,62 +21,92 @@ namespace Renova.Service.Services.Solicitacao
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<SolicitacaoModel, int>>)(solicitacao => solicitacao.Id),
-            ["descricao"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Descricao),
+            ["descricao"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Descricao ?? string.Empty),
             ["produto"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Produto != null ? solicitacao.Produto.Valor : string.Empty),
             ["marca"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Marca != null ? solicitacao.Marca.Valor : string.Empty),
             ["tamanho"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Tamanho != null ? solicitacao.Tamanho.Valor : string.Empty),
             ["cor"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Cor != null ? solicitacao.Cor.Valor : string.Empty),
             ["cliente"] = (Expression<Func<SolicitacaoModel, string>>)(solicitacao => solicitacao.Cliente != null ? solicitacao.Cliente.Nome : string.Empty),
-            ["precoMinimo"] = (Expression<Func<SolicitacaoModel, decimal>>)(solicitacao => solicitacao.PrecoMinimo),
-            ["precoMaximo"] = (Expression<Func<SolicitacaoModel, decimal>>)(solicitacao => solicitacao.PrecoMaximo)
+            ["precoMinimo"] = (Expression<Func<SolicitacaoModel, decimal?>>)(solicitacao => solicitacao.PrecoMinimo),
+            ["precoMaximo"] = (Expression<Func<SolicitacaoModel, decimal?>>)(solicitacao => solicitacao.PrecoMaximo)
         };
 
         public async Task<SolicitacaoDto> CreateAsync(CriarSolicitacaoCommand request, CriarSolicitacaoParametros parametros, CancellationToken cancellationToken = default)
         {
-            if (request.PrecoMinimo <= 0)
+            if (request.PrecoMaximo.HasValue && request.PrecoMaximo <= 0)
             {
-                throw new ArgumentException("Preco minimo deve ser maior que zero.", nameof(request));
+                throw new ArgumentException("Preco maximo deve ser maior que zero.", nameof(request));
             }
 
-            if (request.PrecoMaximo < request.PrecoMinimo)
-            {
-                throw new ArgumentException("Preco maximo deve ser maior ou igual ao preco minimo.", nameof(request));
-            }
-
-            string descricaoNormalizada = request.Descricao.Trim();
+            string descricaoNormalizada = request.Descricao?.Trim() ?? string.Empty;
 
             await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.SolicitacoesAdicionar, cancellationToken);
 
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
-            ClienteModel cliente = await _context.Clientes
-                .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
-                ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
-
-            if (cliente.LojaId != loja.Id)
+            ClienteModel? cliente = null;
+            if (request.ClienteId.HasValue)
             {
-                throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
+                cliente = await _context.Clientes
+                    .SingleOrDefaultAsync(item => item.Id == request.ClienteId.Value, cancellationToken)
+                    ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
+
+                if (cliente.LojaId != loja.Id)
+                {
+                    throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
+                }
             }
 
-            ProdutoReferenciaModel produto = await _context.ProdutosReferencia
-                .SingleOrDefaultAsync(item => item.Id == request.ProdutoId, cancellationToken)
-                ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
-
-            MarcaModel marca = await _context.Marcas
-                .SingleOrDefaultAsync(item => item.Id == request.MarcaId, cancellationToken)
-                ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
-
-            TamanhoModel tamanho = await _context.Tamanhos
-                .SingleOrDefaultAsync(item => item.Id == request.TamanhoId, cancellationToken)
-                ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
-
-            CorModel cor = await _context.Cores
-                .SingleOrDefaultAsync(item => item.Id == request.CorId, cancellationToken)
-                ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
-
-            if (produto.LojaId != loja.Id || marca.LojaId != loja.Id || tamanho.LojaId != loja.Id || cor.LojaId != loja.Id)
+            ProdutoReferenciaModel? produto = null;
+            if (request.ProdutoId.HasValue)
             {
-                throw new ArgumentException("Os registros auxiliares informados devem pertencer a loja selecionada.", nameof(request));
+                produto = await _context.ProdutosReferencia
+                    .SingleOrDefaultAsync(item => item.Id == request.ProdutoId.Value, cancellationToken)
+                    ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
+
+                if (produto.LojaId != loja.Id)
+                {
+                    throw new ArgumentException("Produto informado nao pertence a loja selecionada.", nameof(request));
+                }
+            }
+
+            MarcaModel? marca = null;
+            if (request.MarcaId.HasValue)
+            {
+                marca = await _context.Marcas
+                    .SingleOrDefaultAsync(item => item.Id == request.MarcaId.Value, cancellationToken)
+                    ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
+
+                if (marca.LojaId != loja.Id)
+                {
+                    throw new ArgumentException("Marca informada nao pertence a loja selecionada.", nameof(request));
+                }
+            }
+
+            TamanhoModel? tamanho = null;
+            if (request.TamanhoId.HasValue)
+            {
+                tamanho = await _context.Tamanhos
+                    .SingleOrDefaultAsync(item => item.Id == request.TamanhoId.Value, cancellationToken)
+                    ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
+
+                if (tamanho.LojaId != loja.Id)
+                {
+                    throw new ArgumentException("Tamanho informado nao pertence a loja selecionada.", nameof(request));
+                }
+            }
+
+            CorModel? cor = null;
+            if (request.CorId.HasValue)
+            {
+                cor = await _context.Cores
+                    .SingleOrDefaultAsync(item => item.Id == request.CorId.Value, cancellationToken)
+                    ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
+
+                if (cor.LojaId != loja.Id)
+                {
+                    throw new ArgumentException("Cor informada nao pertence a loja selecionada.", nameof(request));
+                }
             }
 
             SolicitacaoModel solicitacao = new()
@@ -103,7 +133,7 @@ namespace Renova.Service.Services.Solicitacao
                 TamanhoId = solicitacao.TamanhoId,
                 CorId = solicitacao.CorId,
                 ClienteId = solicitacao.ClienteId,
-                Descricao = solicitacao.Descricao,
+                Descricao = solicitacao.Descricao ?? string.Empty,
                 PrecoMinimo = solicitacao.PrecoMinimo,
                 PrecoMaximo = solicitacao.PrecoMaximo,
                 LojaId = solicitacao.LojaId,
@@ -126,7 +156,7 @@ namespace Renova.Service.Services.Solicitacao
             if (!string.IsNullOrWhiteSpace(request.Descricao))
             {
                 string descricaoFiltro = request.Descricao.Trim().ToLowerInvariant();
-                query = query.Where(solicitacao => solicitacao.Descricao.ToLower().Contains(descricaoFiltro));
+                query = query.Where(solicitacao => solicitacao.Descricao != null && solicitacao.Descricao.ToLower().Contains(descricaoFiltro));
             }
 
             if (!string.IsNullOrWhiteSpace(request.Produto))
@@ -185,7 +215,7 @@ namespace Renova.Service.Services.Solicitacao
                     Cor = solicitacao.Cor != null ? solicitacao.Cor.Valor : string.Empty,
                     ClienteId = solicitacao.ClienteId,
                     Cliente = solicitacao.Cliente != null ? solicitacao.Cliente.Nome : string.Empty,
-                    Descricao = solicitacao.Descricao,
+                    Descricao = solicitacao.Descricao ?? string.Empty,
                     PrecoMinimo = solicitacao.PrecoMinimo,
                     PrecoMaximo = solicitacao.PrecoMaximo,
                     LojaId = solicitacao.LojaId
@@ -248,24 +278,24 @@ namespace Renova.Service.Services.Solicitacao
         }
 
         private Task<List<ProdutoCompativelDto>> ObterProdutosCompativeisAsync(
-            int produtoId,
-            int marcaId,
-            int tamanhoId,
-            int corId,
+            int? produtoId,
+            int? marcaId,
+            int? tamanhoId,
+            int? corId,
             int lojaId,
-            decimal precoMinimo,
-            decimal precoMaximo,
+            decimal? precoMinimo,
+            decimal? precoMaximo,
             CancellationToken cancellationToken)
         {
             return _context.ProdutosEstoque
                 .Where(produto =>
                     produto.LojaId == lojaId
-                    && produto.ProdutoId == produtoId
-                    && produto.MarcaId == marcaId
-                    && produto.TamanhoId == tamanhoId
-                    && produto.CorId == corId
-                    && produto.Preco >= precoMinimo
-                    && produto.Preco <= precoMaximo)
+                    && (!produtoId.HasValue || produto.ProdutoId == produtoId.Value)
+                    && (!marcaId.HasValue || produto.MarcaId == marcaId.Value)
+                    && (!tamanhoId.HasValue || produto.TamanhoId == tamanhoId.Value)
+                    && (!corId.HasValue || produto.CorId == corId.Value)
+                    && (!precoMinimo.HasValue || produto.Preco >= precoMinimo.Value)
+                    && (!precoMaximo.HasValue || produto.Preco <= precoMaximo.Value))
                 .OrderBy(produto => produto.Descricao)
                 .ThenBy(produto => produto.Id)
                 .Select(produto => new ProdutoCompativelDto

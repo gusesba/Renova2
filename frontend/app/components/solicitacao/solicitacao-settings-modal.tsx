@@ -22,8 +22,7 @@ const fieldOptions: Array<{
   { label: "Tamanho", value: "tamanho", description: "Tamanho desejado" },
   { label: "Cor", value: "cor", description: "Cor desejada" },
   { label: "Cliente", value: "cliente", description: "Cliente que fez a solicitacao" },
-  { label: "Preco minimo", value: "precoMinimo", description: "Inicio da faixa desejada" },
-  { label: "Preco maximo", value: "precoMaximo", description: "Fim da faixa desejada" },
+  { label: "Preco maximo", value: "precoMaximo", description: "Teto de preco desejado" },
   { label: "Matches", value: "matches", description: "Quantidade de produtos compativeis" },
   { label: "Identificador", value: "id", description: "Codigo interno da solicitacao" },
 ];

@@ -168,14 +168,13 @@ export function SolicitacaoCreateModal({
 
   const createSolicitacaoMutation = useMutation({
     mutationFn: async (payload: {
-      produtoId: number;
-      marcaId: number;
-      tamanhoId: number;
-      corId: number;
-      clienteId: number;
+      produtoId: number | null;
+      marcaId: number | null;
+      tamanhoId: number | null;
+      corId: number | null;
+      clienteId: number | null;
       descricao: string;
-      precoMinimo: number;
-      precoMaximo: number;
+      precoMaximo: number | null;
       lojaId: number;
     }) => {
       if (!token) {
@@ -418,14 +417,15 @@ export function SolicitacaoCreateModal({
 
     try {
       const payload = {
-        produtoId: Number(validation.data.produtoId),
-        marcaId: Number(validation.data.marcaId),
-        tamanhoId: Number(validation.data.tamanhoId),
-        corId: Number(validation.data.corId),
-        clienteId: Number(validation.data.clienteId),
+        produtoId: validation.data.produtoId.trim() ? Number(validation.data.produtoId) : null,
+        marcaId: validation.data.marcaId.trim() ? Number(validation.data.marcaId) : null,
+        tamanhoId: validation.data.tamanhoId.trim() ? Number(validation.data.tamanhoId) : null,
+        corId: validation.data.corId.trim() ? Number(validation.data.corId) : null,
+        clienteId: validation.data.clienteId.trim() ? Number(validation.data.clienteId) : null,
         descricao: validation.data.descricao.trim(),
-        precoMinimo: Number(normalizeDecimalValue(validation.data.precoMinimo)),
-        precoMaximo: Number(normalizeDecimalValue(validation.data.precoMaximo)),
+        precoMaximo: validation.data.precoMaximo.trim()
+          ? Number(normalizeDecimalValue(validation.data.precoMaximo))
+          : null,
         lojaId: storeId,
       };
 
@@ -513,7 +513,7 @@ export function SolicitacaoCreateModal({
               value={values.clienteId}
               selectedLabel={values.clienteLabel}
               searchValue={lookupSearch.cliente}
-              placeholder="Selecione o cliente"
+              placeholder="Qualquer cliente"
               searchPlaceholder="Pesquisar por nome"
               options={clientOptionsQuery.data ?? []}
               emptyLabel={
@@ -524,7 +524,7 @@ export function SolicitacaoCreateModal({
             />
             <FormField
               label="Descricao"
-              placeholder="Ex.: Vestido azul em tecido leve"
+              placeholder="Opcional"
               value={values.descricao}
               error={errors.descricao}
               onChange={(value) => {
@@ -540,7 +540,7 @@ export function SolicitacaoCreateModal({
               value={values.produtoId}
               selectedLabel={values.produtoLabel}
               searchValue={lookupSearch.produto}
-              placeholder="Selecione o produto"
+              placeholder="Qualquer produto"
               searchPlaceholder="Pesquisar por valor"
               options={productOptionsQuery.data ?? []}
               emptyLabel={
@@ -559,7 +559,7 @@ export function SolicitacaoCreateModal({
               value={values.marcaId}
               selectedLabel={values.marcaLabel}
               searchValue={lookupSearch.marca}
-              placeholder="Selecione a marca"
+              placeholder="Qualquer marca"
               searchPlaceholder="Pesquisar por valor"
               options={brandOptionsQuery.data ?? []}
               emptyLabel={
@@ -576,7 +576,7 @@ export function SolicitacaoCreateModal({
               value={values.tamanhoId}
               selectedLabel={values.tamanhoLabel}
               searchValue={lookupSearch.tamanho}
-              placeholder="Selecione o tamanho"
+              placeholder="Qualquer tamanho"
               searchPlaceholder="Pesquisar por valor"
               options={sizeOptionsQuery.data ?? []}
               emptyLabel={
@@ -595,7 +595,7 @@ export function SolicitacaoCreateModal({
               value={values.corId}
               selectedLabel={values.corLabel}
               searchValue={lookupSearch.cor}
-              placeholder="Selecione a cor"
+              placeholder="Qualquer cor"
               searchPlaceholder="Pesquisar por valor"
               options={colorOptionsQuery.data ?? []}
               emptyLabel={
@@ -605,20 +605,9 @@ export function SolicitacaoCreateModal({
               onSelect={(option) => updateRelation("cor", option)}
             />
             <FormField
-              label="Preco minimo"
-              type="number"
-              placeholder="0,00"
-              value={values.precoMinimo}
-              error={errors.precoMinimo}
-              onChange={(value) => {
-                updateField("precoMinimo", value);
-                setErrors((current) => ({ ...current, precoMinimo: undefined }));
-              }}
-            />
-            <FormField
               label="Preco maximo"
               type="number"
-              placeholder="0,00"
+              placeholder="Opcional"
               value={values.precoMaximo}
               error={errors.precoMaximo}
               onChange={(value) => {

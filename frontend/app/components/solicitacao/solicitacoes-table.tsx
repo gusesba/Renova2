@@ -4,7 +4,6 @@ import { Fragment, useState } from "react";
 
 import {
   formatCurrencyValue,
-  formatSolicitacaoPriceRange,
   type SolicitacaoListItem,
   type SolicitacaoVisibleField,
 } from "@/lib/solicitacao";
@@ -50,7 +49,6 @@ export function SolicitacoesTable({
   const showTamanho = visibleFields.includes("tamanho");
   const showCor = visibleFields.includes("cor");
   const showCliente = visibleFields.includes("cliente");
-  const showPrecoMinimo = visibleFields.includes("precoMinimo");
   const showPrecoMaximo = visibleFields.includes("precoMaximo");
   const showMatches = visibleFields.includes("matches");
   const showId = visibleFields.includes("id");
@@ -94,11 +92,6 @@ export function SolicitacoesTable({
                   Cliente
                 </th>
               ) : null}
-              {showPrecoMinimo ? (
-                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                  Preco minimo
-                </th>
-              ) : null}
               {showPrecoMaximo ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Preco maximo
@@ -131,7 +124,6 @@ export function SolicitacoesTable({
                   showTamanho,
                   showCor,
                   showCliente,
-                  showPrecoMinimo,
                   showPrecoMaximo,
                   showMatches,
                   showId,
@@ -163,11 +155,12 @@ export function SolicitacoesTable({
                     {showTamanho ? <Cell subtle>{solicitacao.tamanho}</Cell> : null}
                     {showCor ? <Cell subtle>{solicitacao.cor}</Cell> : null}
                     {showCliente ? <Cell>{solicitacao.cliente}</Cell> : null}
-                    {showPrecoMinimo ? (
-                      <Cell>{formatCurrencyValue(solicitacao.precoMinimo)}</Cell>
-                    ) : null}
                     {showPrecoMaximo ? (
-                      <Cell>{formatCurrencyValue(solicitacao.precoMaximo)}</Cell>
+                      <Cell>
+                        {solicitacao.precoMaximo == null
+                          ? "Qualquer preco"
+                          : formatCurrencyValue(solicitacao.precoMaximo)}
+                      </Cell>
                     ) : null}
                     {showMatches ? <Cell>{solicitacao.produtosCompativeis.length}</Cell> : null}
                     {showId ? <Cell subtle>#{solicitacao.id}</Cell> : null}
@@ -213,11 +206,9 @@ export function SolicitacoesTable({
                               Produtos compativeis
                             </p>
                             <p className="text-sm text-[var(--muted)]">
-                              Faixa desejada:{" "}
-                              {formatSolicitacaoPriceRange(
-                                solicitacao.precoMinimo,
-                                solicitacao.precoMaximo,
-                              )}
+                              {solicitacao.precoMaximo == null
+                                ? "Sem limite de preco"
+                                : `Preco maximo: ${formatCurrencyValue(solicitacao.precoMaximo)}`}
                             </p>
                           </div>
 

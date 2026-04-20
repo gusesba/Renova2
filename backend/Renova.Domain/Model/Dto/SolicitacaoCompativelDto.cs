@@ -9,7 +9,7 @@ namespace Renova.Domain.Model.Dto
         public required string Tamanho { get; set; }
         public required string Cor { get; set; }
         public required string Descricao { get; set; }
-        public decimal PrecoMinimo { get; set; }
-        public decimal PrecoMaximo { get; set; }
+        public decimal? PrecoMinimo { get; set; }
+        public decimal? PrecoMaximo { get; set; }
     }
 }

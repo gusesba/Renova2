@@ -13,19 +13,19 @@ export type SolicitacaoMatchedProduct = {
 
 export type SolicitacaoListItem = {
   id: number;
-  produtoId: number;
+  produtoId: number | null;
   produto: string;
-  marcaId: number;
+  marcaId: number | null;
   marca: string;
-  tamanhoId: number;
+  tamanhoId: number | null;
   tamanho: string;
-  corId: number;
+  corId: number | null;
   cor: string;
-  clienteId: number;
+  clienteId: number | null;
   cliente: string;
   descricao: string;
-  precoMinimo: number;
-  precoMaximo: number;
+  precoMinimo: number | null;
+  precoMaximo: number | null;
   lojaId: number;
   produtosCompativeis: SolicitacaoMatchedProduct[];
 };
@@ -40,21 +40,20 @@ export type SolicitacaoListResponse = {
 
 export type SolicitacaoCreateResponse = {
   id: number;
-  produtoId: number;
-  marcaId: number;
-  tamanhoId: number;
-  corId: number;
-  clienteId: number;
+  produtoId: number | null;
+  marcaId: number | null;
+  tamanhoId: number | null;
+  corId: number | null;
+  clienteId: number | null;
   descricao: string;
-  precoMinimo: number;
-  precoMaximo: number;
+  precoMinimo: number | null;
+  precoMaximo: number | null;
   lojaId: number;
   produtosCompativeis: SolicitacaoMatchedProduct[];
 };
 
 export type SolicitacaoFormValues = {
   descricao: string;
-  precoMinimo: string;
   precoMaximo: string;
   produtoId: string;
   produtoLabel: string;
@@ -71,7 +70,6 @@ export type SolicitacaoFormValues = {
 export type SolicitacaoFieldErrors = Partial<
   Record<
     | "descricao"
-    | "precoMinimo"
     | "precoMaximo"
     | "produtoId"
     | "marcaId"
@@ -98,7 +96,6 @@ export type SolicitacaoFilters = {
     | "tamanho"
     | "cor"
     | "cliente"
-    | "precoMinimo"
     | "precoMaximo"
     | "id";
   direcao: "asc" | "desc";
@@ -113,7 +110,6 @@ export type SolicitacaoVisibleField =
   | "tamanho"
   | "cor"
   | "cliente"
-  | "precoMinimo"
   | "precoMaximo"
   | "matches"
   | "id";
@@ -146,7 +142,6 @@ export const initialSolicitacaoFilters: SolicitacaoFilters = {
 
 export const initialSolicitacaoFormValues: SolicitacaoFormValues = {
   descricao: "",
-  precoMinimo: "",
   precoMaximo: "",
   produtoId: "",
   produtoLabel: "",
@@ -169,7 +164,6 @@ export const defaultSolicitacaoTableSettings: SolicitacaoTableSettings = {
     "tamanho",
     "cor",
     "cliente",
-    "precoMinimo",
     "precoMaximo",
     "matches",
     "id",
@@ -278,10 +272,6 @@ export function extractSolicitacaoFieldErrors(body: unknown): SolicitacaoFieldEr
       accumulator.descricao = error;
     }
 
-    if (normalizedKey === "precominimo" && !accumulator.precoMinimo) {
-      accumulator.precoMinimo = error;
-    }
-
     if (normalizedKey === "precomaximo" && !accumulator.precoMaximo) {
       accumulator.precoMaximo = error;
     }
@@ -340,7 +330,6 @@ export function getStoredSolicitacaoTableSettings(): SolicitacaoTableSettings {
             "tamanho",
             "cor",
             "cliente",
-            "precoMinimo",
             "precoMaximo",
             "matches",
             "id",

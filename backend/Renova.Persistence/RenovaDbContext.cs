@@ -329,14 +329,14 @@ namespace Renova.Persistence
                 _ = entity.ToTable("Solicitacao");
                 _ = entity.HasKey(p => p.Id);
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
-                _ = entity.Property(p => p.ProdutoId).IsRequired();
-                _ = entity.Property(p => p.MarcaId).IsRequired();
-                _ = entity.Property(p => p.TamanhoId).IsRequired();
-                _ = entity.Property(p => p.CorId).IsRequired();
-                _ = entity.Property(p => p.ClienteId).IsRequired();
-                _ = entity.Property(p => p.Descricao).HasMaxLength(1000).IsRequired();
-                _ = entity.Property(p => p.PrecoMinimo).HasPrecision(18, 2).IsRequired();
-                _ = entity.Property(p => p.PrecoMaximo).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.ProdutoId).IsRequired(false);
+                _ = entity.Property(p => p.MarcaId).IsRequired(false);
+                _ = entity.Property(p => p.TamanhoId).IsRequired(false);
+                _ = entity.Property(p => p.CorId).IsRequired(false);
+                _ = entity.Property(p => p.ClienteId).IsRequired(false);
+                _ = entity.Property(p => p.Descricao).HasMaxLength(1000).IsRequired(false);
+                _ = entity.Property(p => p.PrecoMinimo).HasPrecision(18, 2).IsRequired(false);
+                _ = entity.Property(p => p.PrecoMaximo).HasPrecision(18, 2).IsRequired(false);
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.HasOne(p => p.Produto)
                     .WithMany()

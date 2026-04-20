@@ -28,8 +28,8 @@ export type ProductRequestMatchItem = {
   tamanho: string;
   cor: string;
   descricao: string;
-  precoMinimo: number;
-  precoMaximo: number;
+  precoMinimo: number | null;
+  precoMaximo: number | null;
 };
 
 export type ProductCreateResponse = {

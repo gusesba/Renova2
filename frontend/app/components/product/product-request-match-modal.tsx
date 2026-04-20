@@ -132,10 +132,17 @@ export function ProductRequestMatchModal({
                     </td>
                     <td className="px-4 py-4 text-sm text-[var(--foreground)]">{match.descricao}</td>
                     <td className="px-4 py-4 text-sm text-[var(--muted)]">
-                      {match.produto} / {match.marca} / {match.tamanho} / {match.cor}
+                      {[
+                        match.produto || "Qualquer produto",
+                        match.marca || "Qualquer marca",
+                        match.tamanho || "Qualquer tamanho",
+                        match.cor || "Qualquer cor",
+                      ].join(" / ")}
                     </td>
                     <td className="px-4 py-4 text-sm font-semibold text-[var(--foreground)]">
-                      {formatCurrencyValue(match.precoMinimo)} - {formatCurrencyValue(match.precoMaximo)}
+                      {match.precoMaximo == null
+                        ? "Qualquer preco"
+                        : `Ate ${formatCurrencyValue(match.precoMaximo)}`}
                     </td>
                   </tr>
                 ))}

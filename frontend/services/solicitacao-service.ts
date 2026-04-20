@@ -31,14 +31,13 @@ export async function getSolicitacoes(
 
 export async function createSolicitacao(
   payload: {
-    produtoId: number;
-    marcaId: number;
-    tamanhoId: number;
-    corId: number;
-    clienteId: number;
+    produtoId: number | null;
+    marcaId: number | null;
+    tamanhoId: number | null;
+    corId: number | null;
+    clienteId: number | null;
     descricao: string;
-    precoMinimo: number;
-    precoMaximo: number;
+    precoMaximo: number | null;
     lojaId: number;
   },
   token: string,

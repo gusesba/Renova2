@@ -736,12 +736,12 @@ namespace Renova.Service.Services.Produto
             return _context.Solicitacoes
                 .Where(solicitacao =>
                     solicitacao.LojaId == produto.LojaId
-                    && solicitacao.ProdutoId == produto.ProdutoId
-                    && solicitacao.MarcaId == produto.MarcaId
-                    && solicitacao.TamanhoId == produto.TamanhoId
-                    && solicitacao.CorId == produto.CorId
-                    && produto.Preco >= solicitacao.PrecoMinimo
-                    && produto.Preco <= solicitacao.PrecoMaximo)
+                    && (!solicitacao.ProdutoId.HasValue || solicitacao.ProdutoId == produto.ProdutoId)
+                    && (!solicitacao.MarcaId.HasValue || solicitacao.MarcaId == produto.MarcaId)
+                    && (!solicitacao.TamanhoId.HasValue || solicitacao.TamanhoId == produto.TamanhoId)
+                    && (!solicitacao.CorId.HasValue || solicitacao.CorId == produto.CorId)
+                    && (!solicitacao.PrecoMinimo.HasValue || produto.Preco >= solicitacao.PrecoMinimo.Value)
+                    && (!solicitacao.PrecoMaximo.HasValue || produto.Preco <= solicitacao.PrecoMaximo.Value))
                 .OrderBy(solicitacao => solicitacao.Descricao)
                 .ThenBy(solicitacao => solicitacao.Id)
                 .Select(solicitacao => new SolicitacaoCompativelDto
@@ -752,7 +752,7 @@ namespace Renova.Service.Services.Produto
                     Marca = solicitacao.Marca != null ? solicitacao.Marca.Valor : string.Empty,
                     Tamanho = solicitacao.Tamanho != null ? solicitacao.Tamanho.Valor : string.Empty,
                     Cor = solicitacao.Cor != null ? solicitacao.Cor.Valor : string.Empty,
-                    Descricao = solicitacao.Descricao,
+                    Descricao = solicitacao.Descricao ?? string.Empty,
                     PrecoMinimo = solicitacao.PrecoMinimo,
                     PrecoMaximo = solicitacao.PrecoMaximo
                 })

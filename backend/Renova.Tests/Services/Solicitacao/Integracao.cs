@@ -40,7 +40,6 @@ namespace Renova.Tests.Services.Solicitacao
                 CorId = cor.Id,
                 ClienteId = cliente.Id,
                 Descricao = "Procura vestido azul",
-                PrecoMinimo = 100m,
                 PrecoMaximo = 200m,
                 LojaId = loja.Id
             });
@@ -51,6 +50,38 @@ namespace Renova.Tests.Services.Solicitacao
             Assert.NotNull(body);
             ProdutoCompativelDto produtoCompativel = Assert.Single(body.ProdutosCompativeis);
             Assert.Equal("Vestido azul", produtoCompativel.Descricao);
+        }
+
+        [Fact]
+        public async Task PostSolicitacaoDevePermitirCamposOpcionaisEConsiderarWildcardNoMatch()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "solicitacao-opcional@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoReferenciaModel produto = await CriarProdutoReferenciaAsync(factory, loja.Id, "Vestido");
+            MarcaModel marca = await CriarMarcaAsync(factory, loja.Id, "Farm");
+            TamanhoModel tamanho = await CriarTamanhoAsync(factory, loja.Id, "M");
+            CorModel cor = await CriarCorAsync(factory, loja.Id, "Azul");
+            _ = await CriarProdutoAsync(factory, loja.Id, produto.Id, marca.Id, tamanho.Id, cor.Id, cliente.Id);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/solicitacao", new CriarSolicitacaoCommand
+            {
+                Descricao = string.Empty,
+                LojaId = loja.Id
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            SolicitacaoDto? body = await response.Content.ReadFromJsonAsync<SolicitacaoDto>();
+            Assert.NotNull(body);
+            Assert.Null(body.ProdutoId);
+            Assert.Null(body.PrecoMaximo);
+            Assert.Single(body.ProdutosCompativeis);
         }
 
         [Fact]

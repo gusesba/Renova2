@@ -93,7 +93,7 @@ export function SolicitacaoFiltersBar({
         <div>
           <h2 className="text-xl font-semibold text-[var(--foreground)]">Lista de solicitacoes</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Filtre por cliente, auxiliares, descricao e faixa de preco desejada.
+            Filtre por cliente, auxiliares, descricao e preco maximo desejado.
           </p>
         </div>
 
@@ -187,13 +187,6 @@ export function SolicitacaoFiltersBar({
                 onChange={(cor) => onChange({ cor })}
               />
               <Field
-                label="Preco minimo"
-                type="number"
-                value={filters.precoInicial}
-                placeholder="0,00"
-                onChange={(precoInicial) => onChange({ precoInicial })}
-              />
-              <Field
                 label="Preco maximo"
                 type="number"
                 value={filters.precoFinal}
@@ -210,7 +203,6 @@ export function SolicitacaoFiltersBar({
                   { label: "Marca", value: "marca" },
                   { label: "Tamanho", value: "tamanho" },
                   { label: "Cor", value: "cor" },
-                  { label: "Preco minimo", value: "precoMinimo" },
                   { label: "Preco maximo", value: "precoMaximo" },
                   { label: "Id", value: "id" },
                 ]}
