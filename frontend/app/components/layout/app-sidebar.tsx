@@ -82,6 +82,7 @@ export function AppSidebar({ accessArea, isCollapsed = false }: AppSidebarProps)
     ? [
         { label: "Pecas como fornecedor", href: "/dashboard/area-cliente", exact: true },
         { label: "Pecas como cliente", href: "/dashboard/area-cliente/como-cliente" },
+        { label: "Pendencias", href: "/dashboard/area-cliente/pendencia" },
       ]
     : primaryItems.filter((item) => {
     const requiredPermissions = menuPermissionGroups[item.href];

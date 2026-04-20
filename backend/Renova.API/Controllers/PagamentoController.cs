@@ -149,6 +149,32 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("minhas-pendencias")]
+        [ProducesResponseType(typeof(IReadOnlyList<ClientePendenciaAreaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMinhasPendencias(CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                IReadOnlyList<ClientePendenciaAreaDto> resultado = await _pagamentoService.GetMyPendenciasAsync(
+                    usuarioId.Value,
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost("pendencia/atualizar")]
         [ProducesResponseType(typeof(AtualizarPendenciasDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

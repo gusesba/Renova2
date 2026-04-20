@@ -80,6 +80,28 @@ export async function getPendingClients(
   };
 }
 
+export async function getMyPendingBalances(
+  token: string,
+): Promise<{ body: unknown; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/pagamento/minhas-pendencias`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as unknown)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
+}
+
 export async function updatePendingPayments(
   payload: { lojaId: number; data: string },
   token: string,

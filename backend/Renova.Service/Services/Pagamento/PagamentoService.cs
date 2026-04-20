@@ -347,6 +347,45 @@ namespace Renova.Service.Services.Pagamento
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ClientePendenciaAreaDto>> GetMyPendenciasAsync(
+            int usuarioId,
+            CancellationToken cancellationToken = default)
+        {
+            bool usuarioExiste = await _context.Usuarios
+                .AnyAsync(usuario => usuario.Id == usuarioId, cancellationToken);
+
+            if (!usuarioExiste)
+            {
+                throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
+            }
+
+            return await _context.ClientesCreditos
+                .Where(credito => credito.Cliente != null && credito.Cliente.UserId == usuarioId && credito.Valor != 0m)
+                .OrderBy(credito => credito.Loja != null ? credito.Loja.Nome : string.Empty)
+                .ThenBy(credito => credito.LojaId)
+                .Select(credito => new ClientePendenciaAreaDto
+                {
+                    LojaId = credito.LojaId,
+                    LojaNome = credito.Loja != null ? credito.Loja.Nome : $"Loja {credito.LojaId}",
+                    ClienteId = credito.ClienteId,
+                    SaldoConta = credito.Valor,
+                    ValorCredito = credito.Valor < 0m ? -credito.Valor : credito.Valor,
+                    ValorEspecie = credito.Valor > 0m
+                        ? _context.ConfiguracoesLoja
+                            .Where(config => config.LojaId == credito.LojaId && config.PercentualRepasseVendedorCredito > 0m)
+                            .Select(config => (decimal?)decimal.Round(
+                                credito.Valor * config.PercentualRepasseFornecedor / config.PercentualRepasseVendedorCredito,
+                                2,
+                                MidpointRounding.AwayFromZero))
+                            .FirstOrDefault()
+                        : credito.Valor < 0m
+                            ? -credito.Valor
+                            : 0m,
+                    Situacao = credito.Valor > 0m ? "Receber" : "Pagar"
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IReadOnlyList<PagamentoDto>> CreateAsync(CriarPagamentoCommand request, CancellationToken cancellationToken = default)
         {
             if (request.Produtos.Count == 0)

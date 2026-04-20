@@ -802,6 +802,13 @@ namespace Renova.Service.Services.Movimentacao
                 return Task.FromResult<IReadOnlyList<ClientePendenciaDto>>([]);
             }
 
+            public Task<IReadOnlyList<ClientePendenciaAreaDto>> GetMyPendenciasAsync(int usuarioId, CancellationToken cancellationToken = default)
+            {
+                _ = usuarioId;
+                _ = cancellationToken;
+                return Task.FromResult<IReadOnlyList<ClientePendenciaAreaDto>>([]);
+            }
+
             public Task<AtualizarPendenciasDto> UpdatePendenciasAsync(
                 AtualizarPendenciasCommand request,
                 AtualizarPendenciasParametros parametros,
