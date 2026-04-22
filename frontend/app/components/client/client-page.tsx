@@ -69,6 +69,7 @@ export function ClientPage() {
   const [tableSettings, setTableSettings] = useState<ClientTableSettings>(() =>
     getStoredClientTableSettings(),
   );
+  const [closingType, setClosingType] = useState<"produtos" | "movimentacoes">("movimentacoes");
   const [userSearch, setUserSearch] = useState("");
   const [editUserSearch, setEditUserSearch] = useState("");
   const [debouncedUserSearch, setDebouncedUserSearch] = useState("");
@@ -241,7 +242,11 @@ export function ClientPage() {
   });
 
   const exportClosingMutation = useMutation({
-    mutationFn: async (payload: { dataInicial: string; dataFinal: string }) => {
+    mutationFn: async (payload: {
+      dataInicial: string;
+      dataFinal: string;
+      type: "produtos" | "movimentacoes";
+    }) => {
       if (!token) {
         throw new Error("Voce precisa estar autenticado para exportar o fechamento.");
       }
@@ -250,7 +255,15 @@ export function ClientPage() {
         throw new Error("Selecione uma loja antes de exportar o fechamento.");
       }
 
-      return exportClientClosing(token, selectedStoreId, payload);
+      return exportClientClosing(
+        token,
+        selectedStoreId,
+        {
+          dataInicial: payload.dataInicial,
+          dataFinal: payload.dataFinal,
+        },
+        payload.type,
+      );
     },
   });
 
@@ -291,6 +304,7 @@ export function ClientPage() {
 
   function handleOpenClosingModal() {
     setClosingFilters(getPreviousMonthRange());
+    setClosingType("movimentacoes");
     setIsClosingModalOpen(true);
   }
 
@@ -564,7 +578,10 @@ export function ClientPage() {
     }
 
     try {
-      const response = await exportClosingMutation.mutateAsync(closingFilters);
+      const response = await exportClosingMutation.mutateAsync({
+        ...closingFilters,
+        type: closingType,
+      });
 
       if (!response.ok || !response.blob) {
         toast.error("Nao foi possivel exportar o fechamento dos clientes.");
@@ -738,16 +755,22 @@ export function ClientPage() {
         onConfirm={handleDeleteConfirm}
       />
       <ClientClosingModal
+        closingType={closingType}
         dataInicial={closingFilters.dataInicial}
         dataFinal={closingFilters.dataFinal}
         isOpen={isClosingModalOpen}
         isSubmitting={exportClosingMutation.isPending}
-        onChange={(field, value) =>
+        onChange={(field, value) => {
+          if (field === "closingType") {
+            setClosingType(value as "produtos" | "movimentacoes");
+            return;
+          }
+
           setClosingFilters((current) => ({
             ...current,
             [field]: value,
-          }))
-        }
+          }));
+        }}
         onClose={handleCloseClosingModal}
         onSubmit={handleClosingSubmit}
       />

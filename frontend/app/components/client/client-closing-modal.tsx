@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type ClientClosingModalProps = {
   dataInicial: string;
   dataFinal: string;
+  closingType: "produtos" | "movimentacoes";
   isOpen: boolean;
   isSubmitting: boolean;
-  onChange: (field: "dataInicial" | "dataFinal", value: string) => void;
+  onChange: (
+    field: "dataInicial" | "dataFinal" | "closingType",
+    value: string,
+  ) => void;
   onClose: () => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 };
@@ -15,6 +19,7 @@ type ClientClosingModalProps = {
 export function ClientClosingModal({
   dataInicial,
   dataFinal,
+  closingType,
   isOpen,
   isSubmitting,
   onChange,
@@ -23,7 +28,6 @@ export function ClientClosingModal({
 }: ClientClosingModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
-  const wasOpenRef = useRef(isOpen);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -63,11 +67,7 @@ export function ClientClosingModal({
     };
   }, [isOpen, isSubmitting, onClose, shouldRender]);
 
-  useEffect(() => {
-    wasOpenRef.current = isOpen;
-  }, [isOpen]);
-
-  if (!shouldRender && !wasOpenRef.current) {
+  if (!shouldRender && !isOpen) {
     return null;
   }
 
@@ -91,8 +91,8 @@ export function ClientClosingModal({
               Exportar fechamento dos clientes
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-              Gera uma planilha Excel com uma aba por cliente elegivel, contendo entradas, vendas no
-              periodo e os calculos de repasse em dinheiro e em credito.
+              Escolha o periodo e se deseja exportar produtos cadastrados ou movimentacoes dos
+              clientes elegiveis.
             </p>
           </div>
 
@@ -108,6 +108,45 @@ export function ClientClosingModal({
         </div>
 
         <form className="mt-6 space-y-6" onSubmit={onSubmit}>
+          <div className="space-y-3">
+            <span className="text-sm font-semibold text-[var(--foreground)]">Tipo de fechamento</span>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
+                <input
+                  type="radio"
+                  name="closing-type"
+                  value="produtos"
+                  checked={closingType === "produtos"}
+                  onChange={(event) => onChange("closingType", event.target.value)}
+                  className="mt-1"
+                />
+                <span className="space-y-1">
+                  <span className="block text-sm font-semibold text-[var(--foreground)]">Produtos</span>
+                  <span className="block text-sm leading-6 text-[var(--muted)]">
+                    Exporta os itens cadastrados no periodo com o cliente como fornecedor.
+                  </span>
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
+                <input
+                  type="radio"
+                  name="closing-type"
+                  value="movimentacoes"
+                  checked={closingType === "movimentacoes"}
+                  onChange={(event) => onChange("closingType", event.target.value)}
+                  className="mt-1"
+                />
+                <span className="space-y-1">
+                  <span className="block text-sm font-semibold text-[var(--foreground)]">Movimentacoes</span>
+                  <span className="block text-sm leading-6 text-[var(--muted)]">
+                    Exporta vendas dos itens do cliente, compras realizadas e conta credito.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2">
               <span className="text-sm font-semibold text-[var(--foreground)]">Data inicial</span>

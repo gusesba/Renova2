@@ -11,6 +11,8 @@ namespace Renova.Service.Services.Cliente
         Task DeleteAsync(ExcluirClienteParametros parametros, CancellationToken cancellationToken = default);
         Task<ClienteDto> EditAsync(EditarClienteCommand request, EditarClienteParametros parametros, CancellationToken cancellationToken = default);
         Task<byte[]> ExportClosingAsync(ExportarFechamentoClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default);
+        Task<byte[]> ExportMovementClosingAsync(ExportarFechamentoClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default);
+        Task<byte[]> ExportProductClosingAsync(ExportarFechamentoClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ClienteDto>> GetAllAsync(ObterClientesQuery request, ObterClientesParametros parametros, CancellationToken cancellationToken = default);
         Task<ClienteDetalheDto> GetDetailAsync(ObterClienteDetalheQuery request, ObterClienteDetalheParametros parametros, CancellationToken cancellationToken = default);
         Task<PaginacaoDto<ClienteProdutoAreaDto>> GetMyCustomerProductsAsync(ObterMinhasPecasQuery request, int usuarioId, CancellationToken cancellationToken = default);

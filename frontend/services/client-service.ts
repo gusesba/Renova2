@@ -188,6 +188,7 @@ export async function exportClientClosing(
   token: string,
   storeId: number,
   filters: { dataInicial: string; dataFinal: string },
+  type: "produtos" | "movimentacoes",
 ): Promise<{ blob: Blob | null; fileName: string | null; ok: boolean; status: number }> {
   const params = new URLSearchParams({
     lojaId: String(storeId),
@@ -195,7 +196,12 @@ export async function exportClientClosing(
     dataFinal: `${filters.dataFinal}T23:59:59.999`,
   });
 
-  const response = await fetch(`${apiBaseUrl}/api/cliente/fechamento/exportar?${params.toString()}`, {
+  const endpoint =
+    type === "produtos"
+      ? "/api/cliente/fechamento/produtos/exportar"
+      : "/api/cliente/fechamento/movimentacoes/exportar";
+
+  const response = await fetch(`${apiBaseUrl}${endpoint}?${params.toString()}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

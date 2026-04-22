@@ -18,7 +18,7 @@ namespace Renova.Tests.Services.Cliente.Get
         }
 
         [Fact]
-        public async Task ExportClosingAsyncDeveGerarUmaAbaPorClienteElegivelComResumoETabelas()
+        public async Task ExportProductClosingAsyncDeveGerarUmaAbaPorClienteElegivelComProdutosDoPeriodo()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -52,7 +52,7 @@ namespace Renova.Tests.Services.Cliente.Get
                 10m);
 
             ClienteService service = new(context);
-            byte[] arquivo = await service.ExportClosingAsync(
+            byte[] arquivo = await service.ExportProductClosingAsync(
                 new ExportarFechamentoClientesQuery
                 {
                     LojaId = loja.Id,
@@ -69,19 +69,88 @@ namespace Renova.Tests.Services.Cliente.Get
 
             IXLWorksheet worksheet = Assert.Single(workbook.Worksheets);
             Assert.Equal("Ana Fornecedora", worksheet.Name);
-            Assert.Contains("Ana Fornecedora", worksheet.Cell("A4").GetString(), StringComparison.Ordinal);
-            Assert.Contains("R$ 20,00", worksheet.Cell("G4").GetString(), StringComparison.Ordinal);
-            Assert.Contains("R$ 36,00", worksheet.Cell("A8").GetString(), StringComparison.Ordinal);
-            Assert.Contains("R$ 16,00", worksheet.Cell("D8").GetString(), StringComparison.Ordinal);
-            Assert.Contains("R$ 54,00", worksheet.Cell("G8").GetString(), StringComparison.Ordinal);
-            Assert.Contains("R$ 34,00", worksheet.Cell("J8").GetString(), StringComparison.Ordinal);
-            Assert.Equal("Vestido", worksheet.Cell("C15").GetString());
-            Assert.Equal("Vestido", worksheet.Cell("E20").GetString());
-            Assert.Equal(90m, worksheet.Cell("D20").GetValue<decimal>());
+            Assert.Contains("LOJA CENTRO", worksheet.Cell("A1").GetString(), StringComparison.Ordinal);
+            Assert.Contains("Ana Fornecedora", worksheet.Cell("A7").GetString(), StringComparison.Ordinal);
+            Assert.Equal("Vestido", worksheet.Cell("C14").GetString());
+            Assert.Equal("Vendido", worksheet.Cell("I14").GetString());
+            Assert.Equal("Sim", worksheet.Cell("J14").GetString());
         }
 
         [Fact]
-        public async Task ExportClosingAsyncNaoDeveIncluirClienteMarcadoComoDoacao()
+        public async Task ExportMovementClosingAsyncDeveGerarVendasComprasEResumoDaContaCredito()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel fornecedor = await CriarClienteAsync(context, loja.Id, "Ana Fornecedora", "44999990000");
+            ClienteModel comprador = await CriarClienteAsync(context, loja.Id, "Beatriz Compradora", "44999990001");
+            ClienteModel outroFornecedor = await CriarClienteAsync(context, loja.Id, "Carla Fornecedora", "44999990002");
+
+            _ = await CriarConfigLojaAsync(context, loja.Id, 40m, 60m);
+            _ = await CriarCreditoAsync(context, loja.Id, fornecedor.Id, -15m);
+
+            ProdutoEstoqueModel produtoFornecedor = await CriarProdutoAsync(
+                context,
+                loja.Id,
+                fornecedor.Id,
+                "Vestido",
+                100m,
+                new DateTime(2026, 3, 5, 10, 0, 0, DateTimeKind.Utc));
+
+            ProdutoEstoqueModel produtoCompra = await CriarProdutoAsync(
+                context,
+                loja.Id,
+                outroFornecedor.Id,
+                "Blusa",
+                80m,
+                new DateTime(2026, 3, 6, 10, 0, 0, DateTimeKind.Utc));
+
+            _ = await CriarVendaAsync(
+                context,
+                loja.Id,
+                comprador.Id,
+                produtoFornecedor,
+                new DateTime(2026, 3, 12, 14, 0, 0, DateTimeKind.Utc),
+                10m);
+
+            _ = await CriarVendaAsync(
+                context,
+                loja.Id,
+                fornecedor.Id,
+                produtoCompra,
+                new DateTime(2026, 3, 15, 14, 0, 0, DateTimeKind.Utc),
+                0m);
+
+            ClienteService service = new(context);
+            byte[] arquivo = await service.ExportMovementClosingAsync(
+                new ExportarFechamentoClientesQuery
+                {
+                    LojaId = loja.Id,
+                    DataInicial = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                    DataFinal = new DateTime(2026, 3, 31, 23, 59, 59, DateTimeKind.Utc)
+                },
+                new ObterClientesParametros
+                {
+                    UsuarioId = usuario.Id
+                });
+
+            using MemoryStream stream = new(arquivo);
+            using XLWorkbook workbook = new(stream);
+
+            Assert.Equal(3, workbook.Worksheets.Count);
+            IXLWorksheet worksheet = workbook.Worksheet("Ana Fornecedora");
+            Assert.Contains("R$ -15,00", worksheet.Cell("G7").GetString(), StringComparison.Ordinal);
+            Assert.Contains("R$ 54,00", worksheet.Cell("J7").GetString(), StringComparison.Ordinal);
+            Assert.Contains("R$ 39,00", worksheet.Cell("G11").GetString(), StringComparison.Ordinal);
+            Assert.Contains("Vestido", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
+            Assert.Contains("Blusa", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
+            Assert.Contains("Beatriz Compradora", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
+            Assert.Contains("Carla Fornecedora", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
+        }
+
+        [Fact]
+        public async Task ExportProductClosingAsyncNaoDeveIncluirClienteMarcadoComoDoacao()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -107,7 +176,7 @@ namespace Renova.Tests.Services.Cliente.Get
                 0m);
 
             ClienteService service = new(context);
-            byte[] arquivo = await service.ExportClosingAsync(
+            byte[] arquivo = await service.ExportProductClosingAsync(
                 new ExportarFechamentoClientesQuery
                 {
                     LojaId = loja.Id,
@@ -272,6 +341,24 @@ namespace Renova.Tests.Services.Cliente.Get
             _ = context.Pagamentos.Add(pagamento);
             _ = await context.SaveChangesAsync();
             return pagamento;
+        }
+
+        private static async Task<ClienteCreditoModel> CriarCreditoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            decimal valor)
+        {
+            ClienteCreditoModel credito = new()
+            {
+                LojaId = lojaId,
+                ClienteId = clienteId,
+                Valor = valor
+            };
+
+            _ = context.ClientesCreditos.Add(credito);
+            _ = await context.SaveChangesAsync();
+            return credito;
         }
 
         private static async Task<MovimentacaoModel> CriarVendaAsync(

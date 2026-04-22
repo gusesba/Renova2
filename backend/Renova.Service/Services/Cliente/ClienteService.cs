@@ -48,74 +48,51 @@ namespace Renova.Service.Services.Cliente
             return obs.Trim();
         }
 
-        public async Task<byte[]> ExportClosingAsync(
+        public Task<byte[]> ExportClosingAsync(
             ExportarFechamentoClientesQuery request,
             ObterClientesParametros parametros,
             CancellationToken cancellationToken = default)
         {
-            if (!request.LojaId.HasValue)
-            {
-                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
-            }
+            return ExportMovementClosingAsync(request, parametros, cancellationToken);
+        }
 
-            if (!request.DataInicial.HasValue || !request.DataFinal.HasValue)
-            {
-                throw new ArgumentException("Data inicial e data final sao obrigatorias.", nameof(request));
-            }
-
-            DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
-            DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
-
-            if (dataFinalUtc < dataInicialUtc)
-            {
-                throw new ArgumentException("Data final deve ser maior ou igual a data inicial.", nameof(request));
-            }
-
-            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesExportarFechamento, cancellationToken);
-
-            ConfigLojaModel config = await _context.ConfiguracoesLoja
-                .SingleOrDefaultAsync(item => item.LojaId == request.LojaId.Value, cancellationToken)
-                ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
+        public async Task<byte[]> ExportProductClosingAsync(
+            ExportarFechamentoClientesQuery request,
+            ObterClientesParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            (LojaModel loja, ConfigLojaModel _, DateTime dataInicialUtc, DateTime dataFinalUtc) = await PrepararExportacaoFechamentoAsync(
+                request,
+                parametros,
+                cancellationToken);
 
             List<ClienteModel> clientesElegiveis = await _context.Clientes
                 .Where(cliente =>
-                    cliente.LojaId == request.LojaId.Value
+                    cliente.LojaId == request.LojaId!.Value
                     && !cliente.Doacao
                     && _context.ProdutosEstoque.Any(produto =>
                         produto.LojaId == request.LojaId.Value
                         && produto.FornecedorId == cliente.Id
-                        && produto.Consignado
-                        && ((produto.Entrada >= dataInicialUtc && produto.Entrada <= dataFinalUtc)
-                            || (produto.Situacao == SituacaoProduto.Vendido
-                                && produto.Movimentacoes.Any(movimentacaoProduto =>
-                                    movimentacaoProduto.Movimentacao != null
-                                    && movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Venda
-                                    && movimentacaoProduto.Movimentacao.Data >= dataInicialUtc
-                                    && movimentacaoProduto.Movimentacao.Data <= dataFinalUtc)))))
+                        && produto.Entrada >= dataInicialUtc
+                        && produto.Entrada <= dataFinalUtc))
                 .OrderBy(cliente => cliente.Nome)
                 .ThenBy(cliente => cliente.Id)
                 .ToListAsync(cancellationToken);
-
-            Dictionary<int, decimal> saldosAnterioresPorCliente = await CalcularSaldosAntesDoPeriodoAsync(
-                request.LojaId.Value,
-                clientesElegiveis.Select(cliente => cliente.Id).ToList(),
-                dataInicialUtc,
-                cancellationToken);
 
             using XLWorkbook workbook = new();
             HashSet<string> nomesAbas = [];
 
             foreach (ClienteModel cliente in clientesElegiveis)
             {
-                List<FechamentoClienteEntradaItem> entradas = await _context.ProdutosEstoque
+                List<FechamentoClienteProdutoItem> produtos = await _context.ProdutosEstoque
                     .Where(produto =>
-                        produto.LojaId == request.LojaId.Value
+                        produto.LojaId == request.LojaId!.Value
                         && produto.FornecedorId == cliente.Id
                         && produto.Entrada >= dataInicialUtc
                         && produto.Entrada <= dataFinalUtc)
                     .OrderBy(produto => produto.Entrada)
                     .ThenBy(produto => produto.Id)
-                    .Select(produto => new FechamentoClienteEntradaItem
+                    .Select(produto => new FechamentoClienteProdutoItem
                     {
                         Id = produto.Id,
                         Valor = produto.Preco,
@@ -124,24 +101,88 @@ namespace Renova.Service.Services.Cliente
                         Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
                         Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
                         Observacao = produto.Descricao,
+                        Situacao = produto.Situacao,
+                        Consignado = produto.Consignado,
                         DataEntrada = produto.Entrada
                     })
                     .ToListAsync(cancellationToken);
 
-                List<FechamentoClienteVendaItem> vendas = await _context.MovimentacoesProdutos
+                IXLWorksheet worksheet = workbook.Worksheets.Add(GerarNomeAbaUnico(cliente.Nome, nomesAbas));
+                PreencherPlanilhaFechamentoProdutos(
+                    worksheet,
+                    loja.Nome,
+                    cliente,
+                    dataInicialUtc,
+                    dataFinalUtc,
+                    produtos);
+            }
+
+            if (workbook.Worksheets.Count == 0)
+            {
+                IXLWorksheet worksheet = workbook.Worksheets.Add("Resumo");
+                worksheet.Cell(1, 1).Value = "Nenhum cliente elegivel para o fechamento de produtos no periodo informado.";
+                worksheet.Cell(2, 1).Value = "Pre-requisito aplicado: cliente com pelo menos um produto cadastrado como fornecedor no periodo.";
+                worksheet.Columns().AdjustToContents();
+            }
+
+            using MemoryStream stream = new();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        public async Task<byte[]> ExportMovementClosingAsync(
+            ExportarFechamentoClientesQuery request,
+            ObterClientesParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            (LojaModel loja, ConfigLojaModel config, DateTime dataInicialUtc, DateTime dataFinalUtc) = await PrepararExportacaoFechamentoAsync(
+                request,
+                parametros,
+                cancellationToken);
+
+            List<ClienteModel> clientesElegiveis = await _context.Clientes
+                .Include(cliente => cliente.Credito)
+                .Where(cliente =>
+                    cliente.LojaId == request.LojaId!.Value
+                    && !cliente.Doacao
+                    && (
+                        _context.MovimentacoesProdutos.Any(item =>
+                            item.Movimentacao != null
+                            && item.Produto != null
+                            && item.Movimentacao.LojaId == request.LojaId.Value
+                            && item.Produto.FornecedorId == cliente.Id
+                            && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                            && item.Movimentacao.Data >= dataInicialUtc
+                            && item.Movimentacao.Data <= dataFinalUtc)
+                        || _context.MovimentacoesProdutos.Any(item =>
+                            item.Movimentacao != null
+                            && item.Produto != null
+                            && item.Movimentacao.LojaId == request.LojaId.Value
+                            && item.Movimentacao.ClienteId == cliente.Id
+                            && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                            && item.Movimentacao.Data >= dataInicialUtc
+                            && item.Movimentacao.Data <= dataFinalUtc)))
+                .OrderBy(cliente => cliente.Nome)
+                .ThenBy(cliente => cliente.Id)
+                .ToListAsync(cancellationToken);
+
+            using XLWorkbook workbook = new();
+            HashSet<string> nomesAbas = [];
+
+            foreach (ClienteModel cliente in clientesElegiveis)
+            {
+                List<FechamentoClienteVendaMovimentoItem> vendas = await _context.MovimentacoesProdutos
                     .Where(item =>
-                        item.Produto != null
-                        && item.Movimentacao != null
-                        && item.Produto.LojaId == request.LojaId.Value
+                        item.Movimentacao != null
+                        && item.Produto != null
+                        && item.Produto.LojaId == request.LojaId!.Value
                         && item.Produto.FornecedorId == cliente.Id
-                        && item.Produto.Consignado
-                        && item.Produto.Situacao == SituacaoProduto.Vendido
                         && item.Movimentacao.Tipo == TipoMovimentacao.Venda
                         && item.Movimentacao.Data >= dataInicialUtc
                         && item.Movimentacao.Data <= dataFinalUtc)
                     .OrderBy(item => item.Movimentacao!.Data)
                     .ThenBy(item => item.ProdutoId)
-                    .Select(item => new FechamentoClienteVendaItem
+                    .Select(item => new FechamentoClienteVendaMovimentoItem
                     {
                         Id = item.ProdutoId,
                         IdVenda = item.MovimentacaoId,
@@ -157,56 +198,85 @@ namespace Renova.Service.Services.Cliente
                         Tamanho = item.Produto != null && item.Produto.Tamanho != null ? item.Produto.Tamanho.Valor : string.Empty,
                         Cor = item.Produto != null && item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
                         Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
+                        Comprador = item.Movimentacao != null && item.Movimentacao.Cliente != null ? item.Movimentacao.Cliente.Nome : string.Empty,
                         DataEntrada = item.Produto != null ? item.Produto.Entrada : default,
                         DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default
                     })
                     .ToListAsync(cancellationToken);
 
-                decimal valorTotalVenda = vendas.Sum(item => item.ValorVenda);
-                decimal repasseBrutoDinheiro = decimal.Round(
-                    valorTotalVenda * (config.PercentualRepasseFornecedor / 100m),
-                    2,
-                    MidpointRounding.AwayFromZero);
-                decimal repasseBrutoCredito = decimal.Round(
-                    valorTotalVenda * (config.PercentualRepasseVendedorCredito / 100m),
-                    2,
-                    MidpointRounding.AwayFromZero);
+                List<FechamentoClienteCompraMovimentoItem> compras = await _context.MovimentacoesProdutos
+                    .Where(item =>
+                        item.Movimentacao != null
+                        && item.Produto != null
+                        && item.Movimentacao.LojaId == request.LojaId!.Value
+                        && item.Movimentacao.ClienteId == cliente.Id
+                        && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                        && item.Movimentacao.Data >= dataInicialUtc
+                        && item.Movimentacao.Data <= dataFinalUtc)
+                    .OrderBy(item => item.Movimentacao!.Data)
+                    .ThenBy(item => item.ProdutoId)
+                    .Select(item => new FechamentoClienteCompraMovimentoItem
+                    {
+                        Id = item.ProdutoId,
+                        IdVenda = item.MovimentacaoId,
+                        Valor = item.Produto != null ? item.Produto.Preco : 0m,
+                        ValorPago = item.Produto != null
+                            ? decimal.Round(
+                                item.Produto.Preco * ((100m - item.Desconto) / 100m),
+                                2,
+                                MidpointRounding.AwayFromZero)
+                            : 0m,
+                        Produto = item.Produto != null && item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
+                        Marca = item.Produto != null && item.Produto.Marca != null ? item.Produto.Marca.Valor : string.Empty,
+                        Tamanho = item.Produto != null && item.Produto.Tamanho != null ? item.Produto.Tamanho.Valor : string.Empty,
+                        Cor = item.Produto != null && item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
+                        Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
+                        Fornecedor = item.Produto != null && item.Produto.Fornecedor != null ? item.Produto.Fornecedor.Nome : string.Empty,
+                        DataEntrada = item.Produto != null ? item.Produto.Entrada : default,
+                        DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default
+                    })
+                    .ToListAsync(cancellationToken);
 
-                decimal debitoAnterior = 0m;
-                if (saldosAnterioresPorCliente.TryGetValue(cliente.Id, out decimal saldoAnterior) && saldoAnterior < 0)
-                {
-                    debitoAnterior = decimal.Round(-saldoAnterior, 2, MidpointRounding.AwayFromZero);
-                }
-
-                decimal repasseLiquidoDinheiro = decimal.Round(
-                    Math.Max(0m, repasseBrutoDinheiro - debitoAnterior),
+                decimal valorTotalVendas = decimal.Round(vendas.Sum(item => item.ValorVenda), 2, MidpointRounding.AwayFromZero);
+                decimal valorTotalCompras = decimal.Round(compras.Sum(item => item.ValorPago), 2, MidpointRounding.AwayFromZero);
+                decimal valorReceberCreditoPeriodo = decimal.Round(
+                    valorTotalVendas * (config.PercentualRepasseVendedorCredito / 100m),
                     2,
                     MidpointRounding.AwayFromZero);
-                decimal repasseLiquidoCredito = decimal.Round(
-                    Math.Max(0m, repasseBrutoCredito - debitoAnterior),
+                decimal valorReceberEspeciePeriodo = decimal.Round(
+                    valorTotalVendas * (config.PercentualRepasseFornecedor / 100m),
                     2,
                     MidpointRounding.AwayFromZero);
+                decimal saldoContaCreditoAtual = decimal.Round(cliente.Credito?.Valor ?? 0m, 2, MidpointRounding.AwayFromZero);
+                decimal saldoFinalCredito = decimal.Round(saldoContaCreditoAtual + valorReceberCreditoPeriodo, 2, MidpointRounding.AwayFromZero);
+                decimal valorFinalCredito = saldoFinalCredito > 0m ? saldoFinalCredito : 0m;
+                decimal valorFinalEspecie = ConverterCreditoEmEspecie(valorFinalCredito, config);
+                decimal saldoDevedorFinal = saldoFinalCredito < 0m ? -saldoFinalCredito : 0m;
 
                 IXLWorksheet worksheet = workbook.Worksheets.Add(GerarNomeAbaUnico(cliente.Nome, nomesAbas));
-                PreencherPlanilhaFechamentoCliente(
+                PreencherPlanilhaFechamentoMovimentacoes(
                     worksheet,
-                    cliente.Nome,
+                    loja.Nome,
+                    cliente,
                     dataInicialUtc,
                     dataFinalUtc,
-                    debitoAnterior,
-                    repasseBrutoDinheiro,
-                    repasseLiquidoDinheiro,
-                    repasseBrutoCredito,
-                    repasseLiquidoCredito,
-                    entradas,
-                    vendas);
+                    saldoContaCreditoAtual,
+                    valorTotalVendas,
+                    valorTotalCompras,
+                    valorReceberCreditoPeriodo,
+                    valorReceberEspeciePeriodo,
+                    valorFinalCredito,
+                    valorFinalEspecie,
+                    saldoDevedorFinal,
+                    vendas,
+                    compras);
             }
 
             if (workbook.Worksheets.Count == 0)
             {
                 IXLWorksheet worksheet = workbook.Worksheets.Add("Resumo");
-                worksheet.Cell(1, 1).Value = "Nenhum cliente elegivel para o fechamento no periodo informado.";
-                worksheet.Cell(2, 1).Value = "Pre-requisitos aplicados: cliente nao marcado como doacao e com movimentacao consignada no periodo.";
+                worksheet.Cell(1, 1).Value = "Nenhum cliente elegivel para o fechamento de movimentacoes no periodo informado.";
+                worksheet.Cell(2, 1).Value = "Pre-requisito aplicado: cliente com ao menos uma venda dos seus itens ou uma compra realizada no periodo.";
                 worksheet.Columns().AdjustToContents();
             }
 
@@ -737,6 +807,43 @@ namespace Renova.Service.Services.Cliente
                 });
         }
 
+        private async Task<(LojaModel Loja, ConfigLojaModel Config, DateTime DataInicialUtc, DateTime DataFinalUtc)> PrepararExportacaoFechamentoAsync(
+            ExportarFechamentoClientesQuery request,
+            ObterClientesParametros parametros,
+            CancellationToken cancellationToken)
+        {
+            if (!request.LojaId.HasValue)
+            {
+                throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
+            }
+
+            if (!request.DataInicial.HasValue || !request.DataFinal.HasValue)
+            {
+                throw new ArgumentException("Data inicial e data final sao obrigatorias.", nameof(request));
+            }
+
+            DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
+            DateTime dataFinalUtc = NormalizarDateTimeParaUtc(request.DataFinal.Value);
+
+            if (dataFinalUtc < dataInicialUtc)
+            {
+                throw new ArgumentException("Data final deve ser maior ou igual a data inicial.", nameof(request));
+            }
+
+            await _authorizationService.EnsurePermissionAsync(
+                request.LojaId.Value,
+                parametros.UsuarioId,
+                FuncionalidadeCatalogo.ClientesExportarFechamento,
+                cancellationToken);
+
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .SingleOrDefaultAsync(item => item.LojaId == request.LojaId.Value, cancellationToken)
+                ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
+
+            return (loja, config, dataInicialUtc, dataFinalUtc);
+        }
+
         private async Task<Dictionary<int, decimal>> CalcularSaldosAntesDoPeriodoAsync(
             int lojaId,
             IReadOnlyCollection<int> clienteIds,
@@ -808,146 +915,241 @@ namespace Renova.Service.Services.Cliente
             return nomeAtual;
         }
 
-        private static void PreencherPlanilhaFechamentoCliente(
+        private static void PreencherPlanilhaFechamentoProdutos(
             IXLWorksheet worksheet,
-            string nomeCliente,
+            string nomeLoja,
+            ClienteModel cliente,
             DateTime dataInicialUtc,
             DateTime dataFinalUtc,
-            decimal debitoAnterior,
-            decimal repasseBrutoDinheiro,
-            decimal repasseLiquidoDinheiro,
-            decimal repasseBrutoCredito,
-            decimal repasseLiquidoCredito,
-            IReadOnlyList<FechamentoClienteEntradaItem> entradas,
-            IReadOnlyList<FechamentoClienteVendaItem> vendas)
+            IReadOnlyList<FechamentoClienteProdutoItem> produtos)
         {
-            XLColor corTitulo = XLColor.FromHtml("#1F3A5F");
-            XLColor corTexto = XLColor.FromHtml("#4B5D70");
-            XLColor corBorda = XLColor.FromHtml("#D7E0EA");
-            XLColor corCardAzul = XLColor.FromHtml("#EEF4FF");
-            XLColor corCardLaranja = XLColor.FromHtml("#FFF4E8");
-            XLColor corCardVerde = XLColor.FromHtml("#EEFDF3");
-            XLColor corCabecalhoTabela = XLColor.FromHtml("#E9EFF6");
-            XLColor corLinhaAlternada = XLColor.FromHtml("#F8FBFF");
-            XLColor corLinhaVazia = XLColor.FromHtml("#F8FAFC");
+            XLColor corTitulo = XLColor.FromHtml("#345C49");
+            XLColor corTexto = XLColor.FromHtml("#4B5D52");
+            XLColor corBorda = XLColor.FromHtml("#D8D2C5");
+            XLColor corFundo = XLColor.FromHtml("#FAF7F2");
+            XLColor corCardClaro = XLColor.FromHtml("#F4EBDD");
+            XLColor corCardDestaque = XLColor.FromHtml("#E7D2B6");
+            XLColor corCabecalhoTabela = XLColor.FromHtml("#E9DED0");
+            XLColor corLinhaAlternada = XLColor.FromHtml("#FDFBF7");
+            XLColor corLinhaVazia = XLColor.FromHtml("#F6F1E8");
 
             worksheet.Style.Font.FontName = "Aptos";
             worksheet.Style.Font.FontSize = 11;
             worksheet.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            worksheet.Style.Fill.BackgroundColor = corFundo;
+            worksheet.ShowGridLines = false;
+            worksheet.RowHeight = 22;
 
-            worksheet.Range("A1:K1").Merge();
-            worksheet.Cell("A1").Value = "Fechamento do cliente";
+            worksheet.Range("A1:J1").Merge();
+            worksheet.Cell("A1").Value = nomeLoja.ToUpperInvariant();
             worksheet.Cell("A1").Style.Font.Bold = true;
-            worksheet.Cell("A1").Style.Font.FontSize = 20;
-            worksheet.Cell("A1").Style.Font.FontColor = XLColor.White;
-            worksheet.Cell("A1").Style.Fill.BackgroundColor = corTitulo;
+            worksheet.Cell("A1").Style.Font.FontSize = 15;
+            worksheet.Cell("A1").Style.Font.FontColor = corTitulo;
+            worksheet.Cell("A1").Style.Fill.BackgroundColor = corFundo;
             worksheet.Cell("A1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-            worksheet.Row(1).Height = 32;
+            worksheet.Row(1).Height = 24;
 
-            worksheet.Range("A2:K2").Merge();
-            worksheet.Cell("A2").Value = "Planilha detalhada com entradas, vendas e calculos de repasse";
-            worksheet.Cell("A2").Style.Font.FontColor = corTexto;
-            worksheet.Cell("A2").Style.Font.Italic = true;
-            worksheet.Cell("A2").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Range("A4:J4").Merge();
+            worksheet.Cell("A4").Value = $"FECHAMENTO DE PRODUTOS DE {dataInicialUtc:MMMM/yyyy}".ToUpperInvariant();
+            worksheet.Cell("A4").Style.Font.Bold = true;
+            worksheet.Cell("A4").Style.Font.FontSize = 20;
+            worksheet.Cell("A4").Style.Font.FontColor = corTitulo;
+            worksheet.Cell("A4").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Row(4).Height = 28;
 
-            AplicarCardTexto(worksheet, 4, 1, 3, 2, "Cliente", nomeCliente, corCardAzul, corTitulo, corBorda);
+            worksheet.Range("A5:J5").Merge();
+            worksheet.Cell("A5").Value = "Lista de produtos cadastrados no periodo com o cliente como fornecedor.";
+            worksheet.Cell("A5").Style.Font.FontColor = corTexto;
+            worksheet.Cell("A5").Style.Font.Italic = true;
+            worksheet.Cell("A5").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            AplicarCardTexto(worksheet, 7, 1, 3, 2, "Dados do Cliente", $"Nome: {cliente.Nome}", corCardClaro, corTitulo, corBorda);
             AplicarCardTexto(
                 worksheet,
-                4,
+                7,
                 4,
                 3,
                 2,
                 "Periodo",
                 $"{dataInicialUtc:dd/MM/yyyy} a {dataFinalUtc:dd/MM/yyyy}",
-                corCardAzul,
+                corCardClaro,
                 corTitulo,
                 corBorda);
             AplicarCardTexto(
                 worksheet,
-                4,
+                7,
                 7,
                 3,
                 2,
-                "Debito previo",
-                debitoAnterior > 0 ? $"R$ {debitoAnterior:0.00}" : "Sem debito",
-                corCardLaranja,
+                "Cliente ID",
+                cliente.Id.ToString(),
+                corCardClaro,
                 corTitulo,
                 corBorda);
             AplicarCardTexto(
                 worksheet,
-                4,
+                7,
                 10,
                 3,
-                2,
-                "Observacao",
-                debitoAnterior > 0
-                    ? $"Foi descontado R$ {debitoAnterior:0.00} de debito previo."
-                    : "Nao havia debito previo para descontar.",
-                corCardLaranja,
+                1,
+                "Pecas no periodo",
+                produtos.Count.ToString(),
+                corCardDestaque,
                 corTitulo,
                 corBorda);
 
-            AplicarCardMoeda(worksheet, 8, 1, 3, 2, "Repasse bruto em dinheiro", repasseBrutoDinheiro, corCardAzul, corTitulo, corBorda);
-            AplicarCardMoeda(worksheet, 8, 4, 3, 2, "Repasse liquido em dinheiro", repasseLiquidoDinheiro, corCardAzul, corTitulo, corBorda);
-            AplicarCardMoeda(worksheet, 8, 7, 3, 2, "Repasse bruto em credito", repasseBrutoCredito, corCardVerde, corTitulo, corBorda);
-            AplicarCardMoeda(worksheet, 8, 10, 3, 2, "Repasse liquido em credito", repasseLiquidoCredito, corCardVerde, corTitulo, corBorda);
+            int linhaTabela = 12;
+            worksheet.Range(linhaTabela, 1, linhaTabela, 10).Merge();
+            worksheet.Cell(linhaTabela, 1).Value = "Pecas cadastradas no periodo";
+            AplicarTituloSecao(worksheet.Range(linhaTabela, 1, linhaTabela, 10), corTitulo);
 
-            int linhaEntradas = 13;
-            worksheet.Range(linhaEntradas, 1, linhaEntradas, 8).Merge();
-            worksheet.Cell(linhaEntradas, 1).Value = "Pecas adicionadas na loja no periodo";
-            AplicarTituloSecao(worksheet.Range(linhaEntradas, 1, linhaEntradas, 8), corTitulo);
+            int cabecalho = linhaTabela + 1;
+            string[] colunas = ["ID", "Preco", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Situacao", "Consignado"];
 
-            int cabecalhoEntradas = linhaEntradas + 1;
-            string[] colunasEntrada = ["Id", "Valor", "Produto", "Marca", "Tamanho", "Cor", "Obs", "Data de entrada"];
-
-            for (int indice = 0; indice < colunasEntrada.Length; indice++)
+            for (int indice = 0; indice < colunas.Length; indice++)
             {
-                AplicarCabecalhoTabela(worksheet.Cell(cabecalhoEntradas, indice + 1), colunasEntrada[indice], corCabecalhoTabela, corTitulo, corBorda);
+                AplicarCabecalhoTabela(worksheet.Cell(cabecalho, indice + 1), colunas[indice], corCabecalhoTabela, corTitulo, corBorda);
             }
 
-            int linhaAtual = cabecalhoEntradas + 1;
-            foreach (FechamentoClienteEntradaItem entrada in entradas)
+            int linhaAtual = cabecalho + 1;
+            foreach (FechamentoClienteProdutoItem produto in produtos)
             {
-                worksheet.Cell(linhaAtual, 1).Value = entrada.Id;
-                worksheet.Cell(linhaAtual, 2).Value = entrada.Valor;
-                worksheet.Cell(linhaAtual, 3).Value = entrada.Produto;
-                worksheet.Cell(linhaAtual, 4).Value = entrada.Marca;
-                worksheet.Cell(linhaAtual, 5).Value = entrada.Tamanho;
-                worksheet.Cell(linhaAtual, 6).Value = entrada.Cor;
-                worksheet.Cell(linhaAtual, 7).Value = entrada.Observacao;
-                worksheet.Cell(linhaAtual, 8).Value = entrada.DataEntrada;
-                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 8), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
+                worksheet.Cell(linhaAtual, 1).Value = produto.Id;
+                worksheet.Cell(linhaAtual, 2).Value = produto.Valor;
+                worksheet.Cell(linhaAtual, 3).Value = produto.Produto;
+                worksheet.Cell(linhaAtual, 4).Value = produto.Marca;
+                worksheet.Cell(linhaAtual, 5).Value = produto.Tamanho;
+                worksheet.Cell(linhaAtual, 6).Value = produto.Cor;
+                worksheet.Cell(linhaAtual, 7).Value = produto.Observacao;
+                worksheet.Cell(linhaAtual, 8).Value = produto.DataEntrada;
+                worksheet.Cell(linhaAtual, 9).Value = produto.Situacao.ToString();
+                worksheet.Cell(linhaAtual, 10).Value = produto.Consignado ? "Sim" : "Nao";
+                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 10), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
                 linhaAtual++;
             }
 
-            if (entradas.Count == 0)
+            if (produtos.Count == 0)
             {
-                worksheet.Range(linhaAtual, 1, linhaAtual, 8).Merge();
-                worksheet.Cell(linhaAtual, 1).Value = "Nenhuma peca adicionada no periodo.";
-                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 8), corLinhaVazia, corTexto, corBorda);
-                linhaAtual++;
+                worksheet.Range(linhaAtual, 1, linhaAtual, 10).Merge();
+                worksheet.Cell(linhaAtual, 1).Value = "Nenhum produto cadastrado no periodo.";
+                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 10), corLinhaVazia, corTexto, corBorda);
             }
             else
             {
-                worksheet.Range(cabecalhoEntradas + 1, 2, linhaAtual - 1, 2).Style.NumberFormat.Format = "R$ #,##0.00";
-                worksheet.Range(cabecalhoEntradas + 1, 8, linhaAtual - 1, 8).Style.DateFormat.Format = "dd/MM/yyyy";
+                worksheet.Range(cabecalho + 1, 2, linhaAtual - 1, 2).Style.NumberFormat.Format = "R$ #,##0.00";
+                worksheet.Range(cabecalho + 1, 8, linhaAtual - 1, 8).Style.DateFormat.Format = "dd/MM/yyyy";
             }
 
-            linhaAtual += 2;
-            worksheet.Range(linhaAtual, 1, linhaAtual, 11).Merge();
-            worksheet.Cell(linhaAtual, 1).Value = "Pecas vendidas no periodo";
-            AplicarTituloSecao(worksheet.Range(linhaAtual, 1, linhaAtual, 11), corTitulo);
+            worksheet.Columns("A:J").AdjustToContents();
+            worksheet.Column("G").Width = Math.Max(26, worksheet.Column("G").Width);
+            worksheet.Rows().AdjustToContents();
+        }
 
-            int cabecalhoVendas = linhaAtual + 1;
-            string[] colunasVenda = ["Id", "Id da venda", "Valor", "Valor Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data Entrada", "Data Saida"];
+        private static void PreencherPlanilhaFechamentoMovimentacoes(
+            IXLWorksheet worksheet,
+            string nomeLoja,
+            ClienteModel cliente,
+            DateTime dataInicialUtc,
+            DateTime dataFinalUtc,
+            decimal saldoContaCreditoAtual,
+            decimal valorTotalVendas,
+            decimal valorTotalCompras,
+            decimal valorReceberCreditoPeriodo,
+            decimal valorReceberEspeciePeriodo,
+            decimal valorFinalCredito,
+            decimal valorFinalEspecie,
+            decimal saldoDevedorFinal,
+            IReadOnlyList<FechamentoClienteVendaMovimentoItem> vendas,
+            IReadOnlyList<FechamentoClienteCompraMovimentoItem> compras)
+        {
+            XLColor corTitulo = XLColor.FromHtml("#345C49");
+            XLColor corTexto = XLColor.FromHtml("#4B5D52");
+            XLColor corBorda = XLColor.FromHtml("#D8D2C5");
+            XLColor corFundo = XLColor.FromHtml("#FAF7F2");
+            XLColor corCardClaro = XLColor.FromHtml("#F4EBDD");
+            XLColor corCardDestaque = XLColor.FromHtml("#E7D2B6");
+            XLColor corCardCredito = XLColor.FromHtml("#E4EFE7");
+            XLColor corCabecalhoTabela = XLColor.FromHtml("#E9DED0");
+            XLColor corLinhaAlternada = XLColor.FromHtml("#FDFBF7");
+            XLColor corLinhaVazia = XLColor.FromHtml("#F6F1E8");
+
+            worksheet.Style.Font.FontName = "Aptos";
+            worksheet.Style.Font.FontSize = 11;
+            worksheet.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            worksheet.Style.Fill.BackgroundColor = corFundo;
+            worksheet.ShowGridLines = false;
+            worksheet.RowHeight = 22;
+
+            worksheet.Range("A1:M1").Merge();
+            worksheet.Cell("A1").Value = nomeLoja.ToUpperInvariant();
+            worksheet.Cell("A1").Style.Font.Bold = true;
+            worksheet.Cell("A1").Style.Font.FontSize = 15;
+            worksheet.Cell("A1").Style.Font.FontColor = corTitulo;
+            worksheet.Cell("A1").Style.Fill.BackgroundColor = corFundo;
+            worksheet.Cell("A1").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Row(1).Height = 24;
+
+            worksheet.Range("A4:M4").Merge();
+            worksheet.Cell("A4").Value = $"FECHAMENTO DE MOVIMENTACOES DE {dataInicialUtc:MMMM/yyyy}".ToUpperInvariant();
+            worksheet.Cell("A4").Style.Font.Bold = true;
+            worksheet.Cell("A4").Style.Font.FontSize = 20;
+            worksheet.Cell("A4").Style.Font.FontColor = corTitulo;
+            worksheet.Cell("A4").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Row(4).Height = 28;
+
+            worksheet.Range("A5:M5").Merge();
+            worksheet.Cell("A5").Value = "Vendas dos itens do cliente, compras realizadas no periodo e resumo da conta credito.";
+            worksheet.Cell("A5").Style.Font.FontColor = corTexto;
+            worksheet.Cell("A5").Style.Font.Italic = true;
+            worksheet.Cell("A5").Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            AplicarCardTexto(worksheet, 7, 1, 3, 2, "Dados do Cliente", $"Nome: {cliente.Nome}", corCardClaro, corTitulo, corBorda);
+            AplicarCardTexto(
+                worksheet,
+                7,
+                4,
+                3,
+                2,
+                "Periodo",
+                $"{dataInicialUtc:dd/MM/yyyy} a {dataFinalUtc:dd/MM/yyyy}",
+                corCardClaro,
+                corTitulo,
+                corBorda);
+            AplicarCardMoeda(worksheet, 7, 7, 3, 2, "Conta credito atual", saldoContaCreditoAtual, corCardDestaque, corTitulo, corBorda);
+            AplicarCardMoeda(worksheet, 7, 10, 3, 2, "A receber no periodo (credito)", valorReceberCreditoPeriodo, corCardCredito, corTitulo, corBorda);
+            AplicarCardMoeda(worksheet, 7, 13, 3, 1, "A receber no periodo (especie)", valorReceberEspeciePeriodo, corCardCredito, corTitulo, corBorda);
+
+            AplicarCardMoeda(worksheet, 11, 1, 3, 2, "Total de vendas", valorTotalVendas, corCardClaro, corTitulo, corBorda);
+            AplicarCardMoeda(worksheet, 11, 4, 3, 2, "Total de compras", valorTotalCompras, corCardClaro, corTitulo, corBorda);
+            AplicarCardMoeda(worksheet, 11, 7, 3, 2, "Saldo final em credito", valorFinalCredito, corCardCredito, corTitulo, corBorda);
+            AplicarCardMoeda(worksheet, 11, 10, 3, 2, "Saldo final em especie", valorFinalEspecie, corCardCredito, corTitulo, corBorda);
+            AplicarCardTexto(
+                worksheet,
+                11,
+                13,
+                3,
+                1,
+                saldoDevedorFinal > 0 ? "Saldo devedor" : "Status",
+                saldoDevedorFinal > 0 ? $"R$ {saldoDevedorFinal:0.00}" : "Fechamento positivo",
+                corCardDestaque,
+                corTitulo,
+                corBorda);
+
+            int linhaVendas = 16;
+            worksheet.Range(linhaVendas, 1, linhaVendas, 13).Merge();
+            worksheet.Cell(linhaVendas, 1).Value = "Vendas dos itens do cliente";
+            AplicarTituloSecao(worksheet.Range(linhaVendas, 1, linhaVendas, 13), corTitulo);
+
+            int cabecalhoVendas = linhaVendas + 1;
+            string[] colunasVenda = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida", "Comprador", "Fornecedor"];
 
             for (int indice = 0; indice < colunasVenda.Length; indice++)
             {
                 AplicarCabecalhoTabela(worksheet.Cell(cabecalhoVendas, indice + 1), colunasVenda[indice], corCabecalhoTabela, corTitulo, corBorda);
             }
 
-            linhaAtual = cabecalhoVendas + 1;
-            foreach (FechamentoClienteVendaItem venda in vendas)
+            int linhaAtual = cabecalhoVendas + 1;
+            foreach (FechamentoClienteVendaMovimentoItem venda in vendas)
             {
                 worksheet.Cell(linhaAtual, 1).Value = venda.Id;
                 worksheet.Cell(linhaAtual, 2).Value = venda.IdVenda;
@@ -960,15 +1162,18 @@ namespace Renova.Service.Services.Cliente
                 worksheet.Cell(linhaAtual, 9).Value = venda.Descricao;
                 worksheet.Cell(linhaAtual, 10).Value = venda.DataEntrada;
                 worksheet.Cell(linhaAtual, 11).Value = venda.DataSaida;
-                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 11), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
+                worksheet.Cell(linhaAtual, 12).Value = venda.Comprador;
+                worksheet.Cell(linhaAtual, 13).Value = cliente.Nome;
+                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 13), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
                 linhaAtual++;
             }
 
             if (vendas.Count == 0)
             {
-                worksheet.Range(linhaAtual, 1, linhaAtual, 11).Merge();
-                worksheet.Cell(linhaAtual, 1).Value = "Nenhuma peca vendida no periodo.";
-                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 11), corLinhaVazia, corTexto, corBorda);
+                worksheet.Range(linhaAtual, 1, linhaAtual, 13).Merge();
+                worksheet.Cell(linhaAtual, 1).Value = "Nenhuma venda de item do cliente no periodo.";
+                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 13), corLinhaVazia, corTexto, corBorda);
+                linhaAtual++;
             }
             else
             {
@@ -976,9 +1181,55 @@ namespace Renova.Service.Services.Cliente
                 worksheet.Range(cabecalhoVendas + 1, 10, linhaAtual - 1, 11).Style.DateFormat.Format = "dd/MM/yyyy";
             }
 
-            worksheet.Columns("A:K").AdjustToContents();
-            worksheet.Column("G").Width = Math.Max(22, worksheet.Column("G").Width);
+            linhaAtual += 2;
+            worksheet.Range(linhaAtual, 1, linhaAtual, 13).Merge();
+            worksheet.Cell(linhaAtual, 1).Value = "Compras realizadas pelo cliente";
+            AplicarTituloSecao(worksheet.Range(linhaAtual, 1, linhaAtual, 13), corTitulo);
+
+            int cabecalhoCompras = linhaAtual + 1;
+            string[] colunasCompra = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida", "Fornecedor", "Comprador"];
+
+            for (int indice = 0; indice < colunasCompra.Length; indice++)
+            {
+                AplicarCabecalhoTabela(worksheet.Cell(cabecalhoCompras, indice + 1), colunasCompra[indice], corCabecalhoTabela, corTitulo, corBorda);
+            }
+
+            linhaAtual = cabecalhoCompras + 1;
+            foreach (FechamentoClienteCompraMovimentoItem compra in compras)
+            {
+                worksheet.Cell(linhaAtual, 1).Value = compra.Id;
+                worksheet.Cell(linhaAtual, 2).Value = compra.IdVenda;
+                worksheet.Cell(linhaAtual, 3).Value = compra.Valor;
+                worksheet.Cell(linhaAtual, 4).Value = compra.ValorPago;
+                worksheet.Cell(linhaAtual, 5).Value = compra.Produto;
+                worksheet.Cell(linhaAtual, 6).Value = compra.Marca;
+                worksheet.Cell(linhaAtual, 7).Value = compra.Tamanho;
+                worksheet.Cell(linhaAtual, 8).Value = compra.Cor;
+                worksheet.Cell(linhaAtual, 9).Value = compra.Descricao;
+                worksheet.Cell(linhaAtual, 10).Value = compra.DataEntrada;
+                worksheet.Cell(linhaAtual, 11).Value = compra.DataSaida;
+                worksheet.Cell(linhaAtual, 12).Value = compra.Fornecedor;
+                worksheet.Cell(linhaAtual, 13).Value = cliente.Nome;
+                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 13), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
+                linhaAtual++;
+            }
+
+            if (compras.Count == 0)
+            {
+                worksheet.Range(linhaAtual, 1, linhaAtual, 13).Merge();
+                worksheet.Cell(linhaAtual, 1).Value = "Nenhuma compra realizada pelo cliente no periodo.";
+                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 13), corLinhaVazia, corTexto, corBorda);
+            }
+            else
+            {
+                worksheet.Range(cabecalhoCompras + 1, 3, linhaAtual - 1, 4).Style.NumberFormat.Format = "R$ #,##0.00";
+                worksheet.Range(cabecalhoCompras + 1, 10, linhaAtual - 1, 11).Style.DateFormat.Format = "dd/MM/yyyy";
+            }
+
+            worksheet.Columns("A:M").AdjustToContents();
             worksheet.Column("I").Width = Math.Max(26, worksheet.Column("I").Width);
+            worksheet.Column("L").Width = Math.Max(18, worksheet.Column("L").Width);
+            worksheet.Column("M").Width = Math.Max(18, worksheet.Column("M").Width);
             worksheet.Rows().AdjustToContents();
         }
 
@@ -1078,6 +1329,19 @@ namespace Renova.Service.Services.Cliente
             cell.Style.Alignment.WrapText = true;
         }
 
+        private static decimal ConverterCreditoEmEspecie(decimal valorCredito, ConfigLojaModel config)
+        {
+            if (valorCredito <= 0m || config.PercentualRepasseVendedorCredito <= 0m)
+            {
+                return 0m;
+            }
+
+            return decimal.Round(
+                valorCredito * config.PercentualRepasseFornecedor / config.PercentualRepasseVendedorCredito,
+                2,
+                MidpointRounding.AwayFromZero);
+        }
+
         private static DateTime NormalizarDateTimeParaUtc(DateTime data)
         {
             return data.Kind switch
@@ -1095,7 +1359,7 @@ namespace Renova.Service.Services.Cliente
             public decimal Valor { get; set; }
         }
 
-        private sealed class FechamentoClienteEntradaItem
+        private sealed class FechamentoClienteProdutoItem
         {
             public int Id { get; set; }
 
@@ -1111,10 +1375,14 @@ namespace Renova.Service.Services.Cliente
 
             public required string Observacao { get; set; }
 
+            public SituacaoProduto Situacao { get; set; }
+
+            public bool Consignado { get; set; }
+
             public DateTime DataEntrada { get; set; }
         }
 
-        private sealed class FechamentoClienteVendaItem
+        private sealed class FechamentoClienteVendaMovimentoItem
         {
             public int Id { get; set; }
 
@@ -1133,6 +1401,35 @@ namespace Renova.Service.Services.Cliente
             public required string Cor { get; set; }
 
             public required string Descricao { get; set; }
+
+            public required string Comprador { get; set; }
+
+            public DateTime DataEntrada { get; set; }
+
+            public DateTime DataSaida { get; set; }
+        }
+
+        private sealed class FechamentoClienteCompraMovimentoItem
+        {
+            public int Id { get; set; }
+
+            public int IdVenda { get; set; }
+
+            public decimal Valor { get; set; }
+
+            public decimal ValorPago { get; set; }
+
+            public required string Produto { get; set; }
+
+            public required string Marca { get; set; }
+
+            public required string Tamanho { get; set; }
+
+            public required string Cor { get; set; }
+
+            public required string Descricao { get; set; }
+
+            public required string Fornecedor { get; set; }
 
             public DateTime DataEntrada { get; set; }
 
