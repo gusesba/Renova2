@@ -83,12 +83,12 @@ function SummaryCard({
           : "bg-slate-500";
 
   return (
-    <article className={`rounded-[24px] border p-5 ${toneClass}`}>
+    <article className={`rounded-[24px] border p-4 sm:p-5 ${toneClass}`}>
       <div className="flex items-center gap-3">
         <span className={`h-3 w-3 rounded-full ${chipClass}`} aria-hidden="true" />
         <p className={`text-sm font-semibold uppercase tracking-[0.14em] ${labelClass}`}>{label}</p>
       </div>
-      <p className={`mt-4 text-3xl font-semibold tracking-tight ${valueClass}`}>{value}</p>
+      <p className={`mt-4 text-2xl font-semibold tracking-tight sm:text-3xl ${valueClass}`}>{value}</p>
     </article>
   );
 }
@@ -145,8 +145,8 @@ function MonthlySummaryChart({ months }: { months: StoreClosingMonthItem[] }) {
     .join(" ");
 
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[760px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
+    <div className="-mx-1 overflow-x-auto px-1">
+      <div className="min-w-[640px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.05)] sm:min-w-[760px] sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-[var(--foreground)]">Grafico mensal</h3>
@@ -206,7 +206,7 @@ function MonthlySummaryChart({ months }: { months: StoreClosingMonthItem[] }) {
         ) : null}
 
         <div className="mt-6">
-          <svg viewBox={`0 0 ${width} ${height}`} className="h-[320px] w-full">
+          <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] w-full sm:h-[320px]">
             {[0, 1, 2, 3, 4].map((step) => {
               const ratio = step / 4;
               const value = moneyMax - moneyRange * ratio;
@@ -331,8 +331,8 @@ function MonthlySummaryChart({ months }: { months: StoreClosingMonthItem[] }) {
 
 function MonthlySummaryTable({ months }: { months: StoreClosingMonthItem[] }) {
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[760px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5">
+    <div className="-mx-1 overflow-x-auto px-1">
+      <div className="min-w-[620px] rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:min-w-[760px] sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-[var(--foreground)]">Tabela mensal</h3>
@@ -428,26 +428,26 @@ export function StoreClosingPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
+      <div className="rounded-[28px] border border-[var(--border)] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)] sm:p-6">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
               Resumo geral
             </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">Resumo</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">Resumo</h1>
             <p className="max-w-2xl text-sm leading-7 text-[var(--muted)]">
               O resumo considera pagamentos externos pela coluna dinheiro e gastos da loja para montar
               entradas, saidas e total do mes selecionado.
             </p>
           </div>
 
-          <label className="flex flex-col gap-2 text-sm font-medium text-[var(--foreground)]">
+          <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-[var(--foreground)]">
             Mes de referencia
             <input
               type="month"
               value={referenceMonth}
               onChange={(event) => setReferenceMonth(event.target.value)}
-              className="min-w-[220px] rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]"
+              className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_18%,transparent)] sm:min-w-[220px]"
             />
           </label>
         </div>
@@ -473,9 +473,9 @@ export function StoreClosingPage() {
           />
         ) : data ? (
           <div className="mt-8 space-y-8">
-            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(135deg,#fffaf5_0%,#ffffff_38%,#f8fafc_100%)] p-6 shadow-[0_20px_45px_rgba(15,23,42,0.07)]">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                <div className="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white/85 px-5 py-5 shadow-[0_16px_30px_rgba(15,23,42,0.05)]">
+            <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#fffaf5_0%,#ffffff_38%,#f8fafc_100%)] p-3 shadow-[0_20px_45px_rgba(15,23,42,0.07)] sm:rounded-[32px] sm:p-6">
+              <div className="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="relative min-w-0 w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white/85 px-4 py-4 shadow-[0_16px_30px_rgba(15,23,42,0.05)] sm:rounded-[26px] sm:px-5 sm:py-5 xl:max-w-md">
                   <div className="absolute -left-5 top-0 h-20 w-20 rounded-full bg-amber-200/50 blur-2xl" />
                   <div className="absolute right-0 top-0 h-16 w-16 rounded-full bg-violet-200/40 blur-2xl" />
                   <div className="relative flex items-center gap-4">
@@ -486,18 +486,18 @@ export function StoreClosingPage() {
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                         Referencia selecionada
                       </p>
-                      <p className="mt-1 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                      <p className="mt-1 break-words text-lg font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
                         {formatClosingMonthLabel(referenceMonth)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="inline-flex w-fit rounded-[20px] border border-slate-200 bg-white/90 p-1.5 shadow-[0_14px_24px_rgba(15,23,42,0.08)]">
+                <div className="inline-flex w-full rounded-[18px] border border-slate-200 bg-white/90 p-1.5 shadow-[0_14px_24px_rgba(15,23,42,0.08)] sm:w-fit sm:rounded-[20px]">
                   <button
                     type="button"
                     onClick={() => setViewMode("tabela")}
-                    className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
+                    className={`flex-1 rounded-2xl px-5 py-2.5 text-sm font-semibold transition sm:flex-none ${
                       viewMode === "tabela"
                         ? "bg-[linear-gradient(135deg,#0f172a,#334155)] text-white shadow-[0_12px_20px_rgba(15,23,42,0.18)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -508,7 +508,7 @@ export function StoreClosingPage() {
                   <button
                     type="button"
                     onClick={() => setViewMode("grafico")}
-                    className={`rounded-2xl px-5 py-2.5 text-sm font-semibold transition ${
+                    className={`flex-1 rounded-2xl px-5 py-2.5 text-sm font-semibold transition sm:flex-none ${
                       viewMode === "grafico"
                         ? "bg-[linear-gradient(135deg,#0f172a,#334155)] text-white shadow-[0_12px_20px_rgba(15,23,42,0.18)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -519,7 +519,7 @@ export function StoreClosingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <SummaryCard
                   label="Entradas"
                   value={formatCurrency(data.valorRecebidoClientes)}
