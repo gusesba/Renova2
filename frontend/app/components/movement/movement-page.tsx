@@ -604,7 +604,7 @@ export function MovementPage() {
           clienteId: clientId ?? "",
           clienteContato: clientContact,
           clienteLabel: clientName,
-          clienteSearch: clientName,
+          clienteSearch: "",
         },
       ]);
       setActiveDraftId("draft-1");
