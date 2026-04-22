@@ -78,7 +78,7 @@ export function ClientClosingModal({
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
+        className={`max-h-[calc(100vh-3rem)] w-full max-w-xl overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -107,71 +107,69 @@ export function ClientClosingModal({
           </button>
         </div>
 
-        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={onSubmit}>
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-            <div className="space-y-3">
-              <span className="text-sm font-semibold text-[var(--foreground)]">Tipo de fechamento</span>
-              <div className="grid gap-3 md:grid-cols-2">
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
-                  <input
-                    type="radio"
-                    name="closing-type"
-                    value="produtos"
-                    checked={closingType === "produtos"}
-                    onChange={(event) => onChange("closingType", event.target.value)}
-                    className="mt-1"
-                  />
-                  <span className="space-y-1">
-                    <span className="block text-sm font-semibold text-[var(--foreground)]">Produtos</span>
-                    <span className="block text-sm leading-6 text-[var(--muted)]">
-                      Exporta os itens cadastrados no periodo com o cliente como fornecedor.
-                    </span>
-                  </span>
-                </label>
-
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
-                  <input
-                    type="radio"
-                    name="closing-type"
-                    value="movimentacoes"
-                    checked={closingType === "movimentacoes"}
-                    onChange={(event) => onChange("closingType", event.target.value)}
-                    className="mt-1"
-                  />
-                  <span className="space-y-1">
-                    <span className="block text-sm font-semibold text-[var(--foreground)]">Movimentacoes</span>
-                    <span className="block text-sm leading-6 text-[var(--muted)]">
-                      Exporta vendas dos itens do cliente, compras realizadas e conta credito.
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Data inicial</span>
+        <form className="mt-6 space-y-6" onSubmit={onSubmit}>
+          <div className="space-y-3">
+            <span className="text-sm font-semibold text-[var(--foreground)]">Tipo de fechamento</span>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
                 <input
-                  type="date"
-                  value={dataInicial}
-                  onChange={(event) => onChange("dataInicial", event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+                  type="radio"
+                  name="closing-type"
+                  value="produtos"
+                  checked={closingType === "produtos"}
+                  onChange={(event) => onChange("closingType", event.target.value)}
+                  className="mt-1"
                 />
+                <span className="space-y-1">
+                  <span className="block text-sm font-semibold text-[var(--foreground)]">Produtos</span>
+                  <span className="block text-sm leading-6 text-[var(--muted)]">
+                    Exporta os itens cadastrados no periodo com o cliente como fornecedor.
+                  </span>
+                </span>
               </label>
 
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Data final</span>
+              <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[var(--border-strong)]">
                 <input
-                  type="date"
-                  value={dataFinal}
-                  onChange={(event) => onChange("dataFinal", event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+                  type="radio"
+                  name="closing-type"
+                  value="movimentacoes"
+                  checked={closingType === "movimentacoes"}
+                  onChange={(event) => onChange("closingType", event.target.value)}
+                  className="mt-1"
                 />
+                <span className="space-y-1">
+                  <span className="block text-sm font-semibold text-[var(--foreground)]">Movimentacoes</span>
+                  <span className="block text-sm leading-6 text-[var(--muted)]">
+                    Exporta vendas dos itens do cliente, compras realizadas e conta credito.
+                  </span>
+                </span>
               </label>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Data inicial</span>
+              <input
+                type="date"
+                value={dataInicial}
+                onChange={(event) => onChange("dataInicial", event.target.value)}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Data final</span>
+              <input
+                type="date"
+                value={dataFinal}
+                onChange={(event) => onChange("dataFinal", event.target.value)}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}

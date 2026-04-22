@@ -184,7 +184,7 @@ export function ClientCreateModal({
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
+        className={`max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -213,77 +213,75 @@ export function ClientCreateModal({
           </button>
         </div>
 
-        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={onSubmit} noValidate>
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField
-                label="Nome"
-                placeholder="Ex.: Ana Paula"
-                value={values.nome}
-                error={errors.nome}
-                onChange={(value) => onChange("nome", value)}
-              />
-              <FormField
-                label="Contato"
-                placeholder="(41) 99717-3484"
-                value={values.contato}
-                error={errors.contato}
-                inputMode="numeric"
-                onChange={(value) => onChange("contato", value)}
-              />
-            </div>
-
-            <TextareaField
-              label="Obs (opcional)"
-              placeholder="Anotacoes sobre cliente"
-              value={values.obs}
-              error={errors.obs}
-              onChange={(value) => onChange("obs", value)}
+        <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField
+              label="Nome"
+              placeholder="Ex.: Ana Paula"
+              value={values.nome}
+              error={errors.nome}
+              onChange={(value) => onChange("nome", value)}
             />
-
-            {onUserSearchChange ? (
-              <div className="space-y-2">
-                <span className="text-sm font-semibold text-[var(--foreground)]">Usuario vinculado (opcional)</span>
-                <>
-                  <SearchableSelect
-                    ariaLabel="Usuario vinculado"
-                    emptyLabel={userEmptyLabel}
-                    error={errors.userId}
-                    loading={isUserLoading}
-                    options={userOptions.map((user) => ({
-                      label: `${user.nome} - ${user.email}`,
-                      value: String(user.id),
-                    }))}
-                    placeholder="Selecione um usuario"
-                    searchPlaceholder="Pesquisar por nome ou email"
-                    searchValue={userSearchValue}
-                    selectedLabel={userSelectedLabel}
-                    value={values.userId || null}
-                    onSearchChange={onUserSearchChange}
-                    onChange={(option) => onChange("userId", option.value)}
-                  />
-                  {errors.userId ? <p className="text-sm text-red-500">{errors.userId}</p> : null}
-                </>
-              </div>
-            ) : (
-              <FormField
-                label="UserId (opcional)"
-                placeholder="Ex.: 42"
-                value={values.userId}
-                error={errors.userId}
-                onChange={(value) => onChange("userId", value)}
-              />
-            )}
-
-            <ToggleField
-              checked={values.doacao}
-              label="Doacao"
-              description="Marque quando esse cliente for um cadastro de doacao."
-              onChange={(value) => onChange("doacao", value)}
+            <FormField
+              label="Contato"
+              placeholder="(41) 99717-3484"
+              value={values.contato}
+              error={errors.contato}
+              inputMode="numeric"
+              onChange={(value) => onChange("contato", value)}
             />
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
+          <TextareaField
+            label="Obs (opcional)"
+            placeholder="Anotacoes sobre cliente"
+            value={values.obs}
+            error={errors.obs}
+            onChange={(value) => onChange("obs", value)}
+          />
+
+          {onUserSearchChange ? (
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Usuario vinculado (opcional)</span>
+              <>
+                <SearchableSelect
+                  ariaLabel="Usuario vinculado"
+                  emptyLabel={userEmptyLabel}
+                  error={errors.userId}
+                  loading={isUserLoading}
+                  options={userOptions.map((user) => ({
+                    label: `${user.nome} - ${user.email}`,
+                    value: String(user.id),
+                  }))}
+                  placeholder="Selecione um usuario"
+                  searchPlaceholder="Pesquisar por nome ou email"
+                  searchValue={userSearchValue}
+                  selectedLabel={userSelectedLabel}
+                  value={values.userId || null}
+                  onSearchChange={onUserSearchChange}
+                  onChange={(option) => onChange("userId", option.value)}
+                />
+                {errors.userId ? <p className="text-sm text-red-500">{errors.userId}</p> : null}
+              </>
+            </div>
+          ) : (
+            <FormField
+              label="UserId (opcional)"
+              placeholder="Ex.: 42"
+              value={values.userId}
+              error={errors.userId}
+              onChange={(value) => onChange("userId", value)}
+            />
+          )}
+
+          <ToggleField
+            checked={values.doacao}
+            label="Doacao"
+            description="Marque quando esse cliente for um cadastro de doacao."
+            onChange={(value) => onChange("doacao", value)}
+          />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
