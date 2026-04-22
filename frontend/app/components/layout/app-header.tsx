@@ -103,7 +103,7 @@ export function AppHeader({
             onNavigate?.();
             router.replace(getDashboardRouteForArea(nextArea));
           }}
-          className="inline-flex h-12 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)]"
+          className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] sm:w-auto"
         >
           {switchAreaLabel}
         </button>
