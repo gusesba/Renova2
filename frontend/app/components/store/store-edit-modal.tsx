@@ -77,12 +77,12 @@ export function StoreEditModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[200] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-[rgba(15,23,42,0.45)] p-4 py-6 transition-opacity duration-200 ease-out sm:items-center sm:py-4 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
       <div
-        className={`w-full max-w-xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -110,51 +110,53 @@ export function StoreEditModal({
           </button>
         </div>
 
-        <form className="mt-6 space-y-5" onSubmit={onSubmit} noValidate>
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">ID da loja</span>
-            <input
-              type="text"
-              value={storeId ? `#${storeId}` : ""}
-              readOnly
-              className="h-12 w-full cursor-not-allowed rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 text-sm text-[var(--muted)] outline-none"
-            />
-          </label>
+        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={onSubmit} noValidate>
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">ID da loja</span>
+              <input
+                type="text"
+                value={storeId ? `#${storeId}` : ""}
+                readOnly
+                className="h-12 w-full cursor-not-allowed rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 text-sm text-[var(--muted)] outline-none"
+              />
+            </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">Nome da loja</span>
-            <input
-              type="text"
-              value={values.nome}
-              onChange={(event) => onChange(event.target.value)}
-              placeholder="Ex.: Atelier Centro"
-              className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
-                errors.nome
-                  ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
-                  : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
-              }`}
-            />
-            {errors.nome ? <p className="text-sm text-red-500">{errors.nome}</p> : null}
-          </label>
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Nome da loja</span>
+              <input
+                type="text"
+                value={values.nome}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder="Ex.: Atelier Centro"
+                className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
+                  errors.nome
+                    ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
+                    : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+                }`}
+              />
+              {errors.nome ? <p className="text-sm text-red-500">{errors.nome}</p> : null}
+            </label>
 
-          <div className="rounded-2xl border border-red-100 bg-[linear-gradient(180deg,_#fff7f7_0%,_#fff_100%)] p-4">
-            <p className="text-sm font-semibold text-[#b42318]">Excluir loja</p>
-            <p className="mt-1 text-sm leading-6 text-[#7a271a]">
-              Essa acao remove a loja apenas quando ela nao possui registros ativos vinculados.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                void onDelete();
-              }}
-              disabled={isSubmitting || isDeleting || storeId === null}
-              className="mt-4 flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-red-200 bg-white px-5 text-sm font-semibold text-[#b42318] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isDeleting ? "Excluindo loja..." : "Excluir loja"}
-            </button>
+            <div className="rounded-2xl border border-red-100 bg-[linear-gradient(180deg,_#fff7f7_0%,_#fff_100%)] p-4">
+              <p className="text-sm font-semibold text-[#b42318]">Excluir loja</p>
+              <p className="mt-1 text-sm leading-6 text-[#7a271a]">
+                Essa acao remove a loja apenas quando ela nao possui registros ativos vinculados.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  void onDelete();
+                }}
+                disabled={isSubmitting || isDeleting || storeId === null}
+                className="mt-4 flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-red-200 bg-white px-5 text-sm font-semibold text-[#b42318] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? "Excluindo loja..." : "Excluir loja"}
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-5 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
