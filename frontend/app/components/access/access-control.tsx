@@ -419,32 +419,32 @@ function AccessControlContent({
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[30px] border border-[var(--border)] bg-[linear-gradient(135deg,_#fffef9,_#f4f7ff_50%,_#eef6f1)] p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
+      <div className="rounded-[30px] border border-[var(--border)] bg-[linear-gradient(135deg,_#fffef9,_#f4f7ff_50%,_#eef6f1)] p-4 sm:p-6">
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0 space-y-2">
             <span className="inline-flex rounded-full bg-[#eef4ea] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#52624d]">Loja ativa</span>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">Controle de acesso</h1>
-              <p className="mt-2 max-w-3xl text-sm text-[var(--muted)]">
+              <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">Controle de acesso</h1>
+              <p className="mt-2 max-w-3xl text-sm text-[var(--muted)] sm:block">
                 Configure cargos e funcionalidades para a loja <span className="font-semibold text-[var(--foreground)]">{selectedStore.nome}</span>.
               </p>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="rounded-3xl border border-white/70 bg-white/75 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Funcionarios</p>
-              <p className="mt-1 text-3xl font-semibold text-[var(--foreground)]">{employeesQuery.data?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">{employeesQuery.data?.length ?? 0}</p>
             </div>
             <div className="rounded-3xl border border-white/70 bg-white/75 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Cargos</p>
-              <p className="mt-1 text-3xl font-semibold text-[var(--foreground)]">{rolesQuery.data?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">{rolesQuery.data?.length ?? 0}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-        <section className="rounded-[28px] border border-[var(--border)] bg-white p-6">
+        <section className="min-w-0 rounded-[28px] border border-[var(--border)] bg-white p-4 sm:p-6">
           {canAddEmployees ? (
             <div className="space-y-4">
               <div>
@@ -503,22 +503,22 @@ function AccessControlContent({
           )}
         </section>
 
-        <section className="rounded-[28px] border border-[var(--border)] bg-white p-6">
+        <section className="min-w-0 rounded-[28px] border border-[var(--border)] bg-white p-4 sm:p-6">
           {canViewEmployees ? (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">Funcionarios da loja</h2>
-                <p className="text-sm text-[var(--muted)]">O acesso de cada funcionario e definido pelo cargo.</p>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">O acesso de cada funcionario e definido pelo cargo.</p>
               </div>
               <div className="rounded-[24px] border border-[var(--border)]">
-                <div className="overflow-x-auto overflow-y-visible rounded-[24px]">
+                <div className="max-h-[70vh] overflow-y-auto rounded-[24px]">
                   <table className="min-w-full border-collapse">
                   <thead className="bg-[var(--surface-muted)]">
                     <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      <th className="px-4 py-4 font-semibold">Usuario</th>
-                      <th className="px-4 py-4 font-semibold">E-mail</th>
-                      <th className="px-4 py-4 font-semibold">Cargo</th>
-                      <th className="px-4 py-4 font-semibold text-right">Acoes</th>
+                      <th className="px-3 py-4 font-semibold sm:px-4">Usuario</th>
+                      <th className="hidden px-4 py-4 font-semibold sm:table-cell">E-mail</th>
+                      <th className="px-3 py-4 font-semibold sm:px-4">Cargo</th>
+                      <th className="px-3 py-4 font-semibold text-right sm:px-4">Acoes</th>
                     </tr>
                   </thead>
                     <tbody>
@@ -530,11 +530,16 @@ function AccessControlContent({
                       <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">Nenhum funcionario vinculado a esta loja.</td></tr>
                     ) : employeesQuery.data?.map((employee) => (
                       <tr key={`${employee.lojaId}-${employee.usuarioId}`} className="border-t border-[var(--border)]">
-                        <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">{employee.nome}</td>
-                        <td className="px-4 py-4 text-sm text-[var(--muted)]">{employee.email}</td>
-                        <td className="px-4 py-4">
+                        <td className="px-3 py-4 text-sm font-medium text-[var(--foreground)] sm:px-4">
+                          <div className="min-w-0">
+                            <span className="block break-words">{employee.nome}</span>
+                            <span className="mt-1 block break-all text-xs font-normal text-[var(--muted)] sm:hidden">{employee.email}</span>
+                          </div>
+                        </td>
+                        <td className="hidden px-4 py-4 text-sm text-[var(--muted)] sm:table-cell">{employee.email}</td>
+                        <td className="px-3 py-4 align-top sm:px-4">
                           {canEditEmployees ? (
-                            <div className="min-w-[180px] rounded-2xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--foreground)]">
+                            <div className="min-w-0 rounded-2xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--foreground)] sm:min-w-[180px]">
                               <Select
                                 ariaLabel={`Selecionar cargo para ${employee.nome}`}
                                 value={String(employee.cargoId)}
@@ -546,7 +551,7 @@ function AccessControlContent({
                             <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--foreground)]">{employee.cargoNome}</span>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-right">
+                        <td className="px-3 py-4 text-right align-top sm:px-4">
                           {canRemoveEmployees ? (
                             <button
                               type="button"
@@ -574,12 +579,12 @@ function AccessControlContent({
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
-        <div className="rounded-[28px] border border-[var(--border)] bg-white p-6">
+        <div className="min-w-0 rounded-[28px] border border-[var(--border)] bg-white p-4 sm:p-6">
           {canViewRoles || canAddRoles || canEditRoles ? (
             <div className="space-y-5">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">{editingRoleId === null ? "Novo cargo" : "Editar cargo"}</h2>
-                <p className="text-sm text-[var(--muted)]">Selecione as funcionalidades liberadas para este cargo.</p>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">Selecione as funcionalidades liberadas para este cargo.</p>
               </div>
               <label className="space-y-2">
                 <span className="text-sm font-medium text-[var(--foreground)]">Nome do cargo</span>
@@ -602,7 +607,7 @@ function AccessControlContent({
                     <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">{groupName}</p>
                     <div className="space-y-3">
                       {items.map((item) => (
-                        <label key={item.id} className="flex items-start gap-3 rounded-2xl bg-white px-4 py-3">
+                        <label key={item.id} className="flex min-w-0 items-start gap-3 rounded-2xl bg-white px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selectedFunctionalityIds.has(item.id)}
@@ -610,9 +615,9 @@ function AccessControlContent({
                             disabled={editingRoleId === null ? !canAddRoles : !canEditRoles}
                             className="mt-1 h-4 w-4"
                           />
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--foreground)]">{item.chave}</p>
-                            <p className="text-sm text-[var(--muted)]">{item.descricao}</p>
+                          <div className="min-w-0">
+                            <p className="break-all text-sm font-semibold text-[var(--foreground)]">{item.chave}</p>
+                            <p className="break-words text-sm text-[var(--muted)]">{item.descricao}</p>
                           </div>
                         </label>
                       ))}
@@ -643,12 +648,12 @@ function AccessControlContent({
           )}
         </div>
 
-        <div className="rounded-[28px] border border-[var(--border)] bg-white p-6">
+        <div className="min-w-0 rounded-[28px] border border-[var(--border)] bg-white p-4 sm:p-6">
           {canViewRoles ? (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--foreground)]">Cargos cadastrados</h2>
-                <p className="text-sm text-[var(--muted)]">Revise e ajuste rapidamente as permissoes de cada cargo.</p>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">Revise e ajuste rapidamente as permissoes de cada cargo.</p>
               </div>
               {rolesQuery.isLoading ? (
                 <p className="text-sm text-[var(--muted)]">Carregando cargos...</p>
@@ -659,9 +664,9 @@ function AccessControlContent({
               ) : rolesQuery.data?.map((role) => (
                 <div key={role.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)]/45 p-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-[var(--foreground)]">{role.nome}</h3>
+                        <h3 className="break-words text-lg font-semibold text-[var(--foreground)]">{role.nome}</h3>
                         <span className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{role.quantidadeFuncionarios} funcionario(s)</span>
                       </div>
                       <p className="mt-2 text-sm text-[var(--muted)]">{role.funcionalidades.length} funcionalidade(s) liberada(s).</p>
@@ -671,7 +676,7 @@ function AccessControlContent({
                       {canDeleteRoles ? <button type="button" onClick={() => void handleDeleteRole(role)} disabled={deleteRoleMutation.isPending} className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] px-4 text-sm font-semibold text-[#b14a37] disabled:opacity-60">Excluir</button> : null}
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
                     {role.funcionalidades.map((item) => <span key={`${role.id}-${item.id}`} className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--foreground)]">{item.chave}</span>)}
                   </div>
                 </div>
