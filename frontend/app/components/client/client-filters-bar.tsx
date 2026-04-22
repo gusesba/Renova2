@@ -97,21 +97,22 @@ export function ClientFiltersBar({
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:flex">
           <button
             type="button"
             onClick={onOpenSettings}
-            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 sm:px-5 lg:w-12 lg:px-0"
             aria-label="Configurar tabela de clientes"
           >
             <GearIcon />
+            <span className="lg:hidden">Configurar</span>
           </button>
           {canExportClosing ? (
             <button
               type="button"
               disabled={!hasStore || isLoading}
               onClick={onOpenClosing}
-              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Fechamento
             </button>
@@ -121,7 +122,7 @@ export function ClientFiltersBar({
               type="button"
               disabled={!hasStore || isLoading}
               onClick={onAddClient}
-              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 lg:col-auto"
             >
               Novo cliente
             </button>

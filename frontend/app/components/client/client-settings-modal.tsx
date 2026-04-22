@@ -89,12 +89,12 @@ export function ClientSettingsModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(15,23,42,0.45)] p-4 py-6 transition-opacity duration-200 ease-out sm:items-center sm:py-4 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
       <div
-        className={`w-full max-w-2xl rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out ${
+        className={`flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -121,66 +121,68 @@ export function ClientSettingsModal({
           </button>
         </div>
 
-        <div className="mt-6 space-y-6">
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[var(--foreground)]">Itens por pagina</span>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={draft.tamanhoPagina}
-              onChange={(event) => {
-                const parsed = Number(event.target.value);
+        <div className="mt-6 flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Itens por pagina</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={draft.tamanhoPagina}
+                onChange={(event) => {
+                  const parsed = Number(event.target.value);
 
-                setDraft((current) => ({
-                  ...current,
-                  tamanhoPagina: Number.isInteger(parsed) && parsed > 0 ? parsed : 1,
-                }));
-              }}
-              className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
-            />
-          </label>
+                  setDraft((current) => ({
+                    ...current,
+                    tamanhoPagina: Number.isInteger(parsed) && parsed > 0 ? parsed : 1,
+                  }));
+                }}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+              />
+            </label>
 
-          <div className="space-y-3">
-            <p className="text-sm font-semibold text-[var(--foreground)]">Colunas visiveis</p>
-            <div className="grid gap-3 md:grid-cols-2">
-              {fieldOptions.map((field) => {
-                const checked = draft.visibleFields.includes(field.value);
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-[var(--foreground)]">Colunas visiveis</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                {fieldOptions.map((field) => {
+                  const checked = draft.visibleFields.includes(field.value);
 
-                return (
-                  <label
-                    key={field.value}
-                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 transition hover:border-[var(--border-strong)]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(event) => {
-                        setDraft((current) => ({
-                          ...current,
-                          visibleFields: event.target.checked
-                            ? [...current.visibleFields, field.value]
-                            : current.visibleFields.filter((value) => value !== field.value),
-                        }));
-                      }}
-                      className="mt-1 h-4 w-4 rounded border-[var(--border-strong)]"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--foreground)]">
-                        {field.label}
-                      </p>
-                      <p className="text-sm text-[var(--muted)]">{field.description}</p>
-                    </div>
-                  </label>
-                );
-              })}
+                  return (
+                    <label
+                      key={field.value}
+                      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 transition hover:border-[var(--border-strong)]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => {
+                          setDraft((current) => ({
+                            ...current,
+                            visibleFields: event.target.checked
+                              ? [...current.visibleFields, field.value]
+                              : current.visibleFields.filter((value) => value !== field.value),
+                          }));
+                        }}
+                        className="mt-1 h-4 w-4 rounded border-[var(--border-strong)]"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--foreground)]">
+                          {field.label}
+                        </p>
+                        <p className="text-sm text-[var(--muted)]">{field.description}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+              {!hasMinimumVisibleFields ? (
+                <p className="text-sm text-red-500">Selecione pelo menos uma coluna para a tabela.</p>
+              ) : null}
             </div>
-            {!hasMinimumVisibleFields ? (
-              <p className="text-sm text-red-500">Selecione pelo menos uma coluna para a tabela.</p>
-            ) : null}
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
