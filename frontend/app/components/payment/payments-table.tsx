@@ -176,80 +176,85 @@ export function PaymentsTable({
                   {expanded && payment.movimentacao ? (
                     <tr key={`${payment.id}-expanded`} className="bg-[var(--surface-muted)]">
                       <td colSpan={visibleColumnCount} className="px-4 py-5">
-                        <div className="rounded-[20px] border border-[var(--border)] bg-white p-4">
-                          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                            Movimentacao relacionada
-                          </p>
-                          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Identificador
-                              </p>
-                              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                                #{payment.movimentacao.id}
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Tipo
-                              </p>
-                              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                                {formatMovementType(payment.movimentacao.tipo)}
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Data
-                              </p>
-                              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                                {formatMovementDate(payment.movimentacao.data)}
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Produtos
-                              </p>
-                              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                                {payment.movimentacao.quantidadeProdutos} item(ns)
-                              </p>
-                            </div>
+                        <div className="overflow-hidden rounded-[20px] border border-[var(--border)] bg-white">
+                          <div className="px-4 py-4">
+                            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                              Movimentacao relacionada
+                            </p>
                           </div>
-
-                          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-                            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Cliente da movimentacao
-                              </p>
-                              <p className="mt-2 text-base font-semibold text-[var(--foreground)]">
-                                {payment.movimentacao.cliente}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--muted)]">
-                                Cliente #{payment.movimentacao.clienteId} na loja #
-                                {payment.movimentacao.lojaId}
-                              </p>
-                            </div>
-
-                            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                                Produto(s) vinculados
-                              </p>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {payment.movimentacao.produtoIds.length > 0 ? (
-                                  payment.movimentacao.produtoIds.map((productId) => (
-                                    <span
-                                      key={`${payment.id}-${productId}`}
-                                      className="inline-flex rounded-full border border-[var(--border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]"
-                                    >
-                                      #{productId}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-sm text-[var(--muted)]">
-                                    Nenhum produto vinculado.
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                          <div className="overflow-x-auto border-t border-[var(--border)]">
+                            <table className="min-w-[720px] w-full border-collapse">
+                              <thead className="bg-[var(--surface-muted)]">
+                                <tr className="text-left">
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Id
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Tipo
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Data
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Produtos
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Cliente
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Loja
+                                  </th>
+                                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                    Produto(s) vinculados
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="border-t border-[var(--border)] align-top">
+                                  <td className="px-4 py-4 text-sm font-medium text-[var(--foreground)]">
+                                    #{payment.movimentacao.id}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    {formatMovementType(payment.movimentacao.tipo)}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    {formatMovementDate(payment.movimentacao.data)}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    {payment.movimentacao.quantidadeProdutos} item(ns)
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    <div className="min-w-0">
+                                      <p className="break-words font-medium">
+                                        {payment.movimentacao.cliente}
+                                      </p>
+                                      <p className="mt-1 text-xs text-[var(--muted)]">
+                                        Cliente #{payment.movimentacao.clienteId}
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    #{payment.movimentacao.lojaId}
+                                  </td>
+                                  <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                                    {payment.movimentacao.produtoIds.length > 0 ? (
+                                      <div className="flex flex-wrap gap-2">
+                                        {payment.movimentacao.produtoIds.map((productId) => (
+                                          <span
+                                            key={`${payment.id}-${productId}`}
+                                            className="inline-flex rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--foreground)]"
+                                          >
+                                            #{productId}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-[var(--muted)]">Nenhum produto vinculado.</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </td>

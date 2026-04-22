@@ -233,12 +233,12 @@ export function PaymentCreateModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[220] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-[220] flex items-start justify-center overflow-y-auto bg-[rgba(15,23,42,0.45)] p-4 py-6 transition-opacity duration-200 ease-out sm:items-center sm:py-4 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-2rem)] w-full max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-3rem)] sm:max-w-3xl ${
+        className={`max-h-[calc(100vh-3rem)] w-full max-w-[calc(100vw-2rem)] overflow-y-auto rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] sm:max-w-3xl ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
@@ -267,8 +267,7 @@ export function PaymentCreateModal({
           </button>
         </div>
 
-        <form className="mt-6 flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
+        <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
             <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
               <span className="mb-2 block text-sm font-semibold text-[var(--foreground)]">
@@ -410,9 +409,8 @@ export function PaymentCreateModal({
                   : "Nao foi possivel carregar os clientes."}
               </div>
             ) : null}
-          </div>
 
-          <div className="mt-6 flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
