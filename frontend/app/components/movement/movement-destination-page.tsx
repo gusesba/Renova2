@@ -302,13 +302,13 @@ export function MovementDestinationPage() {
   return (
     <section className="space-y-6">
       <div className="overflow-hidden rounded-[32px] border border-[var(--border)] bg-white shadow-[0_20px_55px_rgba(15,23,42,0.08)]">
-        <div className="border-b border-[var(--border)] bg-[linear-gradient(135deg,_#eef7ff_0%,_#fffaf4_48%,_#fff0e6_100%)] px-6 py-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+        <div className="border-b border-[var(--border)] bg-[linear-gradient(135deg,_#eef7ff_0%,_#fffaf4_48%,_#fff0e6_100%)] px-4 py-6 sm:px-6">
+          <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                 Movimentacoes
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
+              <h1 className="mt-2 break-words text-3xl font-semibold tracking-tight text-[var(--foreground)]">
                 Doacao e devolucao ao dono
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
@@ -328,7 +328,7 @@ export function MovementDestinationPage() {
           </div>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="px-4 py-6 sm:px-6">
           {!hasStore ? (
             <div className="rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-6 py-12 text-center">
               <h2 className="text-xl font-semibold text-[var(--foreground)]">Selecione uma loja</h2>
@@ -338,7 +338,7 @@ export function MovementDestinationPage() {
             </div>
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.85fr)]">
-              <div className="space-y-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface-muted)] p-5">
+              <div className="min-w-0 space-y-5 rounded-[28px] border border-[var(--border)] bg-[var(--surface-muted)] p-5">
                 <div className="grid gap-4 md:grid-cols-[minmax(0,220px)_1fr]">
                   <FieldShell label="Data da movimentacao">
                     <input
@@ -365,7 +365,7 @@ export function MovementDestinationPage() {
                         type="button"
                         onClick={handleAddManualProduct}
                         disabled={fetchProductMutation.isPending}
-                        className="flex h-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 md:shrink-0"
                       >
                         {fetchProductMutation.isPending ? "Buscando..." : "Adicionar"}
                       </button>
@@ -415,13 +415,13 @@ export function MovementDestinationPage() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-[var(--border)] bg-white p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+              <div className="min-w-0 rounded-[28px] border border-[var(--border)] bg-white p-5">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                       Resumo
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
+                    <h2 className="mt-2 break-words text-2xl font-semibold text-[var(--foreground)]">
                       {items.length} item(ns) selecionado(s)
                     </h2>
                   </div>
@@ -451,12 +451,12 @@ export function MovementDestinationPage() {
                         key={group.fornecedorId}
                         className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)] p-4"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
+                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0">
                             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                               Fornecedor
                             </p>
-                            <h3 className="mt-1 text-lg font-semibold text-[var(--foreground)]">
+                            <h3 className="mt-1 break-words text-lg font-semibold text-[var(--foreground)]">
                               {group.fornecedor}
                             </h3>
                           </div>
@@ -473,10 +473,10 @@ export function MovementDestinationPage() {
                             >
                               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                                 <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-[var(--foreground)]">
+                                  <p className="break-words text-sm font-semibold text-[var(--foreground)]">
                                     #{item.product.id} - {item.product.produto}
                                   </p>
-                                  <p className="mt-1 text-sm text-[var(--muted)]">
+                                  <p className="mt-1 break-words text-sm text-[var(--muted)]">
                                     {item.product.descricao}
                                   </p>
                                   <div className="mt-3 flex flex-wrap gap-2">
@@ -495,7 +495,7 @@ export function MovementDestinationPage() {
                                   </div>
                                 </div>
 
-                                <div className="flex w-full flex-col gap-3 xl:w-[250px]">
+                                <div className="flex min-w-0 w-full flex-col gap-3 xl:w-[250px]">
                                   <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--foreground)]">
                                     <Select
                                       ariaLabel={`Destino do produto ${item.product.id}`}
