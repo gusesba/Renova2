@@ -24,6 +24,13 @@ export type StoreExpenseFilters = {
   direcao: "asc" | "desc";
 };
 
+export type StoreExpenseVisibleField = "data" | "natureza" | "valor" | "descricao" | "id";
+
+export type StoreExpenseTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: StoreExpenseVisibleField[];
+};
+
 type ApiErrorResponse = {
   mensagem?: unknown;
   title?: unknown;
@@ -40,6 +47,13 @@ export const initialStoreExpenseFilters: StoreExpenseFilters = {
   tamanhoPagina: 10,
   ordenarPor: "data",
   direcao: "desc",
+};
+
+const STORE_EXPENSE_TABLE_SETTINGS_KEY = "renova:store-expense-table-settings";
+
+export const defaultStoreExpenseTableSettings: StoreExpenseTableSettings = {
+  tamanhoPagina: initialStoreExpenseFilters.tamanhoPagina,
+  visibleFields: ["data", "natureza", "valor", "descricao"],
 };
 
 export function asStoreExpenseListResponse(body: unknown) {
@@ -80,4 +94,46 @@ export function formatStoreExpenseNature(value: number) {
   return (
     storeExpenseNatureOptions.find((option) => option.value === value)?.label ?? `Natureza ${value}`
   );
+}
+
+export function getStoredStoreExpenseTableSettings(): StoreExpenseTableSettings {
+  if (typeof window === "undefined") {
+    return defaultStoreExpenseTableSettings;
+  }
+
+  const storedValue = window.localStorage.getItem(STORE_EXPENSE_TABLE_SETTINGS_KEY);
+
+  if (!storedValue) {
+    return defaultStoreExpenseTableSettings;
+  }
+
+  try {
+    const parsed = JSON.parse(storedValue) as Partial<StoreExpenseTableSettings>;
+    const tamanhoPagina =
+      Number.isInteger(parsed.tamanhoPagina) && parsed.tamanhoPagina && parsed.tamanhoPagina > 0
+        ? Math.min(parsed.tamanhoPagina, 100)
+        : defaultStoreExpenseTableSettings.tamanhoPagina;
+    const visibleFields = Array.isArray(parsed.visibleFields)
+      ? parsed.visibleFields.filter((field): field is StoreExpenseVisibleField =>
+          ["data", "natureza", "valor", "descricao", "id"].includes(String(field)),
+        )
+      : defaultStoreExpenseTableSettings.visibleFields;
+
+    return {
+      tamanhoPagina,
+      visibleFields: visibleFields.length
+        ? visibleFields
+        : defaultStoreExpenseTableSettings.visibleFields,
+    };
+  } catch {
+    return defaultStoreExpenseTableSettings;
+  }
+}
+
+export function persistStoreExpenseTableSettings(settings: StoreExpenseTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(STORE_EXPENSE_TABLE_SETTINGS_KEY, JSON.stringify(settings));
 }

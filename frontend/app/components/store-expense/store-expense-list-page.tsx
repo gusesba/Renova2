@@ -5,28 +5,38 @@ import { useMemo, useState } from "react";
 
 import { MovementEmptyState } from "@/app/components/movement/movement-empty-state";
 import { PaymentPagination } from "@/app/components/payment/payment-pagination";
+import { GearIcon } from "@/app/components/ui/gear-icon";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { permissions } from "@/lib/access";
 import { getAuthToken } from "@/lib/store";
 import {
   asStoreExpenseListResponse,
+  defaultStoreExpenseTableSettings,
   getStoreExpenseApiMessage,
+  getStoredStoreExpenseTableSettings,
   initialStoreExpenseFilters,
+  persistStoreExpenseTableSettings,
+  type StoreExpenseTableSettings,
 } from "@/lib/store-expense";
 import { getStoreExpenses } from "@/services/store-expense-service";
 
 import { StoreExpenseCreateModal } from "./store-expense-create-modal";
+import { StoreExpenseSettingsModal } from "./store-expense-settings-modal";
 import { StoreExpensesTable } from "./store-expenses-table";
 
 export function StoreExpenseListPage() {
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [tableSettings, setTableSettings] = useState<StoreExpenseTableSettings>(() =>
+    getStoredStoreExpenseTableSettings(),
+  );
   const [page, setPage] = useState(initialStoreExpenseFilters.pagina);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateExpense = hasPermission(permissions.gastosLojaAdicionar);
 
   const expensesQuery = useQuery({
-    queryKey: ["store-expenses", token, selectedStoreId, page],
+    queryKey: ["store-expenses", token, selectedStoreId, page, tableSettings.tamanhoPagina],
     queryFn: async () => {
       if (!token || !selectedStoreId) {
         return null;
@@ -35,6 +45,7 @@ export function StoreExpenseListPage() {
       const response = await getStoreExpenses(token, selectedStoreId, {
         ...initialStoreExpenseFilters,
         pagina: page,
+        tamanhoPagina: tableSettings.tamanhoPagina,
       });
 
       if (!response.ok) {
@@ -65,16 +76,27 @@ export function StoreExpenseListPage() {
             </p>
           </div>
 
-          {canCreateExpense ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:flex">
             <button
               type="button"
-              onClick={() => setIsCreateModalOpen(true)}
-              disabled={expensesQuery.isLoading || isLoadingStores}
-              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 sm:px-5 lg:w-12 lg:min-w-12 lg:shrink-0 lg:px-0"
+              aria-label="Configurar tabela de gastos da loja"
             >
-              Novo lancamento
+              <GearIcon />
+              <span className="lg:hidden">Configurar</span>
             </button>
-          ) : null}
+            {canCreateExpense ? (
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                disabled={expensesQuery.isLoading || isLoadingStores}
+                className="flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Novo lancamento
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {!hasStore ? (
@@ -98,7 +120,7 @@ export function StoreExpenseListPage() {
           />
         ) : listResponse && listResponse.itens.length > 0 ? (
           <>
-            <StoreExpensesTable expenses={listResponse.itens} />
+            <StoreExpensesTable expenses={listResponse.itens} settings={tableSettings} />
             <PaymentPagination
               currentPage={page}
               hasNextPage={page < listResponse.totalPaginas}
@@ -129,6 +151,25 @@ export function StoreExpenseListPage() {
           }}
         />
       ) : null}
+
+      <StoreExpenseSettingsModal
+        isOpen={isSettingsModalOpen}
+        settings={tableSettings}
+        onClose={() => setIsSettingsModalOpen(false)}
+        onSave={(settings) => {
+          const normalizedSettings = {
+            tamanhoPagina: Math.min(Math.max(settings.tamanhoPagina, 1), 100),
+            visibleFields: settings.visibleFields.length
+              ? settings.visibleFields
+              : defaultStoreExpenseTableSettings.visibleFields,
+          };
+
+          persistStoreExpenseTableSettings(normalizedSettings);
+          setTableSettings(normalizedSettings);
+          setPage(1);
+          setIsSettingsModalOpen(false);
+        }}
+      />
     </section>
   );
 }
