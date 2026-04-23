@@ -135,7 +135,7 @@ export function ProfileMenu({
   }
 
   return (
-    <div ref={containerRef} className="relative z-50 min-w-0 w-full sm:w-auto">
+    <div ref={containerRef} className="relative z-50 min-w-0 w-full xl:w-auto">
       <button
         type="button"
         aria-expanded={open}
@@ -143,7 +143,7 @@ export function ProfileMenu({
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="flex h-12 w-full min-w-0 cursor-pointer items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 text-left shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:border-[var(--border-strong)] sm:w-auto"
+        className="flex h-12 w-full min-w-0 cursor-pointer items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 text-left shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition hover:border-[var(--border-strong)] xl:w-auto"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(135deg,_#ff7b7b,_#ffb36b)] text-sm font-semibold text-white">
           {initials}
@@ -152,7 +152,7 @@ export function ProfileMenu({
           <p className="truncate text-sm font-semibold text-[var(--foreground)]">
             {name?.trim().split(/\s+/)?.[0] ?? "Usuario"}
           </p>
-          <p className="hidden truncate text-xs text-[var(--muted)] sm:block">{email ?? "Sessao autenticada"}</p>
+          <p className="hidden truncate text-xs text-[var(--muted)] xl:block">{email ?? "Sessao autenticada"}</p>
         </div>
         <span className="ml-auto shrink-0 text-[var(--muted)]">
           <ChevronDownIcon open={open} />

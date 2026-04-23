@@ -71,9 +71,9 @@ export function AppHeader({
       }`}
       aria-hidden={isCollapsed && !isMobileOpen}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-end">
         {!isClientArea ? (
-          <label className="flex min-w-0 items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] shadow-[0_12px_30px_rgba(15,23,42,0.04)] sm:min-w-[280px]">
+          <label className="flex min-w-0 items-center gap-3 rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--foreground)] shadow-[0_12px_30px_rgba(15,23,42,0.04)] xl:min-w-[280px]">
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
               Loja
             </span>
@@ -103,7 +103,7 @@ export function AppHeader({
             onNavigate?.();
             router.replace(getDashboardRouteForArea(nextArea));
           }}
-          className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] sm:w-auto"
+          className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-muted)] xl:w-auto"
         >
           {switchAreaLabel}
         </button>
