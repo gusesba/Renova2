@@ -98,6 +98,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Nome).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Nome }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Cargos)
@@ -151,6 +152,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Doacao).IsRequired().HasDefaultValue(false);
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.UserId).IsRequired(false);
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Nome }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Clientes)
@@ -216,6 +218,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.ClienteId).IsRequired();
                 _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => p.ClienteId).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.CreditosClientes)
@@ -234,6 +237,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.ProdutosReferencia)
@@ -248,6 +252,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Marcas)
@@ -262,6 +267,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Tamanhos)
@@ -276,6 +282,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Valor).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => new { p.LojaId, p.Valor }).IsUnique();
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.Cores)
@@ -299,6 +306,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.Property(p => p.Situacao).HasConversion<int>().IsRequired();
                 _ = entity.Property(p => p.Consignado).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasOne(p => p.Produto)
                     .WithMany(p => p.ProdutosEstoque)
                     .HasForeignKey(p => p.ProdutoId)
@@ -339,6 +347,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.PrecoMinimo).HasPrecision(18, 2).IsRequired(false);
                 _ = entity.Property(p => p.PrecoMaximo).HasPrecision(18, 2).IsRequired(false);
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasOne(p => p.Produto)
                     .WithMany()
                     .HasForeignKey(p => p.ProdutoId)
@@ -374,6 +383,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Data).IsRequired();
                 _ = entity.Property(p => p.ClienteId).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasOne(p => p.Cliente)
                     .WithMany(p => p.Movimentacoes)
                     .HasForeignKey(p => p.ClienteId)
@@ -394,6 +404,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
                 _ = entity.Property(p => p.Descricao).HasMaxLength(500).IsRequired(false);
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.GastosLoja)
                     .HasForeignKey(p => p.LojaId)
@@ -413,6 +424,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Descricao).HasMaxLength(500).IsRequired(false);
                 _ = entity.Property(p => p.Valor).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasOne(p => p.Movimentacao)
                     .WithMany(p => p.Pagamentos)
                     .HasForeignKey(p => p.MovimentacaoId)
@@ -439,6 +451,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.ValorCredito).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.ValorDinheiro).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
+                _ = entity.HasIndex(p => p.LojaId);
                 _ = entity.HasIndex(p => p.ConfigLojaFormaPagamentoId);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.PagamentosCredito)
