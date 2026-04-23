@@ -77,12 +77,12 @@ export function StoreEditModal({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-[rgba(15,23,42,0.45)] p-4 py-6 transition-opacity duration-200 ease-out sm:items-center sm:py-4 ${
+      className={`fixed inset-0 z-[200] flex items-start justify-center overflow-y-auto bg-[rgba(15,23,42,0.45)] px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] transition-opacity duration-200 ease-out sm:items-center sm:px-4 sm:pt-4 sm:pb-4 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
     >
       <div
-        className={`flex max-h-[calc(100vh-3rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
+        className={`flex max-h-[calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)-2.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)] transition duration-250 ease-out sm:max-h-[calc(100vh-2rem)] ${
           isVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-[0.98] opacity-0"
         }`}
       >
