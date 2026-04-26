@@ -13,6 +13,21 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http:
 
 let configuredSecurity = false;
 
+export type QzDiagnostics = {
+  certificateConfigured: boolean;
+  privateKeyConfigured: boolean;
+  certificateValid: boolean;
+  privateKeyValid: boolean;
+  keyMatchesCertificate: boolean;
+  certificateSource: string;
+  certificatePath: string | null;
+  certificatePathExists: boolean | null;
+  privateKeySource: string;
+  privateKeyPath: string | null;
+  privateKeyPathExists: boolean | null;
+  messages: string[];
+};
+
 type QzModule = {
   configs: {
     create: (printerName: string, options?: Record<string, unknown>) => unknown;
@@ -71,6 +86,18 @@ export async function getQzStatus() {
   }
 }
 
+export async function getQzDiagnostics(): Promise<QzDiagnostics> {
+  const response = await fetch(`${apiBaseUrl}/api/qz/diagnostics`, {
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readResponseError(response, "Nao foi possivel validar a configuracao do QZ Tray."));
+  }
+
+  return response.json() as Promise<QzDiagnostics>;
+}
+
 export async function printLabelsWithQz(products: ProductListItem[], printer: PrinterInfo) {
   const language = normalizeLabelLanguage(printer.language);
   const payloads =
@@ -100,6 +127,8 @@ export async function printReceiptWithQz(receipt: ReceiptPrintData, printer: Pri
 }
 
 async function getConnectedQz(): Promise<QzModule> {
+  await assertQzDiagnosticsHealthy();
+
   const qz = await importQz();
   configureQzSecurity(qz);
 
@@ -108,6 +137,14 @@ async function getConnectedQz(): Promise<QzModule> {
   }
 
   return qz;
+}
+
+async function assertQzDiagnosticsHealthy() {
+  const diagnostics = await getQzDiagnostics();
+
+  if (!isQzDiagnosticsHealthy(diagnostics)) {
+    throw new Error(diagnostics.messages.join(" "));
+  }
 }
 
 async function importQz(): Promise<QzModule> {
@@ -128,7 +165,9 @@ function configureQzSecurity(qz: QzModule) {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Certificado QZ Tray nao configurado no backend.");
+          return readResponseError(response, "Certificado QZ Tray nao configurado no backend.").then((message) => {
+            throw new Error(message);
+          });
         }
 
         return response.text();
@@ -150,7 +189,9 @@ function configureQzSecurity(qz: QzModule) {
       })
         .then((response) => {
           if (!response.ok) {
-            throw new Error("Nao foi possivel assinar a chamada do QZ Tray.");
+            return readResponseError(response, "Nao foi possivel assinar a chamada do QZ Tray.").then((message) => {
+              throw new Error(message);
+            });
           }
 
           return response.text();
@@ -171,6 +212,27 @@ function buildAuthHeaders(): Record<string, string> {
   const token = window.localStorage.getItem("renova.token");
 
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function readResponseError(response: Response, fallback: string) {
+  const body = await response.text();
+  const trimmedBody = body.trim();
+
+  if (!trimmedBody) {
+    return `${fallback} HTTP ${response.status}.`;
+  }
+
+  return `${trimmedBody} HTTP ${response.status}.`;
+}
+
+function isQzDiagnosticsHealthy(diagnostics: QzDiagnostics) {
+  return (
+    diagnostics.certificateConfigured &&
+    diagnostics.privateKeyConfigured &&
+    diagnostics.certificateValid &&
+    diagnostics.privateKeyValid &&
+    diagnostics.keyMatchesCertificate
+  );
 }
 
 function normalizeLabelLanguage(language: PrinterLanguage) {

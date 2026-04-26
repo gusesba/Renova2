@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Select } from "@/app/components/ui/select";
-import { listQzPrinters } from "@/lib/printing/qz-client";
+import { getQzDiagnostics, listQzPrinters, type QzDiagnostics } from "@/lib/printing/qz-client";
 import {
   createPrinterInfo,
   defaultPrintSettings,
@@ -24,6 +24,7 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [qzConnected, setQzConnected] = useState(false);
   const [qzStatusMessage, setQzStatusMessage] = useState("Abra o QZ Tray e atualize a lista.");
+  const [qzDiagnostics, setQzDiagnostics] = useState<QzDiagnostics | null>(null);
   const [settings, setSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
 
   useEffect(() => {
@@ -44,6 +45,23 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
     setQzStatusMessage("Tentando conectar ao QZ Tray...");
 
     try {
+      const diagnostics = await getQzDiagnostics();
+      setQzDiagnostics(diagnostics);
+
+      if (!isDiagnosticsHealthy(diagnostics)) {
+        const message = diagnostics.messages.join(" ");
+
+        setQzConnected(false);
+        setPrinters([]);
+        setQzStatusMessage(message);
+
+        if (!silent) {
+          toast.error(message);
+        }
+
+        return;
+      }
+
       const nextPrinters = await listQzPrinters();
       setPrinters(nextPrinters);
       setQzConnected(true);
@@ -60,6 +78,7 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
 
       setQzConnected(false);
       setPrinters([]);
+      setQzDiagnostics(null);
       setQzStatusMessage(message);
 
       if (!silent) {
@@ -107,6 +126,8 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
         <p className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--muted)]">
           {qzStatusMessage}
         </p>
+
+        {qzDiagnostics ? <QzDiagnosticsPanel diagnostics={qzDiagnostics} /> : null}
 
         <div className="mt-5 flex flex-wrap gap-3">
           <button
@@ -165,6 +186,70 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
       </div>
     </div>
   );
+}
+
+function QzDiagnosticsPanel({ diagnostics }: { diagnostics: QzDiagnostics }) {
+  return (
+    <div className="mt-3 grid gap-2 rounded-2xl border border-[var(--border)] bg-white p-4 text-sm text-[var(--muted)] md:grid-cols-2">
+      <DiagnosticItem
+        label="Certificado"
+        ok={diagnostics.certificateConfigured && diagnostics.certificateValid}
+        text={formatDiagnosticPath(
+          diagnostics.certificatePath,
+          diagnostics.certificateSource,
+          diagnostics.certificatePathExists,
+        )}
+      />
+      <DiagnosticItem
+        label="Chave privada"
+        ok={diagnostics.privateKeyConfigured && diagnostics.privateKeyValid}
+        text={formatDiagnosticPath(
+          diagnostics.privateKeyPath,
+          diagnostics.privateKeySource,
+          diagnostics.privateKeyPathExists,
+        )}
+      />
+      <DiagnosticItem
+        label="Par certificado/chave"
+        ok={diagnostics.keyMatchesCertificate}
+        text={diagnostics.keyMatchesCertificate ? "Chave corresponde ao certificado." : "Chave nao corresponde."}
+      />
+      <DiagnosticItem
+        label="QZ nesta maquina"
+        ok={diagnostics.keyMatchesCertificate}
+        text="Se ainda aparecer alerta, instale/confie este certificado no QZ Tray local."
+      />
+    </div>
+  );
+}
+
+function DiagnosticItem({ label, ok, text }: { label: string; ok: boolean; text: string }) {
+  return (
+    <div className="rounded-2xl bg-[var(--surface-muted)] px-3 py-2">
+      <span className={`text-xs font-semibold ${ok ? "text-emerald-700" : "text-amber-800"}`}>
+        {ok ? "OK" : "Atenção"} - {label}
+      </span>
+      <p className="mt-1 break-words">{text}</p>
+    </div>
+  );
+}
+
+function isDiagnosticsHealthy(diagnostics: QzDiagnostics) {
+  return (
+    diagnostics.certificateConfigured &&
+    diagnostics.privateKeyConfigured &&
+    diagnostics.certificateValid &&
+    diagnostics.privateKeyValid &&
+    diagnostics.keyMatchesCertificate
+  );
+}
+
+function formatDiagnosticPath(path: string | null, source: string, pathExists: boolean | null) {
+  if (path) {
+    return pathExists === false ? `Arquivo nao encontrado: ${path}` : path;
+  }
+
+  return source === "environment" ? "Configurado por variavel de ambiente." : "Nao configurado.";
 }
 
 function PrinterSection({
