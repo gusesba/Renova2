@@ -29,8 +29,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=renova;Username=postgres;Password=postgres
+      QzTray__CertificatePath: /run/secrets/qz/digital-certificate.txt
+      QzTray__PrivateKeyPath: /run/secrets/qz/private-key.pem
     ports:
       - "5268:8080"
+    volumes:
+      - ./backend/certs/qz:/run/secrets/qz:ro
     restart: unless-stopped
 
 volumes:

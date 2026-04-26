@@ -31,8 +31,12 @@ services:
       Cors__AllowedOrigins__1: https://www.renovacuritiba.com.br
       Cors__AllowedOrigins__2: https://app.renovacuritiba.com.br
       Cors__AllowedOrigins__3: https://api.renovacuritiba.com.br
+      QzTray__CertificatePath: /run/secrets/qz/digital-certificate.txt
+      QzTray__PrivateKeyPath: /run/secrets/qz/private-key.pem
     expose:
       - "8080"
+    volumes:
+      - /opt/renova/qz:/run/secrets/qz:ro
     restart: unless-stopped
 
   caddy:
