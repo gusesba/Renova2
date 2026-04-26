@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Select } from "@/app/components/ui/select";
-import { listQzPrinters, getQzStatus } from "@/lib/printing/qz-client";
+import { listQzPrinters } from "@/lib/printing/qz-client";
 import {
   createPrinterInfo,
   defaultPrintSettings,
@@ -23,6 +23,7 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
   const [printers, setPrinters] = useState<string[]>([]);
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [qzConnected, setQzConnected] = useState(false);
+  const [qzStatusMessage, setQzStatusMessage] = useState("Abra o QZ Tray e atualize a lista.");
   const [settings, setSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
 
   useEffect(() => {
@@ -31,29 +32,39 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
     }
 
     setSettings(getStoredPrintSettings());
-
-    void getQzStatus().then(setQzConnected);
+    void refreshPrinters({ silent: true });
   }, [isOpen]);
 
   if (!isOpen) {
     return null;
   }
 
-  async function refreshPrinters() {
+  async function refreshPrinters({ silent = false }: { silent?: boolean } = {}) {
     setIsLoadingPrinters(true);
+    setQzStatusMessage("Tentando conectar ao QZ Tray...");
 
     try {
       const nextPrinters = await listQzPrinters();
       setPrinters(nextPrinters);
       setQzConnected(true);
-      toast.success(`${nextPrinters.length} impressora(s) encontrada(s).`);
+      setQzStatusMessage(`${nextPrinters.length} impressora(s) encontrada(s).`);
+
+      if (!silent) {
+        toast.success(`${nextPrinters.length} impressora(s) encontrada(s).`);
+      }
     } catch (error) {
-      setQzConnected(false);
-      toast.error(
+      const message =
         error instanceof Error
           ? error.message
-          : "Nao foi possivel conectar ao QZ Tray. Verifique se ele esta aberto.",
-      );
+          : "Nao foi possivel conectar ao QZ Tray. Verifique se ele esta aberto.";
+
+      setQzConnected(false);
+      setPrinters([]);
+      setQzStatusMessage(message);
+
+      if (!silent) {
+        toast.error(message);
+      }
     } finally {
       setIsLoadingPrinters(false);
     }
@@ -82,17 +93,25 @@ export function PrintingSettingsModal({ isOpen, onClose }: PrintingSettingsModal
           </div>
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-              qzConnected ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"
+              qzConnected
+                ? "bg-emerald-100 text-emerald-700"
+                : isLoadingPrinters
+                  ? "bg-sky-100 text-sky-700"
+                  : "bg-amber-100 text-amber-800"
             }`}
           >
-            {qzConnected ? "QZ conectado" : "QZ nao conectado"}
+            {qzConnected ? "QZ conectado" : isLoadingPrinters ? "Conectando QZ" : "QZ nao conectado"}
           </span>
         </div>
+
+        <p className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--muted)]">
+          {qzStatusMessage}
+        </p>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={refreshPrinters}
+            onClick={() => refreshPrinters()}
             disabled={isLoadingPrinters}
             className="flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-4 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
           >
