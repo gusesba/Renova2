@@ -11,8 +11,11 @@ type ProductsTableProps = {
   visibleFields: ProductVisibleField[];
   canEditProduct: boolean;
   canDeleteProduct: boolean;
+  selectedProductIds: number[];
   onEditProduct: (product: ProductListItem) => void;
   onDeleteProduct: (product: ProductListItem) => void;
+  onToggleProductSelection: (productId: number) => void;
+  onToggleAllProducts: () => void;
 };
 
 function ProductTableCell({
@@ -87,8 +90,11 @@ export function ProductsTable({
   visibleFields,
   canEditProduct,
   canDeleteProduct,
+  selectedProductIds,
   onEditProduct,
   onDeleteProduct,
+  onToggleProductSelection,
+  onToggleAllProducts,
 }: ProductsTableProps) {
   const showProduto = visibleFields.includes("produto");
   const showDescricao = visibleFields.includes("descricao");
@@ -102,12 +108,24 @@ export function ProductsTable({
   const showConsignado = visibleFields.includes("consignado");
   const showId = visibleFields.includes("id");
 
+  const allVisibleSelected =
+    products.length > 0 && products.every((product) => selectedProductIds.includes(product.id));
+
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse bg-white">
           <thead className="bg-[var(--surface-muted)]">
             <tr className="text-left">
+              <th className="w-14 px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  onChange={onToggleAllProducts}
+                  aria-label="Selecionar produtos visiveis para impressao"
+                  className="h-4 w-4 cursor-pointer rounded border-[var(--border)]"
+                />
+              </th>
               {showProduto ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Produto
@@ -178,6 +196,15 @@ export function ProductsTable({
                     : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
                 }
               >
+                <ProductTableCell>
+                  <input
+                    type="checkbox"
+                    checked={selectedProductIds.includes(product.id)}
+                    onChange={() => onToggleProductSelection(product.id)}
+                    aria-label={`Selecionar produto ${product.id} para impressao`}
+                    className="h-4 w-4 cursor-pointer rounded border-[var(--border)]"
+                  />
+                </ProductTableCell>
                 {showProduto ? (
                   <ProductTableCell>
                     <div className="flex items-center gap-3">

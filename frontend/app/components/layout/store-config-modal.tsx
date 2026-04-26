@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { StoreDiscountConfigModal } from "@/app/components/layout/store-discount-config-modal";
 import { StorePaymentMethodConfigModal } from "@/app/components/layout/store-payment-method-config-modal";
+import { PrintingSettingsModal } from "@/app/components/printing/printing-settings-modal";
 import {
   extractStoreConfigApiMessage,
   initialStoreDiscountValues,
@@ -38,6 +39,7 @@ export function StoreConfigModal({ isOpen, storeId, storeName, onClose }: StoreC
   const [isMounted, setIsMounted] = useState(false);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
+  const [isPrintingSettingsOpen, setIsPrintingSettingsOpen] = useState(false);
   const [values, setValues] = useState<StoreConfigFormValues>(initialStoreConfigValues);
   const [discountValues, setDiscountValues] = useState<StoreDiscountFormValue[]>(
     initialStoreDiscountValues,
@@ -472,6 +474,28 @@ export function StoreConfigModal({ isOpen, storeId, storeName, onClose }: StoreC
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-[var(--foreground)]">
+                    Impressoras
+                  </p>
+                  <p className="text-sm text-[var(--muted)]">
+                    Selecione a impressora de etiquetas e a impressora de notas deste navegador.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPrintingSettingsOpen(true)}
+                  disabled={isLoading || isSaving}
+                  className="flex h-14 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Configurar impressoras
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--foreground)]">
                     Formas de pagamento
                   </p>
                   <p className="text-sm text-[var(--muted)]">
@@ -553,6 +577,10 @@ export function StoreConfigModal({ isOpen, storeId, storeName, onClose }: StoreC
         isSavingParent={isSaving}
         onClose={() => setIsPaymentMethodModalOpen(false)}
         onSave={setPaymentMethodValues}
+      />
+      <PrintingSettingsModal
+        isOpen={isPrintingSettingsOpen}
+        onClose={() => setIsPrintingSettingsOpen(false)}
       />
     </div>,
     document.body,

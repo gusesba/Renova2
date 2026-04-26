@@ -6,6 +6,7 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { PrintConfirmationModal } from "@/app/components/printing/print-confirmation-modal";
 import { getAuthToken } from "@/lib/store";
 import {
   asMovementListResponse,
@@ -15,8 +16,13 @@ import {
   initialMovementFilters,
   persistMovementTableSettings,
   type MovementFilters,
+  type MovementListItem,
   type MovementTableSettings,
+  type MovementTypeValue,
 } from "@/lib/movement";
+import { openReceiptPdfPreview, printReceipt } from "@/lib/printing/actions";
+import { getStoredPrintSettings } from "@/lib/printing/settings";
+import type { PrintSettings, ReceiptPrintData } from "@/lib/printing/types";
 import { getMovements } from "@/services/movement-service";
 
 import { MovementEmptyState } from "./movement-empty-state";
@@ -29,7 +35,10 @@ export function MovementListPage() {
   const { isLoadingStores, selectedStoreId } = useStoreContext();
   const router = useRouter();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isPrintingReceipt, setIsPrintingReceipt] = useState(false);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
+  const [receiptPreview, setReceiptPreview] = useState<ReceiptPrintData | null>(null);
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
   const [tableSettings, setTableSettings] = useState<MovementTableSettings>(() =>
     getStoredMovementTableSettings(),
   );
@@ -112,6 +121,39 @@ export function MovementListPage() {
     );
   }
 
+  function buildReceiptFromMovement(movement: MovementListItem): ReceiptPrintData {
+    return {
+      buyer: movement.cliente,
+      movementId: movement.id,
+      printedAt: new Date(),
+      products: movement.produtos,
+      sellType: movement.tipo as MovementTypeValue,
+    };
+  }
+
+  function handleOpenMovementPrint(movement: MovementListItem) {
+    setPrintSettings(getStoredPrintSettings());
+    setReceiptPreview(buildReceiptFromMovement(movement));
+  }
+
+  async function handlePrintReceipt() {
+    if (!receiptPreview) {
+      return;
+    }
+
+    setIsPrintingReceipt(true);
+
+    try {
+      await printReceipt(receiptPreview);
+      toast.success("Nota enviada para impressao.");
+      setReceiptPreview(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel imprimir a nota.");
+    } finally {
+      setIsPrintingReceipt(false);
+    }
+  }
+
   const listResponse = movementsQuery.data;
   const hasStore = Boolean(selectedStoreId);
 
@@ -152,6 +194,7 @@ export function MovementListPage() {
             <MovementsTable
               expandedIds={expandedIds}
               movements={listResponse.itens}
+              onPrintMovement={handleOpenMovementPrint}
               visibleFields={tableSettings.visibleFields}
               onToggleExpanded={handleToggleExpanded}
             />
@@ -195,6 +238,27 @@ export function MovementListPage() {
 
           toast.success("Configuracoes da tabela atualizadas.");
         }}
+      />
+      <PrintConfirmationModal
+        description={
+          receiptPreview
+            ? `${receiptPreview.products.length} item(ns) na nota de ${receiptPreview.buyer}.`
+            : ""
+        }
+        isOpen={Boolean(receiptPreview)}
+        isPrinting={isPrintingReceipt}
+        onClose={() => setReceiptPreview(null)}
+        onPreviewPdf={() => {
+          if (receiptPreview) {
+            void openReceiptPdfPreview(receiptPreview);
+          }
+        }}
+        onPrint={() => void handlePrintReceipt()}
+        settings={printSettings}
+        target="receipt"
+        title={
+          receiptPreview ? `Imprimir nota ${receiptPreview.movementId}` : "Imprimir nota"
+        }
       />
     </section>
   );

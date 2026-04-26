@@ -4,6 +4,7 @@ type MovementsTableProps = {
   expandedIds: number[];
   movements: MovementListItem[];
   visibleFields: MovementVisibleField[];
+  onPrintMovement: (movement: MovementListItem) => void;
   onToggleExpanded: (movementId: number) => void;
 };
 
@@ -40,9 +41,29 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
+function PrintIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    >
+      <path d="M6 9V2h12v7" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 14h12v8H6z" />
+    </svg>
+  );
+}
+
 export function MovementsTable({
   expandedIds,
   movements,
+  onPrintMovement,
   visibleFields,
   onToggleExpanded,
 }: MovementsTableProps) {
@@ -51,7 +72,7 @@ export function MovementsTable({
   const showCliente = visibleFields.includes("cliente");
   const showQuantidade = visibleFields.includes("quantidadeProdutos");
   const showTipo = visibleFields.includes("tipo");
-  const visibleColumnCount = visibleFields.length + 1;
+  const visibleColumnCount = visibleFields.length + 2;
 
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
@@ -87,6 +108,9 @@ export function MovementsTable({
                   Tipo
                 </th>
               ) : null}
+              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                Acoes
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -124,6 +148,17 @@ export function MovementsTable({
                       </TableCell>
                     ) : null}
                     {showTipo ? <TableCell>{formatMovementType(movement.tipo)}</TableCell> : null}
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => onPrintMovement(movement)}
+                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                        aria-label={`Imprimir nota da movimentacao ${movement.id}`}
+                        title={`Imprimir nota da movimentacao ${movement.id}`}
+                      >
+                        <PrintIcon />
+                      </button>
+                    </TableCell>
                   </tr>
                   {expanded ? (
                     <tr key={`${movement.id}-expanded`} className="bg-[var(--surface-muted)]">

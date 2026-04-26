@@ -12,6 +12,7 @@ import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
 import { PaymentCreditModal } from "@/app/components/payment/payment-credit-modal";
+import { PrintConfirmationModal } from "@/app/components/printing/print-confirmation-modal";
 import { ProductCreateModal } from "@/app/components/product/product-create-modal";
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
@@ -57,6 +58,9 @@ import {
 } from "@/lib/store-config";
 import type { PendingClientItem } from "@/lib/payment";
 import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
+import { openReceiptPdfPreview, printReceipt } from "@/lib/printing/actions";
+import { getStoredPrintSettings } from "@/lib/printing/settings";
+import type { PrintSettings, ReceiptPrintData } from "@/lib/printing/types";
 
 type MovementDraft = {
   autoLinkedBorrowedProductIds: number[];
@@ -295,6 +299,7 @@ export function MovementPage() {
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
   const [isCreateProductModalOpen, setIsCreateProductModalOpen] = useState(false);
+  const [isPrintingReceipt, setIsPrintingReceipt] = useState(false);
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const [paymentClient, setPaymentClient] = useState<PendingClientItem | null>(null);
@@ -302,6 +307,8 @@ export function MovementPage() {
   const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
   const [overdueOwnerReturnPrompt, setOverdueOwnerReturnPrompt] =
     useState<OverdueOwnerReturnPrompt | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<ReceiptPrintData | null>(null);
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateMovement = hasPermission(permissions.movimentacoesAdicionar);
   const canAddProduct = hasPermission(permissions.produtosAdicionar);
@@ -928,6 +935,53 @@ export function MovementPage() {
     }
   }
 
+  function buildReceiptFromDraft(draft: MovementDraft, movementId: number) {
+    return {
+      buyer: draft.clienteLabel,
+      movementId,
+      printedAt: new Date(),
+      products: draft.products,
+      sellType: Number(draft.tipo) as ReceiptPrintData["sellType"],
+    };
+  }
+
+  function handleOpenDraftReceiptConfirmation() {
+    if (!activeDraft) {
+      return;
+    }
+
+    if (Number(activeDraft.tipo) !== 1) {
+      toast.error("A nota esta disponivel apenas para movimentacoes de venda.");
+      return;
+    }
+
+    if (!activeDraft.clienteLabel || activeDraft.products.length === 0) {
+      toast.error("Selecione o cliente e adicione produtos antes de imprimir a nota.");
+      return;
+    }
+
+    setPrintSettings(getStoredPrintSettings());
+    setReceiptPreview(buildReceiptFromDraft(activeDraft, 0));
+  }
+
+  async function handlePrintReceiptConfirmation() {
+    if (!receiptPreview) {
+      return;
+    }
+
+    setIsPrintingReceipt(true);
+
+    try {
+      await printReceipt(receiptPreview);
+      toast.success("Nota enviada para impressao.");
+      setReceiptPreview(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel imprimir a nota.");
+    } finally {
+      setIsPrintingReceipt(false);
+    }
+  }
+
   async function handleSubmit(draft: MovementDraft) {
     if (!selectedStoreId) {
       toast.error("Selecione uma loja antes de criar movimentacoes.");
@@ -989,6 +1043,11 @@ export function MovementPage() {
 
       const createdMovement = asMovementResponse(response.body);
       await queryClient.invalidateQueries({ queryKey: ["products"] });
+
+      if (createdMovement.tipo === 1) {
+        setPrintSettings(getStoredPrintSettings());
+        setReceiptPreview(buildReceiptFromDraft(draft, createdMovement.id));
+      }
 
       toast.success(
         `Movimentacao ${createdMovement.id} criada como ${formatMovementType(createdMovement.tipo)}.`,
@@ -1057,13 +1116,22 @@ export function MovementPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-white/80 bg-white/85 px-5 py-4 shadow-[0_18px_36px_rgba(15,23,42,0.06)] backdrop-blur">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                Loja ativa
-              </p>
-              <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                {selectedStore?.nome ?? "Nenhuma loja selecionada"}
-              </p>
+            <div className="flex flex-col gap-3 sm:flex-row lg:items-end">
+              <button
+                type="button"
+                onClick={handleOpenDraftReceiptConfirmation}
+                className="flex h-11 cursor-pointer items-center justify-center rounded-2xl border border-white/80 bg-white px-5 text-sm font-semibold text-[var(--foreground)] shadow-[0_12px_26px_rgba(15,23,42,0.06)] transition hover:border-[var(--border-strong)]"
+              >
+                Imprimir nota
+              </button>
+              <div className="rounded-3xl border border-white/80 bg-white/85 px-5 py-4 shadow-[0_18px_36px_rgba(15,23,42,0.06)] backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Loja ativa
+                </p>
+                <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
+                  {selectedStore?.nome ?? "Nenhuma loja selecionada"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1484,6 +1552,30 @@ export function MovementPage() {
           setIsPaymentConfigRequiredOpen(false);
           setIsStoreConfigOpen(true);
         }}
+      />
+
+      <PrintConfirmationModal
+        description={
+          receiptPreview
+            ? `${receiptPreview.products.length} item(ns) na nota de ${receiptPreview.buyer || "cliente"}.`
+            : ""
+        }
+        isOpen={Boolean(receiptPreview)}
+        isPrinting={isPrintingReceipt}
+        onClose={() => setReceiptPreview(null)}
+        onPreviewPdf={() => {
+          if (receiptPreview) {
+            void openReceiptPdfPreview(receiptPreview);
+          }
+        }}
+        onPrint={() => void handlePrintReceiptConfirmation()}
+        settings={printSettings}
+        target="receipt"
+        title={
+          receiptPreview?.movementId
+            ? `Imprimir nota ${receiptPreview.movementId}`
+            : "Imprimir nota"
+        }
       />
 
       {canHandleCredit ? (
