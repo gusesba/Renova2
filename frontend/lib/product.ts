@@ -157,8 +157,8 @@ export const initialProductFilters: ProductFilters = {
   precoFinal: "",
   dataInicial: "",
   dataFinal: "",
-  ordenarPor: "descricao",
-  direcao: "asc",
+  ordenarPor: "id",
+  direcao: "desc",
   pagina: 1,
   tamanhoPagina: 10,
 };

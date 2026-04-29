@@ -45,7 +45,7 @@ export const storeExpenseNatureOptions: Array<{ label: string; value: StoreExpen
 export const initialStoreExpenseFilters: StoreExpenseFilters = {
   pagina: 1,
   tamanhoPagina: 10,
-  ordenarPor: "data",
+  ordenarPor: "id",
   direcao: "desc",
 };
 

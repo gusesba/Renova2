@@ -108,7 +108,7 @@ export const initialMovementFilters: MovementFilters = {
   dataFinal: "",
   cliente: "",
   tipo: "",
-  ordenarPor: "data",
+  ordenarPor: "id",
   direcao: "desc",
   pagina: 1,
   tamanhoPagina: 10,

@@ -120,8 +120,8 @@ export const initialClientFormValues: ClientFormValues = {
 export const initialClientFilters: ClientFilters = {
   nome: "",
   contato: "",
-  ordenarPor: "nome",
-  direcao: "asc",
+  ordenarPor: "id",
+  direcao: "desc",
   pagina: 1,
   tamanhoPagina: 10,
 };
