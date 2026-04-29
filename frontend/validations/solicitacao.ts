@@ -23,7 +23,7 @@ export const solicitacaoSchema = z
     marcaId: z.string(),
     tamanhoId: z.string(),
     corId: z.string(),
-    clienteId: z.string(),
+    clienteId: z.string().trim().min(1, "Selecione um cliente."),
   });
 
 export function mapSolicitacaoZodErrors(error: z.ZodError): SolicitacaoFieldErrors {

@@ -33,6 +33,11 @@ namespace Renova.Service.Services.Solicitacao
 
         public async Task<SolicitacaoDto> CreateAsync(CriarSolicitacaoCommand request, CriarSolicitacaoParametros parametros, CancellationToken cancellationToken = default)
         {
+            if (!request.ClienteId.HasValue)
+            {
+                throw new ArgumentException("Cliente e obrigatorio.", nameof(request));
+            }
+
             if (request.PrecoMaximo.HasValue && request.PrecoMaximo <= 0)
             {
                 throw new ArgumentException("Preco maximo deve ser maior que zero.", nameof(request));
@@ -44,17 +49,13 @@ namespace Renova.Service.Services.Solicitacao
 
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
-            ClienteModel? cliente = null;
-            if (request.ClienteId.HasValue)
-            {
-                cliente = await _context.Clientes
-                    .SingleOrDefaultAsync(item => item.Id == request.ClienteId.Value, cancellationToken)
-                    ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
+            ClienteModel cliente = await _context.Clientes
+                .SingleOrDefaultAsync(item => item.Id == request.ClienteId.Value, cancellationToken)
+                ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
 
-                if (cliente.LojaId != loja.Id)
-                {
-                    throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
-                }
+            if (cliente.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(request));
             }
 
             ProdutoReferenciaModel? produto = null;

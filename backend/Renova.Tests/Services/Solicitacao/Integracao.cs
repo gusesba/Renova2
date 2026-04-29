@@ -53,7 +53,7 @@ namespace Renova.Tests.Services.Solicitacao
         }
 
         [Fact]
-        public async Task PostSolicitacaoDevePermitirCamposOpcionaisEConsiderarWildcardNoMatch()
+        public async Task PostSolicitacaoDevePermitirCamposOpcionaisExcetoClienteEConsiderarWildcardNoMatch()
         {
             await using RenovaApiFactory factory = new();
             HttpClient client = factory.CreateClient();
@@ -71,6 +71,7 @@ namespace Renova.Tests.Services.Solicitacao
 
             HttpResponseMessage response = await client.PostAsJsonAsync("/api/solicitacao", new CriarSolicitacaoCommand
             {
+                ClienteId = cliente.Id,
                 Descricao = string.Empty,
                 LojaId = loja.Id
             });
@@ -80,8 +81,28 @@ namespace Renova.Tests.Services.Solicitacao
             SolicitacaoDto? body = await response.Content.ReadFromJsonAsync<SolicitacaoDto>();
             Assert.NotNull(body);
             Assert.Null(body.ProdutoId);
+            Assert.Equal(cliente.Id, body.ClienteId);
             Assert.Null(body.PrecoMaximo);
             Assert.Single(body.ProdutosCompativeis);
+        }
+
+        [Fact]
+        public async Task PostSolicitacaoDeveRetornarBadRequestQuandoClienteNaoForInformado()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "solicitacao-sem-cliente@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/solicitacao", new CriarSolicitacaoCommand
+            {
+                LojaId = loja.Id
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]

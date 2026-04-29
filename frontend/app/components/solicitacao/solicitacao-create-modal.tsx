@@ -220,7 +220,7 @@ export function SolicitacaoCreateModal({
       marcaId: number | null;
       tamanhoId: number | null;
       corId: number | null;
-      clienteId: number | null;
+      clienteId: number;
       descricao: string;
       precoMaximo: number | null;
       lojaId: number;
@@ -745,7 +745,7 @@ export function SolicitacaoCreateModal({
         marcaId: validation.data.marcaId.trim() ? Number(validation.data.marcaId) : null,
         tamanhoId: validation.data.tamanhoId.trim() ? Number(validation.data.tamanhoId) : null,
         corId: validation.data.corId.trim() ? Number(validation.data.corId) : null,
-        clienteId: validation.data.clienteId.trim() ? Number(validation.data.clienteId) : null,
+        clienteId: Number(validation.data.clienteId),
         descricao: validation.data.descricao.trim(),
         precoMaximo: validation.data.precoMaximo.trim()
           ? Number(normalizeDecimalValue(validation.data.precoMaximo))
@@ -837,7 +837,7 @@ export function SolicitacaoCreateModal({
               value={values.clienteId}
               selectedLabel={values.clienteLabel}
               searchValue={lookupSearch.cliente}
-              placeholder="Qualquer cliente"
+              placeholder="Selecione um cliente"
               searchPlaceholder="Pesquisar por nome"
               options={clientOptionsQuery.data ?? []}
               emptyLabel={

@@ -12,6 +12,7 @@ namespace Renova.Service.Commands.Solicitacao
 
         public int? CorId { get; set; }
 
+        [Required(ErrorMessage = "Cliente e obrigatorio.")]
         public int? ClienteId { get; set; }
 
         public string? Descricao { get; set; }

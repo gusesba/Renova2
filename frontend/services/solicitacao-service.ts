@@ -35,7 +35,7 @@ export async function createSolicitacao(
     marcaId: number | null;
     tamanhoId: number | null;
     corId: number | null;
-    clienteId: number | null;
+    clienteId: number;
     descricao: string;
     precoMaximo: number | null;
     lojaId: number;
