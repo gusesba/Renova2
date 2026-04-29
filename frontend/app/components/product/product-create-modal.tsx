@@ -335,8 +335,12 @@ export function ProductCreateModal({
     },
   });
 
-  function resetForm() {
-    setValues(initialProductFormValues);
+  function resetForm(preserveSupplier = false) {
+    setValues((current) => ({
+      ...initialProductFormValues,
+      fornecedorId: preserveSupplier ? current.fornecedorId : "",
+      fornecedorLabel: preserveSupplier ? current.fornecedorLabel : "",
+    }));
     setErrors({});
     setLookupSearch({
       produto: "",
@@ -906,8 +910,7 @@ export function ProductCreateModal({
       const createdProduct = asProductResponse(response.body);
 
       startTransition(() => {
-        resetForm();
-        onClose();
+        resetForm(true);
       });
 
       await queryClient.invalidateQueries({ queryKey: ["products"] });
