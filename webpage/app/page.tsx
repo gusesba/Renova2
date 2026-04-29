@@ -69,7 +69,7 @@ export default function Home() {
             </div>
           </div>
 
-          <nav className="hidden items-center gap-8 text-sm font-medium text-[var(--secondary)] lg:flex">
+          <nav className="hidden items-center gap-8 text-sm font-medium text-[var(--secondary)] xl:flex">
             <a
               href="#sistema"
               className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
@@ -114,8 +114,8 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="grid flex-1 items-center gap-16 py-14 lg:grid-cols-[1.02fr_0.98fr] lg:py-20">
-          <div className="max-w-2xl">
+        <div className="grid flex-1 items-center gap-16 py-14 xl:grid-cols-[1.02fr_0.98fr] xl:py-20">
+          <div className="mx-auto max-w-2xl text-center xl:mx-0 xl:text-left">
             <p className="reveal-up-delay mt-8 text-sm font-semibold tracking-[0.34em] text-[var(--primary)] uppercase">
               Renova
             </p>
@@ -127,13 +127,13 @@ export default function Home() {
               consignada.
             </h1>
 
-            <p className="reveal-up-delay-2 mt-6 max-w-xl text-lg leading-8 text-[var(--secondary)] sm:text-xl">
+            <p className="reveal-up-delay-2 mx-auto mt-6 max-w-xl text-lg leading-8 text-[var(--secondary)] sm:text-xl xl:mx-0">
               A Renova organiza cadastro, entrada de pecas, comissoes,
-              pagamentos, clientes e rotina da loja em uma plataforma clara,
-              elegante e feita para o dia a dia do brecho.
+              pagamentos, clientes e rotina da loja em uma plataforma clara e
+              feita para o dia a dia do brecho.
             </p>
 
-            <div className="reveal-up-delay-2 mt-8 flex flex-col gap-4 sm:flex-row">
+            <div className="reveal-up-delay-2 mt-8 flex flex-col justify-center gap-4 sm:flex-row xl:justify-start">
               <a
                 href="#demo"
                 className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#6a5cff_0%,_#5a52eb_100%)] px-6 py-4 text-sm font-semibold !text-white shadow-[0_22px_40px_rgba(90,82,235,0.34)] transition hover:translate-y-[-2px] hover:!text-white"
@@ -322,7 +322,7 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="float-card absolute -right-5 top-10 hidden w-52 rounded-[28px] bg-[linear-gradient(180deg,_#1f2a44_0%,_#101726_100%)] p-4 text-white shadow-[0_24px_55px_rgba(10,17,30,0.25)] lg:block">
+              <div className="float-card absolute -right-5 top-10 hidden w-52 rounded-[28px] bg-[linear-gradient(180deg,_#1f2a44_0%,_#101726_100%)] p-4 text-white shadow-[0_24px_55px_rgba(10,17,30,0.25)] 2xl:block">
                 <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/60">
                   Tempo real
                 </p>
@@ -357,7 +357,7 @@ export default function Home() {
       </section>
 
       <section className="relative mx-auto max-w-7xl px-6 py-24 lg:px-10">
-        <div className="grid gap-6 lg:grid-cols-[0.88fr_1.12fr]">
+        <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
           <div className="rounded-[36px] border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] transition duration-300 hover:scale-[1.03] hover:shadow-[0_30px_70px_rgba(15,23,42,0.12)]">
             <p className="text-sm font-semibold tracking-[0.2em] text-[var(--primary)] uppercase">
               Por que a Renova funciona
@@ -397,7 +397,7 @@ export default function Home() {
         id="mobile"
         className="relative mx-auto max-w-7xl px-6 py-8 pb-24 lg:px-10"
       >
-        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[38px] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(241,244,255,0.98)_100%)] p-8 text-[var(--foreground)] shadow-[0_36px_80px_rgba(15,23,42,0.10)]">
             <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
               Mobile Renova
@@ -422,7 +422,9 @@ export default function Home() {
                       <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
                         {index + 1}
                       </span>
-                      <p className="text-sm leading-7 text-[var(--secondary)]">{step}</p>
+                      <p className="text-sm leading-7 text-[var(--secondary)]">
+                        {step}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -438,7 +440,9 @@ export default function Home() {
                       <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
                         {index + 1}
                       </span>
-                      <p className="text-sm leading-7 text-[var(--secondary)]">{step}</p>
+                      <p className="text-sm leading-7 text-[var(--secondary)]">
+                        {step}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -467,7 +471,10 @@ export default function Home() {
 
                 <div className="mt-5 space-y-3">
                   {[
-                    ["Clientes", "Consulta e acompanhamento da base cadastrada"],
+                    [
+                      "Clientes",
+                      "Consulta e acompanhamento da base cadastrada",
+                    ],
                     ["Produtos", "Visualizacao de pecas, valores e status"],
                     ["Movimentacoes", "Rotinas da loja acessiveis no celular"],
                   ].map(([title, detail]) => (
@@ -495,11 +502,14 @@ export default function Home() {
                     App mobile
                   </p>
                   <p className="mt-3 text-2xl font-semibold leading-tight text-[var(--foreground)]">
-                    A mesma estrutura da Renova em uma interface leve e objetiva.
+                    A mesma estrutura da Renova em uma interface leve e
+                    objetiva.
                   </p>
                   <div className="mt-5 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-white px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                     <div>
-                      <p className="text-xs text-[var(--secondary)]">Base visual</p>
+                      <p className="text-xs text-[var(--secondary)]">
+                        Base visual
+                      </p>
                       <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">
                         Mesmo idioma de cards, modulos e consultas
                       </p>
@@ -514,9 +524,15 @@ export default function Home() {
                   </p>
                   <div className="mt-4 space-y-4">
                     {[
-                      ["Consulta de modulos", "Produtos, clientes e pagamentos"],
+                      [
+                        "Consulta de modulos",
+                        "Produtos, clientes e pagamentos",
+                      ],
                       ["Leitura clara", "Cards e informacoes bem organizados"],
-                      ["Uso continuo", "Mesma experiencia entre desktop e celular"],
+                      [
+                        "Uso continuo",
+                        "Mesma experiencia entre desktop e celular",
+                      ],
                     ].map(([label, hour]) => (
                       <div
                         key={label}
@@ -558,16 +574,16 @@ export default function Home() {
                 Solicite um orçamento para levar a Renova ao seu brechó.
               </h2>
               <p className="mt-5 max-w-xl text-base leading-8 text-white/78">
-                Fale com a nossa equipe para entender como a Renova pode apoiar a
-                gestão do seu brechó com venda consignada, organização da rotina
-                e mais clareza no dia a dia da operação.
+                Fale com a nossa equipe para entender como a Renova pode apoiar
+                a gestão do seu brechó com venda consignada, organização da
+                rotina e mais clareza no dia a dia da operação.
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <a
                   href="mailto:contato@renova.com.br?subject=Pedido%20de%20orcamento%20-%20Renova"
                   className="inline-flex items-center justify-center rounded-full bg-white px-6 py-4 text-sm font-semibold !text-[var(--primary-strong)] shadow-[0_18px_36px_rgba(255,255,255,0.18)] transition hover:translate-y-[-2px] hover:!text-[var(--primary-strong)]"
-                  >
+                >
                   Solicitar orçamento
                 </a>
                 <a
