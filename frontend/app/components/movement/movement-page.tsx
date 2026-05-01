@@ -1285,8 +1285,8 @@ export function MovementPage() {
                     </div>
 
                     <div className="rounded-[24px] border border-[var(--border)] bg-white p-4">
-                      <div className="flex flex-col gap-3 md:flex-row">
-                        <div className="flex-1">
+                      <div className="flex flex-col gap-3 2xl:flex-row">
+                        <div className="min-w-0 flex-1">
                           <TextField
                             label="Adicionar produto pelo id"
                             placeholder="Ex.: 152"
@@ -1302,12 +1302,12 @@ export function MovementPage() {
                           />
                         </div>
                         {canCreateMovement ? (
-                          <div className="mt-7 flex shrink-0 flex-col gap-3 sm:flex-row">
+                          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap 2xl:mt-7 2xl:w-auto 2xl:shrink-0 2xl:flex-nowrap">
                             {canAddProduct ? (
                               <button
                                 type="button"
                                 onClick={() => setIsCreateProductModalOpen(true)}
-                                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
+                                className="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] sm:flex-none"
                               >
                                 Novo produto
                               </button>
@@ -1316,7 +1316,7 @@ export function MovementPage() {
                               type="button"
                               onClick={() => handleAddProduct(activeDraft)}
                               disabled={fetchProductMutation.isPending}
-                              className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                              className="flex h-12 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 text-center text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                             >
                               {fetchProductMutation.isPending ? "Buscando..." : "Buscar e adicionar"}
                             </button>

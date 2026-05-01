@@ -1,1 +1,3 @@
 .dotnet/
+backend/certs/qz/*.pem
+backend/certs/qz/*.txt
