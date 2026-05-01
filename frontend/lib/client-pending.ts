@@ -12,15 +12,17 @@ export type ClientPendingItem = {
 };
 
 export function asClientPendingResponse(body: unknown) {
-  return (body as ClientPendingItem[]).map((item) => ({
-    ...item,
-    valorEspecie:
-      typeof item.valorEspecie === "number"
-        ? item.valorEspecie
-        : item.valorEspecie === null
-          ? null
-          : null,
-  }));
+  return (body as ClientPendingItem[])
+    .map((item) => ({
+      ...item,
+      valorEspecie:
+        typeof item.valorEspecie === "number"
+          ? item.valorEspecie
+          : item.valorEspecie === null
+            ? null
+            : null,
+    }))
+    .sort((current, next) => next.clienteId - current.clienteId || next.lojaId - current.lojaId);
 }
 
 export async function getClientPendingBalances(token: string) {

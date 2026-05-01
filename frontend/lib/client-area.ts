@@ -89,7 +89,7 @@ export const initialClientAreaFilters: ClientAreaFilters = {
   precoFinal: "",
   dataInicial: "",
   dataFinal: "",
-  ordenarPor: "entrada",
+  ordenarPor: "id",
   direcao: "desc",
   pagina: 1,
   tamanhoPagina: 10,

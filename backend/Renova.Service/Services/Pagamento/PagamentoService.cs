@@ -361,8 +361,8 @@ namespace Renova.Service.Services.Pagamento
 
             return await _context.ClientesCreditos
                 .Where(credito => credito.Cliente != null && credito.Cliente.UserId == usuarioId && credito.Valor != 0m)
-                .OrderBy(credito => credito.Loja != null ? credito.Loja.Nome : string.Empty)
-                .ThenBy(credito => credito.LojaId)
+                .OrderByDescending(credito => credito.ClienteId)
+                .ThenByDescending(credito => credito.LojaId)
                 .Select(credito => new ClientePendenciaAreaDto
                 {
                     LojaId = credito.LojaId,
