@@ -146,8 +146,8 @@ async function createLabelsPdfBlob(products: ProductListItem[]) {
                       <Text style={labelStyles.price}>{product.tamanho}</Text>
                       <Text style={labelStyles.price}>{formatCurrencyValue(product.preco)}</Text>
                     </View>
-                    <Barcode value={padProductId(product.id)} />
-                    <Text style={labelStyles.barcode}>{padProductId(product.id)}</Text>
+                    <Barcode value={padProductId(product.etiqueta)} />
+                    <Text style={labelStyles.barcode}>{padProductId(product.etiqueta)}</Text>
                   </>
                 ) : null}
               </View>

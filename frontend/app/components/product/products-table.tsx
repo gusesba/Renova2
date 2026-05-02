@@ -97,6 +97,7 @@ export function ProductsTable({
   onToggleAllProducts,
 }: ProductsTableProps) {
   const showProduto = visibleFields.includes("produto");
+  const showEtiqueta = visibleFields.includes("etiqueta");
   const showDescricao = visibleFields.includes("descricao");
   const showMarca = visibleFields.includes("marca");
   const showTamanho = visibleFields.includes("tamanho");
@@ -129,6 +130,11 @@ export function ProductsTable({
               {showProduto ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Produto
+                </th>
+              ) : null}
+              {showEtiqueta ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Etiqueta
                 </th>
               ) : null}
               {showDescricao ? (
@@ -201,7 +207,7 @@ export function ProductsTable({
                     type="checkbox"
                     checked={selectedProductIds.includes(product.id)}
                     onChange={() => onToggleProductSelection(product.id)}
-                    aria-label={`Selecionar produto ${product.id} para impressao`}
+                    aria-label={`Selecionar produto ${product.etiqueta} para impressao`}
                     className="h-4 w-4 cursor-pointer rounded border-[var(--border)]"
                   />
                 </ProductTableCell>
@@ -222,6 +228,7 @@ export function ProductsTable({
                     </div>
                   </ProductTableCell>
                 ) : null}
+                {showEtiqueta ? <ProductTableCell subtle>#{product.etiqueta}</ProductTableCell> : null}
                 {showDescricao ? <ProductTableCell>{product.descricao}</ProductTableCell> : null}
                 {showMarca ? <ProductTableCell>{product.marca}</ProductTableCell> : null}
                 {showTamanho ? <ProductTableCell subtle>{product.tamanho}</ProductTableCell> : null}

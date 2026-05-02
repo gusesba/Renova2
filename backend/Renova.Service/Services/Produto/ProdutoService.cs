@@ -20,6 +20,7 @@ namespace Renova.Service.Services.Produto
         private static readonly IReadOnlyDictionary<string, LambdaExpression> CamposOrdenaveis = new Dictionary<string, LambdaExpression>
         {
             ["id"] = (Expression<Func<ProdutoEstoqueModel, int>>)(produto => produto.Id),
+            ["etiqueta"] = (Expression<Func<ProdutoEstoqueModel, int>>)(produto => produto.Etiqueta),
             ["descricao"] = (Expression<Func<ProdutoEstoqueModel, string>>)(produto => produto.Descricao),
             ["preco"] = (Expression<Func<ProdutoEstoqueModel, decimal>>)(produto => produto.Preco),
             ["entrada"] = (Expression<Func<ProdutoEstoqueModel, DateTime>>)(produto => produto.Entrada),
@@ -82,10 +83,12 @@ namespace Renova.Service.Services.Produto
             }
 
             DateTime entrada = request.Entrada == default ? DateTime.UtcNow : request.Entrada;
+            int etiquetaInicial = await ObterEtiquetaInicialAsync(request.LojaId, request.Etiqueta, request.Quantidade, null, cancellationToken);
 
             List<ProdutoEstoqueModel> produtos = Enumerable.Range(0, request.Quantidade)
-                .Select(_ => new ProdutoEstoqueModel
+                .Select(index => new ProdutoEstoqueModel
                 {
+                    Etiqueta = etiquetaInicial + index,
                     Preco = request.Preco,
                     ProdutoId = request.ProdutoId,
                     MarcaId = request.MarcaId,
@@ -166,6 +169,11 @@ namespace Renova.Service.Services.Produto
             if (!Enum.IsDefined(request.Situacao))
             {
                 throw new ArgumentException("Situacao informada e invalida.", nameof(request));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Etiqueta))
+            {
+                produto.Etiqueta = await ObterEtiquetaInicialAsync(produto.LojaId, request.Etiqueta, 1, produto.Id, cancellationToken);
             }
 
             produto.Preco = request.Preco;
@@ -349,6 +357,16 @@ namespace Renova.Service.Services.Produto
                 query = query.Where(produto => produto.Descricao.ToLower().Contains(descricaoFiltro));
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Etiqueta))
+            {
+                if (!int.TryParse(request.Etiqueta.Trim(), out int etiquetaFiltro))
+                {
+                    throw new ArgumentException("Etiqueta deve conter apenas numeros.", nameof(request));
+                }
+
+                query = query.Where(produto => produto.Etiqueta == etiquetaFiltro);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Produto))
             {
                 string produtoFiltro = request.Produto.Trim().ToLowerInvariant();
@@ -402,12 +420,13 @@ namespace Renova.Service.Services.Produto
             }
 
             IQueryable<ProdutoEstoqueModel> queryOrdenada = query
-                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "descricao")
+                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "etiqueta")
                 .ThenBy(produto => produto.Id);
 
             IQueryable<ProdutoBuscaDto> queryProjetada = queryOrdenada.Select(produto => new ProdutoBuscaDto
             {
                 Id = produto.Id,
+                Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
                 ProdutoId = produto.ProdutoId,
                 Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
@@ -456,6 +475,7 @@ namespace Renova.Service.Services.Produto
             return new ProdutoBuscaDto
             {
                 Id = produto.Id,
+                Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
                 ProdutoId = produto.ProdutoId,
                 Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
@@ -508,6 +528,7 @@ namespace Renova.Service.Services.Produto
                 .Select(produto => new ProdutoBuscaDto
                 {
                     Id = produto.Id,
+                    Etiqueta = produto.Etiqueta,
                     Preco = produto.Preco,
                     ProdutoId = produto.ProdutoId,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
@@ -717,6 +738,7 @@ namespace Renova.Service.Services.Produto
             return new ProdutoDto
             {
                 Id = produto.Id,
+                Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
                 ProdutoId = produto.ProdutoId,
                 MarcaId = produto.MarcaId,
@@ -729,6 +751,46 @@ namespace Renova.Service.Services.Produto
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado
             };
+        }
+
+        private async Task<int> ObterEtiquetaInicialAsync(
+            int lojaId,
+            string? etiquetaInformada,
+            int quantidade,
+            int? produtoIdIgnorado,
+            CancellationToken cancellationToken)
+        {
+            int etiquetaInicial;
+
+            if (string.IsNullOrWhiteSpace(etiquetaInformada))
+            {
+                int? maiorEtiqueta = await _context.ProdutosEstoque
+                    .Where(produto => produto.LojaId == lojaId)
+                    .MaxAsync(produto => (int?)produto.Etiqueta, cancellationToken);
+
+                etiquetaInicial = maiorEtiqueta.HasValue ? maiorEtiqueta.Value + 1 : 0;
+            }
+            else if (!int.TryParse(etiquetaInformada.Trim(), out etiquetaInicial))
+            {
+                throw new ArgumentException("Etiqueta deve conter apenas numeros.", nameof(etiquetaInformada));
+            }
+
+            int etiquetaFinal = checked(etiquetaInicial + quantidade - 1);
+
+            bool etiquetaJaExiste = await _context.ProdutosEstoque
+                .AnyAsync(produto =>
+                    produto.LojaId == lojaId
+                    && (!produtoIdIgnorado.HasValue || produto.Id != produtoIdIgnorado.Value)
+                    && produto.Etiqueta >= etiquetaInicial
+                    && produto.Etiqueta <= etiquetaFinal,
+                    cancellationToken);
+
+            if (etiquetaJaExiste)
+            {
+                throw new InvalidOperationException("Etiqueta ja cadastrada para a loja informada.");
+            }
+
+            return etiquetaInicial;
         }
 
         private Task<List<SolicitacaoCompativelDto>> ObterSolicitacoesCompativeisCoreAsync(ProdutoEstoqueModel produto, CancellationToken cancellationToken)

@@ -3,6 +3,7 @@ namespace Renova.Domain.Model.Dto
     public class ProdutoBuscaDto
     {
         public int Id { get; set; }
+        public int Etiqueta { get; set; }
         public decimal Preco { get; set; }
         public int ProdutoId { get; set; }
         public required string Produto { get; set; }

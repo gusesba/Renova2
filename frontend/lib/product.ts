@@ -1,5 +1,6 @@
 export type ProductListItem = {
   id: number;
+  etiqueta: number;
   preco: number;
   produtoId: number;
   produto: string;
@@ -34,6 +35,7 @@ export type ProductRequestMatchItem = {
 
 export type ProductCreateResponse = {
   id: number;
+  etiqueta: number;
   preco: number;
   produtoId: number;
   marcaId: number;
@@ -49,6 +51,7 @@ export type ProductCreateResponse = {
 };
 
 export type ProductFormValues = {
+  etiqueta: string;
   descricao: string;
   preco: string;
   quantidade: string;
@@ -70,6 +73,7 @@ export type ProductFormValues = {
 export type ProductFieldErrors = Partial<
   Record<
     | "descricao"
+    | "etiqueta"
     | "preco"
     | "quantidade"
     | "entrada"
@@ -98,6 +102,7 @@ export type ProductListResponse = {
 
 export type ProductFilters = {
   descricao: string;
+  etiqueta: string;
   produto: string;
   marca: string;
   tamanho: string;
@@ -109,6 +114,7 @@ export type ProductFilters = {
   dataFinal: string;
   ordenarPor:
     | "descricao"
+    | "etiqueta"
     | "produto"
     | "marca"
     | "tamanho"
@@ -124,6 +130,7 @@ export type ProductFilters = {
 
 export type ProductVisibleField =
   | "produto"
+  | "etiqueta"
   | "descricao"
   | "marca"
   | "tamanho"
@@ -148,6 +155,7 @@ type ApiErrorResponse = {
 
 export const initialProductFilters: ProductFilters = {
   descricao: "",
+  etiqueta: "",
   produto: "",
   marca: "",
   tamanho: "",
@@ -157,13 +165,14 @@ export const initialProductFilters: ProductFilters = {
   precoFinal: "",
   dataInicial: "",
   dataFinal: "",
-  ordenarPor: "id",
+  ordenarPor: "etiqueta",
   direcao: "desc",
   pagina: 1,
   tamanhoPagina: 10,
 };
 
 export const initialProductFormValues: ProductFormValues = {
+  etiqueta: "",
   descricao: "",
   preco: "",
   quantidade: "1",
@@ -186,6 +195,7 @@ export const defaultProductTableSettings: ProductTableSettings = {
   tamanhoPagina: 10,
   visibleFields: [
     "produto",
+    "etiqueta",
     "descricao",
     "marca",
     "fornecedor",
@@ -267,8 +277,8 @@ export function buildProductQuery(storeId: number, filters: ProductFilters) {
 
   const textFields: Array<keyof Pick<
     ProductFilters,
-    "descricao" | "produto" | "marca" | "tamanho" | "cor" | "fornecedor"
-  >> = ["descricao", "produto", "marca", "tamanho", "cor", "fornecedor"];
+    "descricao" | "etiqueta" | "produto" | "marca" | "tamanho" | "cor" | "fornecedor"
+  >> = ["descricao", "etiqueta", "produto", "marca", "tamanho", "cor", "fornecedor"];
 
   for (const field of textFields) {
     if (filters[field].trim()) {
@@ -345,6 +355,10 @@ export function extractProductFieldErrors(body: unknown): ProductFieldErrors {
       accumulator.descricao = error;
     }
 
+    if (normalizedKey === "etiqueta" && !accumulator.etiqueta) {
+      accumulator.etiqueta = error;
+    }
+
     if (normalizedKey === "preco" && !accumulator.preco) {
       accumulator.preco = error;
     }
@@ -410,6 +424,7 @@ export function getStoredProductTableSettings(): ProductTableSettings {
       ? parsed.visibleFields.filter((field): field is ProductVisibleField =>
           [
             "produto",
+            "etiqueta",
             "descricao",
             "marca",
             "tamanho",

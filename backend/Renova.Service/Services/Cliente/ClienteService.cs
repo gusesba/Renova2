@@ -775,6 +775,7 @@ namespace Renova.Service.Services.Cliente
                 .Select(produto => new ClienteProdutoAreaDto
                 {
                     Id = produto.Id,
+                    Etiqueta = produto.Etiqueta,
                     Preco = produto.Situacao == SituacaoProduto.Vendido
                         ? (
                             produto.Movimentacoes
@@ -1441,6 +1442,7 @@ namespace Renova.Service.Services.Cliente
             return produto => new ProdutoBuscaDto
             {
                 Id = produto.Id,
+                Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
                 ProdutoId = produto.ProdutoId,
                 Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,

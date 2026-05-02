@@ -13,6 +13,7 @@ type ProductSettingsModalProps = {
 
 const fieldOptions: Array<{ description: string; label: string; value: ProductVisibleField }> = [
   { label: "Produto", value: "produto", description: "Referencia principal do item" },
+  { label: "Etiqueta", value: "etiqueta", description: "Codigo impresso na etiqueta" },
   { label: "Descricao", value: "descricao", description: "Descricao livre do produto" },
   { label: "Marca", value: "marca", description: "Marca vinculada" },
   { label: "Tamanho", value: "tamanho", description: "Tamanho vinculado" },
@@ -22,7 +23,7 @@ const fieldOptions: Array<{ description: string; label: string; value: ProductVi
   { label: "Entrada", value: "entrada", description: "Data de entrada" },
   { label: "Situacao", value: "situacao", description: "Estado atual do item" },
   { label: "Consignado", value: "consignado", description: "Indicador de consignacao" },
-  { label: "Identificador", value: "id", description: "Codigo interno do produto" },
+  { label: "Id interno", value: "id", description: "Identificador interno do produto" },
 ];
 
 export function ProductSettingsModal({

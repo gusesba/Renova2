@@ -295,6 +295,7 @@ namespace Renova.Persistence
                 _ = entity.ToTable("ProdutoEstoque");
                 _ = entity.HasKey(p => p.Id);
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.Etiqueta).IsRequired();
                 _ = entity.Property(p => p.Preco).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.ProdutoId).IsRequired();
                 _ = entity.Property(p => p.MarcaId).IsRequired();
@@ -307,6 +308,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Situacao).HasConversion<int>().IsRequired();
                 _ = entity.Property(p => p.Consignado).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasIndex(p => new { p.LojaId, p.Etiqueta }).IsUnique();
                 _ = entity.HasOne(p => p.Produto)
                     .WithMany(p => p.ProdutosEstoque)
                     .HasForeignKey(p => p.ProdutoId)

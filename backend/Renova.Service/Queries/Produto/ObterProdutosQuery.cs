@@ -11,6 +11,8 @@ namespace Renova.Service.Queries.Produto
 
         public string? Descricao { get; set; }
 
+        public string? Etiqueta { get; set; }
+
         public string? Produto { get; set; }
 
         public string? Marca { get; set; }

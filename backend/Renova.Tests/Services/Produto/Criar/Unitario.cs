@@ -40,9 +40,68 @@ namespace Renova.Tests.Services.Produto.Criar
             Assert.Equal(command.LojaId, resultado.LojaId);
             Assert.Equal(command.Situacao, resultado.Situacao);
             Assert.True(resultado.Consignado);
+            Assert.Equal(0, resultado.Etiqueta);
 
             ProdutoEstoqueModel produtoSalvo = await context.ProdutosEstoque.SingleAsync();
             Assert.Equal(resultado.Id, produtoSalvo.Id);
+            Assert.Equal(resultado.Etiqueta, produtoSalvo.Etiqueta);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveGerarProximaEtiquetaDaLojaQuandoNaoInformada()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoService service = new(context);
+
+            ProdutoDto primeiro = await service.CreateAsync(
+                await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true),
+                new CriarProdutoParametros { UsuarioId = loja.UsuarioId });
+            ProdutoDto segundo = await service.CreateAsync(
+                await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true),
+                new CriarProdutoParametros { UsuarioId = loja.UsuarioId });
+
+            Assert.Equal(0, primeiro.Etiqueta);
+            Assert.Equal(1, segundo.Etiqueta);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDevePermitirMesmaEtiquetaEmLojasDiferentes()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel primeiraLoja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            LojaModel segundaLoja = await CriarCenarioBaseAsync(context, "joao@renova.com");
+            CriarProdutoCommand primeiroCommand = await CriarCommandValidoAsync(context, primeiraLoja.Id, SituacaoProduto.Estoque, true);
+            primeiroCommand.Etiqueta = "50";
+            CriarProdutoCommand segundoCommand = await CriarCommandValidoAsync(context, segundaLoja.Id, SituacaoProduto.Estoque, true);
+            segundoCommand.Etiqueta = "50";
+
+            ProdutoService service = new(context);
+            ProdutoDto primeiro = await service.CreateAsync(primeiroCommand, new CriarProdutoParametros { UsuarioId = primeiraLoja.UsuarioId });
+            ProdutoDto segundo = await service.CreateAsync(segundoCommand, new CriarProdutoParametros { UsuarioId = segundaLoja.UsuarioId });
+
+            Assert.Equal(50, primeiro.Etiqueta);
+            Assert.Equal(50, segundo.Etiqueta);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveImpedirEtiquetaDuplicadaNaMesmaLoja()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoService service = new(context);
+            CriarProdutoCommand primeiroCommand = await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true);
+            primeiroCommand.Etiqueta = "7";
+            _ = await service.CreateAsync(primeiroCommand, new CriarProdutoParametros { UsuarioId = loja.UsuarioId });
+
+            CriarProdutoCommand segundoCommand = await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true);
+            segundoCommand.Etiqueta = "7";
+
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.CreateAsync(segundoCommand, new CriarProdutoParametros { UsuarioId = loja.UsuarioId }));
         }
 
         [Fact]
@@ -175,6 +234,7 @@ namespace Renova.Tests.Services.Produto.Criar
 
             Assert.Equal(3, produtosSalvos.Count);
             Assert.Equal(produtosSalvos[0].Id, resultado.Id);
+            Assert.Equal([0, 1, 2], produtosSalvos.Select(produto => produto.Etiqueta).ToArray());
             Assert.All(produtosSalvos, produto =>
             {
                 Assert.Equal(command.Preco, produto.Preco);

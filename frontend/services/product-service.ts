@@ -93,6 +93,7 @@ export async function getBorrowedProductsByClient(
 export async function createProduct(
   payload: {
     preco: number;
+    etiqueta?: string;
     quantidade: number;
     produtoId: number;
     marcaId: number;
@@ -132,6 +133,7 @@ export async function updateProduct(
   productId: number,
   payload: {
     preco: number;
+    etiqueta?: string;
     produtoId: number;
     marcaId: number;
     tamanhoId: number;

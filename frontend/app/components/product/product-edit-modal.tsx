@@ -47,6 +47,7 @@ type LookupSearchState = {
 function getInitialProductFormValues(product: ProductListItem): ProductFormValues {
   return {
     descricao: product.descricao,
+    etiqueta: String(product.etiqueta),
     preco: String(product.preco),
     quantidade: "1",
     entrada: toDateInputValue(product.entrada),
@@ -378,6 +379,7 @@ function ProductEditModalContent({
     mutationFn: async (payload: {
       productId: number;
       preco: number;
+      etiqueta?: string;
       produtoId: number;
       marcaId: number;
       tamanhoId: number;
@@ -396,6 +398,7 @@ function ProductEditModalContent({
         payload.productId,
         {
           preco: payload.preco,
+          etiqueta: payload.etiqueta,
           produtoId: payload.produtoId,
           marcaId: payload.marcaId,
           tamanhoId: payload.tamanhoId,
@@ -497,6 +500,7 @@ function ProductEditModalContent({
       const response = await updateProductMutation.mutateAsync({
         productId: product.id,
         preco: Number(normalizeDecimalValue(validation.data.preco)),
+        ...(validation.data.etiqueta.trim() ? { etiqueta: validation.data.etiqueta.trim() } : {}),
         produtoId: Number(validation.data.produtoId),
         marcaId: Number(validation.data.marcaId),
         tamanhoId: Number(validation.data.tamanhoId),
@@ -583,6 +587,16 @@ function ProductEditModalContent({
               emptyLabel="Nenhum produto auxiliar encontrado."
               onSearchChange={(value) => updateLookupSearch("produto", value)}
               onSelect={(option) => updateRelation("produto", option)}
+            />
+            <FormField
+              label="Etiqueta"
+              value={values.etiqueta}
+              error={errors.etiqueta}
+              inputMode="numeric"
+              onChange={(value) => {
+                updateField("etiqueta", value.replace(/\D/g, ""));
+                setErrors((current) => ({ ...current, etiqueta: undefined }));
+              }}
             />
             <FormField
               label="Descricao"

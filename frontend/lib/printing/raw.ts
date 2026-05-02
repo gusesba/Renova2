@@ -54,7 +54,7 @@ export function buildZplLabels(products: ProductListItem[]) {
         `^FO${x + 35},170^A0N,22,22^FD${zplText(formatDateValue(product.entrada))}^FS`,
         `^FO${x + 15},215^A0N,28,28^FD${zplText(product.tamanho)}^FS`,
         `^FO${x + 75},212^A0N,34,34^FDR$${formatRawPrice(product.preco)}^FS`,
-        `^FO${x + 35},275^BY2,2,80^BCN,80,Y,N,N^FD${padProductId(product.id)}^FS`,
+        `^FO${x + 35},275^BY2,2,80^BCN,80,Y,N,N^FD${padProductId(product.etiqueta)}^FS`,
       );
     });
 
@@ -77,7 +77,7 @@ export function buildEplLabels(products: ProductListItem[]) {
         `A${x + 35},160,0,2,1,1,N,"${eplText(formatDateValue(product.entrada))}"`,
         `A${x + 15},210,0,3,1,1,N,"${eplText(product.tamanho)}"`,
         `A${x + 75},210,0,3,1,1,N,"R$${formatRawPrice(product.preco)}"`,
-        `B${x + 35},275,0,1,2,2,80,B,"${padProductId(product.id)}"`,
+        `B${x + 35},275,0,1,2,2,80,B,"${padProductId(product.etiqueta)}"`,
       );
     });
 
@@ -157,7 +157,7 @@ function buildDplLabel(product: ProductListItem, slot: LabelSlot) {
     dplTextLine("0115", slot.textX, formatDateValue(product.entrada)),
     dplTextLine("0140", slot.sizeX, product.tamanho),
     dplTextLine("0140", slot.textX, `R$${formatRawPrice(product.preco)}`, "3"),
-    `3D520000200${slot.barcodeX}${padProductId(product.id)}\n`,
+    `3D520000200${slot.barcodeX}${padProductId(product.etiqueta)}\n`,
   ];
 }
 

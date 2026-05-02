@@ -250,6 +250,7 @@ export function ProductCreateModal({
   const createProductMutation = useMutation({
     mutationFn: async (payload: {
       preco: number;
+      etiqueta?: string;
       quantidade: number;
       produtoId: number;
       marcaId: number;
@@ -881,6 +882,7 @@ export function ProductCreateModal({
     try {
       const payload = {
         preco: Number(normalizeDecimalValue(validation.data.preco)),
+        ...(validation.data.etiqueta.trim() ? { etiqueta: validation.data.etiqueta.trim() } : {}),
         quantidade: Number(validation.data.quantidade),
         produtoId: Number(validation.data.produtoId),
         marcaId: Number(validation.data.marcaId),
@@ -991,6 +993,17 @@ export function ProductCreateModal({
               onSearchChange={(value) => updateLookupSearch("produto", value)}
               onAction={() => openAuxiliaryModal("produto")}
               onSelect={(option) => updateRelation("produto", option)}
+            />
+            <FormField
+              label="Etiqueta"
+              placeholder="Automatico se ficar em branco"
+              value={values.etiqueta}
+              error={errors.etiqueta}
+              inputMode="numeric"
+              onChange={(value) => {
+                updateField("etiqueta", value.replace(/\D/g, ""));
+                setErrors((current) => ({ ...current, etiqueta: undefined }));
+              }}
             />
             <FormField
               label="Descricao"

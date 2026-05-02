@@ -3,6 +3,7 @@ namespace Renova.Domain.Model.Dto
     public class ProdutoCompativelDto
     {
         public int Id { get; set; }
+        public int Etiqueta { get; set; }
         public required string Produto { get; set; }
         public required string Marca { get; set; }
         public required string Tamanho { get; set; }

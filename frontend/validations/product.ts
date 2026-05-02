@@ -3,6 +3,10 @@ import { z } from "zod";
 import { normalizeDecimalValue, type ProductFieldErrors } from "@/lib/product";
 
 export const productSchema = z.object({
+  etiqueta: z
+    .string()
+    .trim()
+    .refine((value) => !value || /^\d+$/.test(value), "Informe apenas numeros na etiqueta."),
   descricao: z.string().trim().min(1, "Informe a descricao do produto."),
   preco: z
     .string()
@@ -38,6 +42,10 @@ export function mapProductZodErrors(error: z.ZodError): ProductFieldErrors {
 
     if (field === "descricao" && !mapped.descricao) {
       mapped.descricao = issue.message;
+    }
+
+    if (field === "etiqueta" && !mapped.etiqueta) {
+      mapped.etiqueta = issue.message;
     }
 
     if (field === "preco" && !mapped.preco) {

@@ -27,6 +27,7 @@ namespace Renova.Tests.Services.Produto.Editar
             EditarProdutoCommand command = await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Vendido, false);
             command.Descricao = "Produto editado";
             command.Preco = 249.90m;
+            command.Etiqueta = "12";
 
             ProdutoService service = new(context);
             ProdutoDto resultado = await service.EditAsync(
@@ -34,10 +35,28 @@ namespace Renova.Tests.Services.Produto.Editar
                 new EditarProdutoParametros { UsuarioId = loja.UsuarioId, ProdutoId = produto.Id });
 
             Assert.Equal(produto.Id, resultado.Id);
+            Assert.Equal(12, resultado.Etiqueta);
             Assert.Equal(command.Descricao, resultado.Descricao);
             Assert.Equal(command.Preco, resultado.Preco);
             Assert.Equal(SituacaoProduto.Vendido, resultado.Situacao);
             Assert.False(resultado.Consignado);
+        }
+
+        [Fact]
+        public async Task EditAsyncDeveImpedirEtiquetaDuplicadaNaMesmaLoja()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarCenarioBaseAsync(context, "maria@renova.com");
+            ProdutoEstoqueModel primeiroProduto = await CriarProdutoAsync(context, loja.Id, SituacaoProduto.Estoque, true, 4);
+            ProdutoEstoqueModel segundoProduto = await CriarProdutoAsync(context, loja.Id, SituacaoProduto.Estoque, true, 9);
+            EditarProdutoCommand command = await CriarCommandValidoAsync(context, loja.Id, SituacaoProduto.Estoque, true);
+            command.Etiqueta = primeiroProduto.Etiqueta.ToString();
+
+            ProdutoService service = new(context);
+            _ = await Assert.ThrowsAsync<InvalidOperationException>(() => service.EditAsync(
+                command,
+                new EditarProdutoParametros { UsuarioId = loja.UsuarioId, ProdutoId = segundoProduto.Id }));
         }
 
         [Fact]
@@ -162,7 +181,12 @@ namespace Renova.Tests.Services.Produto.Editar
             };
         }
 
-        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(RenovaDbContext context, int lojaId, SituacaoProduto situacao, bool consignado)
+        private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            SituacaoProduto situacao,
+            bool consignado,
+            int etiqueta = 0)
         {
             ProdutoReferenciaModel produto = await context.ProdutosReferencia.SingleAsync(item => item.LojaId == lojaId);
             MarcaModel marca = await context.Marcas.SingleAsync(item => item.LojaId == lojaId);
@@ -172,6 +196,7 @@ namespace Renova.Tests.Services.Produto.Editar
 
             ProdutoEstoqueModel entity = new()
             {
+                Etiqueta = etiqueta,
                 Preco = 99.90m,
                 ProdutoId = produto.Id,
                 MarcaId = marca.Id,

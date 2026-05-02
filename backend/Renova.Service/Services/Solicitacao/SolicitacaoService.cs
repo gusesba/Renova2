@@ -302,6 +302,7 @@ namespace Renova.Service.Services.Solicitacao
                 .Select(produto => new ProdutoCompativelDto
                 {
                     Id = produto.Id,
+                    Etiqueta = produto.Etiqueta,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                     Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
                     Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,

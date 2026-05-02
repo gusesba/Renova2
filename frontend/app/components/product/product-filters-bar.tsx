@@ -217,6 +217,12 @@ export function ProductFiltersBar({
                 onChange={(descricao) => onChange({ descricao })}
               />
               <TextField
+                label="Etiqueta"
+                value={filters.etiqueta}
+                placeholder="Buscar por etiqueta"
+                onChange={(etiqueta) => onChange({ etiqueta: etiqueta.replace(/\D/g, "") })}
+              />
+              <TextField
                 label="Produto"
                 value={filters.produto}
                 placeholder="Buscar por produto"
@@ -273,6 +279,7 @@ export function ProductFiltersBar({
                 value={filters.ordenarPor}
                 options={[
                   { label: "Descricao", value: "descricao" },
+                  { label: "Etiqueta", value: "etiqueta" },
                   { label: "Produto", value: "produto" },
                   { label: "Marca", value: "marca" },
                   { label: "Tamanho", value: "tamanho" },

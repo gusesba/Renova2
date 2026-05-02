@@ -115,6 +115,7 @@ namespace Renova.Service.Services.Movimentacao
                     .Select(item => new ProdutoBuscaDto
                     {
                         Id = item.ProdutoId,
+                        Etiqueta = item.Produto != null ? item.Produto.Etiqueta : 0,
                         Preco = item.Produto != null ? item.Produto.Preco : 0,
                         ProdutoId = item.Produto != null ? item.Produto.ProdutoId : 0,
                         Produto = item.Produto != null && item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
@@ -379,6 +380,7 @@ namespace Renova.Service.Services.Movimentacao
                 .Select(produto => new MovimentacaoDestinacaoProdutoDto
                 {
                     Id = produto.Id,
+                    Etiqueta = produto.Etiqueta,
                     Preco = produto.Preco,
                     ProdutoId = produto.ProdutoId,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
