@@ -37,7 +37,9 @@ import { ClientDetailProductSettingsModal } from "./client-detail-product-settin
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[24px] border border-[var(--border)] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        {label}
+      </p>
       <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{value}</p>
     </div>
   );
@@ -281,7 +283,9 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
           >
             Voltar para clientes
           </Link>
-          <h1 className="mt-3 text-3xl font-semibold text-[var(--foreground)]">Detalhe do cliente</h1>
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
+            Detalhe do cliente
+          </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
             O filtro inicial usa automaticamente o primeiro e o ultimo dia do mes anterior.
           </p>
@@ -342,7 +346,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             onClick={() => router.push(returnSaleHref)}
             className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Devolver produtos vendidos
+            Devolver produtos comprados
           </button>
         ) : null}
       </div>
@@ -405,8 +409,14 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard label="Pecas compradas" value={String(detail.quantidadePecasCompradas)} />
               <MetricCard label="Pecas vendidas" value={String(detail.quantidadePecasVendidas)} />
-              <MetricCard label="Dinheiro retirado" value={formatCurrency(detail.valorRetiradoLoja)} />
-              <MetricCard label="Dinheiro aportado" value={formatCurrency(detail.valorAportadoLoja)} />
+              <MetricCard
+                label="Dinheiro retirado"
+                value={formatCurrency(detail.valorRetiradoLoja)}
+              />
+              <MetricCard
+                label="Dinheiro aportado"
+                value={formatCurrency(detail.valorAportadoLoja)}
+              />
             </div>
           </div>
 
