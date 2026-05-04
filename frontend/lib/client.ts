@@ -76,6 +76,7 @@ export type ClientDetailProductVisibleField =
   | "fornecedor"
   | "situacao"
   | "entrada"
+  | "saida"
   | "preco";
 
 export type ClientDetailProductTableSettings = {
@@ -120,7 +121,16 @@ export const defaultClientTableSettings: ClientTableSettings = {
 
 export const defaultClientDetailProductTableSettings: ClientDetailProductTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "produto", "descricao", "fornecedor", "situacao", "entrada", "preco"],
+  visibleFields: [
+    "id",
+    "produto",
+    "descricao",
+    "fornecedor",
+    "situacao",
+    "entrada",
+    "saida",
+    "preco",
+  ],
 };
 
 export function normalizeNumericValue(value: string) {
@@ -354,9 +364,16 @@ function normalizeClientDetailProductTableSettings(
 
   const visibleFields = Array.isArray(settings?.visibleFields)
     ? settings.visibleFields.filter((field): field is ClientDetailProductVisibleField =>
-        ["id", "produto", "descricao", "fornecedor", "situacao", "entrada", "preco"].includes(
-          String(field),
-        ),
+        [
+          "id",
+          "produto",
+          "descricao",
+          "fornecedor",
+          "situacao",
+          "entrada",
+          "saida",
+          "preco",
+        ].includes(String(field)),
       )
     : defaultClientDetailProductTableSettings.visibleFields;
 

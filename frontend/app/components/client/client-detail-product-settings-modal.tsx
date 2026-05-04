@@ -26,6 +26,7 @@ const fieldOptions: Array<{
   { label: "Fornecedor", value: "fornecedor", description: "Cliente fornecedor" },
   { label: "Situacao", value: "situacao", description: "Estado atual do item" },
   { label: "Entrada", value: "entrada", description: "Data de entrada" },
+  { label: "Saida", value: "saida", description: "Data da ultima venda ou emprestimo" },
   { label: "Preco", value: "preco", description: "Preco de cadastro" },
 ];
 

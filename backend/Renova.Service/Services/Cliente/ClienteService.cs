@@ -1468,6 +1468,15 @@ namespace Renova.Service.Services.Cliente
                 Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                 Descricao = produto.Descricao,
                 Entrada = produto.Entrada,
+                DataSaida = produto.Movimentacoes
+                    .Where(item => item.Movimentacao != null)
+                    .OrderByDescending(item => item.Movimentacao!.Data)
+                    .ThenByDescending(item => item.MovimentacaoId)
+                    .Select(item => item.Movimentacao!.Tipo == TipoMovimentacao.Venda
+                        || item.Movimentacao.Tipo == TipoMovimentacao.Emprestimo
+                            ? (DateTime?)item.Movimentacao.Data
+                            : null)
+                    .FirstOrDefault(),
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado

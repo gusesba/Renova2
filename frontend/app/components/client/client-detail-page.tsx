@@ -69,6 +69,7 @@ function ProductsSnapshot({
   const showFornecedor = settings.visibleFields.includes("fornecedor");
   const showSituacao = settings.visibleFields.includes("situacao");
   const showEntrada = settings.visibleFields.includes("entrada");
+  const showSaida = settings.visibleFields.includes("saida");
   const showPreco = settings.visibleFields.includes("preco");
   const paginatedProducts = useMemo(() => {
     const start = (normalizedCurrentPage - 1) * pageSize;
@@ -135,6 +136,11 @@ function ProductsSnapshot({
                       Entrada
                     </th>
                   ) : null}
+                  {showSaida ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Saida
+                    </th>
+                  ) : null}
                   {showPreco ? (
                     <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                       Preco
@@ -178,6 +184,11 @@ function ProductsSnapshot({
                     {showEntrada ? (
                       <td className="px-4 py-4 text-sm text-[var(--muted)]">
                         {formatDateValue(product.entrada)}
+                      </td>
+                    ) : null}
+                    {showSaida ? (
+                      <td className="px-4 py-4 text-sm text-[var(--muted)]">
+                        {product.dataSaida ? formatDateValue(product.dataSaida) : "-"}
                       </td>
                     ) : null}
                     {showPreco ? (

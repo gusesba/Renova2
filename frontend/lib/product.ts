@@ -14,6 +14,7 @@ export type ProductListItem = {
   fornecedor: string;
   descricao: string;
   entrada: string;
+  dataSaida?: string | null;
   lojaId: number;
   situacao: number;
   consignado: boolean;

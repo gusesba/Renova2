@@ -17,6 +17,7 @@ namespace Renova.Domain.Model.Dto
         public required string Fornecedor { get; set; }
         public required string Descricao { get; set; }
         public DateTime Entrada { get; set; }
+        public DateTime? DataSaida { get; set; }
         public int LojaId { get; set; }
         public SituacaoProduto Situacao { get; set; }
         public bool Consignado { get; set; }
