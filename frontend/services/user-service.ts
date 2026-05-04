@@ -15,6 +15,8 @@ type UserResponse = {
 
 type UpdateUserPayload = {
   nome: string;
+  novaSenha?: string;
+  senhaAtual?: string;
 };
 
 export async function getUserOptions(
