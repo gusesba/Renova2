@@ -208,6 +208,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(produtoAtual => produtoAtual.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosExcluir, cancellationToken);
 
             if (await ProdutoPossuiRelacionamentosAtivosAsync(produto.Id, cancellationToken))
@@ -346,10 +347,11 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizar, cancellationToken);
 
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
-                .Where(produto => produto.LojaId == request.LojaId.Value);
+                .Where(produto => produto.LojaId == loja.Id);
 
             if (!string.IsNullOrWhiteSpace(request.Descricao))
             {
@@ -429,8 +431,11 @@ namespace Renova.Service.Services.Produto
                 query = query.Where(produto => produto.Situacao == request.Situacao.Value);
             }
 
+            string? ordenarPor = request.OrdenarPor;
+            string direcao = string.IsNullOrWhiteSpace(ordenarPor) ? "desc" : request.Direcao;
+
             IQueryable<ProdutoEstoqueModel> queryOrdenada = query
-                .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "etiqueta")
+                .ApplyOrdering(ordenarPor, direcao, CamposOrdenaveis, "id")
                 .ThenBy(produto => produto.Id);
 
             IQueryable<ProdutoBuscaDto> queryProjetada = queryOrdenada.Select(produto => new ProdutoBuscaDto
@@ -480,6 +485,7 @@ namespace Renova.Service.Services.Produto
                 .SingleOrDefaultAsync(item => item.Id == parametros.ProdutoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizarItem, cancellationToken);
 
             return new ProdutoBuscaDto
@@ -616,9 +622,10 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosAuxiliaresVisualizar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosAuxiliaresVisualizar, cancellationToken);
 
-            IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == request.LojaId.Value);
+            IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == loja.Id);
 
             if (!string.IsNullOrWhiteSpace(request.Valor))
             {
@@ -660,6 +667,7 @@ namespace Renova.Service.Services.Produto
 
             int lojaId = ObterLojaId(entity);
 
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, ResolverPermissaoAuxiliarExclusao(nomeEntidade), cancellationToken);
 
             if (await possuiProdutosVinculados(parametros.ProdutoAuxiliarId))

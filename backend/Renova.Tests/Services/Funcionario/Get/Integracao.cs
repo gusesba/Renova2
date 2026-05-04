@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -52,12 +53,13 @@ namespace Renova.Tests.Services.Funcionario.Get
             UsuarioTokenDto funcionario = await CriarUsuarioAutenticadoAsync(client, "funcionario@renova.com");
 
             int lojaId = await CriarLojaAsync(factory, dono.Usuario.Id, "Loja Centro");
+            int cargoId = await CriarCargoAsync(factory, lojaId);
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", dono.Token);
 
             HttpResponseMessage response = await client.PostAsJsonAsync(
                 $"/api/funcionario?lojaId={lojaId}",
-                new { usuarioId = funcionario.Usuario.Id });
+                new { usuarioId = funcionario.Usuario.Id, cargoId });
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -66,6 +68,7 @@ namespace Renova.Tests.Services.Funcionario.Get
             Assert.NotNull(body);
             Assert.Equal(funcionario.Usuario.Id, body.UsuarioId);
             Assert.Equal(lojaId, body.LojaId);
+            Assert.Equal(cargoId, body.CargoId);
         }
 
         private static async Task<UsuarioTokenDto> CriarUsuarioAutenticadoAsync(HttpClient client, string email)
@@ -107,13 +110,47 @@ namespace Renova.Tests.Services.Funcionario.Get
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            CargoModel cargo = await ObterOuCriarCargoAsync(context, lojaId);
 
             _ = context.Funcionarios.Add(new FuncionarioModel
             {
                 UsuarioId = usuarioId,
-                LojaId = lojaId
+                LojaId = lojaId,
+                CargoId = cargo.Id
             });
             _ = await context.SaveChangesAsync();
+        }
+
+        private static async Task<int> CriarCargoAsync(RenovaApiFactory factory, int lojaId)
+        {
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            CargoModel cargo = await ObterOuCriarCargoAsync(context, lojaId);
+            return cargo.Id;
+        }
+
+        private static async Task<CargoModel> ObterOuCriarCargoAsync(RenovaDbContext context, int lojaId)
+        {
+            CargoModel? cargo = context.Cargos.SingleOrDefault(item => item.LojaId == lojaId && item.Nome == "Funcionario");
+
+            if (cargo is not null)
+            {
+                return cargo;
+            }
+
+            cargo = new CargoModel
+            {
+                Nome = "Funcionario",
+                LojaId = lojaId,
+                Funcionalidades = [.. FuncionalidadeCatalogo.Itens.Select(item => new CargoFuncionalidadeModel
+                {
+                    FuncionalidadeId = item.Id
+                })]
+            };
+
+            _ = context.Cargos.Add(cargo);
+            _ = await context.SaveChangesAsync();
+            return cargo;
         }
     }
 }

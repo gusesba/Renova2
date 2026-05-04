@@ -16,6 +16,7 @@ namespace Renova.API.Controllers
     public class UsuarioController(IUsuarioService usuarioService, RenovaDbContext context) : AuthenticatedControllerBase(context)
     {
         private readonly IUsuarioService _usuarioService = usuarioService;
+        private readonly RenovaDbContext _context = context;
 
         [HttpGet]
         [ProducesResponseType(typeof(PaginacaoDto<UsuarioDto>), StatusCodes.Status200OK)]
@@ -32,6 +33,17 @@ namespace Renova.API.Controllers
 
             try
             {
+                if (query.LojaId.HasValue)
+                {
+                    bool usuarioDonoDaLoja = _context.Lojas
+                        .Any(loja => loja.Id == query.LojaId.Value && loja.UsuarioId == usuarioId.Value);
+
+                    if (!usuarioDonoDaLoja)
+                    {
+                        return Unauthorized(new { mensagem = "Loja informada nao pertence ao usuario autenticado." });
+                    }
+                }
+
                 PaginacaoDto<UsuarioDto> resultado = await _usuarioService.GetAllAsync(query, usuarioId.Value, cancellationToken);
                 return Ok(resultado);
             }

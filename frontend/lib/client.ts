@@ -1,3 +1,4 @@
+import type { ProductListItem } from "@/lib/product";
 import type { LojaResponse } from "@/lib/store";
 
 export type ClientListItem = {
@@ -31,44 +32,8 @@ export type ClientDetailResponse = ClientListItem & {
   quantidadePecasVendidas: number;
   valorRetiradoLoja: number;
   valorAportadoLoja: number;
-  produtosFornecedor: Array<{
-    id: number;
-    preco: number;
-    produtoId: number;
-    produto: string;
-    marcaId: number;
-    marca: string;
-    tamanhoId: number;
-    tamanho: string;
-    corId: number;
-    cor: string;
-    fornecedorId: number;
-    fornecedor: string;
-    descricao: string;
-    entrada: string;
-    lojaId: number;
-    situacao: number;
-    consignado: boolean;
-  }>;
-  produtosComCliente: Array<{
-    id: number;
-    preco: number;
-    produtoId: number;
-    produto: string;
-    marcaId: number;
-    marca: string;
-    tamanhoId: number;
-    tamanho: string;
-    corId: number;
-    cor: string;
-    fornecedorId: number;
-    fornecedor: string;
-    descricao: string;
-    entrada: string;
-    lojaId: number;
-    situacao: number;
-    consignado: boolean;
-  }>;
+  produtosFornecedor: ProductListItem[];
+  produtosComCliente: ProductListItem[];
 };
 
 export type ClientFormValues = {

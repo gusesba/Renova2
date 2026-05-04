@@ -40,10 +40,9 @@ namespace Renova.Service.Services.Usuario
 
             if (request.LojaId.HasValue)
             {
-                LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
-                    request.LojaId.Value,
-                    usuarioAutenticadoId,
-                    cancellationToken);
+                LojaModel loja = await _context.Lojas
+                    .SingleOrDefaultAsync(item => item.Id == request.LojaId.Value, cancellationToken)
+                    ?? throw new KeyNotFoundException("Loja informada nao foi encontrada.");
 
                 query = query.Where(usuario => usuario.Id != loja.UsuarioId);
             }

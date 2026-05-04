@@ -420,6 +420,7 @@ namespace Renova.Service.Services.Cliente
                 throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
             }
 
+            _ = await _context.ObterLojaAcessivelAoUsuarioAsync(cliente.LojaId, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(cliente.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesExcluir, cancellationToken);
 
             if (await ClientePossuiProdutosVinculadosAsync(cliente.Id, cancellationToken))
@@ -453,10 +454,11 @@ namespace Renova.Service.Services.Cliente
                 throw new ArgumentException("LojaId e obrigatorio.", nameof(request));
             }
 
-            await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesVisualizar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesVisualizar, cancellationToken);
 
             IQueryable<ClienteModel> query = _context.Clientes
-                .Where(cliente => cliente.LojaId == request.LojaId.Value);
+                .Where(cliente => cliente.LojaId == loja.Id);
 
             if (!string.IsNullOrWhiteSpace(request.Nome))
             {
