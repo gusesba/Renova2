@@ -17,6 +17,7 @@ export type ClientAreaListResponse = {
 };
 
 export type ClientAreaFilters = {
+  id: string;
   loja: string;
   produto: string;
   descricao: string;
@@ -79,6 +80,7 @@ const clientAreaTableSettingsStorageKeys: Record<ClientAreaScope, string> = {
 };
 
 export const initialClientAreaFilters: ClientAreaFilters = {
+  id: "",
   loja: "",
   produto: "",
   descricao: "",
@@ -121,8 +123,8 @@ export function buildClientAreaQuery(filters: ClientAreaFilters) {
 
   const textFields: Array<keyof Pick<
     ClientAreaFilters,
-    "loja" | "produto" | "descricao" | "marca" | "tamanho" | "cor"
-  >> = ["loja", "produto", "descricao", "marca", "tamanho", "cor"];
+    "id" | "loja" | "produto" | "descricao" | "marca" | "tamanho" | "cor"
+  >> = ["id", "loja", "produto", "descricao", "marca", "tamanho", "cor"];
 
   for (const field of textFields) {
     if (filters[field].trim()) {

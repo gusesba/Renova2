@@ -353,6 +353,11 @@ namespace Renova.Service.Services.Produto
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
                 .Where(produto => produto.LojaId == loja.Id);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(produto => produto.Id == request.Id.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Descricao))
             {
                 string descricaoFiltro = request.Descricao.Trim().ToLowerInvariant();

@@ -53,6 +53,7 @@ export type ClientUserOption = {
 };
 
 export type ClientFilters = {
+  id: string;
   nome: string;
   contato: string;
   ordenarPor: "nome" | "contato" | "id";
@@ -97,6 +98,7 @@ export const initialClientFormValues: ClientFormValues = {
 };
 
 export const initialClientFilters: ClientFilters = {
+  id: "",
   nome: "",
   contato: "",
   ordenarPor: "id",
@@ -173,6 +175,10 @@ export function buildClientQuery(storeId: number, filters: ClientFilters) {
 
   if (filters.nome.trim()) {
     params.set("nome", filters.nome.trim());
+  }
+
+  if (filters.id.trim()) {
+    params.set("id", normalizeNumericValue(filters.id));
   }
 
   if (filters.contato.trim()) {

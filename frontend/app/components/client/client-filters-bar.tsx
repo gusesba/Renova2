@@ -162,6 +162,12 @@ export function ClientFiltersBar({
               }`}
             >
               <FilterField
+                label="Id"
+                value={filters.id}
+                placeholder="Buscar por id"
+                onChange={(id) => onChange({ id: id.replace(/\D/g, "") })}
+              />
+              <FilterField
                 label="Nome"
                 value={filters.nome}
                 placeholder="Buscar por nome"

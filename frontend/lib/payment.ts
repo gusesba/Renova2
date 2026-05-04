@@ -78,6 +78,7 @@ export type ExternalPaymentListResponse = {
 };
 
 export type PaymentFilters = {
+  id: string;
   dataInicial: string;
   dataFinal: string;
   cliente: string;
@@ -91,6 +92,7 @@ export type PaymentFilters = {
 };
 
 export type ExternalPaymentFilters = {
+  id: string;
   dataInicial: string;
   dataFinal: string;
   cliente: string;
@@ -165,6 +167,7 @@ export const paymentCreditTypeOptions: Array<{ label: string; value: PaymentCred
 ];
 
 export const initialPaymentFilters: PaymentFilters = {
+  id: "",
   dataInicial: "",
   dataFinal: "",
   cliente: "",
@@ -183,6 +186,7 @@ export const defaultPaymentTableSettings: PaymentTableSettings = {
 };
 
 export const initialExternalPaymentFilters: ExternalPaymentFilters = {
+  id: "",
   dataInicial: "",
   dataFinal: "",
   cliente: "",
@@ -345,6 +349,10 @@ export function buildPaymentQuery(storeId: number, filters: PaymentFilters) {
     params.set("dataInicial", toApiDateStart(filters.dataInicial));
   }
 
+  if (filters.id.trim()) {
+    params.set("id", filters.id.trim());
+  }
+
   if (filters.dataFinal) {
     params.set("dataFinal", toApiDateEnd(filters.dataFinal));
   }
@@ -379,6 +387,10 @@ export function buildExternalPaymentQuery(storeId: number, filters: ExternalPaym
 
   if (filters.dataInicial) {
     params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.id.trim()) {
+    params.set("id", filters.id.trim());
   }
 
   if (filters.dataFinal) {

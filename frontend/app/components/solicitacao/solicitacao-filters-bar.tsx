@@ -152,6 +152,12 @@ export function SolicitacaoFiltersBar({
               }`}
             >
               <Field
+                label="Id"
+                value={filters.id}
+                placeholder="Buscar por id"
+                onChange={(id) => onChange({ id: id.replace(/\D/g, "") })}
+              />
+              <Field
                 label="Descricao"
                 value={filters.descricao}
                 placeholder="Buscar por descricao"

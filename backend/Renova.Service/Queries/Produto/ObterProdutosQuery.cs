@@ -10,6 +10,8 @@ namespace Renova.Service.Queries.Produto
         [Required]
         public int? LojaId { get; set; }
 
+        public int? Id { get; set; }
+
         public string? Descricao { get; set; }
 
         public string? Etiqueta { get; set; }

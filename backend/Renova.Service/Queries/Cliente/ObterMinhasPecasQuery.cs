@@ -4,6 +4,7 @@ namespace Renova.Service.Queries.Cliente
 {
     public class ObterMinhasPecasQuery : PaginacaoQuery
     {
+        public int? Id { get; set; }
         public string? Loja { get; set; }
         public string? Produto { get; set; }
         public string? Descricao { get; set; }

@@ -52,6 +52,11 @@ namespace Renova.Service.Services.Pagamento
             IQueryable<PagamentoModel> query = _context.Pagamentos
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(pagamento => pagamento.Id == request.Id.Value);
+            }
+
             if (request.DataInicial.HasValue)
             {
                 DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
@@ -275,6 +280,11 @@ namespace Renova.Service.Services.Pagamento
                 .Include(pagamento => pagamento.ConfigLojaFormaPagamento)
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(pagamento => pagamento.Id == request.Id.Value);
+            }
+
             if (request.DataInicial.HasValue)
             {
                 DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);
@@ -360,7 +370,10 @@ namespace Renova.Service.Services.Pagamento
             }
 
             return await _context.ClientesCreditos
-                .Where(credito => credito.Cliente != null && credito.Cliente.UserId == usuarioId && credito.Valor != 0m)
+                .Where(credito =>
+                    credito.Cliente != null
+                    && credito.Cliente.UserId == usuarioId
+                    && credito.Valor != 0m)
                 .OrderByDescending(credito => credito.ClienteId)
                 .ThenByDescending(credito => credito.LojaId)
                 .Select(credito => new ClientePendenciaAreaDto

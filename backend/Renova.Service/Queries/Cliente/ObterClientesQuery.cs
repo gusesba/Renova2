@@ -9,6 +9,8 @@ namespace Renova.Service.Queries.Cliente
         [Required]
         public int? LojaId { get; set; }
 
+        public int? Id { get; set; }
+
         public string? Nome { get; set; }
 
         public string? Contato { get; set; }

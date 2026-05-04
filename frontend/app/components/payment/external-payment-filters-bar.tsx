@@ -166,6 +166,12 @@ export function ExternalPaymentFiltersBar({
                 value={filters.dataInicial}
                 onChange={(dataInicial) => onChange({ dataInicial })}
               />
+              <TextField
+                label="Id"
+                value={filters.id}
+                placeholder="Buscar por id"
+                onChange={(id) => onChange({ id: id.replace(/\D/g, "") })}
+              />
               <DateField
                 label="Data final"
                 value={filters.dataFinal}

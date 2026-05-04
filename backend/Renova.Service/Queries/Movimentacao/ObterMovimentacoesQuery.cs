@@ -10,6 +10,8 @@ namespace Renova.Service.Queries.Movimentacao
         [Required]
         public int? LojaId { get; set; }
 
+        public int? Id { get; set; }
+
         public DateTime? DataInicial { get; set; }
 
         public DateTime? DataFinal { get; set; }

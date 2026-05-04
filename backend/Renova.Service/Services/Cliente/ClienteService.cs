@@ -460,6 +460,11 @@ namespace Renova.Service.Services.Cliente
             IQueryable<ClienteModel> query = _context.Clientes
                 .Where(cliente => cliente.LojaId == loja.Id);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(cliente => cliente.Id == request.Id.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Nome))
             {
                 string nomeFiltro = request.Nome.Trim().ToLowerInvariant();
@@ -706,6 +711,11 @@ namespace Renova.Service.Services.Cliente
             IQueryable<ProdutoEstoqueModel> query,
             ObterMinhasPecasQuery request)
         {
+            if (request.Id.HasValue)
+            {
+                query = query.Where(produto => produto.Id == request.Id.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Loja))
             {
                 string lojaFiltro = request.Loja.Trim().ToLowerInvariant();
