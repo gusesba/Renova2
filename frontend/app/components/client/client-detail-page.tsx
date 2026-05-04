@@ -11,7 +11,12 @@ import {
   formatPhoneValue,
   getClientApiMessage,
   getPreviousMonthRange,
+  getStoredClientDetailCustomerTableSettings,
+  getStoredClientDetailSupplierTableSettings,
   initialClientDetailFilters,
+  persistClientDetailCustomerTableSettings,
+  persistClientDetailSupplierTableSettings,
+  type ClientDetailProductTableSettings,
   type ClientDetailFilters,
 } from "@/lib/client";
 import { formatCurrency } from "@/lib/payment";
@@ -25,11 +30,16 @@ import {
 import { getAuthToken } from "@/lib/store";
 import { getClientDetail } from "@/services/client-service";
 import { Select } from "@/app/components/ui/select";
+import { TablePagination } from "@/app/components/ui/table-pagination";
+import { GearIcon } from "@/app/components/ui/gear-icon";
+import { ClientDetailProductSettingsModal } from "./client-detail-product-settings-modal";
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[24px] border border-[var(--border)] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        {label}
+      </p>
       <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">{value}</p>
     </div>
   );
@@ -39,16 +49,50 @@ function ProductsSnapshot({
   title,
   description,
   products,
+  settings,
+  onSettingsChange,
 }: {
   title: string;
   description: string;
   products: ProductListItem[];
+  settings: ClientDetailProductTableSettings;
+  onSettingsChange: (settings: ClientDetailProductTableSettings) => void;
 }) {
+  const pageSize = settings.tamanhoPagina;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const totalPages = Math.max(Math.ceil(products.length / pageSize), 1);
+  const normalizedCurrentPage = Math.min(currentPage, totalPages);
+  const showId = settings.visibleFields.includes("id");
+  const showProduto = settings.visibleFields.includes("produto");
+  const showDescricao = settings.visibleFields.includes("descricao");
+  const showFornecedor = settings.visibleFields.includes("fornecedor");
+  const showSituacao = settings.visibleFields.includes("situacao");
+  const showEntrada = settings.visibleFields.includes("entrada");
+  const showPreco = settings.visibleFields.includes("preco");
+  const paginatedProducts = useMemo(() => {
+    const start = (normalizedCurrentPage - 1) * pageSize;
+
+    return products.slice(start, start + pageSize);
+  }, [normalizedCurrentPage, pageSize, products]);
+
   return (
     <section className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-[var(--foreground)]">{title}</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-[var(--foreground)]">{title}</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">{description}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsSettingsOpen(true)}
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 sm:w-11 sm:min-w-11 sm:px-0"
+          aria-label={`Configurar tabela ${title}`}
+        >
+          <GearIcon />
+          <span className="sm:hidden">Configurar</span>
+        </button>
       </div>
 
       {products.length === 0 ? (
@@ -61,28 +105,45 @@ function ProductsSnapshot({
             <table className="min-w-full border-collapse bg-white">
               <thead className="bg-[var(--surface-muted)]">
                 <tr className="text-left">
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Produto
-                  </th>
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Descricao
-                  </th>
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Fornecedor
-                  </th>
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Situacao
-                  </th>
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Entrada
-                  </th>
-                  <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                    Preco
-                  </th>
+                  {showId ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      ID Produto
+                    </th>
+                  ) : null}
+                  {showProduto ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Produto
+                    </th>
+                  ) : null}
+                  {showDescricao ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Descricao
+                    </th>
+                  ) : null}
+                  {showFornecedor ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Fornecedor
+                    </th>
+                  ) : null}
+                  {showSituacao ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Situacao
+                    </th>
+                  ) : null}
+                  {showEntrada ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Entrada
+                    </th>
+                  ) : null}
+                  {showPreco ? (
+                    <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                      Preco
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
-                {products.map((product, index) => (
+                {paginatedProducts.map((product, index) => (
                   <tr
                     key={product.id}
                     className={
@@ -91,27 +152,66 @@ function ProductsSnapshot({
                         : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
                     }
                   >
-                    <td className="px-4 py-4 text-sm font-semibold text-[var(--foreground)]">
-                      {product.produto}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-[var(--foreground)]">{product.descricao}</td>
-                    <td className="px-4 py-4 text-sm text-[var(--foreground)]">{product.fornecedor}</td>
-                    <td className="px-4 py-4 text-sm text-[var(--muted)]">
-                      {formatSituacaoValue(product.situacao)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-[var(--muted)]">
-                      {formatDateValue(product.entrada)}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-[var(--foreground)]">
-                      {formatCurrencyValue(product.preco)}
-                    </td>
+                    {showId ? (
+                      <td className="px-4 py-4 text-sm text-[var(--muted)]">#{product.id}</td>
+                    ) : null}
+                    {showProduto ? (
+                      <td className="px-4 py-4 text-sm font-semibold text-[var(--foreground)]">
+                        {product.produto}
+                      </td>
+                    ) : null}
+                    {showDescricao ? (
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                        {product.descricao}
+                      </td>
+                    ) : null}
+                    {showFornecedor ? (
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                        {product.fornecedor}
+                      </td>
+                    ) : null}
+                    {showSituacao ? (
+                      <td className="px-4 py-4 text-sm text-[var(--muted)]">
+                        {formatSituacaoValue(product.situacao)}
+                      </td>
+                    ) : null}
+                    {showEntrada ? (
+                      <td className="px-4 py-4 text-sm text-[var(--muted)]">
+                        {formatDateValue(product.entrada)}
+                      </td>
+                    ) : null}
+                    {showPreco ? (
+                      <td className="px-4 py-4 text-sm text-[var(--foreground)]">
+                        {formatCurrencyValue(product.preco)}
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <TablePagination
+            currentPage={normalizedCurrentPage}
+            totalPages={totalPages}
+            hasPreviousPage={normalizedCurrentPage > 1}
+            hasNextPage={normalizedCurrentPage < totalPages}
+            summary={`${products.length} produto(s) encontrado(s)`}
+            className="px-4 pb-4 pt-4"
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
+      <ClientDetailProductSettingsModal
+        isOpen={isSettingsOpen}
+        settings={settings}
+        title={title}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={(updatedSettings) => {
+          onSettingsChange(updatedSettings);
+          setCurrentPage(1);
+          setIsSettingsOpen(false);
+        }}
+      />
     </section>
   );
 }
@@ -124,6 +224,12 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
     ...initialClientDetailFilters,
     ...previousMonthRange,
   });
+  const [supplierTableSettings, setSupplierTableSettings] = useState(
+    getStoredClientDetailSupplierTableSettings,
+  );
+  const [customerTableSettings, setCustomerTableSettings] = useState(
+    getStoredClientDetailCustomerTableSettings,
+  );
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const detailQuery = useQuery({
@@ -177,7 +283,9 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
           >
             Voltar para clientes
           </Link>
-          <h1 className="mt-3 text-3xl font-semibold text-[var(--foreground)]">Detalhe do cliente</h1>
+          <h1 className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
+            Detalhe do cliente
+          </h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
             O filtro inicial usa automaticamente o primeiro e o ultimo dia do mes anterior.
           </p>
@@ -238,7 +346,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             onClick={() => router.push(returnSaleHref)}
             className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Devolver produtos vendidos
+            Devolver produtos comprados
           </button>
         ) : null}
       </div>
@@ -301,21 +409,39 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard label="Pecas compradas" value={String(detail.quantidadePecasCompradas)} />
               <MetricCard label="Pecas vendidas" value={String(detail.quantidadePecasVendidas)} />
-              <MetricCard label="Dinheiro retirado" value={formatCurrency(detail.valorRetiradoLoja)} />
-              <MetricCard label="Dinheiro aportado" value={formatCurrency(detail.valorAportadoLoja)} />
+              <MetricCard
+                label="Dinheiro retirado"
+                value={formatCurrency(detail.valorRetiradoLoja)}
+              />
+              <MetricCard
+                label="Dinheiro aportado"
+                value={formatCurrency(detail.valorAportadoLoja)}
+              />
             </div>
           </div>
 
           <ProductsSnapshot
+            key={`fornecedor-${filters.dataInicial}-${filters.dataFinal}-${filters.situacao}`}
             title="Produtos do cliente como fornecedor"
             description="Itens cadastrados com esse cliente como fornecedor, respeitando o periodo e a situacao selecionados."
             products={detail.produtosFornecedor}
+            settings={supplierTableSettings}
+            onSettingsChange={(settings) => {
+              setSupplierTableSettings(settings);
+              persistClientDetailSupplierTableSettings(settings);
+            }}
           />
 
           <ProductsSnapshot
+            key={`com-cliente-${filters.dataInicial}-${filters.dataFinal}-${filters.situacao}`}
             title="Produtos atualmente com o cliente"
             description="Itens cuja ultima movimentacao deixou o produto com esse cliente por venda ou emprestimo."
             products={detail.produtosComCliente}
+            settings={customerTableSettings}
+            onSettingsChange={(settings) => {
+              setCustomerTableSettings(settings);
+              persistClientDetailCustomerTableSettings(settings);
+            }}
           />
         </>
       ) : null}

@@ -43,6 +43,51 @@ namespace Renova.Tests.Services.Usuario.Editar
         }
 
         [Fact]
+        public async Task EditAsyncDeveAtualizarSenhaQuandoSenhaAtualForValida()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "Maria Teste", "maria@renova.com", "Senha@123");
+
+            UsuarioService service = new(context);
+            _ = await service.EditAsync(new EditarUsuarioCommand
+            {
+                Nome = "Maria Atualizada",
+                SenhaAtual = "Senha@123",
+                NovaSenha = "Nova@123"
+            }, new EditarUsuarioParametros
+            {
+                UsuarioAutenticadoId = usuario.Id,
+                UsuarioId = usuario.Id
+            });
+
+            UsuarioModel usuarioSalvo = await context.Usuarios.SingleAsync();
+            Assert.True(BCrypt.Net.BCrypt.Verify("Nova@123", usuarioSalvo.SenhaHash));
+        }
+
+        [Fact]
+        public async Task EditAsyncDeveFalharQuandoSenhaAtualForInvalida()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "Maria Teste", "maria@renova.com", "Senha@123");
+            UsuarioService service = new(context);
+
+            _ = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.EditAsync(
+                new EditarUsuarioCommand
+                {
+                    Nome = "Maria Atualizada",
+                    SenhaAtual = "SenhaErrada",
+                    NovaSenha = "Nova@123"
+                },
+                new EditarUsuarioParametros
+                {
+                    UsuarioAutenticadoId = usuario.Id,
+                    UsuarioId = usuario.Id
+                }));
+        }
+
+        [Fact]
         public async Task EditAsyncDeveFalharQuandoUsuarioAutenticadoNaoExistir()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -105,11 +150,16 @@ namespace Renova.Tests.Services.Usuario.Editar
 
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string nome, string email)
         {
+            return await CriarUsuarioAsync(context, nome, email, null);
+        }
+
+        private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string nome, string email, string? senha)
+        {
             UsuarioModel usuario = new()
             {
                 Nome = nome,
                 Email = email,
-                SenhaHash = "hash"
+                SenhaHash = senha is null ? "hash" : BCrypt.Net.BCrypt.HashPassword(senha)
             };
 
             _ = context.Usuarios.Add(usuario);

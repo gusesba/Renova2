@@ -47,24 +47,40 @@ namespace Renova.Service.Services.Acesso
 
             FuncionarioModel funcionario = await _context.Funcionarios
                 .AsNoTracking()
-                .Include(item => item.Cargo)
-                .ThenInclude(cargo => cargo!.Funcionalidades)
-                .ThenInclude(item => item.Funcionalidade)
                 .SingleOrDefaultAsync(
                     item => item.LojaId == lojaId && item.UsuarioId == usuarioId,
                     cancellationToken)
                 ?? throw new UnauthorizedAccessException("Funcionario nao encontrado para a loja informada.");
+
+            CargoModel? cargo = funcionario.CargoId == 0
+                ? null
+                : await _context.Cargos
+                    .AsNoTracking()
+                    .SingleOrDefaultAsync(item => item.Id == funcionario.CargoId, cancellationToken);
+
+            if (cargo is null)
+            {
+                throw new UnauthorizedAccessException("Cargo do funcionario nao encontrado para a loja informada.");
+            }
+
+            int[] funcionalidadeIds = await _context.CargosFuncionalidades
+                .AsNoTracking()
+                .Where(item => item.CargoId == cargo.Id)
+                .Select(item => item.FuncionalidadeId)
+                .ToArrayAsync(cancellationToken);
 
             return new AcessoLojaDto
             {
                 LojaId = lojaId,
                 EhDono = false,
                 CargoId = funcionario.CargoId,
-                CargoNome = funcionario.Cargo?.Nome,
-                Funcionalidades = [.. funcionario.Cargo?.Funcionalidades
-                    .Select(item => item.Funcionalidade!.Chave)
+                CargoNome = cargo.Nome,
+                Funcionalidades = [.. funcionalidadeIds
+                    .Select(id => FuncionalidadeCatalogo.Itens.FirstOrDefault(funcionalidade => funcionalidade.Id == id)?.Chave)
+                    .Where(chave => chave is not null)
+                    .Select(chave => chave!)
                     .Distinct()
-                    .OrderBy(item => item, StringComparer.Ordinal).ToArray() ?? []]
+                    .OrderBy(item => item, StringComparer.Ordinal).ToArray()]
             };
         }
     }

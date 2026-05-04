@@ -69,6 +69,11 @@ namespace Renova.Service.Services.Movimentacao
             IQueryable<MovimentacaoModel> query = _context.Movimentacoes
                 .Where(movimentacao => movimentacao.LojaId == request.LojaId.Value);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(movimentacao => movimentacao.Id == request.Id.Value);
+            }
+
             if (request.DataInicial.HasValue)
             {
                 DateTime dataInicialUtc = NormalizarDateTimeParaUtc(request.DataInicial.Value);

@@ -81,6 +81,7 @@ export type SolicitacaoFieldErrors = Partial<
 >;
 
 export type SolicitacaoFilters = {
+  id: string;
   descricao: string;
   produto: string;
   marca: string;
@@ -126,6 +127,7 @@ type ApiErrorResponse = {
 };
 
 export const initialSolicitacaoFilters: SolicitacaoFilters = {
+  id: "",
   descricao: "",
   produto: "",
   marca: "",
@@ -191,8 +193,8 @@ export function buildSolicitacaoQuery(storeId: number, filters: SolicitacaoFilte
 
   const textFields: Array<keyof Pick<
     SolicitacaoFilters,
-    "descricao" | "produto" | "marca" | "tamanho" | "cor" | "cliente"
-  >> = ["descricao", "produto", "marca", "tamanho", "cor", "cliente"];
+    "id" | "descricao" | "produto" | "marca" | "tamanho" | "cor" | "cliente"
+  >> = ["id", "descricao", "produto", "marca", "tamanho", "cor", "cliente"];
 
   for (const field of textFields) {
     if (filters[field].trim()) {

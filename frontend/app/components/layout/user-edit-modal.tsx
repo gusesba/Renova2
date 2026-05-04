@@ -29,6 +29,8 @@ export function UserEditModal({
   const [isVisible, setIsVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState(currentName ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -42,6 +44,8 @@ export function UserEditModal({
   useEffect(() => {
     if (isOpen) {
       setName(currentName ?? "");
+      setCurrentPassword("");
+      setNewPassword("");
     }
   }, [currentName, isOpen]);
 
@@ -123,19 +127,46 @@ export function UserEditModal({
       return;
     }
 
+    const hasCurrentPassword = Boolean(currentPassword.trim());
+    const hasNewPassword = Boolean(newPassword.trim());
+
+    if (hasCurrentPassword && !hasNewPassword) {
+      toast.error("Informe a nova senha.");
+      return;
+    }
+
+    if (hasNewPassword && !hasCurrentPassword) {
+      toast.error("Informe a senha atual para alterar a senha.");
+      return;
+    }
+
+    if (hasNewPassword && newPassword.length < 6) {
+      toast.error("A nova senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      const response = await updateUser(userId, { nome: normalizedName }, token);
+      const response = await updateUser(
+        userId,
+        {
+          nome: normalizedName,
+          ...(hasNewPassword
+            ? { novaSenha: newPassword, senhaAtual: currentPassword }
+            : {}),
+        },
+        token,
+      );
 
       if (!response.ok) {
-        toast.error(response.message ?? "Nao foi possivel atualizar o nome do usuario.");
+        toast.error(response.message ?? "Nao foi possivel atualizar o usuario.");
         return;
       }
 
       updateAuthUser(response.body);
       onSaved(response.body);
-      toast.success("Nome do usuario atualizado.");
+      toast.success(hasNewPassword ? "Perfil e senha atualizados." : "Nome do usuario atualizado.");
       onClose();
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
@@ -164,7 +195,7 @@ export function UserEditModal({
               Editar usuario
             </h2>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-              Voce pode alterar apenas o nome exibido no sistema.
+              Voce pode alterar o nome exibido e a senha do usuario.
             </p>
           </div>
 
@@ -196,6 +227,38 @@ export function UserEditModal({
             />
           </label>
 
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Senha atual</span>
+              <input
+                type="password"
+                value={currentPassword}
+                disabled={isSaving}
+                onChange={(event) => {
+                  setCurrentPassword(event.target.value);
+                }}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                placeholder="Digite sua senha atual"
+                autoComplete="current-password"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-semibold text-[var(--foreground)]">Nova senha</span>
+              <input
+                type="password"
+                value={newPassword}
+                disabled={isSaving}
+                onChange={(event) => {
+                  setNewPassword(event.target.value);
+                }}
+                className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)] disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)]"
+                placeholder="Minimo 6 caracteres"
+                autoComplete="new-password"
+              />
+            </label>
+          </div>
+
           <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -210,7 +273,7 @@ export function UserEditModal({
               disabled={isSaving}
               className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSaving ? "Salvando..." : "Salvar nome"}
+              {isSaving ? "Salvando..." : "Salvar perfil"}
             </button>
           </div>
         </form>

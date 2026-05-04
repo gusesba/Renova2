@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Renova.Domain.Access;
 using Renova.Domain.Model;
 using Renova.Domain.Model.Dto;
 using Renova.Persistence;
@@ -149,13 +150,32 @@ namespace Renova.Tests.Services.Loja.Get
         {
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            CargoModel cargo = await CriarCargoAsync(context, lojaId);
 
             _ = context.Funcionarios.Add(new FuncionarioModel
             {
                 UsuarioId = usuarioId,
-                LojaId = lojaId
+                LojaId = lojaId,
+                CargoId = cargo.Id
             });
             _ = await context.SaveChangesAsync();
+        }
+
+        private static async Task<CargoModel> CriarCargoAsync(RenovaDbContext context, int lojaId)
+        {
+            CargoModel cargo = new()
+            {
+                Nome = "Funcionario",
+                LojaId = lojaId,
+                Funcionalidades = [.. FuncionalidadeCatalogo.Itens.Select(item => new CargoFuncionalidadeModel
+                {
+                    FuncionalidadeId = item.Id
+                })]
+            };
+
+            _ = context.Cargos.Add(cargo);
+            _ = await context.SaveChangesAsync();
+            return cargo;
         }
     }
 }

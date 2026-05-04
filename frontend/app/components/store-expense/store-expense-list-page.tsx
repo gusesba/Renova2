@@ -31,20 +31,19 @@ export function StoreExpenseListPage() {
   const [tableSettings, setTableSettings] = useState<StoreExpenseTableSettings>(() =>
     getStoredStoreExpenseTableSettings(),
   );
-  const [page, setPage] = useState(initialStoreExpenseFilters.pagina);
+  const [filters, setFilters] = useState(initialStoreExpenseFilters);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateExpense = hasPermission(permissions.gastosLojaAdicionar);
 
   const expensesQuery = useQuery({
-    queryKey: ["store-expenses", token, selectedStoreId, page, tableSettings.tamanhoPagina],
+    queryKey: ["store-expenses", token, selectedStoreId, filters, tableSettings.tamanhoPagina],
     queryFn: async () => {
       if (!token || !selectedStoreId) {
         return null;
       }
 
       const response = await getStoreExpenses(token, selectedStoreId, {
-        ...initialStoreExpenseFilters,
-        pagina: page,
+        ...filters,
         tamanhoPagina: tableSettings.tamanhoPagina,
       });
 
@@ -122,13 +121,13 @@ export function StoreExpenseListPage() {
           <>
             <StoreExpensesTable expenses={listResponse.itens} settings={tableSettings} />
             <PaymentPagination
-              currentPage={page}
-              hasNextPage={page < listResponse.totalPaginas}
-              hasPreviousPage={page > 1}
+              currentPage={filters.pagina}
+              hasNextPage={filters.pagina < listResponse.totalPaginas}
+              hasPreviousPage={filters.pagina > 1}
               totalItems={listResponse.totalItens}
               totalPages={listResponse.totalPaginas}
               itemLabel="lancamento(s) encontrado(s)"
-              onPageChange={setPage}
+              onPageChange={(pagina) => setFilters((current) => ({ ...current, pagina }))}
             />
           </>
         ) : (
@@ -146,7 +145,7 @@ export function StoreExpenseListPage() {
           storeName={selectedStore?.nome ?? null}
           onClose={() => setIsCreateModalOpen(false)}
           onSuccess={async () => {
-            setPage(1);
+            setFilters((current) => ({ ...current, pagina: 1 }));
             await expensesQuery.refetch();
           }}
         />
@@ -166,7 +165,11 @@ export function StoreExpenseListPage() {
 
           persistStoreExpenseTableSettings(normalizedSettings);
           setTableSettings(normalizedSettings);
-          setPage(1);
+          setFilters((current) => ({
+            ...current,
+            pagina: 1,
+            tamanhoPagina: normalizedSettings.tamanhoPagina,
+          }));
           setIsSettingsModalOpen(false);
         }}
       />

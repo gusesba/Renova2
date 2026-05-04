@@ -64,6 +64,7 @@ export type MovementListResponse = {
 };
 
 export type MovementFilters = {
+  id: string;
   dataInicial: string;
   dataFinal: string;
   cliente: string;
@@ -104,6 +105,7 @@ export const initialMovementDraftFormValues: MovementDraftFormValues = {
 };
 
 export const initialMovementFilters: MovementFilters = {
+  id: "",
   dataInicial: "",
   dataFinal: "",
   cliente: "",
@@ -200,6 +202,10 @@ export function buildMovementQuery(storeId: number, filters: MovementFilters) {
 
   if (filters.dataInicial) {
     params.set("dataInicial", toApiDateStart(filters.dataInicial));
+  }
+
+  if (filters.id.trim()) {
+    params.set("id", filters.id.trim());
   }
 
   if (filters.dataFinal) {

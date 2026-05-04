@@ -154,6 +154,11 @@ namespace Renova.Service.Services.Solicitacao
             IQueryable<SolicitacaoModel> query = _context.Solicitacoes
                 .Where(solicitacao => solicitacao.LojaId == request.LojaId.Value);
 
+            if (request.Id.HasValue)
+            {
+                query = query.Where(solicitacao => solicitacao.Id == request.Id.Value);
+            }
+
             if (!string.IsNullOrWhiteSpace(request.Descricao))
             {
                 string descricaoFiltro = request.Descricao.Trim().ToLowerInvariant();

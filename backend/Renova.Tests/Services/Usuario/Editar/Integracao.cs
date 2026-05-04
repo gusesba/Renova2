@@ -35,6 +35,59 @@ namespace Renova.Tests.Services.Usuario.Editar
         }
 
         [Fact]
+        public async Task PutUsuarioDeveAlterarSenhaQuandoSenhaAtualForValida()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "Maria Teste", "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync($"/api/usuario/{autenticacao.Usuario.Id}", new EditarUsuarioCommand
+            {
+                Nome = "Maria Atualizada",
+                SenhaAtual = "Senha@123",
+                NovaSenha = "Nova@123"
+            });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            client.DefaultRequestHeaders.Authorization = null;
+            HttpResponseMessage loginAntigo = await client.PostAsJsonAsync("/api/auth/login", new LoginCommand
+            {
+                Email = "maria@renova.com",
+                Senha = "Senha@123"
+            });
+            Assert.Equal(HttpStatusCode.Unauthorized, loginAntigo.StatusCode);
+
+            HttpResponseMessage loginNovo = await client.PostAsJsonAsync("/api/auth/login", new LoginCommand
+            {
+                Email = "maria@renova.com",
+                Senha = "Nova@123"
+            });
+            Assert.Equal(HttpStatusCode.OK, loginNovo.StatusCode);
+        }
+
+        [Fact]
+        public async Task PutUsuarioDeveRetornarUnauthorizedQuandoSenhaAtualForInvalida()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "Maria Teste", "maria@renova.com");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PutAsJsonAsync($"/api/usuario/{autenticacao.Usuario.Id}", new EditarUsuarioCommand
+            {
+                Nome = "Maria Atualizada",
+                SenhaAtual = "SenhaErrada",
+                NovaSenha = "Nova@123"
+            });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
         public async Task PutUsuarioDeveRetornarUnauthorizedQuandoUsuarioTentarEditarOutroUsuario()
         {
             await using RenovaApiFactory factory = new();

@@ -9,6 +9,8 @@ namespace Renova.Service.Queries.Solicitacao
         [Required]
         public int? LojaId { get; set; }
 
+        public int? Id { get; set; }
+
         public string? Descricao { get; set; }
         public string? Produto { get; set; }
         public string? Marca { get; set; }

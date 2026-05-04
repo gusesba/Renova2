@@ -15,8 +15,8 @@ const dplSlots: LabelSlot[] = [
   { renovaX: "0350", textX: "0380", sizeX: "0320", barcodeX: "0380" },
 ];
 
-export function padProductId(id: number) {
-  return String(id).padStart(9, "0");
+export function padProductId(etiqueta: number) {
+  return String(etiqueta).padStart(9, "0");
 }
 
 export function chunkProductsForLabels(products: ProductListItem[]) {

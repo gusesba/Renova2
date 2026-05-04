@@ -75,20 +75,22 @@ namespace Renova.Service.Services.Funcionario
                 FuncionalidadeCatalogo.FuncionariosVisualizar,
                 cancellationToken);
 
-            return (IReadOnlyList<FuncionarioDto>)await _context.Funcionarios
+            List<FuncionarioModel> funcionarios = await _context.Funcionarios
+                .Include(funcionario => funcionario.Usuario)
                 .Where(funcionario => funcionario.LojaId == parametros.LojaId)
                 .OrderBy(funcionario => funcionario.Usuario!.Nome)
                 .ThenBy(funcionario => funcionario.UsuarioId)
-                .Select(funcionario => new FuncionarioDto
-                {
-                    UsuarioId = funcionario.UsuarioId,
-                    Nome = funcionario.Usuario!.Nome,
-                    Email = funcionario.Usuario.Email,
-                    LojaId = funcionario.LojaId,
-                    CargoId = funcionario.CargoId,
-                    CargoNome = funcionario.Cargo!.Nome
-                })
                 .ToListAsync(cancellationToken);
+
+            return [.. funcionarios.Select(funcionario => new FuncionarioDto
+            {
+                UsuarioId = funcionario.UsuarioId,
+                Nome = funcionario.Usuario?.Nome ?? string.Empty,
+                Email = funcionario.Usuario?.Email ?? string.Empty,
+                LojaId = funcionario.LojaId,
+                CargoId = funcionario.CargoId,
+                CargoNome = funcionario.Cargo?.Nome ?? "Funcionario"
+            })];
         }
 
         public async Task<FuncionarioDto> UpdateCargoAsync(

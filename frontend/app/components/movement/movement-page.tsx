@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { permissions } from "@/lib/access";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { ClientCreateModal } from "@/app/components/client/client-create-modal";
 import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-credit-auto-paid-modal";
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
@@ -17,10 +18,16 @@ import { ProductCreateModal } from "@/app/components/product/product-create-moda
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
+  asClientResponse,
   asClientListResponse,
+  extractClientFieldErrors,
   formatPhoneValue,
   getClientApiMessage,
   initialClientFilters,
+  initialClientFormValues,
+  normalizeNumericValue,
+  type ClientFieldErrors,
+  type ClientFormValues,
   type ClientListItem,
 } from "@/lib/client";
 import {
@@ -38,10 +45,12 @@ import {
   type MovementSuggestion,
 } from "@/lib/movement";
 import {
+  asProductListResponse,
   formatDateValue,
   formatCurrencyValue,
   formatSituacaoValue,
   getProductApiMessage,
+  initialProductFilters,
   type ProductListItem,
 } from "@/lib/product";
 import {
@@ -50,8 +59,8 @@ import {
 } from "@/services/store-config-service";
 import { getAuthToken } from "@/lib/store";
 import { createMovement, getMovementDestinationSuggestions } from "@/services/movement-service";
-import { getClients } from "@/services/client-service";
-import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
+import { createClient, getClients } from "@/services/client-service";
+import { getBorrowedProductsByClient, getProductById, getProducts } from "@/services/product-service";
 import {
   extractStoreConfigApiMessage,
   type ConfigLojaResponse,
@@ -61,6 +70,7 @@ import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
 import { openReceiptPdfPreview, printReceipt } from "@/lib/printing/actions";
 import { getStoredPrintSettings } from "@/lib/printing/settings";
 import type { PrintSettings, ReceiptPrintData } from "@/lib/printing/types";
+import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 type MovementDraft = {
   autoLinkedBorrowedProductIds: number[];
@@ -224,6 +234,7 @@ function FieldShell({
 
 function TextField({
   error,
+  inputRef,
   label,
   onChange,
   placeholder,
@@ -231,6 +242,7 @@ function TextField({
   value,
 }: {
   error?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -240,6 +252,7 @@ function TextField({
   return (
     <FieldShell error={error} label={label}>
       <input
+        ref={inputRef}
         type={type}
         value={value}
         placeholder={placeholder}
@@ -294,11 +307,18 @@ export function MovementPage() {
   const searchParams = useSearchParams();
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const draftCounterRef = useRef(2);
+  const lastAutoProductInputRef = useRef<string | null>(null);
+  const productIdInputRef = useRef<HTMLInputElement | null>(null);
   const prefillAppliedRef = useRef(false);
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+  const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false);
   const [isCreateProductModalOpen, setIsCreateProductModalOpen] = useState(false);
+  const [clientFormValues, setClientFormValues] = useState<ClientFormValues>(
+    initialClientFormValues,
+  );
+  const [clientFormErrors, setClientFormErrors] = useState<ClientFieldErrors>({});
   const [isPrintingReceipt, setIsPrintingReceipt] = useState(false);
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
@@ -311,6 +331,7 @@ export function MovementPage() {
   const [printSettings, setPrintSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateMovement = hasPermission(permissions.movimentacoesAdicionar);
+  const canAddClient = hasPermission(permissions.clientesAdicionar);
   const canAddProduct = hasPermission(permissions.produtosAdicionar);
   const canHandleCredit =
     hasPermission(permissions.pagamentosCreditoAdicionar) ||
@@ -365,6 +386,66 @@ export function MovementPage() {
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasPendingMovements]);
+
+  useEffect(() => {
+    if (!hasPendingMovements) {
+      return;
+    }
+
+    const handleInternalNavigation = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+
+      const anchor = event.target.closest("a[href]");
+
+      if (!(anchor instanceof HTMLAnchorElement) || (anchor.target && anchor.target !== "_self")) {
+        return;
+      }
+
+      const href = anchor.getAttribute("href");
+
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+        return;
+      }
+
+      const currentUrl = new URL(window.location.href);
+      const nextUrl = new URL(anchor.href, currentUrl);
+
+      if (
+        nextUrl.origin !== currentUrl.origin ||
+        (nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search)
+      ) {
+        return;
+      }
+
+      const canNavigate = window.confirm(
+        "Existe uma movimentacao nao finalizada. Deseja sair desta pagina mesmo assim?",
+      );
+
+      if (!canNavigate) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", handleInternalNavigation, true);
+
+    return () => {
+      document.removeEventListener("click", handleInternalNavigation, true);
     };
   }, [hasPendingMovements]);
 
@@ -491,12 +572,38 @@ export function MovementPage() {
   });
 
   const fetchProductMutation = useMutation({
-    mutationFn: async (productId: number) => {
+    mutationFn: async (etiqueta: string) => {
       if (!token) {
         throw new Error("Voce precisa estar autenticado para buscar produtos.");
       }
 
-      return getProductById(productId, token);
+      if (!selectedStoreId) {
+        throw new Error("Selecione uma loja valida antes de buscar produtos.");
+      }
+
+      return getProducts(token, selectedStoreId, {
+        ...initialProductFilters,
+        etiqueta,
+        pagina: 1,
+        tamanhoPagina: 1,
+      });
+    },
+  });
+
+  const createClientMutation = useMutation({
+    mutationFn: async (payload: {
+      nome: string;
+      contato: string;
+      obs?: string;
+      doacao: boolean;
+      lojaId: number;
+      userId?: number;
+    }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para cadastrar um cliente.");
+      }
+
+      return createClient(payload, token);
     },
   });
 
@@ -709,6 +816,97 @@ export function MovementPage() {
     }));
   }
 
+  function openClientModal() {
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
+    setIsCreateClientModalOpen(true);
+  }
+
+  function closeClientModal() {
+    if (createClientMutation.isPending) {
+      return;
+    }
+
+    setIsCreateClientModalOpen(false);
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
+  }
+
+  function updateClientField<K extends keyof ClientFormValues>(
+    field: K,
+    value: ClientFormValues[K],
+  ) {
+    const normalizedValue = field === "contato" ? formatPhoneValue(String(value)) : value;
+
+    setClientFormValues((current) => ({
+      ...current,
+      [field]: normalizedValue,
+    }));
+    setClientFormErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }));
+  }
+
+  async function handleClientSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedStoreId) {
+      toast.error("Selecione uma loja antes de cadastrar clientes.");
+      return;
+    }
+
+    const validation = clientSchema.safeParse(clientFormValues);
+
+    if (!validation.success) {
+      setClientFormErrors(mapClientZodErrors(validation.error));
+      return;
+    }
+
+    setClientFormErrors({});
+
+    try {
+      const response = await createClientMutation.mutateAsync({
+        nome: validation.data.nome.trim(),
+        contato: normalizeNumericValue(validation.data.contato),
+        ...(validation.data.obs.trim() ? { obs: validation.data.obs.trim() } : {}),
+        doacao: validation.data.doacao,
+        lojaId: selectedStoreId,
+        ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
+      });
+
+      if (!response.ok) {
+        const apiErrors = extractClientFieldErrors(response.body);
+
+        if (Object.keys(apiErrors).length > 0) {
+          setClientFormErrors(apiErrors);
+        }
+
+        toast.error(getClientApiMessage(response.body) ?? "Nao foi possivel cadastrar o cliente.");
+        return;
+      }
+
+      const createdClient = asClientResponse(response.body);
+
+      handleClientSelect(activeDraftId, createdClient);
+      void checkOverdueOwnerReturnProducts(activeDraftId, createdClient);
+      setDebouncedClientSearch(createdClient.nome);
+      setIsCreateClientModalOpen(false);
+      setClientFormValues(initialClientFormValues);
+      setClientFormErrors({});
+
+      await queryClient.invalidateQueries({ queryKey: ["movement-clients"] });
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(`Cliente ${createdClient.nome} cadastrado com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
+  }
+
   async function checkOverdueOwnerReturnProducts(draftId: string, client: ClientListItem) {
     if (!token || !selectedStoreId) {
       return;
@@ -755,41 +953,50 @@ export function MovementPage() {
     return `Os produtos ${incompatibleProducts.map((product) => product.id).join(", ")} nao respeitam o tipo ${formatMovementType(Number(draft.tipo))}.`;
   }
 
+  function focusProductIdInput() {
+    window.setTimeout(() => productIdInputRef.current?.focus(), 0);
+  }
+
   async function handleAddProduct(draft: MovementDraft) {
     const rawValue = draft.productIdInput.trim();
 
     if (!rawValue) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtos: "Informe o id de um produto." },
+        errors: { ...current.errors, produtos: "Informe a etiqueta de um produto." },
       }));
       return;
     }
 
-    const parsedId = Number(rawValue);
+    const parsedEtiqueta = Number(rawValue);
 
-    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    if (!Number.isInteger(parsedEtiqueta) || parsedEtiqueta < 0) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtos: "Informe um id numerico valido." },
+        errors: { ...current.errors, produtos: "Informe uma etiqueta numerica valida." },
       }));
       return;
     }
 
-    if (draft.products.some((product) => product.id === parsedId)) {
-      toast.error(`O produto ${parsedId} ja foi adicionado nesta movimentacao.`);
+    if (draft.products.some((product) => product.etiqueta === parsedEtiqueta)) {
+      toast.error(`O produto com etiqueta ${parsedEtiqueta} ja foi adicionado nesta movimentacao.`);
       return;
     }
 
     try {
-      const response = await fetchProductMutation.mutateAsync(parsedId);
+      const response = await fetchProductMutation.mutateAsync(rawValue);
 
       if (!response.ok) {
         toast.error(getProductApiMessage(response.body) ?? "Nao foi possivel buscar o produto.");
         return;
       }
 
-      const product = response.body as ProductListItem;
+      const product = asProductListResponse(response.body).itens[0];
+
+      if (!product) {
+        toast.error(`Nenhum produto encontrado com a etiqueta ${parsedEtiqueta}.`);
+        return;
+      }
 
       if (selectedStoreId && product.lojaId !== selectedStoreId) {
         toast.error("O produto buscado pertence a outra loja.");
@@ -818,13 +1025,14 @@ export function MovementPage() {
       updateDraft(draft.id, (current) => ({
         ...current,
         productIdInput: "",
-        products: [...current.products, { ...product, desconto: productDiscount }],
+        products: [{ ...product, desconto: productDiscount }, ...current.products],
         autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
           (itemId) => itemId !== product.id,
         ),
         suggestion: null,
         errors: { ...current.errors, produtos: undefined },
       }));
+      focusProductIdInput();
       toast.success(`Produto ${product.id} adicionado na movimentacao.`);
 
       if (automaticDiscount) {
@@ -840,6 +1048,31 @@ export function MovementPage() {
       );
     }
   }
+
+  const autoAddProduct = useEffectEvent((draft: MovementDraft) => {
+    void handleAddProduct(draft);
+  });
+
+  useEffect(() => {
+    const rawValue = activeDraft?.productIdInput.trim() ?? "";
+
+    if (!activeDraft || rawValue.length < 9) {
+      if (rawValue.length === 0) {
+        lastAutoProductInputRef.current = null;
+      }
+
+      return;
+    }
+
+    const autoKey = `${activeDraft.id}:${rawValue}`;
+
+    if (fetchProductMutation.isPending || lastAutoProductInputRef.current === autoKey) {
+      return;
+    }
+
+    lastAutoProductInputRef.current = autoKey;
+    autoAddProduct(activeDraft);
+  }, [activeDraft, activeDraft?.id, activeDraft?.productIdInput, fetchProductMutation.isPending]);
 
   function appendProductToDraft(draftId: string, product: ProductListItem) {
     const targetDraft = drafts.find((draft) => draft.id === draftId);
@@ -878,13 +1111,14 @@ export function MovementPage() {
     updateDraft(draftId, (current) => ({
       ...current,
       productIdInput: "",
-      products: [...current.products, { ...product, desconto: productDiscount }],
+      products: [{ ...product, desconto: productDiscount }, ...current.products],
       autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
         (itemId) => itemId !== product.id,
       ),
       suggestion: null,
       errors: { ...current.errors, produtos: undefined },
     }));
+    focusProductIdInput();
     toast.success(`Produto ${product.id} adicionado na movimentacao.`);
 
     if (automaticDiscount) {
@@ -1257,6 +1491,8 @@ export function MovementPage() {
                           searchValue={activeDraft.clienteSearch}
                           selectedLabel={activeDraft.clienteLabel}
                           value={activeDraft.clienteId || null}
+                          actionLabel={canAddClient ? "Criar novo cliente" : undefined}
+                          onAction={canAddClient ? openClientModal : undefined}
                           onSearchChange={(value) =>
                             updateDraft(activeDraft.id, (draft) => ({
                               ...draft,
@@ -1288,7 +1524,8 @@ export function MovementPage() {
                       <div className="flex flex-col gap-3 2xl:flex-row">
                         <div className="min-w-0 flex-1">
                           <TextField
-                            label="Adicionar produto pelo id"
+                            inputRef={productIdInputRef}
+                            label="Adicionar produto pela etiqueta"
                             placeholder="Ex.: 152"
                             value={activeDraft.productIdInput}
                             error={activeDraft.errors.produtos}
@@ -1429,7 +1666,7 @@ export function MovementPage() {
                         <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
                           {autoLinkingDraftId === activeDraft.id
                             ? "Carregando emprestados do cliente selecionado..."
-                            : "Busque um produto pelo id para compor esta movimentacao."}
+                            : "Busque um produto pela etiqueta para compor esta movimentacao."}
                         </p>
                       </div>
                     ) : (
@@ -1452,7 +1689,7 @@ export function MovementPage() {
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold text-[var(--foreground)]">
-                                    #{product.id} - {product.produto}
+                                    #{product.id} - {product.produto} - Etiqueta {product.etiqueta}
                                   </p>
                                   <p className="mt-1 text-sm text-[var(--muted)]">
                                     {product.descricao}
@@ -1483,9 +1720,6 @@ export function MovementPage() {
                               <div className="mt-4 flex flex-wrap gap-2">
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Marca - {product.marca}
-                                </span>
-                                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
-                                  Fornecedor - {product.fornecedor}
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Preco - {formatCurrencyValue(product.preco)}
@@ -1589,6 +1823,19 @@ export function MovementPage() {
           onSuccess={async () => {
             await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
           }}
+        />
+      ) : null}
+
+      {canAddClient ? (
+        <ClientCreateModal
+          errors={clientFormErrors}
+          isOpen={isCreateClientModalOpen}
+          isSubmitting={createClientMutation.isPending}
+          storeName={selectedStore?.nome ?? null}
+          values={clientFormValues}
+          onChange={updateClientField}
+          onClose={closeClientModal}
+          onSubmit={handleClientSubmit}
         />
       ) : null}
 

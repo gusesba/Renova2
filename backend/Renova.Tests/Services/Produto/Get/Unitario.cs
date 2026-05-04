@@ -288,6 +288,37 @@ namespace Renova.Tests.Services.Produto.Get
         }
 
         [Fact]
+        public async Task GetAllAsyncDeveFiltrarPorSituacaoQuandoFiltroForInformado()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+
+            ProdutoEstoqueModel estoque = await CriarProdutoCompletoAsync(context, loja.Id, "Vestido", "Farm", "M", "Azul", "Fornecedor Alpha", "Item estoque");
+            ProdutoEstoqueModel emprestado = await CriarProdutoCompletoAsync(context, loja.Id, "Blazer", "Animale", "G", "Preto", "Fornecedor Beta", "Item emprestado");
+            ProdutoEstoqueModel vendido = await CriarProdutoCompletoAsync(context, loja.Id, "Saia", "Shoulder", "P", "Verde", "Fornecedor Gamma", "Item vendido");
+
+            estoque.Situacao = SituacaoProduto.Estoque;
+            emprestado.Situacao = SituacaoProduto.Emprestado;
+            vendido.Situacao = SituacaoProduto.Vendido;
+            _ = await context.SaveChangesAsync();
+
+            ProdutoService service = new(context);
+            PaginacaoDto<ProdutoBuscaDto> resultado = await service.GetAllAsync(
+                new ObterProdutosQuery
+                {
+                    LojaId = loja.Id,
+                    Situacao = SituacaoProduto.Emprestado
+                },
+                new ObterProdutosParametros { UsuarioId = usuario.Id });
+
+            ProdutoBuscaDto item = Assert.Single(resultado.Itens);
+            Assert.Equal(emprestado.Id, item.Id);
+            Assert.Equal(SituacaoProduto.Emprestado, item.Situacao);
+        }
+
+        [Fact]
         public async Task GetAllAsyncDeveOrdenarPorCamposRelacionadosQuandoOrdenacaoForInformada()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();

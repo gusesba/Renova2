@@ -186,6 +186,12 @@ export function ClientAreaFiltersBar({
               }`}
             >
               <TextField
+                label="Id"
+                value={filters.id}
+                placeholder="Buscar por id"
+                onChange={(id) => onChange({ id: id.replace(/\D/g, "") })}
+              />
+              <TextField
                 label="Loja"
                 value={filters.loja}
                 placeholder="Buscar por loja"

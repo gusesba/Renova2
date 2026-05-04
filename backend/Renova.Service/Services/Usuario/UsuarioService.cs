@@ -40,10 +40,9 @@ namespace Renova.Service.Services.Usuario
 
             if (request.LojaId.HasValue)
             {
-                LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(
-                    request.LojaId.Value,
-                    usuarioAutenticadoId,
-                    cancellationToken);
+                LojaModel loja = await _context.Lojas
+                    .SingleOrDefaultAsync(item => item.Id == request.LojaId.Value, cancellationToken)
+                    ?? throw new KeyNotFoundException("Loja informada nao foi encontrada.");
 
                 query = query.Where(usuario => usuario.Id != loja.UsuarioId);
             }
@@ -96,6 +95,23 @@ namespace Renova.Service.Services.Usuario
             }
 
             usuario.Nome = command.Nome.Trim();
+
+            if (!string.IsNullOrWhiteSpace(command.NovaSenha))
+            {
+                if (string.IsNullOrWhiteSpace(command.SenhaAtual))
+                {
+                    throw new ArgumentException("Informe a senha atual para alterar a senha.");
+                }
+
+                bool senhaAtualValida = BCrypt.Net.BCrypt.Verify(command.SenhaAtual, usuario.SenhaHash);
+
+                if (!senhaAtualValida)
+                {
+                    throw new UnauthorizedAccessException("Senha atual invalida.");
+                }
+
+                usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(command.NovaSenha);
+            }
 
             _ = await _context.SaveChangesAsync(cancellationToken);
 

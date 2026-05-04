@@ -18,12 +18,13 @@ namespace Renova.Service.Services.ConfigLoja
 
         public async Task<ConfigLojaDto> GetAsync(int lojaId, ObterConfigLojaParametros parametros, CancellationToken cancellationToken = default)
         {
-            await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaVisualizar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(lojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaVisualizar, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
                 .Include(item => item.FormasPagamento)
-                .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
+                .SingleOrDefaultAsync(item => item.LojaId == loja.Id, cancellationToken)
                 ?? throw new KeyNotFoundException("Configuracao da loja nao encontrada.");
 
             return Mapear(config);
@@ -57,7 +58,8 @@ namespace Renova.Service.Services.ConfigLoja
             ValidarDescontosPermanencia(descontosPermanencia);
             ValidarFormasPagamento(formasPagamento);
 
-            await _authorizationService.EnsurePermissionAsync(request.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaEditar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
+            await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaEditar, cancellationToken);
 
             ConfigLojaModel? config = await _context.ConfiguracoesLoja
                 .Include(item => item.DescontosPermanencia)
