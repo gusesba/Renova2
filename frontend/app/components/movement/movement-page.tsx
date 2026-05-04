@@ -45,10 +45,12 @@ import {
   type MovementSuggestion,
 } from "@/lib/movement";
 import {
+  asProductListResponse,
   formatDateValue,
   formatCurrencyValue,
   formatSituacaoValue,
   getProductApiMessage,
+  initialProductFilters,
   type ProductListItem,
 } from "@/lib/product";
 import {
@@ -58,7 +60,7 @@ import {
 import { getAuthToken } from "@/lib/store";
 import { createMovement, getMovementDestinationSuggestions } from "@/services/movement-service";
 import { createClient, getClients } from "@/services/client-service";
-import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
+import { getBorrowedProductsByClient, getProductById, getProducts } from "@/services/product-service";
 import {
   extractStoreConfigApiMessage,
   type ConfigLojaResponse,
@@ -565,12 +567,21 @@ export function MovementPage() {
   });
 
   const fetchProductMutation = useMutation({
-    mutationFn: async (productId: number) => {
+    mutationFn: async (etiqueta: string) => {
       if (!token) {
         throw new Error("Voce precisa estar autenticado para buscar produtos.");
       }
 
-      return getProductById(productId, token);
+      if (!selectedStoreId) {
+        throw new Error("Selecione uma loja valida antes de buscar produtos.");
+      }
+
+      return getProducts(token, selectedStoreId, {
+        ...initialProductFilters,
+        etiqueta,
+        pagina: 1,
+        tamanhoPagina: 1,
+      });
     },
   });
 
@@ -943,35 +954,40 @@ export function MovementPage() {
     if (!rawValue) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtos: "Informe o id de um produto." },
+        errors: { ...current.errors, produtos: "Informe a etiqueta de um produto." },
       }));
       return;
     }
 
-    const parsedId = Number(rawValue);
+    const parsedEtiqueta = Number(rawValue);
 
-    if (!Number.isInteger(parsedId) || parsedId <= 0) {
+    if (!Number.isInteger(parsedEtiqueta) || parsedEtiqueta < 0) {
       updateDraft(draft.id, (current) => ({
         ...current,
-        errors: { ...current.errors, produtos: "Informe um id numerico valido." },
+        errors: { ...current.errors, produtos: "Informe uma etiqueta numerica valida." },
       }));
       return;
     }
 
-    if (draft.products.some((product) => product.id === parsedId)) {
-      toast.error(`O produto ${parsedId} ja foi adicionado nesta movimentacao.`);
+    if (draft.products.some((product) => product.etiqueta === parsedEtiqueta)) {
+      toast.error(`O produto com etiqueta ${parsedEtiqueta} ja foi adicionado nesta movimentacao.`);
       return;
     }
 
     try {
-      const response = await fetchProductMutation.mutateAsync(parsedId);
+      const response = await fetchProductMutation.mutateAsync(rawValue);
 
       if (!response.ok) {
         toast.error(getProductApiMessage(response.body) ?? "Nao foi possivel buscar o produto.");
         return;
       }
 
-      const product = response.body as ProductListItem;
+      const product = asProductListResponse(response.body).itens[0];
+
+      if (!product) {
+        toast.error(`Nenhum produto encontrado com a etiqueta ${parsedEtiqueta}.`);
+        return;
+      }
 
       if (selectedStoreId && product.lojaId !== selectedStoreId) {
         toast.error("O produto buscado pertence a outra loja.");
@@ -1472,7 +1488,7 @@ export function MovementPage() {
                       <div className="flex flex-col gap-3 2xl:flex-row">
                         <div className="min-w-0 flex-1">
                           <TextField
-                            label="Adicionar produto pelo id"
+                            label="Adicionar produto pela etiqueta"
                             placeholder="Ex.: 152"
                             value={activeDraft.productIdInput}
                             error={activeDraft.errors.produtos}
@@ -1613,7 +1629,7 @@ export function MovementPage() {
                         <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
                           {autoLinkingDraftId === activeDraft.id
                             ? "Carregando emprestados do cliente selecionado..."
-                            : "Busque um produto pelo id para compor esta movimentacao."}
+                            : "Busque um produto pela etiqueta para compor esta movimentacao."}
                         </p>
                       </div>
                     ) : (
