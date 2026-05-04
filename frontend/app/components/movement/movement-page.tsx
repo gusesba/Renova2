@@ -818,7 +818,7 @@ export function MovementPage() {
       updateDraft(draft.id, (current) => ({
         ...current,
         productIdInput: "",
-        products: [...current.products, { ...product, desconto: productDiscount }],
+        products: [{ ...product, desconto: productDiscount }, ...current.products],
         autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
           (itemId) => itemId !== product.id,
         ),
@@ -878,7 +878,7 @@ export function MovementPage() {
     updateDraft(draftId, (current) => ({
       ...current,
       productIdInput: "",
-      products: [...current.products, { ...product, desconto: productDiscount }],
+      products: [{ ...product, desconto: productDiscount }, ...current.products],
       autoLinkedBorrowedProductIds: current.autoLinkedBorrowedProductIds.filter(
         (itemId) => itemId !== product.id,
       ),
