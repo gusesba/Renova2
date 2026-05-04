@@ -68,6 +68,20 @@ export type ClientTableSettings = {
   visibleFields: ClientVisibleField[];
 };
 
+export type ClientDetailProductVisibleField =
+  | "id"
+  | "produto"
+  | "descricao"
+  | "fornecedor"
+  | "situacao"
+  | "entrada"
+  | "preco";
+
+export type ClientDetailProductTableSettings = {
+  tamanhoPagina: number;
+  visibleFields: ClientDetailProductVisibleField[];
+};
+
 type ApiErrorResponse = {
   mensagem?: unknown;
   title?: unknown;
@@ -102,6 +116,11 @@ export const defaultClientTableSettings: ClientTableSettings = {
   visibleFields: ["nome", "contato", "obs", "doacao", "userId", "id"],
 };
 
+export const defaultClientDetailProductTableSettings: ClientDetailProductTableSettings = {
+  tamanhoPagina: 10,
+  visibleFields: ["id", "produto", "descricao", "fornecedor", "situacao", "entrada", "preco"],
+};
+
 export function normalizeNumericValue(value: string) {
   return value.replace(/\D+/g, "");
 }
@@ -128,6 +147,8 @@ export function formatPhoneValue(value: string) {
 }
 
 const clientTableSettingsStorageKey = "renova.clientTableSettings";
+const clientDetailSupplierTableSettingsStorageKey = "renova.clientDetail.supplierTableSettings";
+const clientDetailCustomerTableSettingsStorageKey = "renova.clientDetail.customerTableSettings";
 
 export function asClientListResponse(body: unknown) {
   return body as ClientListResponse;
@@ -312,6 +333,87 @@ export function persistClientTableSettings(settings: ClientTableSettings) {
   }
 
   window.localStorage.setItem(clientTableSettingsStorageKey, JSON.stringify(settings));
+}
+
+function normalizeClientDetailProductTableSettings(
+  settings: Partial<ClientDetailProductTableSettings> | null,
+) {
+  const tamanhoPagina =
+    typeof settings?.tamanhoPagina === "number" &&
+    Number.isInteger(settings.tamanhoPagina) &&
+    settings.tamanhoPagina > 0 &&
+    settings.tamanhoPagina <= 100
+      ? settings.tamanhoPagina
+      : defaultClientDetailProductTableSettings.tamanhoPagina;
+
+  const visibleFields = Array.isArray(settings?.visibleFields)
+    ? settings.visibleFields.filter((field): field is ClientDetailProductVisibleField =>
+        ["id", "produto", "descricao", "fornecedor", "situacao", "entrada", "preco"].includes(
+          String(field),
+        ),
+      )
+    : defaultClientDetailProductTableSettings.visibleFields;
+
+  return {
+    tamanhoPagina,
+    visibleFields: visibleFields.length
+      ? visibleFields
+      : defaultClientDetailProductTableSettings.visibleFields,
+  };
+}
+
+function getClientDetailProductTableSettings(storageKey: string) {
+  if (typeof window === "undefined") {
+    return defaultClientDetailProductTableSettings;
+  }
+
+  const rawValue = window.localStorage.getItem(storageKey);
+
+  if (!rawValue) {
+    return defaultClientDetailProductTableSettings;
+  }
+
+  try {
+    return normalizeClientDetailProductTableSettings(
+      JSON.parse(rawValue) as Partial<ClientDetailProductTableSettings>,
+    );
+  } catch {
+    return defaultClientDetailProductTableSettings;
+  }
+}
+
+export function getStoredClientDetailSupplierTableSettings() {
+  return getClientDetailProductTableSettings(clientDetailSupplierTableSettingsStorageKey);
+}
+
+export function getStoredClientDetailCustomerTableSettings() {
+  return getClientDetailProductTableSettings(clientDetailCustomerTableSettingsStorageKey);
+}
+
+export function persistClientDetailSupplierTableSettings(
+  settings: ClientDetailProductTableSettings,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    clientDetailSupplierTableSettingsStorageKey,
+    JSON.stringify(normalizeClientDetailProductTableSettings(settings)),
+  );
+}
+
+export function persistClientDetailCustomerTableSettings(
+  settings: ClientDetailProductTableSettings,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    clientDetailCustomerTableSettingsStorageKey,
+    JSON.stringify(normalizeClientDetailProductTableSettings(settings)),
+  );
 }
 
 export function getPreviousMonthRange() {
