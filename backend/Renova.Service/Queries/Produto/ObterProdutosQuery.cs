@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
+using Renova.Domain.Model;
 using Renova.Service.Queries.Common;
 
 namespace Renova.Service.Queries.Produto
@@ -30,5 +31,7 @@ namespace Renova.Service.Queries.Produto
         public DateTime? DataInicial { get; set; }
 
         public DateTime? DataFinal { get; set; }
+
+        public SituacaoProduto? Situacao { get; set; }
     }
 }

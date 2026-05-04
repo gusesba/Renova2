@@ -419,6 +419,16 @@ namespace Renova.Service.Services.Produto
                 query = query.Where(produto => produto.Entrada <= dataFinalUtc);
             }
 
+            if (request.Situacao.HasValue)
+            {
+                if (!Enum.IsDefined(request.Situacao.Value))
+                {
+                    throw new ArgumentException("Situacao informada e invalida.", nameof(request));
+                }
+
+                query = query.Where(produto => produto.Situacao == request.Situacao.Value);
+            }
+
             IQueryable<ProdutoEstoqueModel> queryOrdenada = query
                 .ApplyOrdering(request.OrdenarPor, request.Direcao, CamposOrdenaveis, "etiqueta")
                 .ThenBy(produto => produto.Id);

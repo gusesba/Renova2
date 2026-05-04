@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { GearIcon } from "@/app/components/ui/gear-icon";
 import { Select } from "@/app/components/ui/select";
-import type { ProductFilters } from "@/lib/product";
+import { productSituacaoOptions, type ProductFilters } from "@/lib/product";
 
 type ProductFiltersBarProps = {
   filters: ProductFilters;
@@ -273,6 +273,18 @@ export function ProductFiltersBar({
                 label="Data final"
                 value={filters.dataFinal}
                 onChange={(dataFinal) => onChange({ dataFinal })}
+              />
+              <SelectField
+                label="Situacao"
+                value={filters.situacao}
+                options={[
+                  { label: "Todas", value: "" },
+                  ...productSituacaoOptions.map((option) => ({
+                    label: option.label,
+                    value: String(option.value),
+                  })),
+                ]}
+                onChange={(situacao) => onChange({ situacao })}
               />
               <SelectField
                 label="Ordenar por"

@@ -112,6 +112,7 @@ export type ProductFilters = {
   precoFinal: string;
   dataInicial: string;
   dataFinal: string;
+  situacao: string;
   ordenarPor:
     | "descricao"
     | "etiqueta"
@@ -165,6 +166,7 @@ export const initialProductFilters: ProductFilters = {
   precoFinal: "",
   dataInicial: "",
   dataFinal: "",
+  situacao: "",
   ordenarPor: "etiqueta",
   direcao: "desc",
   pagina: 1,
@@ -300,6 +302,10 @@ export function buildProductQuery(storeId: number, filters: ProductFilters) {
 
   if (filters.dataFinal) {
     params.set("dataFinal", toApiDateEnd(filters.dataFinal));
+  }
+
+  if (filters.situacao.trim()) {
+    params.set("situacao", filters.situacao.trim());
   }
 
   return params.toString();
