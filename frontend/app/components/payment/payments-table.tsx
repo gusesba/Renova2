@@ -63,7 +63,18 @@ export function PaymentsTable({
   const showNatureza = visibleFields.includes("natureza");
   const showStatus = visibleFields.includes("status");
   const showMovimentacao = visibleFields.includes("movimentacaoId");
-  const visibleColumnCount = visibleFields.length + 1;
+  const showDetalhes = visibleFields.includes("detalhes");
+  const visibleColumnCount = [
+    showDetalhes,
+    showId,
+    showData,
+    showCliente,
+    showDescricao,
+    showValor,
+    showNatureza,
+    showStatus,
+    showMovimentacao,
+  ].filter(Boolean).length;
 
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
@@ -71,9 +82,11 @@ export function PaymentsTable({
         <table className="min-w-full border-collapse bg-white">
           <thead className="bg-[var(--surface-muted)]">
             <tr className="text-left">
-              <th className="w-14 px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Detalhes
-              </th>
+              {showDetalhes ? (
+                <th className="w-14 px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Detalhes
+                </th>
+              ) : null}
               {showId ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Identificador
@@ -131,21 +144,23 @@ export function PaymentsTable({
                         : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
                     }
                   >
-                    <TableCell>
-                      <button
-                        type="button"
-                        onClick={() => onToggleExpanded(payment.id)}
-                        disabled={!hasMovimentacao}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45"
-                        aria-label={
-                          hasMovimentacao
-                            ? `${expanded ? "Ocultar" : "Exibir"} detalhes do pagamento ${payment.id}`
-                            : `Pagamento ${payment.id} sem movimentacao vinculada`
-                        }
-                      >
-                        <ChevronIcon expanded={expanded} />
-                      </button>
-                    </TableCell>
+                    {showDetalhes ? (
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => onToggleExpanded(payment.id)}
+                          disabled={!hasMovimentacao}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-45"
+                          aria-label={
+                            hasMovimentacao
+                              ? `${expanded ? "Ocultar" : "Exibir"} detalhes do pagamento ${payment.id}`
+                              : `Pagamento ${payment.id} sem movimentacao vinculada`
+                          }
+                        >
+                          <ChevronIcon expanded={expanded} />
+                        </button>
+                      </TableCell>
+                    ) : null}
                     {showId ? <TableCell subtle>#{payment.id}</TableCell> : null}
                     {showData ? <TableCell>{formatPaymentDate(payment.data)}</TableCell> : null}
                     {showCliente ? <TableCell>{payment.cliente}</TableCell> : null}
@@ -173,7 +188,7 @@ export function PaymentsTable({
                       </TableCell>
                     ) : null}
                   </tr>
-                  {expanded && payment.movimentacao ? (
+                  {showDetalhes && expanded && payment.movimentacao ? (
                     <tr key={`${payment.id}-expanded`} className="bg-[var(--surface-muted)]">
                       <td colSpan={visibleColumnCount} className="px-4 py-5">
                         <div className="overflow-hidden rounded-[20px] border border-[var(--border)] bg-white">

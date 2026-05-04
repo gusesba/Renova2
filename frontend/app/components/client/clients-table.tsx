@@ -100,6 +100,7 @@ export function ClientsTable({
   const showDonation = visibleFields.includes("doacao");
   const showUserId = visibleFields.includes("userId");
   const showId = visibleFields.includes("id");
+  const showAcoes = visibleFields.includes("acoes");
 
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
@@ -137,9 +138,11 @@ export function ClientsTable({
                   Identificador
                 </th>
               ) : null}
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Acoes
-              </th>
+              {showAcoes ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Acoes
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -180,40 +183,42 @@ export function ClientsTable({
                   <ClientTableCell subtle>{client.userId ?? "Nao vinculado"}</ClientTableCell>
                 ) : null}
                 {showId ? <ClientTableCell subtle>#{client.id}</ClientTableCell> : null}
-                <ClientTableCell>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={getClientDetailsHref(client)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:border-sky-300 hover:bg-sky-100"
-                      aria-label={`Abrir detalhes do cliente ${client.nome}`}
-                      title={`Abrir detalhes do cliente ${client.nome}`}
-                    >
-                      <EyeIcon />
-                    </Link>
-                    {canEditClient ? (
-                      <button
-                        type="button"
-                        onClick={() => onEditClient(client)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
-                        aria-label={`Editar cliente ${client.nome}`}
-                        title={`Editar cliente ${client.nome}`}
+                {showAcoes ? (
+                  <ClientTableCell>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={getClientDetailsHref(client)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-600 transition hover:border-sky-300 hover:bg-sky-100"
+                        aria-label={`Abrir detalhes do cliente ${client.nome}`}
+                        title={`Abrir detalhes do cliente ${client.nome}`}
                       >
-                        <EditIcon />
-                      </button>
-                    ) : null}
-                    {canDeleteClient ? (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteClient(client)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
-                        aria-label={`Excluir cliente ${client.nome}`}
-                        title={`Excluir cliente ${client.nome}`}
-                      >
-                        <DeleteIcon />
-                      </button>
-                    ) : null}
-                  </div>
-                </ClientTableCell>
+                        <EyeIcon />
+                      </Link>
+                      {canEditClient ? (
+                        <button
+                          type="button"
+                          onClick={() => onEditClient(client)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                          aria-label={`Editar cliente ${client.nome}`}
+                          title={`Editar cliente ${client.nome}`}
+                        >
+                          <EditIcon />
+                        </button>
+                      ) : null}
+                      {canDeleteClient ? (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteClient(client)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                          aria-label={`Excluir cliente ${client.nome}`}
+                          title={`Excluir cliente ${client.nome}`}
+                        >
+                          <DeleteIcon />
+                        </button>
+                      ) : null}
+                    </div>
+                  </ClientTableCell>
+                ) : null}
               </tr>
             ))}
           </tbody>

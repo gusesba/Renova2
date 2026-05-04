@@ -24,6 +24,7 @@ const fieldOptions: Array<{ description: string; label: string; value: PaymentVi
     value: "movimentacaoId",
     description: "Codigo da movimentacao relacionada",
   },
+  { label: "Detalhes", value: "detalhes", description: "Botao para abrir movimentacao relacionada" },
 ];
 
 export function PaymentSettingsModal({

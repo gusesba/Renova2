@@ -25,6 +25,8 @@ const fieldOptions: Array<{
   { label: "Preco maximo", value: "precoMaximo", description: "Teto de preco desejado" },
   { label: "Matches", value: "matches", description: "Quantidade de produtos compativeis" },
   { label: "Identificador", value: "id", description: "Codigo interno da solicitacao" },
+  { label: "Expandir", value: "expandir", description: "Botao para abrir produtos compativeis" },
+  { label: "Acoes", value: "acoes", description: "Botoes de operacao da solicitacao" },
 ];
 
 export function SolicitacaoSettingsModal({

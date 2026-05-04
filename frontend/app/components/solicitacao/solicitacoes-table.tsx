@@ -52,6 +52,8 @@ export function SolicitacoesTable({
   const showPrecoMaximo = visibleFields.includes("precoMaximo");
   const showMatches = visibleFields.includes("matches");
   const showId = visibleFields.includes("id");
+  const showExpandir = visibleFields.includes("expandir");
+  const showAcoes = visibleFields.includes("acoes");
 
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
@@ -59,9 +61,11 @@ export function SolicitacoesTable({
         <table className="min-w-full border-collapse bg-white">
           <thead className="bg-[var(--surface-muted)]">
             <tr className="text-left">
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Expandir
-              </th>
+              {showExpandir ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Expandir
+                </th>
+              ) : null}
               {showProduto ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Produto
@@ -107,28 +111,29 @@ export function SolicitacoesTable({
                   Identificador
                 </th>
               ) : null}
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Acoes
-              </th>
+              {showAcoes ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Acoes
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
             {solicitacoes.map((solicitacao, index) => {
               const isExpanded = expandedIds.includes(solicitacao.id);
-              const colSpan =
-                1 +
-                [
-                  showProduto,
-                  showDescricao,
-                  showMarca,
-                  showTamanho,
-                  showCor,
-                  showCliente,
-                  showPrecoMaximo,
-                  showMatches,
-                  showId,
-                  true,
-                ].filter(Boolean).length;
+              const colSpan = [
+                showExpandir,
+                showProduto,
+                showDescricao,
+                showMarca,
+                showTamanho,
+                showCor,
+                showCliente,
+                showPrecoMaximo,
+                showMatches,
+                showId,
+                showAcoes,
+              ].filter(Boolean).length;
 
               return (
                 <Fragment key={solicitacao.id}>
@@ -139,7 +144,8 @@ export function SolicitacoesTable({
                         : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
                     }
                   >
-                    <Cell>
+                    {showExpandir ? (
+                      <Cell>
                       <button
                         type="button"
                         onClick={() => toggleExpanded(solicitacao.id)}
@@ -148,7 +154,8 @@ export function SolicitacoesTable({
                       >
                         {isExpanded ? "−" : "+"}
                       </button>
-                    </Cell>
+                      </Cell>
+                    ) : null}
                     {showProduto ? <Cell>{solicitacao.produto}</Cell> : null}
                     {showDescricao ? <Cell>{solicitacao.descricao}</Cell> : null}
                     {showMarca ? <Cell>{solicitacao.marca}</Cell> : null}
@@ -164,8 +171,9 @@ export function SolicitacoesTable({
                     ) : null}
                     {showMatches ? <Cell>{solicitacao.produtosCompativeis.length}</Cell> : null}
                     {showId ? <Cell subtle>#{solicitacao.id}</Cell> : null}
-                    <Cell>
-                      <div className="flex items-center gap-2">
+                    {showAcoes ? (
+                      <Cell>
+                        <div className="flex items-center gap-2">
                         {canDeleteSolicitacao ? (
                           <button
                             type="button"
@@ -194,10 +202,11 @@ export function SolicitacoesTable({
                         ) : (
                           <span className="inline-flex h-10 w-10" aria-hidden="true" />
                         )}
-                      </div>
-                    </Cell>
+                        </div>
+                      </Cell>
+                    ) : null}
                   </tr>
-                  {isExpanded ? (
+                  {showExpandir && isExpanded ? (
                     <tr>
                       <td colSpan={colSpan} className="border-t border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4">
                         <div className="space-y-3">

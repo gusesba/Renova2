@@ -143,7 +143,8 @@ export type ProductVisibleField =
   | "entrada"
   | "situacao"
   | "consignado"
-  | "id";
+  | "id"
+  | "acoes";
 
 export type ProductTableSettings = {
   tamanhoPagina: number;
@@ -209,10 +210,12 @@ export const defaultProductTableSettings: ProductTableSettings = {
     "situacao",
     "consignado",
     "id",
+    "acoes",
   ],
 };
 
 const productTableSettingsStorageKey = "renova.productTableSettings";
+const productTableSettingsSchemaVersion = 2;
 
 export function asProductListResponse(body: unknown) {
   return body as ProductListResponse;
@@ -420,7 +423,9 @@ export function getStoredProductTableSettings(): ProductTableSettings {
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as Partial<ProductTableSettings>;
+    const parsed = JSON.parse(rawValue) as Partial<ProductTableSettings> & {
+      schemaVersion?: number;
+    };
     const tamanhoPagina =
       typeof parsed.tamanhoPagina === "number" &&
       Number.isInteger(parsed.tamanhoPagina) &&
@@ -444,14 +449,20 @@ export function getStoredProductTableSettings(): ProductTableSettings {
             "situacao",
             "consignado",
             "id",
+            "acoes",
           ].includes(String(field)),
         )
       : defaultProductTableSettings.visibleFields;
 
+    const migratedVisibleFields =
+      parsed.schemaVersion === productTableSettingsSchemaVersion || visibleFields.includes("acoes")
+        ? visibleFields
+        : [...visibleFields, "acoes" as const];
+
     return {
       tamanhoPagina,
-      visibleFields: visibleFields.length
-        ? visibleFields
+      visibleFields: migratedVisibleFields.length
+        ? migratedVisibleFields
         : defaultProductTableSettings.visibleFields,
     };
   } catch {
@@ -464,5 +475,8 @@ export function persistProductTableSettings(settings: ProductTableSettings) {
     return;
   }
 
-  window.localStorage.setItem(productTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(
+    productTableSettingsStorageKey,
+    JSON.stringify({ ...settings, schemaVersion: productTableSettingsSchemaVersion }),
+  );
 }

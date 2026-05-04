@@ -108,6 +108,7 @@ export function ProductsTable({
   const showSituacao = visibleFields.includes("situacao");
   const showConsignado = visibleFields.includes("consignado");
   const showId = visibleFields.includes("id");
+  const showAcoes = visibleFields.includes("acoes");
 
   const allVisibleSelected =
     products.length > 0 && products.every((product) => selectedProductIds.includes(product.id));
@@ -187,9 +188,11 @@ export function ProductsTable({
                   Identificador
                 </th>
               ) : null}
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Acoes
-              </th>
+              {showAcoes ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Acoes
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -249,32 +252,34 @@ export function ProductsTable({
                   </ProductTableCell>
                 ) : null}
                 {showId ? <ProductTableCell subtle>#{product.id}</ProductTableCell> : null}
-                <ProductTableCell>
-                  <div className="flex items-center gap-2">
-                    {canEditProduct ? (
-                      <button
-                        type="button"
-                        onClick={() => onEditProduct(product)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
-                        aria-label={`Editar produto ${product.descricao}`}
-                        title={`Editar produto ${product.descricao}`}
-                      >
-                        <EditIcon />
-                      </button>
-                    ) : null}
-                    {canDeleteProduct ? (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteProduct(product)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
-                        aria-label={`Excluir produto ${product.descricao}`}
-                        title={`Excluir produto ${product.descricao}`}
-                      >
-                        <DeleteIcon />
-                      </button>
-                    ) : null}
-                  </div>
-                </ProductTableCell>
+                {showAcoes ? (
+                  <ProductTableCell>
+                    <div className="flex items-center gap-2">
+                      {canEditProduct ? (
+                        <button
+                          type="button"
+                          onClick={() => onEditProduct(product)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-600 transition hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700"
+                          aria-label={`Editar produto ${product.descricao}`}
+                          title={`Editar produto ${product.descricao}`}
+                        >
+                          <EditIcon />
+                        </button>
+                      ) : null}
+                      {canDeleteProduct ? (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteProduct(product)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700"
+                          aria-label={`Excluir produto ${product.descricao}`}
+                          title={`Excluir produto ${product.descricao}`}
+                        >
+                          <DeleteIcon />
+                        </button>
+                      ) : null}
+                    </div>
+                  </ProductTableCell>
+                ) : null}
               </tr>
             ))}
           </tbody>

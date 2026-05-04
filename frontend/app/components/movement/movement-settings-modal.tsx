@@ -21,6 +21,8 @@ const fieldOptions: Array<{ description: string; label: string; value: MovementV
     description: "Total de produtos atrelados",
   },
   { label: "Tipo", value: "tipo", description: "Tipo da movimentacao realizada" },
+  { label: "Detalhes", value: "detalhes", description: "Botao para abrir produtos vinculados" },
+  { label: "Acoes", value: "acoes", description: "Botoes de operacao da movimentacao" },
 ];
 
 export function MovementSettingsModal({

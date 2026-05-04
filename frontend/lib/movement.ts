@@ -75,7 +75,14 @@ export type MovementFilters = {
   tamanhoPagina: number;
 };
 
-export type MovementVisibleField = "id" | "data" | "cliente" | "quantidadeProdutos" | "tipo";
+export type MovementVisibleField =
+  | "id"
+  | "data"
+  | "cliente"
+  | "quantidadeProdutos"
+  | "tipo"
+  | "detalhes"
+  | "acoes";
 
 export type MovementTableSettings = {
   tamanhoPagina: number;
@@ -118,10 +125,11 @@ export const initialMovementFilters: MovementFilters = {
 
 export const defaultMovementTableSettings: MovementTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "data", "cliente", "quantidadeProdutos", "tipo"],
+  visibleFields: ["id", "data", "cliente", "quantidadeProdutos", "tipo", "detalhes", "acoes"],
 };
 
 const movementTableSettingsStorageKey = "renova.movementTableSettings";
+const movementTableSettingsSchemaVersion = 2;
 
 export function asMovementResponse(body: unknown) {
   return body as MovementCreateResponse;
@@ -248,7 +256,9 @@ export function getStoredMovementTableSettings(): MovementTableSettings {
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as Partial<MovementTableSettings>;
+    const parsed = JSON.parse(rawValue) as Partial<MovementTableSettings> & {
+      schemaVersion?: number;
+    };
     const tamanhoPagina =
       typeof parsed.tamanhoPagina === "number" &&
       Number.isInteger(parsed.tamanhoPagina) &&
@@ -259,14 +269,24 @@ export function getStoredMovementTableSettings(): MovementTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
       ? parsed.visibleFields.filter((field): field is MovementVisibleField =>
-          ["id", "data", "cliente", "quantidadeProdutos", "tipo"].includes(String(field)),
+          ["id", "data", "cliente", "quantidadeProdutos", "tipo", "detalhes", "acoes"].includes(
+            String(field),
+          ),
         )
       : defaultMovementTableSettings.visibleFields;
 
+    const migratedVisibleFields =
+      parsed.schemaVersion === movementTableSettingsSchemaVersion
+        ? visibleFields
+        : [
+            ...visibleFields,
+            ...(["detalhes", "acoes"] as const).filter((field) => !visibleFields.includes(field)),
+          ];
+
     return {
       tamanhoPagina,
-      visibleFields: visibleFields.length
-        ? visibleFields
+      visibleFields: migratedVisibleFields.length
+        ? migratedVisibleFields
         : defaultMovementTableSettings.visibleFields,
     };
   } catch {
@@ -279,7 +299,10 @@ export function persistMovementTableSettings(settings: MovementTableSettings) {
     return;
   }
 
-  window.localStorage.setItem(movementTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(
+    movementTableSettingsStorageKey,
+    JSON.stringify({ ...settings, schemaVersion: movementTableSettingsSchemaVersion }),
+  );
 }
 
 export function isProductSituationCompatible(movementType: number, productSituation: number) {

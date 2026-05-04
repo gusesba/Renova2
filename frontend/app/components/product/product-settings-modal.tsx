@@ -24,6 +24,7 @@ const fieldOptions: Array<{ description: string; label: string; value: ProductVi
   { label: "Situacao", value: "situacao", description: "Estado atual do item" },
   { label: "Consignado", value: "consignado", description: "Indicador de consignacao" },
   { label: "Id interno", value: "id", description: "Identificador interno do produto" },
+  { label: "Acoes", value: "acoes", description: "Botoes de edicao e exclusao" },
 ];
 
 export function ProductSettingsModal({

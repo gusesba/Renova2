@@ -62,7 +62,14 @@ export type ClientFilters = {
   tamanhoPagina: number;
 };
 
-export type ClientVisibleField = "nome" | "contato" | "obs" | "doacao" | "userId" | "id";
+export type ClientVisibleField =
+  | "nome"
+  | "contato"
+  | "obs"
+  | "doacao"
+  | "userId"
+  | "id"
+  | "acoes";
 
 export type ClientTableSettings = {
   tamanhoPagina: number;
@@ -116,7 +123,7 @@ export const initialClientDetailFilters: ClientDetailFilters = {
 
 export const defaultClientTableSettings: ClientTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["nome", "contato", "obs", "doacao", "userId", "id"],
+  visibleFields: ["nome", "contato", "obs", "doacao", "userId", "id", "acoes"],
 };
 
 export const defaultClientDetailProductTableSettings: ClientDetailProductTableSettings = {
@@ -159,6 +166,7 @@ export function formatPhoneValue(value: string) {
 }
 
 const clientTableSettingsStorageKey = "renova.clientTableSettings";
+const clientTableSettingsSchemaVersion = 2;
 const clientDetailSupplierTableSettingsStorageKey = "renova.clientDetail.supplierTableSettings";
 const clientDetailCustomerTableSettingsStorageKey = "renova.clientDetail.customerTableSettings";
 
@@ -317,7 +325,9 @@ export function getStoredClientTableSettings(): ClientTableSettings {
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as Partial<ClientTableSettings>;
+    const parsed = JSON.parse(rawValue) as Partial<ClientTableSettings> & {
+      schemaVersion?: number;
+    };
     const tamanhoPagina =
       typeof parsed.tamanhoPagina === "number" &&
       Number.isInteger(parsed.tamanhoPagina) &&
@@ -328,14 +338,19 @@ export function getStoredClientTableSettings(): ClientTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
       ? parsed.visibleFields.filter((field): field is ClientVisibleField =>
-          ["nome", "contato", "obs", "doacao", "userId", "id"].includes(String(field)),
+          ["nome", "contato", "obs", "doacao", "userId", "id", "acoes"].includes(String(field)),
         )
       : defaultClientTableSettings.visibleFields;
 
+    const migratedVisibleFields =
+      parsed.schemaVersion === clientTableSettingsSchemaVersion || visibleFields.includes("acoes")
+        ? visibleFields
+        : [...visibleFields, "acoes" as const];
+
     return {
       tamanhoPagina,
-      visibleFields: visibleFields.length
-        ? visibleFields
+      visibleFields: migratedVisibleFields.length
+        ? migratedVisibleFields
         : defaultClientTableSettings.visibleFields,
     };
   } catch {
@@ -348,7 +363,10 @@ export function persistClientTableSettings(settings: ClientTableSettings) {
     return;
   }
 
-  window.localStorage.setItem(clientTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(
+    clientTableSettingsStorageKey,
+    JSON.stringify({ ...settings, schemaVersion: clientTableSettingsSchemaVersion }),
+  );
 }
 
 function normalizeClientDetailProductTableSettings(

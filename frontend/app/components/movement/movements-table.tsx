@@ -72,7 +72,17 @@ export function MovementsTable({
   const showCliente = visibleFields.includes("cliente");
   const showQuantidade = visibleFields.includes("quantidadeProdutos");
   const showTipo = visibleFields.includes("tipo");
-  const visibleColumnCount = visibleFields.length + 2;
+  const showDetalhes = visibleFields.includes("detalhes");
+  const showAcoes = visibleFields.includes("acoes");
+  const visibleColumnCount = [
+    showDetalhes,
+    showId,
+    showData,
+    showCliente,
+    showQuantidade,
+    showTipo,
+    showAcoes,
+  ].filter(Boolean).length;
 
   return (
     <div className="mt-6 overflow-hidden rounded-[24px] border border-[var(--border)]">
@@ -80,9 +90,11 @@ export function MovementsTable({
         <table className="min-w-full border-collapse bg-white">
           <thead className="bg-[var(--surface-muted)]">
             <tr className="text-left">
-              <th className="w-14 px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Detalhes
-              </th>
+              {showDetalhes ? (
+                <th className="w-14 px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Detalhes
+                </th>
+              ) : null}
               {showId ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Identificador
@@ -108,9 +120,11 @@ export function MovementsTable({
                   Tipo
                 </th>
               ) : null}
-              <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                Acoes
-              </th>
+              {showAcoes ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Acoes
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -127,16 +141,18 @@ export function MovementsTable({
                         : "bg-[color:color-mix(in_srgb,var(--surface-muted)_55%,white)]"
                     }
                   >
-                    <TableCell>
-                      <button
-                        type="button"
-                        onClick={() => onToggleExpanded(movement.id)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
-                        aria-label={`${expanded ? "Ocultar" : "Exibir"} produtos da movimentacao ${movement.id}`}
-                      >
-                        <ChevronIcon expanded={expanded} />
-                      </button>
-                    </TableCell>
+                    {showDetalhes ? (
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => onToggleExpanded(movement.id)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                          aria-label={`${expanded ? "Ocultar" : "Exibir"} produtos da movimentacao ${movement.id}`}
+                        >
+                          <ChevronIcon expanded={expanded} />
+                        </button>
+                      </TableCell>
+                    ) : null}
                     {showId ? <TableCell subtle>#{movement.id}</TableCell> : null}
                     {showData ? <TableCell>{formatMovementDate(movement.data)}</TableCell> : null}
                     {showCliente ? <TableCell>{movement.cliente}</TableCell> : null}
@@ -148,19 +164,21 @@ export function MovementsTable({
                       </TableCell>
                     ) : null}
                     {showTipo ? <TableCell>{formatMovementType(movement.tipo)}</TableCell> : null}
-                    <TableCell>
-                      <button
-                        type="button"
-                        onClick={() => onPrintMovement(movement)}
-                        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
-                        aria-label={`Imprimir nota da movimentacao ${movement.id}`}
-                        title={`Imprimir nota da movimentacao ${movement.id}`}
-                      >
-                        <PrintIcon />
-                      </button>
-                    </TableCell>
+                    {showAcoes ? (
+                      <TableCell>
+                        <button
+                          type="button"
+                          onClick={() => onPrintMovement(movement)}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                          aria-label={`Imprimir nota da movimentacao ${movement.id}`}
+                          title={`Imprimir nota da movimentacao ${movement.id}`}
+                        >
+                          <PrintIcon />
+                        </button>
+                      </TableCell>
+                    ) : null}
                   </tr>
-                  {expanded ? (
+                  {showDetalhes && expanded ? (
                     <tr key={`${movement.id}-expanded`} className="bg-[var(--surface-muted)]">
                       <td colSpan={visibleColumnCount} className="px-4 py-5">
                         <div className="rounded-[20px] border border-[var(--border)] bg-white p-4">

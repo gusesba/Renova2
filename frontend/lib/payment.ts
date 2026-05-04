@@ -111,7 +111,8 @@ export type PaymentVisibleField =
   | "valor"
   | "natureza"
   | "status"
-  | "movimentacaoId";
+  | "movimentacaoId"
+  | "detalhes";
 
 export type PaymentTableSettings = {
   tamanhoPagina: number;
@@ -182,7 +183,17 @@ export const initialPaymentFilters: PaymentFilters = {
 
 export const defaultPaymentTableSettings: PaymentTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "data", "cliente", "descricao", "valor", "natureza", "status", "movimentacaoId"],
+  visibleFields: [
+    "id",
+    "data",
+    "cliente",
+    "descricao",
+    "valor",
+    "natureza",
+    "status",
+    "movimentacaoId",
+    "detalhes",
+  ],
 };
 
 export const initialExternalPaymentFilters: ExternalPaymentFilters = {
@@ -203,6 +214,7 @@ export const defaultExternalPaymentTableSettings: ExternalPaymentTableSettings =
 };
 
 const paymentTableSettingsStorageKey = "renova.paymentTableSettings";
+const paymentTableSettingsSchemaVersion = 2;
 const externalPaymentTableSettingsStorageKey = "renova.externalPaymentTableSettings";
 
 export function asPendingClientsResponse(body: unknown) {
@@ -433,7 +445,9 @@ export function getStoredPaymentTableSettings(): PaymentTableSettings {
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as Partial<PaymentTableSettings>;
+    const parsed = JSON.parse(rawValue) as Partial<PaymentTableSettings> & {
+      schemaVersion?: number;
+    };
     const tamanhoPagina =
       typeof parsed.tamanhoPagina === "number" &&
       Number.isInteger(parsed.tamanhoPagina) &&
@@ -444,15 +458,31 @@ export function getStoredPaymentTableSettings(): PaymentTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
         ? parsed.visibleFields.filter((field): field is PaymentVisibleField =>
-          ["id", "data", "cliente", "descricao", "valor", "natureza", "status", "movimentacaoId"].includes(
-            String(field),
-          ),
+          [
+            "id",
+            "data",
+            "cliente",
+            "descricao",
+            "valor",
+            "natureza",
+            "status",
+            "movimentacaoId",
+            "detalhes",
+          ].includes(String(field)),
         )
       : defaultPaymentTableSettings.visibleFields;
 
+    const migratedVisibleFields =
+      parsed.schemaVersion === paymentTableSettingsSchemaVersion ||
+      visibleFields.includes("detalhes")
+        ? visibleFields
+        : [...visibleFields, "detalhes" as const];
+
     return {
       tamanhoPagina,
-      visibleFields: visibleFields.length ? visibleFields : defaultPaymentTableSettings.visibleFields,
+      visibleFields: migratedVisibleFields.length
+        ? migratedVisibleFields
+        : defaultPaymentTableSettings.visibleFields,
     };
   } catch {
     return defaultPaymentTableSettings;
@@ -464,7 +494,10 @@ export function persistPaymentTableSettings(settings: PaymentTableSettings) {
     return;
   }
 
-  window.localStorage.setItem(paymentTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(
+    paymentTableSettingsStorageKey,
+    JSON.stringify({ ...settings, schemaVersion: paymentTableSettingsSchemaVersion }),
+  );
 }
 
 export function getStoredExternalPaymentTableSettings(): ExternalPaymentTableSettings {

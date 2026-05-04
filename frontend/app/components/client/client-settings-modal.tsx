@@ -18,6 +18,7 @@ const fieldOptions: Array<{ description: string; label: string; value: ClientVis
   { label: "Doacao", value: "doacao", description: "Indica se o cliente e de doacao" },
   { label: "UserId", value: "userId", description: "Conta vinculada no sistema" },
   { label: "Identificador", value: "id", description: "Codigo interno do cliente" },
+  { label: "Acoes", value: "acoes", description: "Botoes de detalhes, edicao e exclusao" },
 ];
 
 export function ClientSettingsModal({

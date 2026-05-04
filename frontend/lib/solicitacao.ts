@@ -113,7 +113,9 @@ export type SolicitacaoVisibleField =
   | "cliente"
   | "precoMaximo"
   | "matches"
-  | "id";
+  | "id"
+  | "expandir"
+  | "acoes";
 
 export type SolicitacaoTableSettings = {
   tamanhoPagina: number;
@@ -169,10 +171,13 @@ export const defaultSolicitacaoTableSettings: SolicitacaoTableSettings = {
     "precoMaximo",
     "matches",
     "id",
+    "expandir",
+    "acoes",
   ],
 };
 
 const solicitacaoTableSettingsStorageKey = "renova.solicitacaoTableSettings";
+const solicitacaoTableSettingsSchemaVersion = 2;
 
 export function asSolicitacaoListResponse(body: unknown) {
   return body as SolicitacaoListResponse;
@@ -314,7 +319,9 @@ export function getStoredSolicitacaoTableSettings(): SolicitacaoTableSettings {
   }
 
   try {
-    const parsed = JSON.parse(rawValue) as Partial<SolicitacaoTableSettings>;
+    const parsed = JSON.parse(rawValue) as Partial<SolicitacaoTableSettings> & {
+      schemaVersion?: number;
+    };
     const tamanhoPagina =
       typeof parsed.tamanhoPagina === "number" &&
       Number.isInteger(parsed.tamanhoPagina) &&
@@ -335,14 +342,24 @@ export function getStoredSolicitacaoTableSettings(): SolicitacaoTableSettings {
             "precoMaximo",
             "matches",
             "id",
+            "expandir",
+            "acoes",
           ].includes(String(field)),
         )
       : defaultSolicitacaoTableSettings.visibleFields;
 
+    const migratedVisibleFields =
+      parsed.schemaVersion === solicitacaoTableSettingsSchemaVersion
+        ? visibleFields
+        : [
+            ...visibleFields,
+            ...(["expandir", "acoes"] as const).filter((field) => !visibleFields.includes(field)),
+          ];
+
     return {
       tamanhoPagina,
-      visibleFields: visibleFields.length
-        ? visibleFields
+      visibleFields: migratedVisibleFields.length
+        ? migratedVisibleFields
         : defaultSolicitacaoTableSettings.visibleFields,
     };
   } catch {
@@ -355,7 +372,10 @@ export function persistSolicitacaoTableSettings(settings: SolicitacaoTableSettin
     return;
   }
 
-  window.localStorage.setItem(solicitacaoTableSettingsStorageKey, JSON.stringify(settings));
+  window.localStorage.setItem(
+    solicitacaoTableSettingsStorageKey,
+    JSON.stringify({ ...settings, schemaVersion: solicitacaoTableSettingsSchemaVersion }),
+  );
 }
 
 export function mapLookupOption(option: ProductLookupOption) {
