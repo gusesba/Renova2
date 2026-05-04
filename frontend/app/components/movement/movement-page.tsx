@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { permissions } from "@/lib/access";
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
+import { ClientCreateModal } from "@/app/components/client/client-create-modal";
 import { MovementCreditAutoPaidModal } from "@/app/components/movement/movement-credit-auto-paid-modal";
 import { MovementOverdueOwnerReturnModal } from "@/app/components/movement/movement-overdue-owner-return-modal";
 import { PaymentConfigRequiredModal } from "@/app/components/movement/payment-config-required-modal";
@@ -17,10 +18,16 @@ import { ProductCreateModal } from "@/app/components/product/product-create-moda
 import { Select } from "@/app/components/ui/select";
 import { SearchableSelect } from "@/app/components/ui/searchable-select";
 import {
+  asClientResponse,
   asClientListResponse,
+  extractClientFieldErrors,
   formatPhoneValue,
   getClientApiMessage,
   initialClientFilters,
+  initialClientFormValues,
+  normalizeNumericValue,
+  type ClientFieldErrors,
+  type ClientFormValues,
   type ClientListItem,
 } from "@/lib/client";
 import {
@@ -50,7 +57,7 @@ import {
 } from "@/services/store-config-service";
 import { getAuthToken } from "@/lib/store";
 import { createMovement, getMovementDestinationSuggestions } from "@/services/movement-service";
-import { getClients } from "@/services/client-service";
+import { createClient, getClients } from "@/services/client-service";
 import { getBorrowedProductsByClient, getProductById } from "@/services/product-service";
 import {
   extractStoreConfigApiMessage,
@@ -61,6 +68,7 @@ import { mapMovementZodErrors, movementSchema } from "@/validations/movement";
 import { openReceiptPdfPreview, printReceipt } from "@/lib/printing/actions";
 import { getStoredPrintSettings } from "@/lib/printing/settings";
 import type { PrintSettings, ReceiptPrintData } from "@/lib/printing/types";
+import { clientSchema, mapClientZodErrors } from "@/validations/client";
 
 type MovementDraft = {
   autoLinkedBorrowedProductIds: number[];
@@ -298,7 +306,12 @@ export function MovementPage() {
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
   const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+  const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false);
   const [isCreateProductModalOpen, setIsCreateProductModalOpen] = useState(false);
+  const [clientFormValues, setClientFormValues] = useState<ClientFormValues>(
+    initialClientFormValues,
+  );
+  const [clientFormErrors, setClientFormErrors] = useState<ClientFieldErrors>({});
   const [isPrintingReceipt, setIsPrintingReceipt] = useState(false);
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
@@ -311,6 +324,7 @@ export function MovementPage() {
   const [printSettings, setPrintSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canCreateMovement = hasPermission(permissions.movimentacoesAdicionar);
+  const canAddClient = hasPermission(permissions.clientesAdicionar);
   const canAddProduct = hasPermission(permissions.produtosAdicionar);
   const canHandleCredit =
     hasPermission(permissions.pagamentosCreditoAdicionar) ||
@@ -560,6 +574,23 @@ export function MovementPage() {
     },
   });
 
+  const createClientMutation = useMutation({
+    mutationFn: async (payload: {
+      nome: string;
+      contato: string;
+      obs?: string;
+      doacao: boolean;
+      lojaId: number;
+      userId?: number;
+    }) => {
+      if (!token) {
+        throw new Error("Voce precisa estar autenticado para cadastrar um cliente.");
+      }
+
+      return createClient(payload, token);
+    },
+  });
+
   const createMovementMutation = useMutation({
     mutationFn: async (draft: MovementDraft) => {
       if (!token || !selectedStoreId) {
@@ -767,6 +798,97 @@ export function MovementPage() {
       clienteSearch: "",
       errors: { ...draft.errors, clienteId: undefined },
     }));
+  }
+
+  function openClientModal() {
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
+    setIsCreateClientModalOpen(true);
+  }
+
+  function closeClientModal() {
+    if (createClientMutation.isPending) {
+      return;
+    }
+
+    setIsCreateClientModalOpen(false);
+    setClientFormValues(initialClientFormValues);
+    setClientFormErrors({});
+  }
+
+  function updateClientField<K extends keyof ClientFormValues>(
+    field: K,
+    value: ClientFormValues[K],
+  ) {
+    const normalizedValue = field === "contato" ? formatPhoneValue(String(value)) : value;
+
+    setClientFormValues((current) => ({
+      ...current,
+      [field]: normalizedValue,
+    }));
+    setClientFormErrors((current) => ({
+      ...current,
+      [field]: undefined,
+    }));
+  }
+
+  async function handleClientSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedStoreId) {
+      toast.error("Selecione uma loja antes de cadastrar clientes.");
+      return;
+    }
+
+    const validation = clientSchema.safeParse(clientFormValues);
+
+    if (!validation.success) {
+      setClientFormErrors(mapClientZodErrors(validation.error));
+      return;
+    }
+
+    setClientFormErrors({});
+
+    try {
+      const response = await createClientMutation.mutateAsync({
+        nome: validation.data.nome.trim(),
+        contato: normalizeNumericValue(validation.data.contato),
+        ...(validation.data.obs.trim() ? { obs: validation.data.obs.trim() } : {}),
+        doacao: validation.data.doacao,
+        lojaId: selectedStoreId,
+        ...(validation.data.userId ? { userId: Number(validation.data.userId) } : {}),
+      });
+
+      if (!response.ok) {
+        const apiErrors = extractClientFieldErrors(response.body);
+
+        if (Object.keys(apiErrors).length > 0) {
+          setClientFormErrors(apiErrors);
+        }
+
+        toast.error(getClientApiMessage(response.body) ?? "Nao foi possivel cadastrar o cliente.");
+        return;
+      }
+
+      const createdClient = asClientResponse(response.body);
+
+      handleClientSelect(activeDraftId, createdClient);
+      void checkOverdueOwnerReturnProducts(activeDraftId, createdClient);
+      setDebouncedClientSearch(createdClient.nome);
+      setIsCreateClientModalOpen(false);
+      setClientFormValues(initialClientFormValues);
+      setClientFormErrors({});
+
+      await queryClient.invalidateQueries({ queryKey: ["movement-clients"] });
+      await queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success(`Cliente ${createdClient.nome} cadastrado com sucesso.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.",
+      );
+    }
   }
 
   async function checkOverdueOwnerReturnProducts(draftId: string, client: ClientListItem) {
@@ -1317,6 +1439,8 @@ export function MovementPage() {
                           searchValue={activeDraft.clienteSearch}
                           selectedLabel={activeDraft.clienteLabel}
                           value={activeDraft.clienteId || null}
+                          actionLabel={canAddClient ? "Criar novo cliente" : undefined}
+                          onAction={canAddClient ? openClientModal : undefined}
                           onSearchChange={(value) =>
                             updateDraft(activeDraft.id, (draft) => ({
                               ...draft,
@@ -1646,6 +1770,19 @@ export function MovementPage() {
           onSuccess={async () => {
             await queryClient.invalidateQueries({ queryKey: ["pending-clients"] });
           }}
+        />
+      ) : null}
+
+      {canAddClient ? (
+        <ClientCreateModal
+          errors={clientFormErrors}
+          isOpen={isCreateClientModalOpen}
+          isSubmitting={createClientMutation.isPending}
+          storeName={selectedStore?.nome ?? null}
+          values={clientFormValues}
+          onChange={updateClientField}
+          onClose={closeClientModal}
+          onSubmit={handleClientSubmit}
         />
       ) : null}
 
