@@ -234,6 +234,7 @@ function FieldShell({
 
 function TextField({
   error,
+  inputRef,
   label,
   onChange,
   placeholder,
@@ -241,6 +242,7 @@ function TextField({
   value,
 }: {
   error?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
   label: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -250,6 +252,7 @@ function TextField({
   return (
     <FieldShell error={error} label={label}>
       <input
+        ref={inputRef}
         type={type}
         value={value}
         placeholder={placeholder}
@@ -304,6 +307,8 @@ export function MovementPage() {
   const searchParams = useSearchParams();
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const draftCounterRef = useRef(2);
+  const lastAutoProductInputRef = useRef<string | null>(null);
+  const productIdInputRef = useRef<HTMLInputElement | null>(null);
   const prefillAppliedRef = useRef(false);
   const [drafts, setDrafts] = useState<MovementDraft[]>(() => [createDraft("draft-1")]);
   const [activeDraftId, setActiveDraftId] = useState("draft-1");
@@ -948,6 +953,10 @@ export function MovementPage() {
     return `Os produtos ${incompatibleProducts.map((product) => product.id).join(", ")} nao respeitam o tipo ${formatMovementType(Number(draft.tipo))}.`;
   }
 
+  function focusProductIdInput() {
+    window.setTimeout(() => productIdInputRef.current?.focus(), 0);
+  }
+
   async function handleAddProduct(draft: MovementDraft) {
     const rawValue = draft.productIdInput.trim();
 
@@ -1023,6 +1032,7 @@ export function MovementPage() {
         suggestion: null,
         errors: { ...current.errors, produtos: undefined },
       }));
+      focusProductIdInput();
       toast.success(`Produto ${product.id} adicionado na movimentacao.`);
 
       if (automaticDiscount) {
@@ -1038,6 +1048,31 @@ export function MovementPage() {
       );
     }
   }
+
+  const autoAddProduct = useEffectEvent((draft: MovementDraft) => {
+    void handleAddProduct(draft);
+  });
+
+  useEffect(() => {
+    const rawValue = activeDraft?.productIdInput.trim() ?? "";
+
+    if (!activeDraft || rawValue.length < 9) {
+      if (rawValue.length === 0) {
+        lastAutoProductInputRef.current = null;
+      }
+
+      return;
+    }
+
+    const autoKey = `${activeDraft.id}:${rawValue}`;
+
+    if (fetchProductMutation.isPending || lastAutoProductInputRef.current === autoKey) {
+      return;
+    }
+
+    lastAutoProductInputRef.current = autoKey;
+    autoAddProduct(activeDraft);
+  }, [activeDraft, activeDraft?.id, activeDraft?.productIdInput, fetchProductMutation.isPending]);
 
   function appendProductToDraft(draftId: string, product: ProductListItem) {
     const targetDraft = drafts.find((draft) => draft.id === draftId);
@@ -1083,6 +1118,7 @@ export function MovementPage() {
       suggestion: null,
       errors: { ...current.errors, produtos: undefined },
     }));
+    focusProductIdInput();
     toast.success(`Produto ${product.id} adicionado na movimentacao.`);
 
     if (automaticDiscount) {
@@ -1488,6 +1524,7 @@ export function MovementPage() {
                       <div className="flex flex-col gap-3 2xl:flex-row">
                         <div className="min-w-0 flex-1">
                           <TextField
+                            inputRef={productIdInputRef}
                             label="Adicionar produto pela etiqueta"
                             placeholder="Ex.: 152"
                             value={activeDraft.productIdInput}
@@ -1652,7 +1689,7 @@ export function MovementPage() {
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold text-[var(--foreground)]">
-                                    #{product.id} - {product.produto}
+                                    #{product.id} - {product.produto} - Etiqueta {product.etiqueta}
                                   </p>
                                   <p className="mt-1 text-sm text-[var(--muted)]">
                                     {product.descricao}
