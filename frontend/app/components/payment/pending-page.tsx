@@ -21,6 +21,16 @@ import { getPendingClients, updatePendingPayments } from "@/services/payment-ser
 
 import { PaymentCreditModal } from "./payment-credit-modal";
 
+type PendingCreditFilter = "all" | "positive" | "negative";
+
+const pendingCreditFilterOptions: Array<{ label: string; value: PendingCreditFilter }> = [
+  { label: "Todos", value: "all" },
+  { label: "Positivos", value: "positive" },
+  { label: "Negativos", value: "negative" },
+];
+
+const emptyPendingClients: PendingClientItem[] = [];
+
 function getCreditBadgeClass(value: number) {
   if (value > 0) {
     return "bg-emerald-100 text-emerald-700";
@@ -33,10 +43,42 @@ function getCreditBadgeClass(value: number) {
   return "bg-slate-100 text-slate-600";
 }
 
+function PendingCreditFilterControls({
+  value,
+  onChange,
+}: {
+  value: PendingCreditFilter;
+  onChange: (value: PendingCreditFilter) => void;
+}) {
+  return (
+    <div className="mt-6 flex flex-wrap gap-2">
+      {pendingCreditFilterOptions.map((option) => {
+        const isActive = option.value === value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`h-10 rounded-2xl px-4 text-sm font-semibold transition ${
+              isActive
+                ? "bg-[var(--primary)] text-white shadow-[0_14px_24px_rgba(106,92,255,0.18)]"
+                : "border border-[var(--border)] bg-white text-[var(--muted)] hover:text-[var(--foreground)]"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PendingPage() {
   const queryClient = useQueryClient();
   const { hasPermission, isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const [dateValue, setDateValue] = useState(() => getPreviousMonthLastDateInputValue());
+  const [creditFilter, setCreditFilter] = useState<PendingCreditFilter>("all");
   const [selectedClient, setSelectedClient] = useState<PendingClientItem | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
   const canUpdatePending = hasPermission(permissions.pagamentosPendenciasAtualizar);
@@ -119,8 +161,19 @@ export function PendingPage() {
     }
   }
 
-  const clients = pendingClientsQuery.data ?? [];
-  const totalCredit = clients.reduce((total, item) => total + item.credito, 0);
+  const clients = pendingClientsQuery.data ?? emptyPendingClients;
+  const visibleClients = useMemo(() => {
+    if (creditFilter === "positive") {
+      return clients.filter((item) => item.credito > 0);
+    }
+
+    if (creditFilter === "negative") {
+      return clients.filter((item) => item.credito < 0);
+    }
+
+    return clients;
+  }, [clients, creditFilter]);
+  const totalCredit = visibleClients.reduce((total, item) => total + item.credito, 0);
   const hasStore = Boolean(selectedStoreId);
 
   return (
@@ -172,7 +225,9 @@ export function PendingPage() {
           </div>
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
             <p className="text-sm text-[var(--muted)]">Clientes com credito</p>
-            <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">{clients.length}</p>
+            <p className="mt-2 text-3xl font-semibold text-[var(--foreground)]">
+              {visibleClients.length}
+            </p>
           </div>
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-muted)] p-5">
             <p className="text-sm text-[var(--muted)]">Credito total</p>
@@ -206,54 +261,69 @@ export function PendingPage() {
             title="Nenhuma pendencia encontrada"
             description="Nao ha clientes com credito diferente de zero para a loja selecionada."
           />
+        ) : visibleClients.length === 0 ? (
+          <>
+            <PendingCreditFilterControls value={creditFilter} onChange={setCreditFilter} />
+            <ClientEmptyState
+              title="Nenhuma pendencia neste filtro"
+              description="Troque o filtro para ver outros saldos da loja selecionada."
+            />
+          </>
         ) : (
-          <div className="mt-6 overflow-hidden rounded-[28px] border border-[var(--border)]">
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse">
-                <thead className="bg-[var(--surface-muted)]">
-                  <tr className="text-left text-xs uppercase tracking-[0.24em] text-[var(--muted)]">
-                    <th className="px-5 py-4 font-medium">Cliente</th>
-                    <th className="px-5 py-4 font-medium">Contato</th>
-                    <th className="px-5 py-4 font-medium text-right">Credito atual</th>
-                    <th className="px-5 py-4 font-medium text-right">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((client) => (
-                    <tr key={client.clienteId} className="border-t border-[var(--border)] bg-white">
-                      <td className="px-5 py-4">
-                        <div className="font-medium text-[var(--foreground)]">{client.nome}</div>
-                        <div className="text-sm text-[var(--muted)]">#{client.clienteId}</div>
-                      </td>
-                      <td className="px-5 py-4 text-sm text-[var(--muted)]">
-                        {formatPhone(client.contato)}
-                      </td>
-                      <td className="px-5 py-4 text-right text-sm font-semibold text-[var(--foreground)]">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCreditBadgeClass(client.credito)}`}
-                        >
-                          {formatCurrency(client.credito)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        {canHandleCredit ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedClient(client)}
-                            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
-                          >
-                            Pagamento
-                          </button>
-                        ) : (
-                          <span className="text-sm text-[var(--muted)]">Sem acoes</span>
-                        )}
-                      </td>
+          <>
+            <PendingCreditFilterControls value={creditFilter} onChange={setCreditFilter} />
+
+            <div className="mt-4 overflow-hidden rounded-[28px] border border-[var(--border)]">
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse">
+                  <thead className="bg-[var(--surface-muted)]">
+                    <tr className="text-left text-xs uppercase tracking-[0.24em] text-[var(--muted)]">
+                      <th className="px-5 py-4 font-medium">Cliente</th>
+                      <th className="px-5 py-4 font-medium">Contato</th>
+                      <th className="px-5 py-4 font-medium text-right">Credito atual</th>
+                      <th className="px-5 py-4 font-medium text-right">Acoes</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {visibleClients.map((client) => (
+                      <tr
+                        key={client.clienteId}
+                        className="border-t border-[var(--border)] bg-white"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="font-medium text-[var(--foreground)]">{client.nome}</div>
+                          <div className="text-sm text-[var(--muted)]">#{client.clienteId}</div>
+                        </td>
+                        <td className="px-5 py-4 text-sm text-[var(--muted)]">
+                          {formatPhone(client.contato)}
+                        </td>
+                        <td className="px-5 py-4 text-right text-sm font-semibold text-[var(--foreground)]">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getCreditBadgeClass(client.credito)}`}
+                          >
+                            {formatCurrency(client.credito)}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          {canHandleCredit ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedClient(client)}
+                              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.24)] transition hover:brightness-105"
+                            >
+                              Pagamento
+                            </button>
+                          ) : (
+                            <span className="text-sm text-[var(--muted)]">Sem acoes</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
