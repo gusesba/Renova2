@@ -1485,9 +1485,6 @@ export function MovementPage() {
                                   Marca - {product.marca}
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
-                                  Fornecedor - {product.fornecedor}
-                                </span>
-                                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                   Preco - {formatCurrencyValue(product.preco)}
                                 </span>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
