@@ -369,6 +369,66 @@ export function MovementPage() {
   }, [hasPendingMovements]);
 
   useEffect(() => {
+    if (!hasPendingMovements) {
+      return;
+    }
+
+    const handleInternalNavigation = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+
+      const anchor = event.target.closest("a[href]");
+
+      if (!(anchor instanceof HTMLAnchorElement) || (anchor.target && anchor.target !== "_self")) {
+        return;
+      }
+
+      const href = anchor.getAttribute("href");
+
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) {
+        return;
+      }
+
+      const currentUrl = new URL(window.location.href);
+      const nextUrl = new URL(anchor.href, currentUrl);
+
+      if (
+        nextUrl.origin !== currentUrl.origin ||
+        (nextUrl.pathname === currentUrl.pathname && nextUrl.search === currentUrl.search)
+      ) {
+        return;
+      }
+
+      const canNavigate = window.confirm(
+        "Existe uma movimentacao nao finalizada. Deseja sair desta pagina mesmo assim?",
+      );
+
+      if (!canNavigate) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", handleInternalNavigation, true);
+
+    return () => {
+      document.removeEventListener("click", handleInternalNavigation, true);
+    };
+  }, [hasPendingMovements]);
+
+  useEffect(() => {
     if (!token || !selectedStoreId || !activeDraft?.clienteId) {
       return;
     }
