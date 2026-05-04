@@ -12,6 +12,7 @@ import {
   extractClientFieldErrors,
   formatPhoneValue,
   getClientApiMessage,
+  initialClientFilters,
   initialClientFormValues,
   normalizeNumericValue,
   type ClientFieldErrors,
@@ -452,8 +453,8 @@ export function SolicitacaoCreateModal({
       }
 
       const response = await getClients(token, storeId, {
+        ...initialClientFilters,
         nome: debouncedLookupSearch.cliente,
-        contato: "",
         ordenarPor: "nome",
         direcao: "asc",
         pagina: 1,
