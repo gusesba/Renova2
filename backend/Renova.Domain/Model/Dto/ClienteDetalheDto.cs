@@ -23,6 +23,14 @@ namespace Renova.Domain.Model.Dto
             TotalItens = 0,
             TotalPaginas = 0
         };
+        public PaginacaoDto<ProdutoBuscaDto> ProdutosVendidos { get; set; } = new()
+        {
+            Itens = [],
+            Pagina = 1,
+            TamanhoPagina = 10,
+            TotalItens = 0,
+            TotalPaginas = 0
+        };
         public PaginacaoDto<ProdutoBuscaDto> ProdutosComCliente { get; set; } = new()
         {
             Itens = [],

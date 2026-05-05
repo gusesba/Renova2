@@ -27,6 +27,8 @@ export type ClientDetailFilters = {
   situacao: string;
   produtosFornecedorPagina: number;
   produtosFornecedorTamanhoPagina: number;
+  produtosVendidosPagina: number;
+  produtosVendidosTamanhoPagina: number;
   produtosComClientePagina: number;
   produtosComClienteTamanhoPagina: number;
 };
@@ -37,6 +39,7 @@ export type ClientDetailResponse = ClientListItem & {
   valorRetiradoLoja: number;
   valorAportadoLoja: number;
   produtosFornecedor: ProductListResponse;
+  produtosVendidos: ProductListResponse;
   produtosComCliente: ProductListResponse;
 };
 
@@ -125,6 +128,8 @@ export const initialClientDetailFilters: ClientDetailFilters = {
   situacao: "",
   produtosFornecedorPagina: 1,
   produtosFornecedorTamanhoPagina: 10,
+  produtosVendidosPagina: 1,
+  produtosVendidosTamanhoPagina: 10,
   produtosComClientePagina: 1,
   produtosComClienteTamanhoPagina: 10,
 };
@@ -176,6 +181,7 @@ export function formatPhoneValue(value: string) {
 const clientTableSettingsStorageKey = "renova.clientTableSettings";
 const clientTableSettingsSchemaVersion = 2;
 const clientDetailSupplierTableSettingsStorageKey = "renova.clientDetail.supplierTableSettings";
+const clientDetailSoldTableSettingsStorageKey = "renova.clientDetail.soldTableSettings";
 const clientDetailCustomerTableSettingsStorageKey = "renova.clientDetail.customerTableSettings";
 
 export function asClientListResponse(body: unknown) {
@@ -241,6 +247,8 @@ export function buildClientDetailQuery(storeId: number, filters: ClientDetailFil
 
   params.set("produtosFornecedorPagina", String(filters.produtosFornecedorPagina));
   params.set("produtosFornecedorTamanhoPagina", String(filters.produtosFornecedorTamanhoPagina));
+  params.set("produtosVendidosPagina", String(filters.produtosVendidosPagina));
+  params.set("produtosVendidosTamanhoPagina", String(filters.produtosVendidosTamanhoPagina));
   params.set("produtosComClientePagina", String(filters.produtosComClientePagina));
   params.set("produtosComClienteTamanhoPagina", String(filters.produtosComClienteTamanhoPagina));
 
@@ -440,6 +448,10 @@ export function getStoredClientDetailSupplierTableSettings() {
   return getClientDetailProductTableSettings(clientDetailSupplierTableSettingsStorageKey);
 }
 
+export function getStoredClientDetailSoldTableSettings() {
+  return getClientDetailProductTableSettings(clientDetailSoldTableSettingsStorageKey);
+}
+
 export function getStoredClientDetailCustomerTableSettings() {
   return getClientDetailProductTableSettings(clientDetailCustomerTableSettingsStorageKey);
 }
@@ -453,6 +465,17 @@ export function persistClientDetailSupplierTableSettings(
 
   window.localStorage.setItem(
     clientDetailSupplierTableSettingsStorageKey,
+    JSON.stringify(normalizeClientDetailProductTableSettings(settings)),
+  );
+}
+
+export function persistClientDetailSoldTableSettings(settings: ClientDetailProductTableSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    clientDetailSoldTableSettingsStorageKey,
     JSON.stringify(normalizeClientDetailProductTableSettings(settings)),
   );
 }

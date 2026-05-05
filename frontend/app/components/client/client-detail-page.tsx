@@ -12,9 +12,11 @@ import {
   getClientApiMessage,
   getPreviousMonthRange,
   getStoredClientDetailCustomerTableSettings,
+  getStoredClientDetailSoldTableSettings,
   getStoredClientDetailSupplierTableSettings,
   initialClientDetailFilters,
   persistClientDetailCustomerTableSettings,
+  persistClientDetailSoldTableSettings,
   persistClientDetailSupplierTableSettings,
   type ClientDetailProductTableSettings,
   type ClientDetailFilters,
@@ -228,6 +230,9 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
   const [supplierTableSettings, setSupplierTableSettings] = useState(
     getStoredClientDetailSupplierTableSettings,
   );
+  const [soldTableSettings, setSoldTableSettings] = useState(
+    getStoredClientDetailSoldTableSettings,
+  );
   const [customerTableSettings, setCustomerTableSettings] = useState(
     getStoredClientDetailCustomerTableSettings,
   );
@@ -235,6 +240,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
     ...initialClientDetailFilters,
     ...previousMonthRange,
     produtosFornecedorTamanhoPagina: supplierTableSettings.tamanhoPagina,
+    produtosVendidosTamanhoPagina: soldTableSettings.tamanhoPagina,
     produtosComClienteTamanhoPagina: customerTableSettings.tamanhoPagina,
   });
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
@@ -311,6 +317,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
                   ...current,
                   dataInicial: event.target.value,
                   produtosFornecedorPagina: 1,
+                  produtosVendidosPagina: 1,
                   produtosComClientePagina: 1,
                 }))
               }
@@ -329,6 +336,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
                   ...current,
                   dataFinal: event.target.value,
                   produtosFornecedorPagina: 1,
+                  produtosVendidosPagina: 1,
                   produtosComClientePagina: 1,
                 }))
               }
@@ -356,6 +364,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
                     ...current,
                     situacao,
                     produtosFornecedorPagina: 1,
+                    produtosVendidosPagina: 1,
                     produtosComClientePagina: 1,
                   }))
                 }
@@ -446,8 +455,8 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
 
           <ProductsSnapshot
             key={`fornecedor-${filters.dataInicial}-${filters.dataFinal}-${filters.situacao}`}
-            title="Produtos do cliente como fornecedor"
-            description="Itens cadastrados com esse cliente como fornecedor, respeitando o periodo e a situacao selecionados."
+            title="Itens do cliente adicionados"
+            description="Itens cadastrados com esse cliente como fornecedor, respeitando o periodo de entrada e a situacao selecionados."
             products={detail.produtosFornecedor}
             settings={supplierTableSettings}
             onPageChange={(page) =>
@@ -465,9 +474,29 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
           />
 
           <ProductsSnapshot
+            key={`vendidos-${filters.dataInicial}-${filters.dataFinal}-${filters.situacao}`}
+            title="Itens do cliente vendidos"
+            description="Itens desse fornecedor vendidos no periodo, considerando somente vendas que ainda sao a ultima movimentacao do item."
+            products={detail.produtosVendidos}
+            settings={soldTableSettings}
+            onPageChange={(page) =>
+              setFilters((current) => ({ ...current, produtosVendidosPagina: page }))
+            }
+            onSettingsChange={(settings) => {
+              setSoldTableSettings(settings);
+              persistClientDetailSoldTableSettings(settings);
+              setFilters((current) => ({
+                ...current,
+                produtosVendidosPagina: 1,
+                produtosVendidosTamanhoPagina: settings.tamanhoPagina,
+              }));
+            }}
+          />
+
+          <ProductsSnapshot
             key={`com-cliente-${filters.dataInicial}-${filters.dataFinal}-${filters.situacao}`}
-            title="Produtos atualmente com o cliente"
-            description="Itens cuja ultima movimentacao deixou o produto com esse cliente por venda ou emprestimo."
+            title="Itens comprados pelo cliente"
+            description="Itens cuja ultima movimentacao e uma venda para esse cliente no periodo."
             products={detail.produtosComCliente}
             settings={customerTableSettings}
             onPageChange={(page) =>

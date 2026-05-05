@@ -22,6 +22,12 @@ namespace Renova.Service.Queries.Cliente
         public int ProdutosFornecedorTamanhoPagina { get; set; } = 10;
 
         [Range(1, int.MaxValue)]
+        public int ProdutosVendidosPagina { get; set; } = 1;
+
+        [Range(1, 100)]
+        public int ProdutosVendidosTamanhoPagina { get; set; } = 10;
+
+        [Range(1, int.MaxValue)]
         public int ProdutosComClientePagina { get; set; } = 1;
 
         [Range(1, 100)]

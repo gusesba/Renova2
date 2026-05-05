@@ -552,6 +552,24 @@ namespace Renova.Service.Services.Cliente
                 produtosFornecedorQuery = produtosFornecedorQuery.Where(produto => produto.Situacao == request.Situacao.Value);
             }
 
+            IQueryable<MovimentacaoProdutoModel> produtosVendidosQuery = _context.MovimentacoesProdutos
+                .AsNoTracking()
+                .Where(item => item.Movimentacao != null
+                    && item.Produto != null
+                    && item.Produto.LojaId == loja.Id
+                    && item.Movimentacao.LojaId == loja.Id
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                    && item.Produto.FornecedorId == cliente.Id)
+                .Where(item => !_context.MovimentacoesProdutos
+                    .AsNoTracking()
+                    .Any(proximaMovimentacaoProduto =>
+                        proximaMovimentacaoProduto.ProdutoId == item.ProdutoId
+                        && proximaMovimentacaoProduto.Movimentacao != null
+                        && item.Movimentacao != null
+                        && (proximaMovimentacaoProduto.Movimentacao.Data > item.Movimentacao.Data
+                            || (proximaMovimentacaoProduto.Movimentacao.Data == item.Movimentacao.Data
+                                && proximaMovimentacaoProduto.MovimentacaoId > item.MovimentacaoId))));
+
             IQueryable<MovimentacaoProdutoModel> produtosComClienteQuery = _context.MovimentacoesProdutos
                 .AsNoTracking()
                 .Where(item => item.Movimentacao != null
@@ -559,8 +577,7 @@ namespace Renova.Service.Services.Cliente
                     && item.Produto.LojaId == loja.Id
                     && item.Movimentacao.LojaId == loja.Id
                     && item.Movimentacao.ClienteId == cliente.Id
-                    && (item.Movimentacao.Tipo == TipoMovimentacao.Venda
-                        || item.Movimentacao.Tipo == TipoMovimentacao.Emprestimo))
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
                 .Where(item => !_context.MovimentacoesProdutos
                     .AsNoTracking()
                     .Any(proximaMovimentacaoProduto =>
@@ -573,16 +590,19 @@ namespace Renova.Service.Services.Cliente
 
             if (dataInicialUtc.HasValue)
             {
+                produtosVendidosQuery = produtosVendidosQuery.Where(item => item.Movimentacao!.Data >= dataInicialUtc.Value);
                 produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Movimentacao!.Data >= dataInicialUtc.Value);
             }
 
             if (dataFinalUtc.HasValue)
             {
+                produtosVendidosQuery = produtosVendidosQuery.Where(item => item.Movimentacao!.Data <= dataFinalUtc.Value);
                 produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Movimentacao!.Data <= dataFinalUtc.Value);
             }
 
             if (request.Situacao.HasValue)
             {
+                produtosVendidosQuery = produtosVendidosQuery.Where(item => item.Produto!.Situacao == request.Situacao.Value);
                 produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Produto!.Situacao == request.Situacao.Value);
             }
 
@@ -643,8 +663,39 @@ namespace Renova.Service.Services.Cliente
                     request.ProdutosFornecedorTamanhoPagina,
                     cancellationToken);
 
+            PaginacaoDto<ProdutoBuscaDto> produtosVendidos = await produtosVendidosQuery
+                .OrderByDescending(item => item.Movimentacao!.Data)
+                .ThenByDescending(item => item.MovimentacaoId)
+                .Select(item => new ProdutoBuscaDto
+                {
+                    Id = item.ProdutoId,
+                    Etiqueta = item.Produto!.Etiqueta,
+                    Preco = item.Produto.Preco,
+                    ProdutoId = item.Produto.ProdutoId,
+                    Produto = item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
+                    MarcaId = item.Produto.MarcaId,
+                    Marca = item.Produto.Marca != null ? item.Produto.Marca.Valor : string.Empty,
+                    TamanhoId = item.Produto.TamanhoId,
+                    Tamanho = item.Produto.Tamanho != null ? item.Produto.Tamanho.Valor : string.Empty,
+                    CorId = item.Produto.CorId,
+                    Cor = item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
+                    FornecedorId = item.Produto.FornecedorId,
+                    Fornecedor = item.Produto.Fornecedor != null ? item.Produto.Fornecedor.Nome : string.Empty,
+                    Descricao = item.Produto.Descricao,
+                    Entrada = item.Produto.Entrada,
+                    DataSaida = item.Movimentacao!.Data,
+                    LojaId = item.Produto.LojaId,
+                    Situacao = item.Produto.Situacao,
+                    Consignado = item.Produto.Consignado
+                })
+                .ToPagedResultAsync(
+                    request.ProdutosVendidosPagina,
+                    request.ProdutosVendidosTamanhoPagina,
+                    cancellationToken);
+
             PaginacaoDto<ProdutoBuscaDto> produtosComCliente = await produtosComClienteQuery
-                .OrderByDescending(item => item.ProdutoId)
+                .OrderByDescending(item => item.Movimentacao!.Data)
+                .ThenByDescending(item => item.MovimentacaoId)
                 .Select(item => new ProdutoBuscaDto
                 {
                     Id = item.ProdutoId,
@@ -688,6 +739,7 @@ namespace Renova.Service.Services.Cliente
                 ValorAportadoLoja = valorAportadoLoja,
                 ValorRetiradoLoja = valorRetiradoLoja,
                 ProdutosFornecedor = produtosFornecedor,
+                ProdutosVendidos = produtosVendidos,
                 ProdutosComCliente = produtosComCliente
             };
         }
