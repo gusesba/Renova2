@@ -205,6 +205,9 @@ export function MovementsTable({
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                                       Fornecedor
                                     </th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                      Desconto
+                                    </th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -222,6 +225,9 @@ export function MovementsTable({
                                       <TableCell>{product.descricao}</TableCell>
                                       <TableCell subtle>{product.marca}</TableCell>
                                       <TableCell subtle>{product.fornecedor}</TableCell>
+                                      <TableCell subtle>
+                                        {Number(product.descontoMovimentacao ?? 0).toFixed(2)}%
+                                      </TableCell>
                                     </tr>
                                   ))}
                                 </tbody>

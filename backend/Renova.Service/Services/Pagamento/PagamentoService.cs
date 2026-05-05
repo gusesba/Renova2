@@ -460,7 +460,7 @@ namespace Renova.Service.Services.Pagamento
                 LojaId = request.LojaId,
                 ClienteId = request.ClienteId,
                 Natureza = naturezaCliente,
-                Status = request.TipoMovimentacao == TipoMovimentacao.Venda
+                Status = request.TipoMovimentacao is TipoMovimentacao.Venda or TipoMovimentacao.DevolucaoVenda
                     ? StatusPagamento.Pago
                     : StatusPagamento.Pendente,
                 Valor = decimal.Round(valorTotal, 2, MidpointRounding.AwayFromZero),
@@ -506,6 +506,15 @@ namespace Renova.Service.Services.Pagamento
                     cancellationToken);
 
                 credito.Valor -= pagamentoCliente.Valor;
+            }
+            else if (request.TipoMovimentacao == TipoMovimentacao.DevolucaoVenda)
+            {
+                ClienteCreditoModel credito = await ObterOuCriarCreditoAsync(
+                    request.LojaId,
+                    request.ClienteId,
+                    cancellationToken);
+
+                credito.Valor += pagamentoCliente.Valor;
             }
 
             await _context.Pagamentos.AddRangeAsync(pagamentos, cancellationToken);

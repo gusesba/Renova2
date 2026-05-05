@@ -126,7 +126,10 @@ export function MovementListPage() {
       buyer: movement.cliente,
       movementId: movement.id,
       printedAt: new Date(),
-      products: movement.produtos,
+      products: movement.produtos.map((product) => ({
+        ...product,
+        desconto: String(product.descontoMovimentacao ?? 0),
+      })),
       sellType: movement.tipo as MovementTypeValue,
     };
   }

@@ -73,6 +73,29 @@ namespace Renova.Tests.Services.Produto.GetProduto
         }
 
         [Fact]
+        public async Task GetByIdAsyncDeveRetornarDescontoDaUltimaVenda()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente Venda", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoCompletoAsync(context, loja.Id, "Vestido", "Farm", "M", "Azul", "Fornecedor Alpha", "Vestido azul");
+            _ = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, produto.Id, 10m, new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc));
+            _ = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, produto.Id, 25m, new DateTime(2026, 4, 2, 12, 0, 0, DateTimeKind.Utc));
+
+            ProdutoService service = new(context);
+            ProdutoBuscaDto resultado = await service.GetByIdAsync(new ObterProdutoParametros
+            {
+                UsuarioId = usuario.Id,
+                ProdutoId = produto.Id
+            });
+
+            Assert.Equal(25m, resultado.DescontoUltimaVenda);
+        }
+
+
+        [Fact]
         public async Task GetByIdAsyncDeveFalharQuandoProdutoNaoExistir()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -243,6 +266,35 @@ namespace Renova.Tests.Services.Produto.GetProduto
             };
 
             _ = context.Cores.Add(entity);
+            _ = await context.SaveChangesAsync();
+            return entity;
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            int produtoId,
+            decimal desconto,
+            DateTime data)
+        {
+            MovimentacaoModel entity = new()
+            {
+                Tipo = TipoMovimentacao.Venda,
+                Data = data,
+                ClienteId = clienteId,
+                LojaId = lojaId,
+                Produtos =
+                [
+                    new MovimentacaoProdutoModel
+                    {
+                        ProdutoId = produtoId,
+                        Desconto = desconto
+                    }
+                ]
+            };
+
+            _ = context.Movimentacoes.Add(entity);
             _ = await context.SaveChangesAsync();
             return entity;
         }

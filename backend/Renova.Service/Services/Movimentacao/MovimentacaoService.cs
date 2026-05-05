@@ -134,6 +134,7 @@ namespace Renova.Service.Services.Movimentacao
                         Fornecedor = item.Produto != null && item.Produto.Fornecedor != null ? item.Produto.Fornecedor.Nome : string.Empty,
                         Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
                         Entrada = item.Produto != null ? item.Produto.Entrada : default,
+                        DescontoMovimentacao = item.Desconto,
                         LojaId = item.Produto != null ? item.Produto.LojaId : 0,
                         Situacao = item.Produto != null ? item.Produto.Situacao : default,
                         Consignado = item.Produto != null && item.Produto.Consignado
@@ -238,6 +239,20 @@ namespace Renova.Service.Services.Movimentacao
                     throw new ArgumentException(
                         $"Os produtos [{produtosInvalidos}] nao estao com a situacao esperada {situacaoEsperada} para a movimentacao {request.Tipo}.",
                         nameof(request));
+                }
+
+                if (request.Tipo == TipoMovimentacao.DevolucaoVenda)
+                {
+                    Dictionary<int, decimal> descontosUltimaVendaPorProduto = await ObterDescontosUltimaVendaPorProdutoAsync(
+                        produtoIds,
+                        request.ClienteId,
+                        cancellationToken);
+
+                    produtosSolicitados = [.. produtosSolicitados.Select(item => new CriarMovimentacaoProdutoCommand
+                    {
+                        ProdutoId = item.ProdutoId,
+                        Desconto = descontosUltimaVendaPorProduto[item.ProdutoId]
+                    })];
                 }
 
                 SituacaoProduto situacaoFinal = SituacoesFinaisPorTipo[request.Tipo];
@@ -669,6 +684,37 @@ namespace Renova.Service.Services.Movimentacao
                         item.ClienteId))
                     .First())
                 .ToDictionaryAsync(item => item.ProdutoId, item => item, cancellationToken);
+        }
+
+        private async Task<Dictionary<int, decimal>> ObterDescontosUltimaVendaPorProdutoAsync(
+            List<int> produtoIds,
+            int clienteId,
+            CancellationToken cancellationToken)
+        {
+            return await _context.MovimentacoesProdutos
+                .Where(item =>
+                    produtoIds.Contains(item.ProdutoId)
+                    && item.Movimentacao != null
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                    && item.Movimentacao.ClienteId == clienteId)
+                .Select(item => new
+                {
+                    item.ProdutoId,
+                    item.Desconto,
+                    item.MovimentacaoId,
+                    item.Movimentacao!.Data
+                })
+                .GroupBy(item => item.ProdutoId)
+                .Select(group => group
+                    .OrderByDescending(item => item.Data)
+                    .ThenByDescending(item => item.MovimentacaoId)
+                    .Select(item => new
+                    {
+                        ProdutoId = group.Key,
+                        item.Desconto
+                    })
+                    .First())
+                .ToDictionaryAsync(item => item.ProdutoId, item => item.Desconto, cancellationToken);
         }
 
         private static bool UltimaMovimentacaoEhCompativel(

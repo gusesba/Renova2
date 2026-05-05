@@ -63,14 +63,14 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 TipoMovimentacao = TipoMovimentacao.DevolucaoVenda,
                 LojaId = loja.Id,
                 ClienteId = cliente.Id,
-                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id }],
+                Produtos = [new CriarPagamentoProdutoCommand { ProdutoId = produto.Id, Desconto = 25m }],
                 Data = movimentacao.Data
             });
 
             Assert.Equal(2, resultado.Count);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pendente && item.Valor == 200m && item.ClienteId == cliente.Id);
-            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pendente && item.Valor == 120m && item.ClienteId == produto.FornecedorId);
-            Assert.Equal(0, await context.ClientesCreditos.CountAsync());
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Pagar && item.Status == StatusPagamento.Pago && item.Valor == 150m && item.ClienteId == cliente.Id);
+            Assert.Contains(resultado, item => item.Natureza == NaturezaPagamento.Receber && item.Status == StatusPagamento.Pendente && item.Valor == 90m && item.ClienteId == produto.FornecedorId);
+            Assert.Equal(150m, await ObterCreditoAsync(context, cliente.Id));
         }
 
         [Fact]
@@ -286,7 +286,7 @@ namespace Renova.Tests.Services.Pagamento.Criar
         }
 
         [Fact]
-        public async Task CreateAsyncNaoDeveAlterarCreditoDoClienteQuandoMovimentacaoForDevolucaoVenda()
+        public async Task CreateAsyncDeveFaturarReembolsoDoClienteQuandoMovimentacaoForDevolucaoVenda()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -307,7 +307,10 @@ namespace Renova.Tests.Services.Pagamento.Criar
                 Data = movimentacao.Data
             });
 
-            Assert.Empty(context.ClientesCreditos);
+            PagamentoModel pagamentoCliente = await context.Pagamentos.SingleAsync(item => item.ClienteId == cliente.Id);
+            Assert.Equal(NaturezaPagamento.Pagar, pagamentoCliente.Natureza);
+            Assert.Equal(StatusPagamento.Pago, pagamentoCliente.Status);
+            Assert.Equal(200m, await ObterCreditoAsync(context, cliente.Id));
         }
 
         private static async Task<LojaModel> CriarLojaAsync(RenovaDbContext context, string nomeLoja, string emailUsuario)

@@ -15,6 +15,8 @@ export type ProductListItem = {
   descricao: string;
   entrada: string;
   dataSaida?: string | null;
+  descontoMovimentacao?: number | null;
+  descontoUltimaVenda?: number | null;
   lojaId: number;
   situacao: number;
   consignado: boolean;

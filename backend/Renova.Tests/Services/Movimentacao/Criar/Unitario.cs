@@ -342,7 +342,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001", SituacaoProduto.Vendido);
-            _ = await CriarMovimentacaoExistenteAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, produto.Id);
+            _ = await CriarMovimentacaoExistenteComDescontoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, 15m, produto.Id);
 
             CriarMovimentacaoCommand command = new()
             {
@@ -362,6 +362,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             Assert.Equal(cliente.Id, pagamentoService.Commands[0].ClienteId);
             Assert.Equal(loja.Id, pagamentoService.Commands[0].LojaId);
             Assert.Equal([produto.Id], pagamentoService.Commands[0].Produtos.Select(item => item.ProdutoId).ToList());
+            Assert.Equal(15m, pagamentoService.Commands[0].Produtos[0].Desconto);
         }
 
         [Fact]
@@ -641,6 +642,17 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             TipoMovimentacao tipo,
             params int[] produtoIds)
         {
+            return await CriarMovimentacaoExistenteComDescontoAsync(context, lojaId, clienteId, tipo, 0m, produtoIds);
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoExistenteComDescontoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            decimal desconto,
+            params int[] produtoIds)
+        {
             MovimentacaoModel movimentacao = new()
             {
                 Tipo = tipo,
@@ -650,7 +662,8 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 Produtos = produtoIds
                     .Select(produtoId => new MovimentacaoProdutoModel
                     {
-                        ProdutoId = produtoId
+                        ProdutoId = produtoId,
+                        Desconto = desconto
                     })
                     .ToList()
             };

@@ -166,6 +166,19 @@ function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraf
       : 0;
 }
 
+function getProductDiscountForDraft(
+  draft: MovementDraft,
+  product: ProductListItem,
+  storeConfig: ConfigLojaResponse | null,
+) {
+  if (Number(draft.tipo) === 5) {
+    return String(product.descontoUltimaVenda ?? 0);
+  }
+
+  const automaticDiscount = getAutomaticDiscountForProduct(draft, product, storeConfig);
+  return automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0";
+}
+
 function getMonthsBetweenDates(startDate: string, endDate: string) {
   const start = new Date(`${startDate}T00:00:00.000Z`);
   const end = new Date(`${endDate}T00:00:00.000Z`);
@@ -233,6 +246,7 @@ function FieldShell({
 }
 
 function TextField({
+  disabled = false,
   error,
   inputRef,
   label,
@@ -241,6 +255,7 @@ function TextField({
   type = "text",
   value,
 }: {
+  disabled?: boolean;
   error?: string;
   inputRef?: React.Ref<HTMLInputElement>;
   label: string;
@@ -256,12 +271,13 @@ function TextField({
         type={type}
         value={value}
         placeholder={placeholder}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
           error
             ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
             : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
-        }`}
+        } disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] disabled:text-[var(--muted)]`}
       />
     </FieldShell>
   );
@@ -664,15 +680,9 @@ export function MovementPage() {
           continue;
         }
 
-        const automaticDiscount = getAutomaticDiscountForProduct(
-          current,
-          product,
-          storeConfigQuery.data ?? null,
-        );
-
         nextProducts.push({
           ...product,
-          desconto: automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0",
+          desconto: getProductDiscountForDraft(current, product, storeConfigQuery.data ?? null),
         });
         existingIds.add(product.id);
       }
@@ -800,6 +810,15 @@ export function MovementPage() {
       tipo,
       suggestion: null,
       descontoTotal: tipo === "1" ? draft.descontoTotal : "0",
+      products: draft.products.map((product) => ({
+        ...product,
+        desconto:
+          tipo === "1"
+            ? product.desconto
+            : tipo === "5"
+              ? String(product.descontoUltimaVenda ?? 0)
+              : "0",
+      })),
       errors: { ...draft.errors, tipo: undefined, descontoTotal: undefined, produtos: undefined },
     }));
   }
@@ -1018,9 +1037,7 @@ export function MovementPage() {
         product,
         storeConfigQuery.data ?? null,
       );
-      const productDiscount = automaticDiscount
-        ? String(automaticDiscount.percentualDesconto)
-        : "0";
+      const productDiscount = getProductDiscountForDraft(draft, product, storeConfigQuery.data ?? null);
 
       updateDraft(draft.id, (current) => ({
         ...current,
@@ -1106,7 +1123,7 @@ export function MovementPage() {
       product,
       storeConfigQuery.data ?? null,
     );
-    const productDiscount = automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0";
+    const productDiscount = getProductDiscountForDraft(targetDraft, product, storeConfigQuery.data ?? null);
 
     updateDraft(draftId, (current) => ({
       ...current,
@@ -1152,7 +1169,11 @@ export function MovementPage() {
       products: [
         {
           ...draft.suggestion.product,
-          desconto: automaticDiscount ? String(automaticDiscount.percentualDesconto) : "0",
+          desconto: getProductDiscountForDraft(
+            { ...draft, tipo: String(draft.suggestion.suggestedType) },
+            draft.suggestion.product,
+            storeConfigQuery.data ?? null,
+          ),
         },
       ],
     });
@@ -1598,6 +1619,7 @@ export function MovementPage() {
                           label="Desconto total da movimentacao (%)"
                           value={activeDraft.descontoTotal}
                           error={activeDraft.errors.descontoTotal}
+                          disabled={Number(activeDraft.tipo) === 5}
                           onChange={(value) =>
                             updateDraft(activeDraft.id, (draft) => ({
                               ...draft,
@@ -1654,7 +1676,9 @@ export function MovementPage() {
                       <p className="mt-2 text-sm text-[var(--muted)]">
                         {Number(activeDraft.tipo) === 1
                           ? "Preview com o desconto total como padrao por peca, sobrescrito quando a peca tiver desconto proprio."
-                          : "Preview com desconto unitario quando a peca tiver valor configurado. No envio, movimentacoes sem venda continuam sendo salvas com desconto zerado."}
+                          : Number(activeDraft.tipo) === 5
+                            ? "Preview com desconto da venda original da peca."
+                            : "Preview com desconto unitario quando a peca tiver valor configurado. No envio, movimentacoes sem venda continuam sendo salvas com desconto zerado."}
                       </p>
                     </div>
 
@@ -1745,6 +1769,7 @@ export function MovementPage() {
                                 <TextField
                                   label="Desconto da peca (%)"
                                   value={product.desconto}
+                                  disabled={Number(activeDraft.tipo) === 5}
                                   onChange={(value) =>
                                     updateDraft(activeDraft.id, (draft) => ({
                                       ...draft,

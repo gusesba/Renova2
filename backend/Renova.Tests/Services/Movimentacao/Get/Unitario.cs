@@ -32,6 +32,9 @@ namespace Renova.Tests.Services.Movimentacao.Get
             ProdutoEstoqueModel produtoC = await CriarProdutoAsync(context, outraLoja.Id, "Produto Outra Loja", "44999990003");
 
             MovimentacaoModel movimento = await CriarMovimentacaoAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Venda, new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc), produtoA.Id, produtoB.Id);
+            MovimentacaoProdutoModel movimentoProdutoA = await context.MovimentacoesProdutos.SingleAsync(item => item.MovimentacaoId == movimento.Id && item.ProdutoId == produtoA.Id);
+            movimentoProdutoA.Desconto = 15m;
+            _ = await context.SaveChangesAsync();
             _ = await CriarMovimentacaoAsync(context, outraLoja.Id, clienteOutraLoja.Id, TipoMovimentacao.Emprestimo, new DateTime(2026, 4, 2, 12, 0, 0, DateTimeKind.Utc), produtoC.Id);
 
             MovimentacaoService service = new(context);
@@ -60,6 +63,7 @@ namespace Renova.Tests.Services.Movimentacao.Get
                     Assert.Equal("M", produto.Tamanho);
                     Assert.Equal("Azul", produto.Cor);
                     Assert.Equal("Vestido Azul Fornecedor", produto.Fornecedor);
+                    Assert.Equal(15m, produto.DescontoMovimentacao);
                 },
                 produto =>
                 {

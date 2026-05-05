@@ -460,6 +460,14 @@ namespace Renova.Service.Services.Produto
                 Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                 Descricao = produto.Descricao,
                 Entrada = produto.Entrada,
+                DescontoUltimaVenda = produto.Movimentacoes
+                    .Where(movimentacaoProduto =>
+                        movimentacaoProduto.Movimentacao != null
+                        && movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                    .Select(movimentacaoProduto => (decimal?)movimentacaoProduto.Desconto)
+                    .FirstOrDefault(),
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado,
@@ -493,6 +501,8 @@ namespace Renova.Service.Services.Produto
             _ = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(produto.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizarItem, cancellationToken);
 
+            decimal? descontoUltimaVenda = await ObterDescontoUltimaVendaAsync(produto.Id, cancellationToken);
+
             return new ProdutoBuscaDto
             {
                 Id = produto.Id,
@@ -510,6 +520,7 @@ namespace Renova.Service.Services.Produto
                 Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                 Descricao = produto.Descricao,
                 Entrada = produto.Entrada,
+                DescontoUltimaVenda = descontoUltimaVenda,
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
                 Consignado = produto.Consignado,
@@ -563,11 +574,32 @@ namespace Renova.Service.Services.Produto
                     Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                     Descricao = produto.Descricao,
                     Entrada = produto.Entrada,
+                    DescontoUltimaVenda = produto.Movimentacoes
+                        .Where(movimentacaoProduto =>
+                            movimentacaoProduto.Movimentacao != null
+                            && movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                        .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                        .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                        .Select(movimentacaoProduto => (decimal?)movimentacaoProduto.Desconto)
+                        .FirstOrDefault(),
                     LojaId = produto.LojaId,
                     Situacao = produto.Situacao,
                     Consignado = produto.Consignado
                 })
                 .ToListAsync(cancellationToken);
+        }
+
+        private async Task<decimal?> ObterDescontoUltimaVendaAsync(int produtoId, CancellationToken cancellationToken)
+        {
+            return await _context.MovimentacoesProdutos
+                .Where(item =>
+                    item.ProdutoId == produtoId
+                    && item.Movimentacao != null
+                    && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
+                .OrderByDescending(item => item.Movimentacao!.Data)
+                .ThenByDescending(item => item.MovimentacaoId)
+                .Select(item => (decimal?)item.Desconto)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         public async Task<IReadOnlyList<SolicitacaoCompativelDto>> GetSolicitacoesCompativeisAsync(int produtoId, CancellationToken cancellationToken = default)
