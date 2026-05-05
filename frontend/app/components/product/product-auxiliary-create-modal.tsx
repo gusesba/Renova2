@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ProductAuxiliaryCreateModalProps = {
   error?: string;
@@ -27,6 +27,7 @@ export function ProductAuxiliaryCreateModal({
 }: ProductAuxiliaryCreateModalProps) {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -65,6 +66,20 @@ export function ProductAuxiliaryCreateModal({
       window.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen, isSubmitting, onClose, shouldRender]);
+
+  useEffect(() => {
+    if (!isOpen || !shouldRender) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isOpen, shouldRender]);
 
   if (!shouldRender) {
     return null;
@@ -110,6 +125,7 @@ export function ProductAuxiliaryCreateModal({
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-[var(--foreground)]">Valor</span>
             <input
+              ref={inputRef}
               type="text"
               value={value}
               placeholder={`Ex.: novo ${label.toLowerCase()}`}
