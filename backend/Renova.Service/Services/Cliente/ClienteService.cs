@@ -605,6 +605,15 @@ namespace Renova.Service.Services.Cliente
                     && item.Produto.FornecedorId == cliente.Id)
                 .Where(item => !dataInicialUtc.HasValue || item.Movimentacao!.Data >= dataInicialUtc.Value)
                 .Where(item => !dataFinalUtc.HasValue || item.Movimentacao!.Data <= dataFinalUtc.Value)
+                .Where(item => !_context.MovimentacoesProdutos
+                    .AsNoTracking()
+                    .Any(proximaMovimentacaoProduto =>
+                        proximaMovimentacaoProduto.ProdutoId == item.ProdutoId
+                        && proximaMovimentacaoProduto.Movimentacao != null
+                        && item.Movimentacao != null
+                        && (proximaMovimentacaoProduto.Movimentacao.Data > item.Movimentacao.Data
+                            || (proximaMovimentacaoProduto.Movimentacao.Data == item.Movimentacao.Data
+                                && proximaMovimentacaoProduto.MovimentacaoId > item.MovimentacaoId))))
                 .CountAsync(cancellationToken);
 
             decimal valorAportadoLoja = await _context.PagamentosCredito
