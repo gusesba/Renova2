@@ -511,6 +511,7 @@ namespace Renova.Service.Services.Cliente
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .Include(item => item.User)
                 .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
                 ?? throw new KeyNotFoundException("Cliente informado nao foi encontrado.");
@@ -533,6 +534,7 @@ namespace Renova.Service.Services.Cliente
                 : null;
 
             IQueryable<ProdutoEstoqueModel> produtosFornecedorQuery = _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(produto => produto.LojaId == loja.Id && produto.FornecedorId == cliente.Id);
 
             if (dataInicialUtc.HasValue)
@@ -550,44 +552,42 @@ namespace Renova.Service.Services.Cliente
                 produtosFornecedorQuery = produtosFornecedorQuery.Where(produto => produto.Situacao == request.Situacao.Value);
             }
 
-            IQueryable<ProdutoEstoqueModel> produtosComClienteQuery = _context.ProdutosEstoque
-                .Where(produto => produto.LojaId == loja.Id)
-                .Where(produto => produto.Movimentacoes
-                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
-                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
-                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
-                    .Take(1)
-                    .Any(movimentacaoProduto =>
-                        movimentacaoProduto.Movimentacao!.ClienteId == cliente.Id
-                        && (movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Venda
-                            || movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Emprestimo)));
+            IQueryable<MovimentacaoProdutoModel> produtosComClienteQuery = _context.MovimentacoesProdutos
+                .AsNoTracking()
+                .Where(item => item.Movimentacao != null
+                    && item.Produto != null
+                    && item.Produto.LojaId == loja.Id
+                    && item.Movimentacao.LojaId == loja.Id
+                    && item.Movimentacao.ClienteId == cliente.Id
+                    && (item.Movimentacao.Tipo == TipoMovimentacao.Venda
+                        || item.Movimentacao.Tipo == TipoMovimentacao.Emprestimo))
+                .Where(item => !_context.MovimentacoesProdutos
+                    .AsNoTracking()
+                    .Any(proximaMovimentacaoProduto =>
+                        proximaMovimentacaoProduto.ProdutoId == item.ProdutoId
+                        && proximaMovimentacaoProduto.Movimentacao != null
+                        && item.Movimentacao != null
+                        && (proximaMovimentacaoProduto.Movimentacao.Data > item.Movimentacao.Data
+                            || (proximaMovimentacaoProduto.Movimentacao.Data == item.Movimentacao.Data
+                                && proximaMovimentacaoProduto.MovimentacaoId > item.MovimentacaoId))));
 
             if (dataInicialUtc.HasValue)
             {
-                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Movimentacoes
-                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
-                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
-                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
-                    .Take(1)
-                    .Any(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data >= dataInicialUtc.Value));
+                produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Movimentacao!.Data >= dataInicialUtc.Value);
             }
 
             if (dataFinalUtc.HasValue)
             {
-                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Movimentacoes
-                    .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
-                    .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
-                    .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
-                    .Take(1)
-                    .Any(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data <= dataFinalUtc.Value));
+                produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Movimentacao!.Data <= dataFinalUtc.Value);
             }
 
             if (request.Situacao.HasValue)
             {
-                produtosComClienteQuery = produtosComClienteQuery.Where(produto => produto.Situacao == request.Situacao.Value);
+                produtosComClienteQuery = produtosComClienteQuery.Where(item => item.Produto!.Situacao == request.Situacao.Value);
             }
 
             int quantidadePecasCompradas = await _context.MovimentacoesProdutos
+                .AsNoTracking()
                 .Where(item => item.Movimentacao != null
                     && item.Movimentacao.LojaId == loja.Id
                     && item.Movimentacao.ClienteId == cliente.Id
@@ -597,6 +597,7 @@ namespace Renova.Service.Services.Cliente
                 .CountAsync(cancellationToken);
 
             int quantidadePecasVendidas = await _context.MovimentacoesProdutos
+                .AsNoTracking()
                 .Where(item => item.Movimentacao != null
                     && item.Movimentacao.LojaId == loja.Id
                     && item.Movimentacao.Tipo == TipoMovimentacao.Venda
@@ -607,6 +608,7 @@ namespace Renova.Service.Services.Cliente
                 .CountAsync(cancellationToken);
 
             decimal valorAportadoLoja = await _context.PagamentosCredito
+                .AsNoTracking()
                 .Where(item => item.LojaId == loja.Id
                     && item.ClienteId == cliente.Id
                     && item.Tipo == TipoPagamentoCredito.AdicionarCredito)
@@ -615,6 +617,7 @@ namespace Renova.Service.Services.Cliente
                 .SumAsync(item => (decimal?)item.ValorDinheiro, cancellationToken) ?? 0m;
 
             decimal valorRetiradoLoja = await _context.PagamentosCredito
+                .AsNoTracking()
                 .Where(item => item.LojaId == loja.Id
                     && item.ClienteId == cliente.Id
                     && item.Tipo == TipoPagamentoCredito.ResgatarCredito)
@@ -629,8 +632,29 @@ namespace Renova.Service.Services.Cliente
                 .ToListAsync(cancellationToken);
 
             List<ProdutoBuscaDto> produtosComCliente = await produtosComClienteQuery
-                .OrderByDescending(produto => produto.Id)
-                .Select(MapearProdutoBuscaDto())
+                .OrderByDescending(item => item.ProdutoId)
+                .Select(item => new ProdutoBuscaDto
+                {
+                    Id = item.ProdutoId,
+                    Etiqueta = item.Produto!.Etiqueta,
+                    Preco = item.Produto.Preco,
+                    ProdutoId = item.Produto.ProdutoId,
+                    Produto = item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
+                    MarcaId = item.Produto.MarcaId,
+                    Marca = item.Produto.Marca != null ? item.Produto.Marca.Valor : string.Empty,
+                    TamanhoId = item.Produto.TamanhoId,
+                    Tamanho = item.Produto.Tamanho != null ? item.Produto.Tamanho.Valor : string.Empty,
+                    CorId = item.Produto.CorId,
+                    Cor = item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
+                    FornecedorId = item.Produto.FornecedorId,
+                    Fornecedor = item.Produto.Fornecedor != null ? item.Produto.Fornecedor.Nome : string.Empty,
+                    Descricao = item.Produto.Descricao,
+                    Entrada = item.Produto.Entrada,
+                    DataSaida = item.Movimentacao!.Data,
+                    LojaId = item.Produto.LojaId,
+                    Situacao = item.Produto.Situacao,
+                    Consignado = item.Produto.Consignado
+                })
                 .ToListAsync(cancellationToken);
 
             return new ClienteDetalheDto

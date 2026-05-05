@@ -308,6 +308,8 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Situacao).HasConversion<int>().IsRequired();
                 _ = entity.Property(p => p.Consignado).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasIndex(p => new { p.LojaId, p.FornecedorId, p.Entrada });
+                _ = entity.HasIndex(p => new { p.LojaId, p.Situacao });
                 _ = entity.HasIndex(p => new { p.LojaId, p.Etiqueta }).IsUnique();
                 _ = entity.HasOne(p => p.Produto)
                     .WithMany(p => p.ProdutosEstoque)
@@ -386,6 +388,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.ClienteId).IsRequired();
                 _ = entity.Property(p => p.LojaId).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasIndex(p => new { p.LojaId, p.ClienteId, p.Tipo, p.Data });
                 _ = entity.HasOne(p => p.Cliente)
                     .WithMany(p => p.Movimentacoes)
                     .HasForeignKey(p => p.ClienteId)
@@ -454,6 +457,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.ValorDinheiro).HasPrecision(18, 2).IsRequired();
                 _ = entity.Property(p => p.Data).IsRequired();
                 _ = entity.HasIndex(p => p.LojaId);
+                _ = entity.HasIndex(p => new { p.LojaId, p.ClienteId, p.Tipo, p.Data });
                 _ = entity.HasIndex(p => p.ConfigLojaFormaPagamentoId);
                 _ = entity.HasOne(p => p.Loja)
                     .WithMany(p => p.PagamentosCredito)
@@ -476,6 +480,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.MovimentacaoId).IsRequired();
                 _ = entity.Property(p => p.ProdutoId).IsRequired();
                 _ = entity.Property(p => p.Desconto).HasPrecision(5, 2).IsRequired();
+                _ = entity.HasIndex(p => p.ProdutoId);
                 _ = entity.HasOne(p => p.Movimentacao)
                     .WithMany(p => p.Produtos)
                     .HasForeignKey(p => p.MovimentacaoId)
