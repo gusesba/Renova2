@@ -1,4 +1,4 @@
-import type { ProductListItem } from "@/lib/product";
+import type { ProductListResponse } from "@/lib/product";
 import type { LojaResponse } from "@/lib/store";
 
 export type ClientListItem = {
@@ -25,6 +25,10 @@ export type ClientDetailFilters = {
   dataInicial: string;
   dataFinal: string;
   situacao: string;
+  produtosFornecedorPagina: number;
+  produtosFornecedorTamanhoPagina: number;
+  produtosComClientePagina: number;
+  produtosComClienteTamanhoPagina: number;
 };
 
 export type ClientDetailResponse = ClientListItem & {
@@ -32,8 +36,8 @@ export type ClientDetailResponse = ClientListItem & {
   quantidadePecasVendidas: number;
   valorRetiradoLoja: number;
   valorAportadoLoja: number;
-  produtosFornecedor: ProductListItem[];
-  produtosComCliente: ProductListItem[];
+  produtosFornecedor: ProductListResponse;
+  produtosComCliente: ProductListResponse;
 };
 
 export type ClientFormValues = {
@@ -119,6 +123,10 @@ export const initialClientDetailFilters: ClientDetailFilters = {
   dataInicial: "",
   dataFinal: "",
   situacao: "",
+  produtosFornecedorPagina: 1,
+  produtosFornecedorTamanhoPagina: 10,
+  produtosComClientePagina: 1,
+  produtosComClienteTamanhoPagina: 10,
 };
 
 export const defaultClientTableSettings: ClientTableSettings = {
@@ -230,6 +238,11 @@ export function buildClientDetailQuery(storeId: number, filters: ClientDetailFil
   if (filters.situacao.trim()) {
     params.set("situacao", filters.situacao.trim());
   }
+
+  params.set("produtosFornecedorPagina", String(filters.produtosFornecedorPagina));
+  params.set("produtosFornecedorTamanhoPagina", String(filters.produtosFornecedorTamanhoPagina));
+  params.set("produtosComClientePagina", String(filters.produtosComClientePagina));
+  params.set("produtosComClienteTamanhoPagina", String(filters.produtosComClienteTamanhoPagina));
 
   return params.toString();
 }

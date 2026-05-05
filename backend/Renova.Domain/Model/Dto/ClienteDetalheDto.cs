@@ -15,7 +15,21 @@ namespace Renova.Domain.Model.Dto
         public int QuantidadePecasVendidas { get; set; }
         public decimal ValorRetiradoLoja { get; set; }
         public decimal ValorAportadoLoja { get; set; }
-        public IReadOnlyList<ProdutoBuscaDto> ProdutosFornecedor { get; set; } = [];
-        public IReadOnlyList<ProdutoBuscaDto> ProdutosComCliente { get; set; } = [];
+        public PaginacaoDto<ProdutoBuscaDto> ProdutosFornecedor { get; set; } = new()
+        {
+            Itens = [],
+            Pagina = 1,
+            TamanhoPagina = 10,
+            TotalItens = 0,
+            TotalPaginas = 0
+        };
+        public PaginacaoDto<ProdutoBuscaDto> ProdutosComCliente { get; set; } = new()
+        {
+            Itens = [],
+            Pagina = 1,
+            TamanhoPagina = 10,
+            TotalItens = 0,
+            TotalPaginas = 0
+        };
     }
 }

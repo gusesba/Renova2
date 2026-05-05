@@ -625,13 +625,16 @@ namespace Renova.Service.Services.Cliente
                 .Where(item => !dataFinalUtc.HasValue || item.Data <= dataFinalUtc.Value)
                 .SumAsync(item => (decimal?)item.ValorDinheiro, cancellationToken) ?? 0m;
 
-            List<ProdutoBuscaDto> produtosFornecedor = await produtosFornecedorQuery
+            PaginacaoDto<ProdutoBuscaDto> produtosFornecedor = await produtosFornecedorQuery
                 .OrderByDescending(produto => produto.Entrada)
                 .ThenByDescending(produto => produto.Id)
                 .Select(MapearProdutoBuscaDto())
-                .ToListAsync(cancellationToken);
+                .ToPagedResultAsync(
+                    request.ProdutosFornecedorPagina,
+                    request.ProdutosFornecedorTamanhoPagina,
+                    cancellationToken);
 
-            List<ProdutoBuscaDto> produtosComCliente = await produtosComClienteQuery
+            PaginacaoDto<ProdutoBuscaDto> produtosComCliente = await produtosComClienteQuery
                 .OrderByDescending(item => item.ProdutoId)
                 .Select(item => new ProdutoBuscaDto
                 {
@@ -655,7 +658,10 @@ namespace Renova.Service.Services.Cliente
                     Situacao = item.Produto.Situacao,
                     Consignado = item.Produto.Consignado
                 })
-                .ToListAsync(cancellationToken);
+                .ToPagedResultAsync(
+                    request.ProdutosComClientePagina,
+                    request.ProdutosComClienteTamanhoPagina,
+                    cancellationToken);
 
             return new ClienteDetalheDto
             {

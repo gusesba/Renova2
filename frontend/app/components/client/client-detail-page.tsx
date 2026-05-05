@@ -25,7 +25,7 @@ import {
   formatDateValue,
   formatSituacaoValue,
   productSituacaoOptions,
-  type ProductListItem,
+  type ProductListResponse,
 } from "@/lib/product";
 import { getAuthToken } from "@/lib/store";
 import { getClientDetail } from "@/services/client-service";
@@ -50,19 +50,19 @@ function ProductsSnapshot({
   description,
   products,
   settings,
+  onPageChange,
   onSettingsChange,
 }: {
   title: string;
   description: string;
-  products: ProductListItem[];
+  products: ProductListResponse;
   settings: ClientDetailProductTableSettings;
+  onPageChange: (page: number) => void;
   onSettingsChange: (settings: ClientDetailProductTableSettings) => void;
 }) {
-  const pageSize = settings.tamanhoPagina;
-  const [currentPage, setCurrentPage] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const totalPages = Math.max(Math.ceil(products.length / pageSize), 1);
-  const normalizedCurrentPage = Math.min(currentPage, totalPages);
+  const totalPages = Math.max(products.totalPaginas, 1);
+  const normalizedCurrentPage = Math.min(products.pagina, totalPages);
   const showId = settings.visibleFields.includes("id");
   const showProduto = settings.visibleFields.includes("produto");
   const showDescricao = settings.visibleFields.includes("descricao");
@@ -71,11 +71,6 @@ function ProductsSnapshot({
   const showEntrada = settings.visibleFields.includes("entrada");
   const showSaida = settings.visibleFields.includes("saida");
   const showPreco = settings.visibleFields.includes("preco");
-  const paginatedProducts = useMemo(() => {
-    const start = (normalizedCurrentPage - 1) * pageSize;
-
-    return products.slice(start, start + pageSize);
-  }, [normalizedCurrentPage, pageSize, products]);
 
   return (
     <section className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
@@ -96,7 +91,7 @@ function ProductsSnapshot({
         </button>
       </div>
 
-      {products.length === 0 ? (
+      {products.itens.length === 0 ? (
         <div className="rounded-[24px] border border-dashed border-[var(--border)] bg-[var(--surface)]/50 px-4 py-10 text-center text-sm text-[var(--muted)]">
           Nenhum produto encontrado para os filtros aplicados.
         </div>
@@ -149,7 +144,7 @@ function ProductsSnapshot({
                 </tr>
               </thead>
               <tbody>
-                {paginatedProducts.map((product, index) => (
+                {products.itens.map((product, index) => (
                   <tr
                     key={product.id}
                     className={
@@ -206,9 +201,9 @@ function ProductsSnapshot({
             totalPages={totalPages}
             hasPreviousPage={normalizedCurrentPage > 1}
             hasNextPage={normalizedCurrentPage < totalPages}
-            summary={`${products.length} produto(s) encontrado(s)`}
+            summary={`${products.totalItens} produto(s) encontrado(s)`}
             className="px-4 pb-4 pt-4"
-            onPageChange={setCurrentPage}
+            onPageChange={onPageChange}
           />
         </div>
       )}
@@ -219,7 +214,6 @@ function ProductsSnapshot({
         onClose={() => setIsSettingsOpen(false)}
         onSave={(updatedSettings) => {
           onSettingsChange(updatedSettings);
-          setCurrentPage(1);
           setIsSettingsOpen(false);
         }}
       />
@@ -231,16 +225,18 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
   const router = useRouter();
   const { isLoadingStores, selectedStoreId } = useStoreContext();
   const previousMonthRange = useMemo(() => getPreviousMonthRange(), []);
-  const [filters, setFilters] = useState<ClientDetailFilters>({
-    ...initialClientDetailFilters,
-    ...previousMonthRange,
-  });
   const [supplierTableSettings, setSupplierTableSettings] = useState(
     getStoredClientDetailSupplierTableSettings,
   );
   const [customerTableSettings, setCustomerTableSettings] = useState(
     getStoredClientDetailCustomerTableSettings,
   );
+  const [filters, setFilters] = useState<ClientDetailFilters>({
+    ...initialClientDetailFilters,
+    ...previousMonthRange,
+    produtosFornecedorTamanhoPagina: supplierTableSettings.tamanhoPagina,
+    produtosComClienteTamanhoPagina: customerTableSettings.tamanhoPagina,
+  });
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
   const detailQuery = useQuery({
@@ -265,7 +261,7 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
 
   const detail = detailQuery.data;
   const soldProductsWithClient = useMemo(
-    () => detail?.produtosComCliente.filter((product) => product.situacao === 2) ?? [],
+    () => detail?.produtosComCliente.itens.filter((product) => product.situacao === 2) ?? [],
     [detail],
   );
   const returnSaleHref = useMemo(() => {
@@ -311,7 +307,12 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
               type="date"
               value={filters.dataInicial}
               onChange={(event) =>
-                setFilters((current) => ({ ...current, dataInicial: event.target.value }))
+                setFilters((current) => ({
+                  ...current,
+                  dataInicial: event.target.value,
+                  produtosFornecedorPagina: 1,
+                  produtosComClientePagina: 1,
+                }))
               }
               className="h-12 rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)]"
             />
@@ -324,7 +325,12 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
               type="date"
               value={filters.dataFinal}
               onChange={(event) =>
-                setFilters((current) => ({ ...current, dataFinal: event.target.value }))
+                setFilters((current) => ({
+                  ...current,
+                  dataFinal: event.target.value,
+                  produtosFornecedorPagina: 1,
+                  produtosComClientePagina: 1,
+                }))
               }
               className="h-12 rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)]"
             />
@@ -345,7 +351,14 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
                   })),
                 ]}
                 placeholder="Selecionar"
-                onChange={(situacao) => setFilters((current) => ({ ...current, situacao }))}
+                onChange={(situacao) =>
+                  setFilters((current) => ({
+                    ...current,
+                    situacao,
+                    produtosFornecedorPagina: 1,
+                    produtosComClientePagina: 1,
+                  }))
+                }
               />
             </div>
           </label>
@@ -437,9 +450,17 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             description="Itens cadastrados com esse cliente como fornecedor, respeitando o periodo e a situacao selecionados."
             products={detail.produtosFornecedor}
             settings={supplierTableSettings}
+            onPageChange={(page) =>
+              setFilters((current) => ({ ...current, produtosFornecedorPagina: page }))
+            }
             onSettingsChange={(settings) => {
               setSupplierTableSettings(settings);
               persistClientDetailSupplierTableSettings(settings);
+              setFilters((current) => ({
+                ...current,
+                produtosFornecedorPagina: 1,
+                produtosFornecedorTamanhoPagina: settings.tamanhoPagina,
+              }));
             }}
           />
 
@@ -449,9 +470,17 @@ export function ClientDetailPage({ clientId }: { clientId: number }) {
             description="Itens cuja ultima movimentacao deixou o produto com esse cliente por venda ou emprestimo."
             products={detail.produtosComCliente}
             settings={customerTableSettings}
+            onPageChange={(page) =>
+              setFilters((current) => ({ ...current, produtosComClientePagina: page }))
+            }
             onSettingsChange={(settings) => {
               setCustomerTableSettings(settings);
               persistClientDetailCustomerTableSettings(settings);
+              setFilters((current) => ({
+                ...current,
+                produtosComClientePagina: 1,
+                produtosComClienteTamanhoPagina: settings.tamanhoPagina,
+              }));
             }}
           />
         </>
