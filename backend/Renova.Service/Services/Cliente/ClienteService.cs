@@ -614,6 +614,15 @@ namespace Renova.Service.Services.Cliente
                     && item.Movimentacao.Tipo == TipoMovimentacao.Venda)
                 .Where(item => !dataInicialUtc.HasValue || item.Movimentacao!.Data >= dataInicialUtc.Value)
                 .Where(item => !dataFinalUtc.HasValue || item.Movimentacao!.Data <= dataFinalUtc.Value)
+                .Where(item => !_context.MovimentacoesProdutos
+                    .AsNoTracking()
+                    .Any(proximaMovimentacaoProduto =>
+                        proximaMovimentacaoProduto.ProdutoId == item.ProdutoId
+                        && proximaMovimentacaoProduto.Movimentacao != null
+                        && item.Movimentacao != null
+                        && (proximaMovimentacaoProduto.Movimentacao.Data > item.Movimentacao.Data
+                            || (proximaMovimentacaoProduto.Movimentacao.Data == item.Movimentacao.Data
+                                && proximaMovimentacaoProduto.MovimentacaoId > item.MovimentacaoId))))
                 .CountAsync(cancellationToken);
 
             int quantidadePecasVendidas = await _context.MovimentacoesProdutos
