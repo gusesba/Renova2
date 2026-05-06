@@ -64,10 +64,10 @@ export function AppHeader({
         isMobileOpen
           ? "absolute top-0 right-0 left-0 z-40 max-h-[420px] overflow-visible px-16 py-4 opacity-100 shadow-[0_20px_48px_rgba(15,23,42,0.16)]"
           : "pointer-events-none absolute top-0 right-0 left-0 z-40 max-h-0 overflow-hidden border-b-0 px-0 py-0 opacity-0"
-      } lg:pointer-events-auto lg:relative lg:z-40 lg:max-h-64 lg:overflow-visible lg:border-b lg:border-[var(--border)] lg:px-8 lg:py-4 lg:opacity-100 lg:shadow-none ${
+      } lg:relative lg:z-40 lg:shadow-none ${
         isCollapsed
-          ? "lg:max-h-0 lg:overflow-hidden lg:border-b-0 lg:px-0 lg:py-0 lg:opacity-0"
-          : ""
+          ? "lg:pointer-events-none lg:max-h-0 lg:overflow-hidden lg:border-b-0 lg:px-0 lg:py-0 lg:opacity-0"
+          : "lg:pointer-events-auto lg:max-h-64 lg:overflow-visible lg:border-b lg:border-[var(--border)] lg:px-8 lg:py-4 lg:opacity-100"
       }`}
       aria-hidden={isCollapsed && !isMobileOpen}
     >

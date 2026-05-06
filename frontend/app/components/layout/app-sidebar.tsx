@@ -112,12 +112,12 @@ export function AppSidebar({
 
   return (
     <aside
-      className={`fixed top-[104px] bottom-4 left-4 z-40 flex w-[290px] max-w-[calc(100vw-2rem)] shrink-0 flex-col overflow-y-auto rounded-[24px] border border-[var(--border)] bg-[var(--surface)] px-5 py-6 shadow-[0_24px_60px_rgba(15,23,42,0.22)] transition-all duration-300 lg:static lg:top-auto lg:right-auto lg:bottom-auto lg:left-auto lg:z-auto lg:max-w-none lg:rounded-none lg:border-r lg:border-t-0 lg:border-b-0 lg:border-l-0 lg:shadow-none ${
+      className={`fixed top-[104px] bottom-4 left-4 z-40 flex w-[290px] max-w-[calc(100vw-2rem)] shrink-0 flex-col overflow-y-auto rounded-[24px] border border-[var(--border)] bg-[var(--surface)] px-5 py-6 shadow-[0_24px_60px_rgba(15,23,42,0.22)] transition-all duration-300 lg:static lg:top-auto lg:right-auto lg:bottom-auto lg:left-auto lg:z-auto lg:max-w-none lg:rounded-none lg:border-t-0 lg:border-b-0 lg:border-l-0 lg:shadow-none ${
         isMobileOpen ? "translate-x-0" : "-translate-x-[110%]"
       } lg:translate-x-0 ${
         isCollapsed
-          ? "lg:w-0 lg:border-r-0 lg:px-0 lg:py-0 lg:opacity-0"
-          : "lg:w-[290px] lg:opacity-100"
+          ? "lg:w-0 lg:overflow-hidden lg:border-r-0 lg:px-0 lg:py-0 lg:opacity-0"
+          : "lg:w-[290px] lg:overflow-y-auto lg:border-r lg:opacity-100"
       }`}
       aria-hidden={isCollapsed && !isMobileOpen}
     >

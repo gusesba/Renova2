@@ -16,6 +16,10 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
   const [isMobileChromeOpen, setIsMobileChromeOpen] = useState(false);
+  const [isDesktopChromeVisible, setIsDesktopChromeVisible] = useState(true);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(min-width: 1024px)").matches,
+  );
   const [accessArea, setAccessArea] = useState<AccessArea>(() =>
     typeof window === "undefined" ? "lojista" : getStoredAccessArea(),
   );
@@ -76,19 +80,42 @@ export function AppShell({ children }: AppShellProps) {
     }
   }, [accessArea, pathname, router]);
 
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+    const updateViewport = () => setIsDesktopViewport(desktopQuery.matches);
+
+    updateViewport();
+    desktopQuery.addEventListener("change", updateViewport);
+
+    return () => {
+      desktopQuery.removeEventListener("change", updateViewport);
+    };
+  }, []);
+
+  const isChromeExpanded = isDesktopViewport ? isDesktopChromeVisible : isMobileChromeOpen;
+
+  function toggleChrome() {
+    if (isDesktopViewport) {
+      setIsDesktopChromeVisible((current) => !current);
+      return;
+    }
+
+    setIsMobileChromeOpen((current) => !current);
+  }
+
   return (
     <div className="h-[100dvh] overflow-hidden bg-[var(--background)] px-4 pt-[calc(env(safe-area-inset-top,0px)+1rem)] pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] lg:h-screen lg:p-6">
       <div className="relative mx-auto flex h-full w-full max-w-[1600px] overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] transition-all duration-300">
         <button
           type="button"
-          onClick={() => setIsMobileChromeOpen((current) => !current)}
-          aria-label={isMobileChromeOpen ? "Fechar header e menu lateral" : "Abrir header e menu lateral"}
-          aria-expanded={isMobileChromeOpen}
-          className="absolute top-[max(0.5rem,env(safe-area-inset-top,0px))] left-2 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-2 lg:hidden"
+          onClick={toggleChrome}
+          aria-label={isChromeExpanded ? "Esconder header e menu lateral" : "Mostrar header e menu lateral"}
+          aria-expanded={isChromeExpanded}
+          className="absolute top-[max(0.5rem,env(safe-area-inset-top,0px))] left-2 z-50 flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--border)] bg-white/92 text-[var(--foreground)] shadow-[0_16px_36px_rgba(15,23,42,0.12)] backdrop-blur transition hover:border-[var(--border-strong)] hover:bg-white lg:top-2"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
             <path
-              d={isMobileChromeOpen ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16"}
+              d="M4 7h16M4 12h16M4 17h16"
               fill="none"
               stroke="currentColor"
               strokeLinecap="round"
@@ -109,12 +136,14 @@ export function AppShell({ children }: AppShellProps) {
 
         <AppSidebar
           accessArea={accessArea}
+          isCollapsed={!isDesktopChromeVisible}
           isMobileOpen={isMobileChromeOpen}
           onNavigate={() => setIsMobileChromeOpen(false)}
         />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--surface-muted)]">
           <AppHeader
             accessArea={accessArea}
+            isCollapsed={!isDesktopChromeVisible}
             isMobileOpen={isMobileChromeOpen}
             onAccessAreaChange={setAccessArea}
             onNavigate={() => setIsMobileChromeOpen(false)}
