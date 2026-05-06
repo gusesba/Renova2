@@ -67,9 +67,7 @@ export function StoreExpenseListPage() {
       <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-[var(--foreground)]">
-              Gastos da loja
-            </h2>
+            <h2 className="text-xl font-semibold text-[var(--foreground)]">Gastos da loja</h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
               Lancamentos administrativos sem relacao com clientes.
             </p>

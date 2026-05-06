@@ -4,11 +4,7 @@ import { useState } from "react";
 
 import { GearIcon } from "@/app/components/ui/gear-icon";
 import { Select } from "@/app/components/ui/select";
-import {
-  paymentNatureOptions,
-  paymentStatusOptions,
-  type PaymentFilters,
-} from "@/lib/payment";
+import { paymentNatureOptions, paymentStatusOptions, type PaymentFilters } from "@/lib/payment";
 
 type PaymentFiltersBarProps = {
   canCreatePayment: boolean;
@@ -127,7 +123,7 @@ export function PaymentFiltersBar({
             type="button"
             onClick={onOpenSettings}
             disabled={isLoading}
-            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5 lg:w-12 lg:px-0"
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105 sm:px-5 lg:w-12 lg:min-w-12 lg:shrink-0 lg:px-0"
             aria-label="Configurar tabela de pagamentos"
           >
             <GearIcon />
@@ -255,9 +251,7 @@ export function PaymentFiltersBar({
                   { label: "Crescente", value: "asc" },
                   { label: "Decrescente", value: "desc" },
                 ]}
-                onChange={(direcao) =>
-                  onChange({ direcao: direcao as PaymentFilters["direcao"] })
-                }
+                onChange={(direcao) => onChange({ direcao: direcao as PaymentFilters["direcao"] })}
               />
             </div>
           </div>
