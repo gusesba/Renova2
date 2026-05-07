@@ -18,6 +18,7 @@ namespace Renova.Domain.Model.Dto
         public required string Descricao { get; set; }
         public DateTime Entrada { get; set; }
         public DateTime? DataSaida { get; set; }
+        public string? Comprador { get; set; }
         public decimal? DescontoMovimentacao { get; set; }
         public decimal? DescontoUltimaVenda { get; set; }
         public int LojaId { get; set; }

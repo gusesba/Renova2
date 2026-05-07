@@ -26,6 +26,8 @@ namespace Renova.Service.Queries.Produto
 
         public string? Fornecedor { get; set; }
 
+        public string? Comprador { get; set; }
+
         public decimal? PrecoInicial { get; set; }
 
         public decimal? PrecoFinal { get; set; }

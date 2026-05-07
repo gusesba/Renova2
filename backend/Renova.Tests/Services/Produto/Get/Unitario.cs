@@ -384,6 +384,46 @@ namespace Renova.Tests.Services.Produto.Get
         }
 
         [Fact]
+        public async Task GetAllAsyncDeveRetornarCompradorDaUltimaMovimentacaoQuandoProdutoVendidoOuEmprestado()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel ana = await CriarClienteAsync(context, loja.Id, "Ana", "44999990001");
+            ClienteModel bruno = await CriarClienteAsync(context, loja.Id, "Bruno", "44999990002");
+            ProdutoEstoqueModel vendido = await CriarProdutoCompletoAsync(context, loja.Id, "Vestido", "Farm", "M", "Azul", "Fornecedor Alpha", "Vendido");
+            ProdutoEstoqueModel emprestado = await CriarProdutoCompletoAsync(context, loja.Id, "Blazer", "Animale", "G", "Preto", "Fornecedor Beta", "Emprestado");
+            ProdutoEstoqueModel estoque = await CriarProdutoCompletoAsync(context, loja.Id, "Saia", "Shoulder", "P", "Verde", "Fornecedor Gamma", "Estoque");
+
+            vendido.Situacao = SituacaoProduto.Vendido;
+            emprestado.Situacao = SituacaoProduto.Emprestado;
+            _ = await context.SaveChangesAsync();
+
+            _ = await CriarMovimentacaoAsync(context, loja.Id, ana.Id, TipoMovimentacao.Venda, new DateTime(2026, 4, 1, 12, 0, 0, DateTimeKind.Utc), vendido.Id);
+            _ = await CriarMovimentacaoAsync(context, loja.Id, bruno.Id, TipoMovimentacao.Venda, new DateTime(2026, 4, 2, 12, 0, 0, DateTimeKind.Utc), vendido.Id);
+            _ = await CriarMovimentacaoAsync(context, loja.Id, ana.Id, TipoMovimentacao.Emprestimo, new DateTime(2026, 4, 3, 12, 0, 0, DateTimeKind.Utc), emprestado.Id);
+            _ = await CriarMovimentacaoAsync(context, loja.Id, bruno.Id, TipoMovimentacao.Venda, new DateTime(2026, 4, 4, 12, 0, 0, DateTimeKind.Utc), estoque.Id);
+
+            ProdutoService service = new(context);
+            PaginacaoDto<ProdutoBuscaDto> resultado = await service.GetAllAsync(
+                new ObterProdutosQuery { LojaId = loja.Id, OrdenarPor = "id", Direcao = "asc" },
+                new ObterProdutosParametros { UsuarioId = usuario.Id });
+
+            Assert.Collection(resultado.Itens,
+                item => Assert.Equal("Bruno", item.Comprador),
+                item => Assert.Equal("Ana", item.Comprador),
+                item => Assert.Null(item.Comprador));
+
+            PaginacaoDto<ProdutoBuscaDto> filtradoPorComprador = await service.GetAllAsync(
+                new ObterProdutosQuery { LojaId = loja.Id, Comprador = "bru" },
+                new ObterProdutosParametros { UsuarioId = usuario.Id });
+
+            ProdutoBuscaDto itemFiltrado = Assert.Single(filtradoPorComprador.Itens);
+            Assert.Equal(vendido.Id, itemFiltrado.Id);
+        }
+
+        [Fact]
         public async Task GetAllAsyncDeveFalharQuandoLojaIdNaoForInformado()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -645,10 +685,27 @@ namespace Renova.Tests.Services.Produto.Get
             TipoMovimentacao tipo,
             params int[] produtoIds)
         {
+            return await CriarMovimentacaoAsync(
+                context,
+                lojaId,
+                clienteId,
+                tipo,
+                new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                produtoIds);
+        }
+
+        private static async Task<MovimentacaoModel> CriarMovimentacaoAsync(
+            RenovaDbContext context,
+            int lojaId,
+            int clienteId,
+            TipoMovimentacao tipo,
+            DateTime data,
+            params int[] produtoIds)
+        {
             MovimentacaoModel movimentacao = new()
             {
                 Tipo = tipo,
-                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                Data = data,
                 ClienteId = clienteId,
                 LojaId = lojaId,
                 Produtos = produtoIds

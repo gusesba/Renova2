@@ -15,6 +15,7 @@ export type ProductListItem = {
   descricao: string;
   entrada: string;
   dataSaida?: string | null;
+  comprador?: string | null;
   descontoMovimentacao?: number | null;
   descontoUltimaVenda?: number | null;
   lojaId: number;
@@ -112,6 +113,7 @@ export type ProductFilters = {
   tamanho: string;
   cor: string;
   fornecedor: string;
+  comprador: string;
   precoInicial: string;
   precoFinal: string;
   dataInicial: string;
@@ -141,6 +143,7 @@ export type ProductVisibleField =
   | "tamanho"
   | "cor"
   | "fornecedor"
+  | "comprador"
   | "preco"
   | "entrada"
   | "situacao"
@@ -168,6 +171,7 @@ export const initialProductFilters: ProductFilters = {
   tamanho: "",
   cor: "",
   fornecedor: "",
+  comprador: "",
   precoInicial: "",
   precoFinal: "",
   dataInicial: "",
@@ -210,6 +214,7 @@ export const defaultProductTableSettings: ProductTableSettings = {
     "preco",
     "entrada",
     "situacao",
+    "comprador",
     "consignado",
     "id",
     "acoes",
@@ -217,7 +222,7 @@ export const defaultProductTableSettings: ProductTableSettings = {
 };
 
 const productTableSettingsStorageKey = "renova.productTableSettings";
-const productTableSettingsSchemaVersion = 2;
+const productTableSettingsSchemaVersion = 3;
 
 export function asProductListResponse(body: unknown) {
   return body as ProductListResponse;
@@ -287,8 +292,26 @@ export function buildProductQuery(storeId: number, filters: ProductFilters) {
 
   const textFields: Array<keyof Pick<
     ProductFilters,
-    "id" | "descricao" | "etiqueta" | "produto" | "marca" | "tamanho" | "cor" | "fornecedor"
-  >> = ["id", "descricao", "etiqueta", "produto", "marca", "tamanho", "cor", "fornecedor"];
+    | "id"
+    | "descricao"
+    | "etiqueta"
+    | "produto"
+    | "marca"
+    | "tamanho"
+    | "cor"
+    | "fornecedor"
+    | "comprador"
+  >> = [
+    "id",
+    "descricao",
+    "etiqueta",
+    "produto",
+    "marca",
+    "tamanho",
+    "cor",
+    "fornecedor",
+    "comprador",
+  ];
 
   for (const field of textFields) {
     if (filters[field].trim()) {
@@ -446,6 +469,7 @@ export function getStoredProductTableSettings(): ProductTableSettings {
             "tamanho",
             "cor",
             "fornecedor",
+            "comprador",
             "preco",
             "entrada",
             "situacao",
@@ -456,10 +480,19 @@ export function getStoredProductTableSettings(): ProductTableSettings {
         )
       : defaultProductTableSettings.visibleFields;
 
-    const migratedVisibleFields =
-      parsed.schemaVersion === productTableSettingsSchemaVersion || visibleFields.includes("acoes")
-        ? visibleFields
-        : [...visibleFields, "acoes" as const];
+    const migratedVisibleFields = [...visibleFields];
+    const compradorIndex = migratedVisibleFields.indexOf("comprador");
+
+    if (compradorIndex >= 0) {
+      migratedVisibleFields.splice(compradorIndex, 1);
+    }
+
+    const situacaoIndex = migratedVisibleFields.indexOf("situacao");
+    migratedVisibleFields.splice(situacaoIndex >= 0 ? situacaoIndex + 1 : migratedVisibleFields.length, 0, "comprador");
+
+    if (parsed.schemaVersion !== productTableSettingsSchemaVersion && !migratedVisibleFields.includes("acoes")) {
+      migratedVisibleFields.push("acoes");
+    }
 
     return {
       tamanhoPagina,

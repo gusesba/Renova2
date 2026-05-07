@@ -69,6 +69,7 @@ export function ProductPage() {
     tamanho: initialProductFilters.tamanho,
     cor: initialProductFilters.cor,
     fornecedor: initialProductFilters.fornecedor,
+    comprador: initialProductFilters.comprador,
   }));
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
@@ -81,6 +82,7 @@ export function ProductPage() {
         tamanho: filters.tamanho,
         cor: filters.cor,
         fornecedor: filters.fornecedor,
+        comprador: filters.comprador,
       });
     }, 300);
 
@@ -89,6 +91,7 @@ export function ProductPage() {
     };
   }, [
     filters.cor,
+    filters.comprador,
     filters.descricao,
     filters.fornecedor,
     filters.marca,

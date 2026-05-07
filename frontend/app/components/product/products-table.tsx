@@ -106,6 +106,7 @@ export function ProductsTable({
   const showPreco = visibleFields.includes("preco");
   const showEntrada = visibleFields.includes("entrada");
   const showSituacao = visibleFields.includes("situacao");
+  const showComprador = visibleFields.includes("comprador");
   const showConsignado = visibleFields.includes("consignado");
   const showId = visibleFields.includes("id");
   const showAcoes = visibleFields.includes("acoes");
@@ -178,6 +179,11 @@ export function ProductsTable({
                   Situacao
                 </th>
               ) : null}
+              {showComprador ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Comprador
+                </th>
+              ) : null}
               {showConsignado ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Consignado
@@ -246,6 +252,7 @@ export function ProductsTable({
                 {showSituacao ? (
                   <ProductTableCell subtle>{formatSituacaoValue(product.situacao)}</ProductTableCell>
                 ) : null}
+                {showComprador ? <ProductTableCell>{product.comprador || "-"}</ProductTableCell> : null}
                 {showConsignado ? (
                   <ProductTableCell>
                     <ConsignadoBadge value={product.consignado} />

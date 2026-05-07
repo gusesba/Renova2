@@ -22,6 +22,7 @@ const fieldOptions: Array<{ description: string; label: string; value: ProductVi
   { label: "Preco", value: "preco", description: "Preco de cadastro" },
   { label: "Entrada", value: "entrada", description: "Data de entrada" },
   { label: "Situacao", value: "situacao", description: "Estado atual do item" },
+  { label: "Comprador", value: "comprador", description: "Cliente da ultima movimentacao" },
   { label: "Consignado", value: "consignado", description: "Indicador de consignacao" },
   { label: "Id interno", value: "id", description: "Identificador interno do produto" },
   { label: "Acoes", value: "acoes", description: "Botoes de edicao e exclusao" },

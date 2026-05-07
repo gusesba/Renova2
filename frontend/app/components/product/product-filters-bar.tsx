@@ -144,7 +144,7 @@ export function ProductFiltersBar({
         <div>
           <h2 className="text-xl font-semibold text-[var(--foreground)]">Lista de produtos</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Filtre por descricao, auxiliares, fornecedor, preco e data de entrada.
+            Filtre por descricao, auxiliares, fornecedor, comprador, preco e data de entrada.
           </p>
         </div>
 
@@ -245,6 +245,12 @@ export function ProductFiltersBar({
                 value={filters.fornecedor}
                 placeholder="Buscar por fornecedor"
                 onChange={(fornecedor) => onChange({ fornecedor })}
+              />
+              <TextField
+                label="Comprador"
+                value={filters.comprador}
+                placeholder="Buscar por comprador"
+                onChange={(comprador) => onChange({ comprador })}
               />
               <TextField
                 label="Tamanho"

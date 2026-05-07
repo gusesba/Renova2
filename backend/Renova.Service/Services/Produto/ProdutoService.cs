@@ -404,6 +404,21 @@ namespace Renova.Service.Services.Produto
                 query = query.Where(produto => produto.Fornecedor != null && produto.Fornecedor.Nome.ToLower().Contains(fornecedorFiltro));
             }
 
+            if (!string.IsNullOrWhiteSpace(request.Comprador))
+            {
+                string compradorFiltro = request.Comprador.Trim().ToLowerInvariant();
+                query = query.Where(produto =>
+                    (produto.Situacao == SituacaoProduto.Vendido || produto.Situacao == SituacaoProduto.Emprestado)
+                    && produto.Movimentacoes
+                        .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                        .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                        .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                        .Take(1)
+                        .Any(movimentacaoProduto =>
+                            movimentacaoProduto.Movimentacao!.Cliente != null
+                            && movimentacaoProduto.Movimentacao.Cliente.Nome.ToLower().Contains(compradorFiltro)));
+            }
+
             if (request.PrecoInicial.HasValue)
             {
                 query = query.Where(produto => produto.Preco >= request.PrecoInicial.Value);
@@ -460,6 +475,16 @@ namespace Renova.Service.Services.Produto
                 Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                 Descricao = produto.Descricao,
                 Entrada = produto.Entrada,
+                Comprador = produto.Situacao == SituacaoProduto.Vendido || produto.Situacao == SituacaoProduto.Emprestado
+                    ? produto.Movimentacoes
+                        .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                        .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                        .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                        .Select(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Cliente != null
+                            ? movimentacaoProduto.Movimentacao.Cliente.Nome
+                            : string.Empty)
+                        .FirstOrDefault()
+                    : null,
                 DescontoUltimaVenda = produto.Movimentacoes
                     .Where(movimentacaoProduto =>
                         movimentacaoProduto.Movimentacao != null
@@ -520,6 +545,16 @@ namespace Renova.Service.Services.Produto
                 Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                 Descricao = produto.Descricao,
                 Entrada = produto.Entrada,
+                Comprador = produto.Situacao == SituacaoProduto.Vendido || produto.Situacao == SituacaoProduto.Emprestado
+                    ? produto.Movimentacoes
+                        .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                        .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                        .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                        .Select(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Cliente != null
+                            ? movimentacaoProduto.Movimentacao.Cliente.Nome
+                            : string.Empty)
+                        .FirstOrDefault()
+                    : null,
                 DescontoUltimaVenda = descontoUltimaVenda,
                 LojaId = produto.LojaId,
                 Situacao = produto.Situacao,
@@ -574,6 +609,16 @@ namespace Renova.Service.Services.Produto
                     Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
                     Descricao = produto.Descricao,
                     Entrada = produto.Entrada,
+                    Comprador = produto.Situacao == SituacaoProduto.Vendido || produto.Situacao == SituacaoProduto.Emprestado
+                        ? produto.Movimentacoes
+                            .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
+                            .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                            .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                            .Select(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Cliente != null
+                                ? movimentacaoProduto.Movimentacao.Cliente.Nome
+                                : string.Empty)
+                            .FirstOrDefault()
+                        : null,
                     DescontoUltimaVenda = produto.Movimentacoes
                         .Where(movimentacaoProduto =>
                             movimentacaoProduto.Movimentacao != null
