@@ -547,7 +547,7 @@ export function MovementPage() {
       const response = await getClients(token, selectedStoreId, {
         ...initialClientFilters,
         nome: trimmedClientSearch,
-        tamanhoPagina: 5,
+        tamanhoPagina: 100,
       });
 
       if (!response.ok) {

@@ -125,7 +125,7 @@ export function PaymentCreateModal({
       const response = await getClients(token, storeId, {
         ...initialClientFilters,
         nome: trimmedClientSearch,
-        tamanhoPagina: 5,
+        tamanhoPagina: 100,
       });
 
       if (!response.ok) {

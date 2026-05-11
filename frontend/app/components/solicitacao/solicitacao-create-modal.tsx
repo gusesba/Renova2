@@ -458,7 +458,7 @@ export function SolicitacaoCreateModal({
         ordenarPor: "nome",
         direcao: "asc",
         pagina: 1,
-        tamanhoPagina: 20,
+        tamanhoPagina: 100,
       });
 
       if (!response.ok) {

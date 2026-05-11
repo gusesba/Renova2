@@ -151,7 +151,11 @@ export function SearchableSelect({
             : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
         }`}
       >
-        <span className={currentLabel ? "truncate text-[var(--foreground)]" : "truncate text-[var(--muted)]"}>
+        <span
+          className={
+            currentLabel ? "truncate text-[var(--foreground)]" : "truncate text-[var(--muted)]"
+          }
+        >
           {currentLabel || placeholder}
         </span>
         <span className="flex shrink-0 items-center gap-2 text-[var(--muted)]">
@@ -211,9 +215,13 @@ export function SearchableSelect({
           ) : null}
 
           {loading ? (
-            <div className="px-4 py-4 text-sm text-[var(--muted)]">Buscando opcoes...</div>
+            <div className="max-h-72 overflow-y-auto px-4 py-4 text-sm text-[var(--muted)]">
+              Buscando opcoes...
+            </div>
           ) : options.length === 0 ? (
-            <div className="px-4 py-4 text-sm text-[var(--muted)]">{emptyLabel}</div>
+            <div className="max-h-72 overflow-y-auto px-4 py-4 text-sm text-[var(--muted)]">
+              {emptyLabel}
+            </div>
           ) : (
             <ul
               id={listboxId}
