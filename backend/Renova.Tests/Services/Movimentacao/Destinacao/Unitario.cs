@@ -18,32 +18,6 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
         }
 
         [Fact]
-        public async Task GetDestinacaoAsyncDeveRetornarApenasProdutosElegiveisComTipoSugeridoPorFornecedor()
-        {
-            await using RenovaDbContext context = CriarContextoEmMemoria();
-
-            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
-            ClienteModel fornecedorDoacao = await CriarClienteAsync(context, loja.Id, "Fornecedor Doacao", "44999990001", true);
-            ClienteModel fornecedorDevolucao = await CriarClienteAsync(context, loja.Id, "Fornecedor Devolucao", "44999990002", false);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 3);
-            ProdutoEstoqueModel produtoElegivelDoacao = await CriarProdutoAsync(context, loja.Id, fornecedorDoacao.Id, "Produto Doacao", new DateTime(2025, 10, 1, 0, 0, 0, DateTimeKind.Utc), SituacaoProduto.Estoque);
-            ProdutoEstoqueModel produtoElegivelDevolucao = await CriarProdutoAsync(context, loja.Id, fornecedorDevolucao.Id, "Produto Devolucao", new DateTime(2025, 10, 2, 0, 0, 0, DateTimeKind.Utc), SituacaoProduto.Estoque);
-            _ = await CriarProdutoAsync(context, loja.Id, fornecedorDoacao.Id, "Produto Recente", DateTime.UtcNow.AddDays(-10), SituacaoProduto.Estoque);
-            _ = await CriarProdutoAsync(context, loja.Id, fornecedorDevolucao.Id, "Produto Vendido", new DateTime(2025, 10, 1, 0, 0, 0, DateTimeKind.Utc), SituacaoProduto.Vendido);
-
-            MovimentacaoService service = new(context);
-            MovimentacaoDestinacaoSugestaoDto resultado = await service.GetDestinacaoAsync(
-                loja.Id,
-                new ObterMovimentacoesParametros { UsuarioId = loja.UsuarioId });
-
-            Assert.Equal(loja.Id, resultado.LojaId);
-            Assert.Equal(3, resultado.TempoPermanenciaProdutoMeses);
-            Assert.Equal(2, resultado.Produtos.Count);
-            Assert.Contains(resultado.Produtos, item => item.Id == produtoElegivelDoacao.Id && item.TipoSugerido == TipoMovimentacao.Doacao);
-            Assert.Contains(resultado.Produtos, item => item.Id == produtoElegivelDevolucao.Id && item.TipoSugerido == TipoMovimentacao.DevolucaoDono);
-        }
-
-        [Fact]
         public async Task CreateDestinacaoAsyncDeveAgruparMovimentosPorFornecedorETipo()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -87,7 +61,6 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
 
             LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
             ClienteModel fornecedor = await CriarClienteAsync(context, loja.Id, "Fornecedor A", "44999990001", false);
-            _ = await CriarConfigLojaAsync(context, loja.Id, 6);
             ProdutoEstoqueModel produtoRecente = await CriarProdutoAsync(context, loja.Id, fornecedor.Id, "Produto Recente", DateTime.UtcNow.AddDays(-7), SituacaoProduto.Estoque);
 
             MovimentacaoService service = new(context);
@@ -168,22 +141,6 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
             _ = await context.SaveChangesAsync();
 
             return cliente;
-        }
-
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaDbContext context, int lojaId, int tempoPermanenciaProdutoMeses)
-        {
-            ConfigLojaModel config = new()
-            {
-                LojaId = lojaId,
-                PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses
-            };
-
-            _ = context.ConfiguracoesLoja.Add(config);
-            _ = await context.SaveChangesAsync();
-
-            return config;
         }
 
         private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(

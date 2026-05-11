@@ -300,7 +300,6 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = 6
             };
 
             _ = context.ConfiguracoesLoja.Add(config);
@@ -322,7 +321,6 @@ namespace Renova.Tests.Services.Pagamento.CriarCredito
                     LojaId = lojaId,
                     PercentualRepasseFornecedor = 45m,
                     PercentualRepasseVendedorCredito = 60m,
-                    TempoPermanenciaProdutoMeses = 6
                 };
 
             if (config.Id == 0)

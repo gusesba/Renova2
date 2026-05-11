@@ -17,32 +17,6 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
     public class Integracao
     {
         [Fact]
-        public async Task GetDestinacaoDeveRetornarProdutosElegiveis()
-        {
-            await using RenovaApiFactory factory = new();
-            HttpClient client = factory.CreateClient();
-
-            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-destinacao-get@renova.com");
-            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
-            ClienteModel fornecedor = await CriarClienteAsync(factory, loja.Id, "Fornecedor A", "44999990001", true);
-            _ = await CriarConfigLojaAsync(factory, loja.Id, 3);
-            ProdutoEstoqueModel produtoElegivel = await CriarProdutoAsync(factory, loja.Id, fornecedor.Id, "Produto Elegivel", new DateTime(2025, 10, 1, 0, 0, 0, DateTimeKind.Utc), SituacaoProduto.Estoque);
-            _ = await CriarProdutoAsync(factory, loja.Id, fornecedor.Id, "Produto Recente", DateTime.UtcNow.AddDays(-10), SituacaoProduto.Estoque);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
-
-            HttpResponseMessage response = await client.GetAsync($"/api/movimentacao/doacao-devolucao?lojaId={loja.Id}");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-            MovimentacaoDestinacaoSugestaoDto? body = await response.Content.ReadFromJsonAsync<MovimentacaoDestinacaoSugestaoDto>();
-            Assert.NotNull(body);
-            Assert.Single(body.Produtos);
-            Assert.Equal(produtoElegivel.Id, body.Produtos[0].Id);
-            Assert.Equal(TipoMovimentacao.Doacao, body.Produtos[0].TipoSugerido);
-        }
-
-        [Fact]
         public async Task PostDestinacaoDeveCriarMovimentosAgrupadosPorFornecedorETipo()
         {
             await using RenovaApiFactory factory = new();
@@ -130,24 +104,6 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
             _ = context.Clientes.Add(cliente);
             _ = await context.SaveChangesAsync();
             return cliente;
-        }
-
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaApiFactory factory, int lojaId, int tempoPermanenciaProdutoMeses)
-        {
-            using IServiceScope scope = factory.Services.CreateScope();
-            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
-
-            ConfigLojaModel config = new()
-            {
-                LojaId = lojaId,
-                PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses
-            };
-
-            _ = context.ConfiguracoesLoja.Add(config);
-            _ = await context.SaveChangesAsync();
-            return config;
         }
 
         private static async Task<ProdutoEstoqueModel> CriarProdutoAsync(

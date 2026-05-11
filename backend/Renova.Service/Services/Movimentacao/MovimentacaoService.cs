@@ -380,58 +380,6 @@ namespace Renova.Service.Services.Movimentacao
                 MidpointRounding.AwayFromZero);
         }
 
-        public async Task<MovimentacaoDestinacaoSugestaoDto> GetDestinacaoAsync(int lojaId, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
-        {
-            await _authorizationService.EnsurePermissionAsync(lojaId, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesDestinacaoVisualizar, cancellationToken);
-
-            ConfigLojaModel config = await _context.ConfiguracoesLoja
-                .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
-                ?? throw new InvalidOperationException("Configuracao da loja nao encontrada.");
-
-            DateTime dataLimitePermanencia = DateTime.UtcNow.AddMonths(-config.TempoPermanenciaProdutoMeses);
-
-            List<MovimentacaoDestinacaoProdutoDto> produtos = await _context.ProdutosEstoque
-                .Where(produto =>
-                    produto.LojaId == lojaId
-                    && produto.Situacao == SituacaoProduto.Estoque
-                    && produto.Entrada <= dataLimitePermanencia)
-                .OrderBy(produto => produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty)
-                .ThenBy(produto => produto.Id)
-                .Select(produto => new MovimentacaoDestinacaoProdutoDto
-                {
-                    Id = produto.Id,
-                    Etiqueta = produto.Etiqueta,
-                    Preco = produto.Preco,
-                    ProdutoId = produto.ProdutoId,
-                    Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
-                    MarcaId = produto.MarcaId,
-                    Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
-                    TamanhoId = produto.TamanhoId,
-                    Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
-                    CorId = produto.CorId,
-                    Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
-                    FornecedorId = produto.FornecedorId,
-                    Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
-                    Descricao = produto.Descricao,
-                    Entrada = produto.Entrada,
-                    LojaId = produto.LojaId,
-                    Situacao = produto.Situacao,
-                    Consignado = produto.Consignado,
-                    TipoSugerido = produto.Fornecedor != null && produto.Fornecedor.Doacao
-                        ? TipoMovimentacao.Doacao
-                        : TipoMovimentacao.DevolucaoDono
-                })
-                .ToListAsync(cancellationToken);
-
-            return new MovimentacaoDestinacaoSugestaoDto
-            {
-                LojaId = lojaId,
-                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses,
-                DataLimitePermanencia = dataLimitePermanencia,
-                Produtos = produtos
-            };
-        }
-
         public async Task<IReadOnlyList<MovimentacaoDto>> CreateDestinacaoAsync(CriarMovimentacaoDestinacaoCommand request, CriarMovimentacaoParametros parametros, CancellationToken cancellationToken = default)
         {
             if (request.Data == default)

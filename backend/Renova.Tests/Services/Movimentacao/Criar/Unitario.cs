@@ -35,7 +35,6 @@ namespace Renova.Tests.Services.Movimentacao.Criar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 60m,
-                TempoPermanenciaProdutoMeses = 6
             });
             _ = await context.SaveChangesAsync();
 

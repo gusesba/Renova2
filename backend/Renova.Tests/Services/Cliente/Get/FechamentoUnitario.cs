@@ -373,7 +373,6 @@ namespace Renova.Tests.Services.Cliente.Get
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = 12
             };
 
             _ = context.ConfiguracoesLoja.Add(config);

@@ -47,11 +47,6 @@ namespace Renova.Service.Services.ConfigLoja
                 throw new ArgumentException("Percentual de repasse ao vendedor em credito deve ser maior ou igual ao repasse normal.");
             }
 
-            if (request.TempoPermanenciaProdutoMeses < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(request), "Tempo de permanencia do produto na loja deve ser de ao menos 1 mes.");
-            }
-
             List<SalvarConfigLojaDescontoPermanenciaCommand> descontosPermanencia = request.DescontosPermanencia ?? [];
             List<SalvarConfigLojaFormaPagamentoCommand> formasPagamento = request.FormasPagamento ?? [];
 
@@ -73,7 +68,6 @@ namespace Renova.Service.Services.ConfigLoja
                     LojaId = request.LojaId,
                     PercentualRepasseFornecedor = request.PercentualRepasseFornecedor,
                     PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito,
-                    TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses,
                     DescontosPermanencia = MapearDescontosPermanencia(descontosPermanencia),
                     FormasPagamento = MapearFormasPagamento(formasPagamento)
                 };
@@ -84,7 +78,6 @@ namespace Renova.Service.Services.ConfigLoja
             {
                 config.PercentualRepasseFornecedor = request.PercentualRepasseFornecedor;
                 config.PercentualRepasseVendedorCredito = request.PercentualRepasseVendedorCredito;
-                config.TempoPermanenciaProdutoMeses = request.TempoPermanenciaProdutoMeses;
                 config.DescontosPermanencia.Clear();
                 config.FormasPagamento.Clear();
 
@@ -116,7 +109,6 @@ namespace Renova.Service.Services.ConfigLoja
                 LojaId = config.LojaId,
                 PercentualRepasseFornecedor = config.PercentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = config.PercentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = config.TempoPermanenciaProdutoMeses,
                 DescontosPermanencia = [.. config.DescontosPermanencia
                     .OrderBy(item => item.APartirDeMeses)
                     .Select(item => new ConfigLojaDescontoPermanenciaDto

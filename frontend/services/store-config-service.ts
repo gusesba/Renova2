@@ -30,7 +30,6 @@ export async function saveStoreConfig(
     lojaId: number;
     percentualRepasseFornecedor: number;
     percentualRepasseVendedorCredito: number;
-    tempoPermanenciaProdutoMeses: number;
     descontosPermanencia: {
       aPartirDeMeses: number;
       percentualDesconto: number;

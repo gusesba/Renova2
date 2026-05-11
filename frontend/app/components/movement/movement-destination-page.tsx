@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
@@ -9,24 +9,24 @@ import { Select } from "@/app/components/ui/select";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import {
   asMovementBatchResponse,
-  asMovementDestinationSuggestionResponse,
-  formatMovementDate,
   formatMovementType,
   getMovementApiMessage,
-  type MovementDestinationProduct,
 } from "@/lib/movement";
-import { formatDateValue, formatSituacaoValue, getProductApiMessage, type ProductListItem } from "@/lib/product";
-import { getAuthToken } from "@/lib/store";
 import {
-  createMovementDestination,
-  getMovementDestinationSuggestions,
-} from "@/services/movement-service";
-import { getProductById } from "@/services/product-service";
+  asProductListResponse,
+  formatDateValue,
+  formatSituacaoValue,
+  getProductApiMessage,
+  initialProductFilters,
+  type ProductListItem,
+} from "@/lib/product";
+import { getAuthToken } from "@/lib/store";
+import { createMovementDestination } from "@/services/movement-service";
+import { getProducts } from "@/services/product-service";
 
 type DestinationItem = {
   id: number;
   product: ProductListItem;
-  source: "automatic" | "manual";
   tipo: "3" | "4";
 };
 
@@ -36,19 +36,6 @@ function toUtcStartOfDay(value: string) {
 
 function asDestinationType(value: number): "3" | "4" {
   return value === 3 ? "3" : "4";
-}
-
-function getSuggestedDestinationType(product: ProductListItem): "3" | "4" {
-  return asDestinationType(product.tipoSugerido ?? 4);
-}
-
-function buildAutomaticItems(products: MovementDestinationProduct[]): DestinationItem[] {
-  return products.map((product) => ({
-    id: product.id,
-    product,
-    source: "automatic",
-    tipo: asDestinationType(product.tipoSugerido),
-  }));
 }
 
 function FieldShell({
@@ -71,43 +58,30 @@ function FieldShell({
 
 export function MovementDestinationPage() {
   const queryClient = useQueryClient();
-  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
+  const { selectedStore, selectedStoreId } = useStoreContext();
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [manualProductId, setManualProductId] = useState("");
+  const [manualProductEtiqueta, setManualProductEtiqueta] = useState("");
   const [items, setItems] = useState<DestinationItem[]>([]);
   const [manualError, setManualError] = useState<string | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
 
-  const suggestionsQuery = useQuery({
-    queryKey: ["movement-destination", token, selectedStoreId],
-    queryFn: async () => {
-      if (!token || !selectedStoreId) {
-        return null;
-      }
-
-      const response = await getMovementDestinationSuggestions(token, selectedStoreId);
-
-      if (!response.ok) {
-        throw new Error(
-          getMovementApiMessage(response.body) ??
-            "Nao foi possivel carregar os produtos elegiveis para doacao e devolucao.",
-        );
-      }
-
-      return asMovementDestinationSuggestionResponse(response.body);
-    },
-    enabled: Boolean(token && selectedStoreId),
-    refetchOnWindowFocus: false,
-  });
-
   const fetchProductMutation = useMutation({
-    mutationFn: async (productId: number) => {
+    mutationFn: async (etiqueta: string) => {
       if (!token) {
         throw new Error("Voce precisa estar autenticado para buscar produtos.");
       }
 
-      return getProductById(productId, token);
+      if (!selectedStoreId) {
+        throw new Error("Selecione uma loja valida antes de buscar produtos.");
+      }
+
+      return getProducts(token, selectedStoreId, {
+        ...initialProductFilters,
+        etiqueta,
+        pagina: 1,
+        tamanhoPagina: 1,
+      });
     },
   });
 
@@ -130,14 +104,6 @@ export function MovementDestinationPage() {
       );
     },
   });
-
-  useEffect(() => {
-    startTransition(() => {
-      setItems(buildAutomaticItems(suggestionsQuery.data?.produtos ?? []));
-      setManualProductId("");
-      setManualError(null);
-    });
-  }, [selectedStoreId, suggestionsQuery.data]);
 
   const groupedItems = useMemo(() => {
     const groups = new Map<
@@ -186,34 +152,39 @@ export function MovementDestinationPage() {
   }, [items]);
 
   async function handleAddManualProduct() {
-    const trimmed = manualProductId.trim();
+    const trimmed = manualProductEtiqueta.trim();
 
     if (!trimmed) {
-      setManualError("Informe o id de um produto.");
+      setManualError("Informe a etiqueta de um produto.");
       return;
     }
 
-    const parsedId = Number(trimmed);
+    const parsedEtiqueta = Number(trimmed);
 
-    if (!Number.isInteger(parsedId) || parsedId <= 0) {
-      setManualError("Informe um id numerico valido.");
+    if (!Number.isInteger(parsedEtiqueta) || parsedEtiqueta < 0) {
+      setManualError("Informe uma etiqueta numerica valida.");
       return;
     }
 
-    if (items.some((item) => item.product.id === parsedId)) {
+    if (items.some((item) => item.product.etiqueta === parsedEtiqueta)) {
       setManualError("Este produto ja esta listado.");
       return;
     }
 
     try {
-      const response = await fetchProductMutation.mutateAsync(parsedId);
+      const response = await fetchProductMutation.mutateAsync(trimmed);
 
       if (!response.ok) {
         setManualError(getProductApiMessage(response.body) ?? "Nao foi possivel buscar o produto.");
         return;
       }
 
-      const product = response.body as ProductListItem;
+      const product = asProductListResponse(response.body).itens[0];
+
+      if (!product) {
+        setManualError(`Nenhum produto encontrado com a etiqueta ${parsedEtiqueta}.`);
+        return;
+      }
 
       if (selectedStoreId && product.lojaId !== selectedStoreId) {
         setManualError("O produto buscado pertence a outra loja.");
@@ -230,13 +201,12 @@ export function MovementDestinationPage() {
         {
           id: product.id,
           product,
-          source: "manual",
-          tipo: getSuggestedDestinationType(product),
+          tipo: asDestinationType(4),
         },
       ]);
-      setManualProductId("");
+      setManualProductEtiqueta("");
       setManualError(null);
-      toast.success(`Produto ${product.id} adicionado para revisao.`);
+      toast.success(`Produto com etiqueta ${product.etiqueta} adicionado para revisao.`);
     } catch (error) {
       setManualError(
         error instanceof Error
@@ -277,9 +247,7 @@ export function MovementDestinationPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["movements"] }),
         queryClient.invalidateQueries({ queryKey: ["products"] }),
-        queryClient.invalidateQueries({ queryKey: ["movement-destination"] }),
       ]);
-      await suggestionsQuery.refetch();
 
       toast.success(
         `${createdMovements.length} movimentacao(oes) criada(s) para ${items.length} produto(s).`,
@@ -312,8 +280,8 @@ export function MovementDestinationPage() {
                 Doacao e devolucao ao dono
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-                A tela sugere produtos que ja passaram da permanencia configurada, agrupa por
-                fornecedor e permite trocar o destino de cada peca antes do envio.
+                Busque produtos por etiqueta, agrupe por fornecedor e escolha o destino de cada peca
+                antes do envio.
               </p>
             </div>
 
@@ -333,7 +301,7 @@ export function MovementDestinationPage() {
             <div className="rounded-[28px] border border-dashed border-[var(--border-strong)] bg-[var(--surface-muted)] px-6 py-12 text-center">
               <h2 className="text-xl font-semibold text-[var(--foreground)]">Selecione uma loja</h2>
               <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                A destinacao por permanencia depende da loja ativa no topo da aplicacao.
+                A destinacao depende da loja ativa no topo da aplicacao.
               </p>
             </div>
           ) : (
@@ -349,14 +317,14 @@ export function MovementDestinationPage() {
                     />
                   </FieldShell>
 
-                  <FieldShell error={manualError ?? undefined} label="Adicionar produto pelo id">
+                  <FieldShell error={manualError ?? undefined} label="Adicionar produto pela etiqueta">
                     <div className="flex flex-col gap-3 md:flex-row">
                       <input
                         type="text"
-                        value={manualProductId}
+                        value={manualProductEtiqueta}
                         placeholder="Ex.: 152"
                         onChange={(event) => {
-                          setManualProductId(event.target.value.replace(/[^\d]/g, ""));
+                          setManualProductEtiqueta(event.target.value.replace(/[^\d]/g, ""));
                           setManualError(null);
                         }}
                         className="h-12 flex-1 rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
@@ -373,37 +341,7 @@ export function MovementDestinationPage() {
                   </FieldShell>
                 </div>
 
-                <div className="rounded-[24px] border border-[var(--border)] bg-white p-4">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                      Sugestao automatica
-                    </p>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      {suggestionsQuery.isLoading || isLoadingStores
-                        ? "Carregando os itens pela permanencia da loja..."
-                        : suggestionsQuery.isError
-                          ? suggestionsQuery.error instanceof Error
-                            ? suggestionsQuery.error.message
-                            : "Nao foi possivel carregar a sugestao."
-                          : suggestionsQuery.data
-                            ? `Produtos em estoque com entrada ate ${formatMovementDate(
-                                suggestionsQuery.data.dataLimitePermanencia,
-                              )}. Permanencia atual: ${
-                                suggestionsQuery.data.tempoPermanenciaProdutoMeses
-                              } mes(es).`
-                            : "Nenhuma configuracao carregada."}
-                    </p>
-                  </div>
-                </div>
-
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setItems(buildAutomaticItems(suggestionsQuery.data?.produtos ?? []))}
-                    className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)]"
-                  >
-                    Restaurar sugestao
-                  </button>
                   <button
                     type="button"
                     onClick={handleSubmit}
@@ -441,7 +379,7 @@ export function MovementDestinationPage() {
                       Nenhum produto listado
                     </p>
                     <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                      Carregue a sugestao automatica ou adicione produtos manualmente pelo id.
+                      Busque produtos pela etiqueta para montar a destinacao.
                     </p>
                   </div>
                 ) : (
@@ -488,9 +426,6 @@ export function MovementDestinationPage() {
                                     </span>
                                     <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                       Situacao - {formatSituacaoValue(item.product.situacao)}
-                                    </span>
-                                    <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
-                                      Origem - {item.source === "automatic" ? "Automatica" : "Manual"}
                                     </span>
                                   </div>
                                 </div>

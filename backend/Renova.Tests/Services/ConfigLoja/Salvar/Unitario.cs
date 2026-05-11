@@ -30,7 +30,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6,
                 FormasPagamento =
                 [
                     new SalvarConfigLojaFormaPagamentoCommand { Nome = "Cartao credito", PercentualAjuste = 4.5m },
@@ -49,7 +48,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(loja.Id, resultado.LojaId);
             Assert.Equal(45m, resultado.PercentualRepasseFornecedor);
             Assert.Equal(45m, resultado.PercentualRepasseVendedorCredito);
-            Assert.Equal(6, resultado.TempoPermanenciaProdutoMeses);
             Assert.Collection(resultado.DescontosPermanencia,
                 item =>
                 {
@@ -78,7 +76,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             Assert.Equal(loja.Id, configSalva.LojaId);
             Assert.Equal(45m, configSalva.PercentualRepasseFornecedor);
             Assert.Equal(45m, configSalva.PercentualRepasseVendedorCredito);
-            Assert.Equal(6, configSalva.TempoPermanenciaProdutoMeses);
             Assert.Collection(configSalva.DescontosPermanencia.OrderBy(item => item.APartirDeMeses),
                 item =>
                 {
@@ -117,7 +114,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 50m,
                 PercentualRepasseVendedorCredito = 60m,
-                TempoPermanenciaProdutoMeses = 9,
                 FormasPagamento =
                 [
                     new SalvarConfigLojaFormaPagamentoCommand { Nome = "Debito", PercentualAjuste = 2m }
@@ -133,7 +129,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
 
             Assert.Equal(50m, resultado.PercentualRepasseFornecedor);
             Assert.Equal(60m, resultado.PercentualRepasseVendedorCredito);
-            Assert.Equal(9, resultado.TempoPermanenciaProdutoMeses);
             Assert.Single(resultado.DescontosPermanencia);
             Assert.Equal(9, resultado.DescontosPermanencia[0].APartirDeMeses);
             Assert.Equal(20m, resultado.DescontosPermanencia[0].PercentualDesconto);
@@ -146,7 +141,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 .SingleAsync();
             Assert.Equal(50m, configAtualizada.PercentualRepasseFornecedor);
             Assert.Equal(60m, configAtualizada.PercentualRepasseVendedorCredito);
-            Assert.Equal(9, configAtualizada.TempoPermanenciaProdutoMeses);
             Assert.Single(configAtualizada.DescontosPermanencia);
             Assert.Equal(9, configAtualizada.DescontosPermanencia[0].APartirDeMeses);
             Assert.Equal(20m, configAtualizada.DescontosPermanencia[0].PercentualDesconto);
@@ -168,8 +162,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 150m,
                 PercentualRepasseVendedorCredito = 100m
-                ,
-                TempoPermanenciaProdutoMeses = 6
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
@@ -189,7 +181,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 150m,
-                TempoPermanenciaProdutoMeses = 6
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
@@ -209,33 +200,12 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 30m,
-                TempoPermanenciaProdutoMeses = 6
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = loja.UsuarioId
             }));
 
             Assert.Contains("maior ou igual", exception.Message, StringComparison.OrdinalIgnoreCase);
-        }
-
-        [Fact]
-        public async Task SaveAsyncDeveImpedirQuandoTempoPermanenciaProdutoForMenorQueUmMes()
-        {
-            await using RenovaDbContext context = CriarContextoEmMemoria();
-
-            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria@renova.com");
-            ConfigLojaService service = new(context);
-
-            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.SaveAsync(new SalvarConfigLojaCommand
-            {
-                LojaId = loja.Id,
-                PercentualRepasseFornecedor = 45m,
-                PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 0
-            }, new SalvarConfigLojaParametros
-            {
-                UsuarioId = loja.UsuarioId
-            }));
         }
 
         [Fact]
@@ -251,7 +221,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6,
                 DescontosPermanencia =
                 [
                     new SalvarConfigLojaDescontoPermanenciaCommand { APartirDeMeses = 3, PercentualDesconto = 10m },
@@ -276,7 +245,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6
             }, new SalvarConfigLojaParametros
             {
                 UsuarioId = 9999
@@ -296,7 +264,6 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
                 LojaId = loja.Id,
                 PercentualRepasseFornecedor = 45m,
                 PercentualRepasseVendedorCredito = 45m,
-                TempoPermanenciaProdutoMeses = 6,
                 FormasPagamento =
                 [
                     new SalvarConfigLojaFormaPagamentoCommand { Nome = "Pix", PercentualAjuste = 0m },
@@ -332,14 +299,19 @@ namespace Renova.Tests.Services.ConfigLoja.Salvar
             return loja;
         }
 
-        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(RenovaDbContext context, int lojaId, decimal percentualRepasseFornecedor, decimal percentualRepasseVendedorCredito, int tempoPermanenciaProdutoMeses)
+        private static async Task<ConfigLojaModel> CriarConfigLojaAsync(
+            RenovaDbContext context,
+            int lojaId,
+            decimal percentualRepasseFornecedor,
+            decimal percentualRepasseVendedorCredito,
+            int tempoPermanenciaProdutoMeses)
         {
+            _ = tempoPermanenciaProdutoMeses;
             ConfigLojaModel config = new()
             {
                 LojaId = lojaId,
                 PercentualRepasseFornecedor = percentualRepasseFornecedor,
                 PercentualRepasseVendedorCredito = percentualRepasseVendedorCredito,
-                TempoPermanenciaProdutoMeses = tempoPermanenciaProdutoMeses,
                 FormasPagamento =
                 [
                     new ConfigLojaFormaPagamentoModel
