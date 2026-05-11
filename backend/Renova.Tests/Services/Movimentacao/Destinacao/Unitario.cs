@@ -45,11 +45,11 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
                 new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.Equal(3, resultado.Count);
-            Assert.Contains(resultado, item => item.ClienteId == fornecedorA.Id && item.Tipo == TipoMovimentacao.DevolucaoDono && item.ProdutoIds.SequenceEqual([produtoA1.Id]));
+            Assert.Contains(resultado, item => item.ClienteId == fornecedorA.Id && item.Tipo == TipoMovimentacao.SepararDevolucao && item.ProdutoIds.SequenceEqual([produtoA1.Id]));
             Assert.Contains(resultado, item => item.ClienteId == fornecedorA.Id && item.Tipo == TipoMovimentacao.Doacao && item.ProdutoIds.SequenceEqual([produtoA2.Id]));
             Assert.Contains(resultado, item => item.ClienteId == fornecedorB.Id && item.Tipo == TipoMovimentacao.Doacao && item.ProdutoIds.SequenceEqual([produtoB1.Id]));
 
-            Assert.Equal(SituacaoProduto.Devolvido, await context.ProdutosEstoque.Where(item => item.Id == produtoA1.Id).Select(item => item.Situacao).SingleAsync());
+            Assert.Equal(SituacaoProduto.PendenteDevolucao, await context.ProdutosEstoque.Where(item => item.Id == produtoA1.Id).Select(item => item.Situacao).SingleAsync());
             Assert.Equal(SituacaoProduto.Doado, await context.ProdutosEstoque.Where(item => item.Id == produtoA2.Id).Select(item => item.Situacao).SingleAsync());
             Assert.Equal(SituacaoProduto.Doado, await context.ProdutosEstoque.Where(item => item.Id == produtoB1.Id).Select(item => item.Situacao).SingleAsync());
         }
@@ -77,7 +77,7 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
                 new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
 
             Assert.Single(resultado);
-            Assert.Equal(SituacaoProduto.Devolvido, await context.ProdutosEstoque.Where(item => item.Id == produtoRecente.Id).Select(item => item.Situacao).SingleAsync());
+            Assert.Equal(SituacaoProduto.PendenteDevolucao, await context.ProdutosEstoque.Where(item => item.Id == produtoRecente.Id).Select(item => item.Situacao).SingleAsync());
         }
 
         [Fact]

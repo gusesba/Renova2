@@ -6,7 +6,7 @@ type ApiErrorResponse = {
   errors?: Record<string, string[] | undefined>;
 };
 
-export type MovementTypeValue = 1 | 2 | 3 | 4 | 5 | 6;
+export type MovementTypeValue = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export type MovementDraftFormValues = {
   tipo: string;
@@ -91,6 +91,7 @@ export const movementTypeOptions: Array<{ label: string; value: MovementTypeValu
   { value: 4, label: "Devolucao dono" },
   { value: 5, label: "Devolucao venda" },
   { value: 6, label: "Devolucao emprestimo" },
+  { value: 7, label: "Separar devolucao" },
 ];
 
 export const initialMovementDraftFormValues: MovementDraftFormValues = {
@@ -303,6 +304,14 @@ export function isProductSituationCompatible(movementType: number, productSituat
     return productSituation === 4;
   }
 
+  if (movementType === 4) {
+    return productSituation === 7;
+  }
+
+  if (movementType === 7) {
+    return productSituation === 1;
+  }
+
   return productSituation === 1;
 }
 
@@ -318,12 +327,20 @@ export function getSuggestedMovementType(
     return 6;
   }
 
+  if (productSituation === 7) {
+    return 4;
+  }
+
   if (productSituation === 1 && currentMovementType === 5) {
     return 1;
   }
 
   if (productSituation === 1 && currentMovementType === 6) {
     return 2;
+  }
+
+  if (productSituation === 1 && currentMovementType === 4) {
+    return 7;
   }
 
   return null;

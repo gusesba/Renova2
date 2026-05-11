@@ -53,7 +53,7 @@ namespace Renova.Tests.Services.Movimentacao.Destinacao
             using IServiceScope scope = factory.Services.CreateScope();
             RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
             Assert.Equal(3, await context.Movimentacoes.CountAsync());
-            Assert.Equal(SituacaoProduto.Devolvido, await context.ProdutosEstoque.Where(item => item.Id == produtoA1.Id).Select(item => item.Situacao).SingleAsync());
+            Assert.Equal(SituacaoProduto.PendenteDevolucao, await context.ProdutosEstoque.Where(item => item.Id == produtoA1.Id).Select(item => item.Situacao).SingleAsync());
             Assert.Equal(SituacaoProduto.Doado, await context.ProdutosEstoque.Where(item => item.Id == produtoA2.Id).Select(item => item.Situacao).SingleAsync());
             Assert.Equal(SituacaoProduto.Doado, await context.ProdutosEstoque.Where(item => item.Id == produtoB1.Id).Select(item => item.Situacao).SingleAsync());
         }

@@ -27,15 +27,15 @@ import { getProducts } from "@/services/product-service";
 type DestinationItem = {
   id: number;
   product: ProductListItem;
-  tipo: "3" | "4";
+  tipo: "3" | "7";
 };
 
 function toUtcStartOfDay(value: string) {
   return new Date(`${value}T00:00:00.000Z`).toISOString();
 }
 
-function asDestinationType(value: number): "3" | "4" {
-  return value === 3 ? "3" : "4";
+function asDestinationType(value: number): "3" | "7" {
+  return value === 3 ? "3" : "7";
 }
 
 function FieldShell({
@@ -201,7 +201,7 @@ export function MovementDestinationPage() {
         {
           id: product.id,
           product,
-          tipo: asDestinationType(4),
+          tipo: asDestinationType(product.tipoSugerido ?? 7),
         },
       ]);
       setManualProductEtiqueta("");
@@ -262,9 +262,9 @@ export function MovementDestinationPage() {
   }
 
   const hasStore = Boolean(selectedStoreId);
-  const destinationTypeOptions: Array<{ label: string; value: "3" | "4" }> = [
+  const destinationTypeOptions: Array<{ label: string; value: "3" | "7" }> = [
     { label: "Doacao", value: "3" },
-    { label: "Devolucao dono", value: "4" },
+    { label: "Separar devolucao", value: "7" },
   ];
 
   return (
@@ -442,7 +442,7 @@ export function MovementDestinationPage() {
                                             currentItem.product.id === item.product.id
                                               ? {
                                                   ...currentItem,
-                                                  tipo: value as "3" | "4",
+                                                  tipo: value as "3" | "7",
                                                 }
                                               : currentItem,
                                           ),

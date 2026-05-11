@@ -58,7 +58,12 @@ import {
 import { getAuthToken } from "@/lib/store";
 import { createMovement } from "@/services/movement-service";
 import { createClient, getClients } from "@/services/client-service";
-import { getBorrowedProductsByClient, getProductById, getProducts } from "@/services/product-service";
+import {
+  getBorrowedProductsByClient,
+  getPendingReturnProductsByClient,
+  getProductById,
+  getProducts,
+} from "@/services/product-service";
 import {
   extractStoreConfigApiMessage,
   type ConfigLojaResponse,
@@ -90,6 +95,14 @@ type CreditAutoPaidPrompt = {
   creditoAnterior: number;
   creditoAtual: number;
   nome: string;
+};
+
+type PendingReturnPrompt = {
+  clienteContato: string;
+  clienteId: string;
+  clienteNome: string;
+  draftDate: string;
+  products: ProductListItem[];
 };
 
 function createDraft(id: string): MovementDraft {
@@ -328,6 +341,7 @@ export function MovementPage() {
   const [isPaymentConfigRequiredOpen, setIsPaymentConfigRequiredOpen] = useState(false);
   const [paymentClient, setPaymentClient] = useState<PendingClientItem | null>(null);
   const [creditAutoPaidPrompt, setCreditAutoPaidPrompt] = useState<CreditAutoPaidPrompt | null>(null);
+  const [pendingReturnPrompt, setPendingReturnPrompt] = useState<PendingReturnPrompt | null>(null);
   const [autoLinkingDraftId, setAutoLinkingDraftId] = useState<string | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<ReceiptPrintData | null>(null);
   const [printSettings, setPrintSettings] = useState<PrintSettings>(() => getStoredPrintSettings());
@@ -478,7 +492,9 @@ export function MovementPage() {
           return;
         }
 
-        const borrowedProducts = (response.body as ProductListItem[]) ?? [];
+        const borrowedProducts = ((response.body as ProductListItem[]) ?? []).filter((product) =>
+          isProductSituationCompatible(Number(activeDraft.tipo), product.situacao),
+        );
 
         updateDraft(draftId, (draft) => {
           if (draft.clienteId !== String(clienteId)) {
@@ -520,7 +536,7 @@ export function MovementPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeDraft?.clienteId, activeDraft?.id, selectedStoreId, token]);
+  }, [activeDraft?.clienteId, activeDraft?.id, activeDraft?.tipo, selectedStoreId, token]);
   const trimmedClientSearch = debouncedClientSearch.trim();
 
   const clientOptionsQuery = useQuery({
@@ -702,7 +718,7 @@ export function MovementPage() {
     }
 
     const normalizedType =
-      type && ["1", "2", "3", "4", "5", "6"].includes(type) ? type : initialMovementDraftFormValues.tipo;
+      type && ["1", "2", "3", "4", "5", "6", "7"].includes(type) ? type : initialMovementDraftFormValues.tipo;
 
     prefillAppliedRef.current = true;
 
@@ -819,6 +835,55 @@ export function MovementPage() {
       clienteSearch: "",
       errors: { ...draft.errors, clienteId: undefined },
     }));
+    void promptPendingReturnProducts(draftId, client);
+  }
+
+  async function promptPendingReturnProducts(draftId: string, client: ClientListItem) {
+    if (!token || !selectedStoreId) {
+      return;
+    }
+
+    const response = await getPendingReturnProductsByClient(token, selectedStoreId, client.id);
+
+    if (!response.ok) {
+      toast.error(
+        getProductApiMessage(response.body) ??
+          "Nao foi possivel verificar pecas pendentes de devolucao deste cliente.",
+      );
+      return;
+    }
+
+    const pendingProducts = (response.body as ProductListItem[]) ?? [];
+
+    if (pendingProducts.length === 0) {
+      return;
+    }
+
+    setPendingReturnPrompt({
+      clienteContato: client.contato,
+      clienteId: String(client.id),
+      clienteNome: client.nome,
+      draftDate: drafts.find((draft) => draft.id === draftId)?.data ?? initialMovementDraftFormValues.data,
+      products: pendingProducts,
+    });
+  }
+
+  function openPendingReturnDraft() {
+    if (!pendingReturnPrompt) {
+      return;
+    }
+
+    addDraft({
+      tipo: "4",
+      data: pendingReturnPrompt.draftDate,
+      descontoTotal: "0",
+      clienteId: pendingReturnPrompt.clienteId,
+      clienteContato: pendingReturnPrompt.clienteContato,
+      clienteLabel: pendingReturnPrompt.clienteNome,
+      clienteSearch: pendingReturnPrompt.clienteNome,
+      products: pendingReturnPrompt.products.map((product) => ({ ...product, desconto: "0" })),
+    });
+    setPendingReturnPrompt(null);
   }
 
   function openClientModal() {
@@ -1819,6 +1884,57 @@ export function MovementPage() {
         isOpen={Boolean(creditAutoPaidPrompt)}
         onClose={() => setCreditAutoPaidPrompt(null)}
       />
+
+      {pendingReturnPrompt ? (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4">
+          <div className="w-full max-w-lg rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.22)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Devolucao pendente
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                  Pecas a devolver
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+                  {pendingReturnPrompt.clienteNome} tem {pendingReturnPrompt.products.length} peca(s)
+                  pendente(s) de devolucao. Abra uma aba de devolucao ao dono com essas pecas.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPendingReturnPrompt(null)}
+                className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--muted)] transition hover:border-[var(--border-strong)] hover:text-[var(--foreground)]"
+                aria-label="Fechar aviso"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-4 text-sm text-[var(--muted)]">
+              A devolucao ao dono so aceita pecas em situacao pendente de devolucao.
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setPendingReturnPrompt(null)}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 text-sm font-semibold text-[var(--foreground)] transition hover:border-[var(--border-strong)] hover:bg-white"
+              >
+                Agora nao
+              </button>
+              <button
+                type="button"
+                onClick={openPendingReturnDraft}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-2xl bg-[linear-gradient(90deg,_#ff8a3d,_#ff6b3d)] px-5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(255,107,61,0.28)] transition hover:brightness-105"
+              >
+                Abrir aba de devolucao
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {canEditStoreConfig ? (
         <StoreConfigModal

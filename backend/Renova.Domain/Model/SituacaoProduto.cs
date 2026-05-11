@@ -7,6 +7,7 @@ namespace Renova.Domain.Model
         Devolvido = 3,
         Emprestado = 4,
         Doado = 5,
-        Perdido = 6
+        Perdido = 6,
+        PendenteDevolucao = 7
     }
 }

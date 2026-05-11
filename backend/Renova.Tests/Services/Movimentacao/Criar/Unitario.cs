@@ -102,6 +102,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         [InlineData(TipoMovimentacao.DevolucaoDono)]
         [InlineData(TipoMovimentacao.DevolucaoVenda)]
         [InlineData(TipoMovimentacao.DevolucaoEmprestimo)]
+        [InlineData(TipoMovimentacao.SepararDevolucao)]
         public async Task CreateAsyncDevePersistirTipoMovimentacaoComValorDoEnumEsperado(TipoMovimentacao tipo)
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -110,6 +111,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             SituacaoProduto situacaoInicial = tipo switch
             {
+                TipoMovimentacao.DevolucaoDono => SituacaoProduto.PendenteDevolucao,
                 TipoMovimentacao.DevolucaoVenda => SituacaoProduto.Vendido,
                 TipoMovimentacao.DevolucaoEmprestimo => SituacaoProduto.Emprestado,
                 _ => SituacaoProduto.Estoque
@@ -138,6 +140,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         [InlineData(TipoMovimentacao.DevolucaoDono, SituacaoProduto.Devolvido)]
         [InlineData(TipoMovimentacao.DevolucaoVenda, SituacaoProduto.Estoque)]
         [InlineData(TipoMovimentacao.DevolucaoEmprestimo, SituacaoProduto.Estoque)]
+        [InlineData(TipoMovimentacao.SepararDevolucao, SituacaoProduto.PendenteDevolucao)]
         public async Task CreateAsyncDeveAtualizarSituacaoDoProdutoAposCriacao(TipoMovimentacao tipo, SituacaoProduto situacaoEsperadaAoFinal)
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
@@ -146,6 +149,7 @@ namespace Renova.Tests.Services.Movimentacao.Criar
             ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
             SituacaoProduto situacaoInicial = tipo switch
             {
+                TipoMovimentacao.DevolucaoDono => SituacaoProduto.PendenteDevolucao,
                 TipoMovimentacao.DevolucaoVenda => SituacaoProduto.Vendido,
                 TipoMovimentacao.DevolucaoEmprestimo => SituacaoProduto.Emprestado,
                 _ => SituacaoProduto.Estoque

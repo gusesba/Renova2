@@ -634,6 +634,52 @@ namespace Renova.Service.Services.Produto
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ProdutoBuscaDto>> GetPendentesDevolucaoDoClienteAsync(
+            ObterProdutosEmprestadosClienteParametros parametros,
+            CancellationToken cancellationToken = default)
+        {
+            await _authorizationService.EnsurePermissionAsync(parametros.LojaId, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizar, cancellationToken);
+            LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
+
+            ClienteModel cliente = await _context.Clientes
+                .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
+                ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(parametros));
+
+            if (cliente.LojaId != loja.Id)
+            {
+                throw new ArgumentException("Cliente informado nao pertence a loja selecionada.", nameof(parametros));
+            }
+
+            return await _context.ProdutosEstoque
+                .Where(produto =>
+                    produto.LojaId == parametros.LojaId
+                    && produto.FornecedorId == parametros.ClienteId
+                    && produto.Situacao == SituacaoProduto.PendenteDevolucao)
+                .OrderBy(produto => produto.Id)
+                .Select(produto => new ProdutoBuscaDto
+                {
+                    Id = produto.Id,
+                    Etiqueta = produto.Etiqueta,
+                    Preco = produto.Preco,
+                    ProdutoId = produto.ProdutoId,
+                    Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
+                    MarcaId = produto.MarcaId,
+                    Marca = produto.Marca != null ? produto.Marca.Valor : string.Empty,
+                    TamanhoId = produto.TamanhoId,
+                    Tamanho = produto.Tamanho != null ? produto.Tamanho.Valor : string.Empty,
+                    CorId = produto.CorId,
+                    Cor = produto.Cor != null ? produto.Cor.Valor : string.Empty,
+                    FornecedorId = produto.FornecedorId,
+                    Fornecedor = produto.Fornecedor != null ? produto.Fornecedor.Nome : string.Empty,
+                    Descricao = produto.Descricao,
+                    Entrada = produto.Entrada,
+                    LojaId = produto.LojaId,
+                    Situacao = produto.Situacao,
+                    Consignado = produto.Consignado
+                })
+                .ToListAsync(cancellationToken);
+        }
+
         private async Task<decimal?> ObterDescontoUltimaVendaAsync(int produtoId, CancellationToken cancellationToken)
         {
             return await _context.MovimentacoesProdutos

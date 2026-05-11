@@ -271,6 +271,7 @@ export const productSituacaoOptions = [
   { value: 4, label: "Emprestado" },
   { value: 5, label: "Doado" },
   { value: 6, label: "Perdido" },
+  { value: 7, label: "Pendente devolucao" },
 ] as const;
 
 function toApiDateStart(value: string) {

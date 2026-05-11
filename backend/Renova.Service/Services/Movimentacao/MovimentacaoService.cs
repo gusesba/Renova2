@@ -43,9 +43,10 @@ namespace Renova.Service.Services.Movimentacao
             [TipoMovimentacao.Venda] = SituacaoProduto.Estoque,
             [TipoMovimentacao.Emprestimo] = SituacaoProduto.Estoque,
             [TipoMovimentacao.Doacao] = SituacaoProduto.Estoque,
-            [TipoMovimentacao.DevolucaoDono] = SituacaoProduto.Estoque,
+            [TipoMovimentacao.DevolucaoDono] = SituacaoProduto.PendenteDevolucao,
             [TipoMovimentacao.DevolucaoVenda] = SituacaoProduto.Vendido,
-            [TipoMovimentacao.DevolucaoEmprestimo] = SituacaoProduto.Emprestado
+            [TipoMovimentacao.DevolucaoEmprestimo] = SituacaoProduto.Emprestado,
+            [TipoMovimentacao.SepararDevolucao] = SituacaoProduto.Estoque
         };
         private static readonly IReadOnlyDictionary<TipoMovimentacao, SituacaoProduto> SituacoesFinaisPorTipo = new Dictionary<TipoMovimentacao, SituacaoProduto>
         {
@@ -54,7 +55,8 @@ namespace Renova.Service.Services.Movimentacao
             [TipoMovimentacao.Doacao] = SituacaoProduto.Doado,
             [TipoMovimentacao.DevolucaoDono] = SituacaoProduto.Devolvido,
             [TipoMovimentacao.DevolucaoVenda] = SituacaoProduto.Estoque,
-            [TipoMovimentacao.DevolucaoEmprestimo] = SituacaoProduto.Estoque
+            [TipoMovimentacao.DevolucaoEmprestimo] = SituacaoProduto.Estoque,
+            [TipoMovimentacao.SepararDevolucao] = SituacaoProduto.PendenteDevolucao
         };
 
         public async Task<PaginacaoDto<MovimentacaoBuscaDto>> GetAllAsync(ObterMovimentacoesQuery request, ObterMovimentacoesParametros parametros, CancellationToken cancellationToken = default)
@@ -406,9 +408,9 @@ namespace Renova.Service.Services.Movimentacao
                 throw new ArgumentException($"Os produtos [{string.Join(", ", produtoIdsDuplicados)}] foram informados mais de uma vez.", nameof(request));
             }
 
-            if (request.Itens.Any(item => item.Tipo is not TipoMovimentacao.Doacao and not TipoMovimentacao.DevolucaoDono))
+            if (request.Itens.Any(item => item.Tipo is not TipoMovimentacao.Doacao and not TipoMovimentacao.DevolucaoDono and not TipoMovimentacao.SepararDevolucao))
             {
-                throw new ArgumentException("Os itens devem ser marcados apenas como doacao ou devolucao ao dono.", nameof(request));
+                throw new ArgumentException("Os itens devem ser marcados apenas como doacao ou separacao de devolucao.", nameof(request));
             }
 
             List<int> produtoIds = request.Itens
@@ -455,7 +457,7 @@ namespace Renova.Service.Services.Movimentacao
                 List<MovimentacaoModel> movimentacoes = [];
 
                 foreach (IGrouping<(int FornecedorId, TipoMovimentacao Tipo), ProdutoEstoqueModel> grupo in produtos
-                    .GroupBy(produto => (FornecedorId: produto.FornecedorId, Tipo: tipoPorProdutoId[produto.Id]))
+                    .GroupBy(produto => (FornecedorId: produto.FornecedorId, Tipo: ObterTipoDestinacao(tipoPorProdutoId[produto.Id])))
                     .OrderBy(group => group.Key.FornecedorId)
                     .ThenBy(group => group.Key.Tipo))
                 {
@@ -632,6 +634,13 @@ namespace Renova.Service.Services.Movimentacao
                         item.ClienteId))
                     .First())
                 .ToDictionaryAsync(item => item.ProdutoId, item => item, cancellationToken);
+        }
+
+        private static TipoMovimentacao ObterTipoDestinacao(TipoMovimentacao tipo)
+        {
+            return tipo == TipoMovimentacao.DevolucaoDono
+                ? TipoMovimentacao.SepararDevolucao
+                : tipo;
         }
 
         private async Task<Dictionary<int, decimal>> ObterDescontosUltimaVendaPorProdutoAsync(

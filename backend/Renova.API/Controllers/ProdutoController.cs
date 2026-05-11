@@ -126,6 +126,45 @@ namespace Renova.API.Controllers
             }
         }
 
+        [HttpGet("pendentes-devolucao")]
+        [ProducesResponseType(typeof(IReadOnlyList<ProdutoBuscaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetProdutosPendentesDevolucaoDoCliente(
+            [FromQuery] int lojaId,
+            [FromQuery] int clienteId,
+            CancellationToken cancellationToken)
+        {
+            int? usuarioId = await ObterUsuarioIdAsync(cancellationToken);
+
+            if (!usuarioId.HasValue)
+            {
+                return Unauthorized(new { mensagem = "Usuario autenticado invalido." });
+            }
+
+            try
+            {
+                IReadOnlyList<ProdutoBuscaDto> resultado = await _produtoService.GetPendentesDevolucaoDoClienteAsync(
+                    new ObterProdutosEmprestadosClienteParametros
+                    {
+                        UsuarioId = usuarioId.Value,
+                        LojaId = lojaId,
+                        ClienteId = clienteId
+                    },
+                    cancellationToken);
+
+                return Ok(resultado);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { mensagem = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ProdutoDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -7,6 +7,7 @@ namespace Renova.Domain.Model
         Doacao = 3,
         DevolucaoDono = 4,
         DevolucaoVenda = 5,
-        DevolucaoEmprestimo = 6
+        DevolucaoEmprestimo = 6,
+        SepararDevolucao = 7
     }
 }
