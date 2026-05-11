@@ -4,7 +4,12 @@ import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer
 
 import { formatMovementType } from "@/lib/movement";
 import { formatCurrencyValue, formatDateValue, type ProductListItem } from "@/lib/product";
-import { formatReceiptDate, getReceiptProductPrice, padProductId } from "@/lib/printing/raw";
+import {
+  formatReceiptDate,
+  formatReceiptProductDiscount,
+  getReceiptProductPrice,
+  padProductId,
+} from "@/lib/printing/raw";
 import type { ReceiptPrintData } from "@/lib/printing/types";
 
 const labelStyles = StyleSheet.create({
@@ -160,7 +165,9 @@ async function createLabelsPdfBlob(products: ProductListItem[]) {
 }
 
 async function createReceiptPdfBlob(receipt: ReceiptPrintData) {
+  const subtotal = receipt.products.reduce((sum, product) => sum + product.preco, 0);
   const total = receipt.products.reduce((sum, product) => sum + getReceiptProductPrice(product), 0);
+  const discountTotal = subtotal - total;
 
   return pdf(
     <Document title={`Nota Renova ${receipt.movementId}`}>
@@ -179,18 +186,30 @@ async function createReceiptPdfBlob(receipt: ReceiptPrintData) {
           Registo de {formatMovementType(receipt.sellType)}
         </Text>
         <View style={receiptStyles.sectionGap}>
-          {receipt.products.map((product) => (
+          {receipt.products.flatMap((product) => [
             <View key={product.id} style={receiptStyles.item}>
               <Text style={receiptStyles.itemName}>
                 {product.produto} {product.cor} {product.marca}
               </Text>
+              <Text>{product.preco.toFixed(2)}</Text>
+            </View>,
+            <View key={`${product.id}-discount`} style={receiptStyles.item}>
+              <Text style={receiptStyles.itemName}>{formatReceiptProductDiscount(product)}</Text>
               <Text>{getReceiptProductPrice(product).toFixed(2)}</Text>
-            </View>
-          ))}
+            </View>,
+          ])}
         </View>
         <View style={receiptStyles.divider} />
         <View style={receiptStyles.total}>
           <Text>Total</Text>
+          <Text>{subtotal.toFixed(2)}</Text>
+        </View>
+        <View style={receiptStyles.total}>
+          <Text>Desconto</Text>
+          <Text>{discountTotal.toFixed(2)}</Text>
+        </View>
+        <View style={receiptStyles.total}>
+          <Text>Total com desconto</Text>
           <Text>{total.toFixed(2)}</Text>
         </View>
       </Page>

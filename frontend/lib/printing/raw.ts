@@ -88,9 +88,15 @@ export function buildEplLabels(products: ProductListItem[]) {
 }
 
 export function buildEscPosReceipt(receipt: ReceiptPrintData) {
+  const subtotal = receipt.products.reduce((sum, product) => sum + product.preco, 0);
   const total = receipt.products.reduce((sum, product) => sum + getReceiptProductPrice(product), 0);
+  const discountTotal = subtotal - total;
   const productsData = receipt.products.flatMap((product) => [
     `${padRight(`${product.produto} ${product.cor} ${product.marca}`, 40)}${formatRawPrice(
+      product.preco,
+    )}\x1B\x74\x13\xAA`,
+    "\x0A",
+    `${padRight(formatReceiptProductDiscount(product), 40)}${formatRawPrice(
       getReceiptProductPrice(product),
     )}\x1B\x74\x13\xAA`,
     "\x0A",
@@ -122,7 +128,11 @@ export function buildEscPosReceipt(receipt: ReceiptPrintData) {
     "\x0A\x0A",
     "\x1B\x61\x30",
     "----------------------------------------------\x0A",
-    `Total                                   ${formatRawPrice(total)}\x1B\x74\x13\xAA`,
+    `Total                                  ${formatRawPrice(subtotal)}\x1B\x74\x13\xAA`,
+    "\x0A",
+    `Desconto                               ${formatRawPrice(discountTotal)}\x1B\x74\x13\xAA`,
+    "\x0A",
+    `Total com desconto                     ${formatRawPrice(total)}\x1B\x74\x13\xAA`,
     "\x1B\x61\x30",
     "\x0A\x0A\x0A\x0A\x0A\x0A\x0A",
     "\x1B\x69",
@@ -137,6 +147,16 @@ export function getReceiptProductPrice(product: { preco: number; desconto?: stri
   }
 
   return Number((product.preco * Math.max(0, 1 - discount / 100)).toFixed(2));
+}
+
+export function formatReceiptProductDiscount(product: { desconto?: string }) {
+  const discount = Number((product.desconto || "0").replace(",", "."));
+
+  if (!Number.isFinite(discount) || discount <= 0) {
+    return "0.00%";
+  }
+
+  return `${discount.toFixed(2)}%`;
 }
 
 export function formatReceiptDate(date: Date) {

@@ -1211,7 +1211,10 @@ export function MovementPage() {
       buyer: draft.clienteLabel,
       movementId,
       printedAt: new Date(),
-      products: draft.products,
+      products: draft.products.map((product) => ({
+        ...product,
+        desconto: String(getEffectiveProductDiscount(draft, product)),
+      })),
       sellType: Number(draft.tipo) as ReceiptPrintData["sellType"],
     };
   }
