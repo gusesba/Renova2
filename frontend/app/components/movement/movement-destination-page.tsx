@@ -412,12 +412,16 @@ export function MovementDestinationPage() {
                               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                                 <div className="min-w-0">
                                   <p className="break-words text-sm font-semibold text-[var(--foreground)]">
-                                    #{item.product.id} - {item.product.produto}
+                                    #{item.product.id} - Etiqueta {item.product.etiqueta} -{" "}
+                                    {item.product.produto}
                                   </p>
                                   <p className="mt-1 break-words text-sm text-[var(--muted)]">
                                     {item.product.descricao}
                                   </p>
                                   <div className="mt-3 flex flex-wrap gap-2">
+                                    <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
+                                      Etiqueta - {item.product.etiqueta}
+                                    </span>
                                     <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--foreground)]">
                                       Marca - {item.product.marca}
                                     </span>
