@@ -1,3 +1,5 @@
+const siteUrl = "https://renovacuritiba.com.br";
+
 export default function Home() {
   const proofPoints = [
     {
@@ -114,8 +116,94 @@ export default function Home() {
     "equipes com mais de um atendente",
   ];
 
+  const faqItems = [
+    {
+      question: "Para quais lojas a Renova serve?",
+      answer:
+        "A Renova foi pensada para brechos consignados, lojas com muitas pecas em estoque, operacoes com repasse para fornecedor e equipes que precisam de controle por permissao.",
+    },
+    {
+      question: "Como a Renova controla pecas consignadas?",
+      answer:
+        "Cada peca pode ser cadastrada com dados do fornecedor, etiqueta, valor, situacao e historico. Assim a loja acompanha entrada, venda, emprestimo, devolucao e fechamento sem depender de planilhas.",
+    },
+    {
+      question: "Como funciona o repasse para fornecedor?",
+      answer:
+        "O sistema conecta pecas, movimentacoes, pagamentos, creditos e pendencias ao cliente-fornecedor, ajudando a identificar o que precisa ser repassado no fechamento.",
+    },
+    {
+      question: "O sistema imprime etiquetas?",
+      answer:
+        "Sim. A Renova ajuda na impressao de etiquetas e recibos para manter a peca identificada e facilitar a conferencia durante a rotina da loja.",
+    },
+    {
+      question: "Clientes conseguem acompanhar pecas e creditos?",
+      answer:
+        "Sim. A area do cliente permite consultar pecas cadastradas, vendas, movimentacoes, pendencias, creditos e historico, reduzindo atendimentos manuais repetidos.",
+    },
+    {
+      question: "Precisa substituir planilhas de uma vez?",
+      answer:
+        "Nao. A Renova pode entrar como uma plataforma para centralizar a operacao aos poucos, principalmente onde a loja mais perde tempo: pecas, repasses, etiquetas e fechamento financeiro.",
+    },
+    {
+      question: "Funciona em celular?",
+      answer:
+        "Sim. A experiencia em telas menores facilita consultas rapidas de clientes, produtos, pagamentos e movimentacoes durante a rotina do brecho.",
+    },
+  ];
+
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Renova",
+      url: siteUrl,
+      email: "contato@renova.com.br",
+      areaServed: {
+        "@type": "Country",
+        name: "Brasil",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Renova",
+      url: siteUrl,
+      inLanguage: "pt-BR",
+      description:
+        "Sistema para brecho consignado com controle de pecas, clientes, movimentacoes, etiquetas, repasses e fechamento financeiro.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Renova",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: siteUrl,
+      inLanguage: "pt-BR",
+      areaServed: {
+        "@type": "Country",
+        name: "Brasil",
+      },
+      audience: {
+        "@type": "BusinessAudience",
+        audienceType: "Brechos consignados",
+      },
+      description:
+        "Sistema para gestao de brecho consignado com controle de pecas consignadas, repasse para fornecedor, impressao de etiquetas e fechamento financeiro.",
+    },
+  ];
+
   return (
     <main className="relative overflow-hidden bg-[var(--background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="absolute inset-0 landing-grid opacity-60" />
       <div className="absolute inset-x-0 top-0 h-[720px] bg-[radial-gradient(circle_at_top_left,_rgba(183,196,255,0.95)_0%,_rgba(143,153,243,0.75)_26%,_rgba(106,92,255,0.28)_54%,_rgba(244,246,251,0)_78%)]" />
       <div className="absolute -top-16 right-[8%] h-72 w-72 rounded-full bg-[rgba(106,92,255,0.20)] blur-3xl hero-orb" />
@@ -132,7 +220,7 @@ export default function Home() {
                 Renova
               </p>
               <p className="text-xs text-[var(--secondary)]">
-                Gestao para brechos consignados
+                Sistema para brecho consignado
               </p>
             </div>
           </div>
@@ -179,16 +267,16 @@ export default function Home() {
               Renova
             </p>
             <h1 className="reveal-up-delay mt-4 text-4xl font-semibold leading-[1.05] text-[var(--foreground)] sm:text-5xl lg:text-6xl">
-              Gestao operacional para brechos que trabalham com{" "}
+              Sistema para brecho consignado com controle real da{" "}
               <span className="bg-[linear-gradient(135deg,_#6a5cff_0%,_#5a52eb_100%)] bg-clip-text text-transparent">
-                consignacao.
+                operacao.
               </span>
             </h1>
 
             <p className="reveal-up-delay-2 mx-auto mt-6 max-w-xl text-lg leading-8 text-[var(--secondary)] sm:text-xl xl:mx-0">
-              Cadastro de pecas, controle de movimentacoes, repasses,
-              emprestimos e fechamento financeiro em uma plataforma feita para
-              o dia a dia do brecho.
+              Gestao de brecho consignado com cadastro de pecas, controle de
+              movimentacoes, repasse para fornecedor, impressao de etiquetas e
+              fechamento financeiro em um so lugar.
             </p>
 
             <div className="reveal-up-delay-2 mt-8 flex flex-col justify-center gap-4 sm:flex-row xl:justify-start">
@@ -405,8 +493,8 @@ export default function Home() {
               Dores resolvidas
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
-              Controle de consignacao sem depender de memoria, papel ou
-              planilha.
+              Controle de pecas consignadas sem depender de memoria, papel ou
+              planilhas.
             </h2>
             <p className="mt-5 text-base leading-8 text-[var(--secondary)]">
               A Renova coloca estoque, clientes-fornecedores, movimentacoes e
@@ -448,8 +536,9 @@ export default function Home() {
               Criado junto de um brecho que vive essa operacao.
             </h2>
             <p className="mt-5 max-w-xl text-base leading-8 text-[var(--secondary)]">
-              A Renova foi pensada para quem recebe pecas, vende, devolve,
-              empresta e precisa repassar valores com clareza no fim do mes.
+              A Renova foi desenvolvida acompanhando a rotina real de um brecho
+              consignado, para quem recebe pecas, vende, devolve, empresta e
+              precisa repassar valores com clareza no fim do mes.
             </p>
           </div>
 
@@ -516,7 +605,7 @@ export default function Home() {
               Impressao integrada
             </p>
             <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
-              Etiquetas e recibos saem direto do fluxo da loja.
+              Impressao de etiquetas para brecho, direto do fluxo da loja.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--secondary)]">
               A impressao e parte central da operacao de brecho consignado. A
@@ -767,6 +856,37 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="faq" className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+            Duvidas frequentes
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+            Perguntas comuns sobre sistema para brecho consignado.
+          </h2>
+          <p className="mt-5 text-base leading-8 text-[var(--secondary)]">
+            Respostas diretas sobre controle de pecas, repasses, etiquetas,
+            clientes e fechamento financeiro de brecho.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          {faqItems.map((item) => (
+            <article
+              key={item.question}
+              className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+            >
+              <h3 className="text-lg font-semibold text-[var(--foreground)]">
+                {item.question}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-[var(--secondary)]">
+                {item.answer}
+              </p>
+            </article>
+          ))}
         </div>
       </section>
 
