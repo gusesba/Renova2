@@ -754,7 +754,9 @@ namespace Renova.Service.Services.Cliente
             await EnsureAuthenticatedUserExistsAsync(usuarioId, cancellationToken);
 
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
-                .Where(produto => produto.Fornecedor != null && produto.Fornecedor.UserId == usuarioId);
+                .Where(produto =>
+                    produto.Fornecedor != null
+                    && produto.Fornecedor.UserId == usuarioId);
 
             IQueryable<ClienteProdutoAreaDto> queryProjetada = BuildClientAreaProductsQuery(
                 ApplyMyProductsFilters(query, request),

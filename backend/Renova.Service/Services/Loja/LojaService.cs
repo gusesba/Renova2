@@ -29,6 +29,17 @@ namespace Renova.Service.Services.Loja
                 throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
             }
 
+            if (!_context.IsInMemoryProvider())
+            {
+                bool usuarioLiberado = await _context.ObterLiberacoesAtivas(DateTime.UtcNow)
+                    .AnyAsync(liberacao => liberacao.UsuarioId == parametros.UsuarioId, cancellationToken);
+
+                if (!usuarioLiberado)
+                {
+                    throw new UnauthorizedAccessException("Seu plano precisa estar ativo para criar lojas.");
+                }
+            }
+
             bool lojaJaExiste = await _context.Lojas
                 .AnyAsync(loja => loja.UsuarioId == parametros.UsuarioId && loja.Nome == nomeNormalizado, cancellationToken);
 

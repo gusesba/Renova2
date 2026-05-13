@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,7 +5,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
-using Renova.Domain.Model;
 using Renova.Domain.Settings;
 using Renova.Persistence;
 using Renova.Service.Services.Auth;
@@ -128,49 +125,6 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
 }
 app.UseAuthentication();
 app.UseAuthorization();
-if (!app.Environment.IsEnvironment("Testing"))
-{
-    app.Use(async (context, next) =>
-    {
-        bool apiAuth = context.Request.Path.StartsWithSegments("/api/auth");
-
-        if (apiAuth || context.User.Identity?.IsAuthenticated != true)
-        {
-            await next();
-            return;
-        }
-
-        string? usuarioIdClaim = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!int.TryParse(usuarioIdClaim, out int usuarioId))
-        {
-            await next();
-            return;
-        }
-
-        RenovaDbContext dbContext = context.RequestServices.GetRequiredService<RenovaDbContext>();
-        DateTime agora = DateTime.UtcNow;
-        LiberacaoUsuarioModel? liberacao = await dbContext.LiberacoesUsuarios
-            .AsNoTracking()
-            .Where(item => item.UsuarioId == usuarioId)
-            .OrderByDescending(item => item.LiberadoAte)
-            .FirstOrDefaultAsync(context.RequestAborted);
-
-        if (liberacao is { Ativo: true } && liberacao.LiberadoAte >= agora)
-        {
-            await next();
-            return;
-        }
-
-        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-        await context.Response.WriteAsJsonAsync(new
-        {
-            codigo = liberacao is null ? "liberacao_pendente" : "liberacao_expirada",
-            mensagem = liberacao is null ? "Usuario sem liberacao ativa." : "Liberacao do usuario expirada."
-        }, context.RequestAborted);
-    });
-}
 app.MapControllers();
 
 app.Run();

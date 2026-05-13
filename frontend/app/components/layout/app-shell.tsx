@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { getDashboardRouteForArea, getStoredAccessArea, type AccessArea } from "@/lib/access-area";
+import { getDashboardRouteForArea, getStoredAccessArea, persistAccessArea, type AccessArea } from "@/lib/access-area";
 import { useStoreContext } from "@/app/dashboard/store-context";
 import { menuPermissionGroups } from "@/lib/access";
+import { getAuthToken } from "@/lib/auth";
+import { getLicenseStatus } from "@/services/auth-service";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 
@@ -21,11 +23,18 @@ export function AppShell({ children }: AppShellProps) {
     typeof window === "undefined" ? false : window.matchMedia("(min-width: 1024px)").matches,
   );
   const [accessArea, setAccessArea] = useState<AccessArea>(() =>
-    typeof window === "undefined" ? "lojista" : getStoredAccessArea(),
+    typeof window === "undefined"
+      ? "lojista"
+      : window.location.pathname.startsWith("/dashboard/area-cliente")
+        ? "cliente"
+        : getStoredAccessArea(),
   );
   const pathname = usePathname();
   const router = useRouter();
-  const { hasAnyPermission, isLoadingAccess, selectedStoreId } = useStoreContext();
+  const { hasAnyPermission, isLoadingAccess, isLoadingStores, selectedStoreId, stores } = useStoreContext();
+  const effectiveAccessArea: AccessArea = pathname.startsWith("/dashboard/area-cliente")
+    ? "cliente"
+    : accessArea;
 
   const allowedRoutes = useMemo(
     () =>
@@ -40,7 +49,7 @@ export function AppShell({ children }: AppShellProps) {
   );
 
   useEffect(() => {
-    if (accessArea === "cliente") {
+    if (effectiveAccessArea === "cliente") {
       if (!pathname.startsWith("/dashboard/area-cliente")) {
         router.replace("/dashboard/area-cliente");
       }
@@ -72,13 +81,62 @@ export function AppShell({ children }: AppShellProps) {
     }
 
     router.replace(allowedRoutes[0] ?? "/dashboard/loja");
-  }, [accessArea, allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
+  }, [effectiveAccessArea, allowedRoutes, hasAnyPermission, isLoadingAccess, pathname, router, selectedStoreId]);
 
   useEffect(() => {
-    if (accessArea === "lojista" && pathname.startsWith("/dashboard/area-cliente")) {
-      router.replace(getDashboardRouteForArea(accessArea));
+    if (pathname.startsWith("/dashboard/area-cliente")) {
+      persistAccessArea("cliente");
+      return;
     }
-  }, [accessArea, pathname, router]);
+
+    if (effectiveAccessArea === "lojista" && pathname.startsWith("/dashboard/area-cliente")) {
+      router.replace(getDashboardRouteForArea(effectiveAccessArea));
+    }
+  }, [effectiveAccessArea, pathname, router]);
+
+  useEffect(() => {
+    if (
+      effectiveAccessArea !== "lojista"
+      || pathname.startsWith("/dashboard/area-cliente")
+      || isLoadingStores
+      || stores.length > 0
+    ) {
+      return;
+    }
+
+    const token = getAuthToken();
+
+    if (!token) {
+      return;
+    }
+
+    const authToken = token;
+    let cancelled = false;
+
+    async function redirectBlockedStoreOwner() {
+      const response = await getLicenseStatus(authToken);
+
+      if (cancelled || !response.ok) {
+        return;
+      }
+
+      const status = response.body?.status;
+
+      if (status === "pendente") {
+        router.replace("/entrar-em-contato");
+      }
+
+      if (status === "expirada") {
+        router.replace("/permissao-expirada");
+      }
+    }
+
+    void redirectBlockedStoreOwner();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [effectiveAccessArea, isLoadingStores, pathname, router, stores.length]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
@@ -135,14 +193,14 @@ export function AppShell({ children }: AppShellProps) {
         ) : null}
 
         <AppSidebar
-          accessArea={accessArea}
+          accessArea={effectiveAccessArea}
           isCollapsed={!isDesktopChromeVisible}
           isMobileOpen={isMobileChromeOpen}
           onNavigate={() => setIsMobileChromeOpen(false)}
         />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[var(--surface-muted)]">
           <AppHeader
-            accessArea={accessArea}
+            accessArea={effectiveAccessArea}
             isCollapsed={!isDesktopChromeVisible}
             isMobileOpen={isMobileChromeOpen}
             onAccessAreaChange={setAccessArea}

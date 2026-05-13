@@ -375,12 +375,14 @@ namespace Renova.Service.Services.Pagamento
                 throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
             }
 
-            return await _context.ClientesCreditos
+            IQueryable<ClienteCreditoModel> query = _context.ClientesCreditos
                 .AsNoTracking()
                 .Where(credito =>
                     credito.Cliente != null
                     && credito.Cliente.UserId == usuarioId
-                    && credito.Valor != 0m)
+                    && credito.Valor != 0m);
+
+            return await query
                 .OrderByDescending(credito => credito.ClienteId)
                 .ThenByDescending(credito => credito.LojaId)
                 .Select(credito => new ClientePendenciaAreaDto
