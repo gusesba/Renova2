@@ -1,4 +1,4 @@
-const siteUrl = "https://renovacuritiba.com.br";
+const siteUrl = "https://www.renovacuritiba.com.br";
 
 export default function Home() {
   const proofPoints = [

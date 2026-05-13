@@ -3,7 +3,7 @@ import { Poppins } from "next/font/google";
 
 import "./globals.css";
 
-const siteUrl = "https://renovacuritiba.com.br";
+const siteUrl = "https://www.renovacuritiba.com.br";
 
 const poppins = Poppins({
   subsets: ["latin"],
