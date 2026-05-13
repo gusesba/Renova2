@@ -20,7 +20,7 @@ import {
   type FieldErrors,
   type FormValues,
 } from "@/lib/auth";
-import { asUsuarioTokenResponse, authenticate } from "@/services/auth-service";
+import { asUsuarioTokenResponse, authenticate, getLicenseStatus } from "@/services/auth-service";
 import { getSchema, mapZodErrors } from "@/validations/auth";
 
 import { AuthLeftPanel } from "./left-panel";
@@ -122,7 +122,21 @@ export function AuthShell() {
           ? `Login realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`
           : `Cadastro realizado com sucesso. Bem-vindo, ${result.usuario.nome}.`,
       );
-      router.replace(getDashboardRouteForArea(accessArea));
+
+      if (mode === "cadastro") {
+        router.replace("/entrar-em-contato");
+        return;
+      }
+
+      const licenseResponse = await getLicenseStatus(result.token);
+      const status = licenseResponse.body?.status;
+
+      if (status === "ativa") {
+        router.replace(getDashboardRouteForArea(accessArea));
+        return;
+      }
+
+      router.replace(status === "expirada" ? "/permissao-expirada" : "/entrar-em-contato");
     } catch {
       toast.error("Nao foi possivel conectar ao backend. Verifique se a API esta em execucao.");
     }

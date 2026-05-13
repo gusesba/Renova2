@@ -7,5 +7,6 @@ namespace Renova.Service.Services.Auth
     {
         Task<UsuarioTokenDto> CreateAsync(CadastroCommand request, CancellationToken cancellationToken = default);
         Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default);
+        Task<LiberacaoUsuarioStatusDto> ObterLiberacaoAsync(int usuarioId, CancellationToken cancellationToken = default);
     }
 }

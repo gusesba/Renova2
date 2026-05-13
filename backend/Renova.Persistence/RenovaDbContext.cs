@@ -9,6 +9,7 @@ namespace Renova.Persistence
     {
         public DbSet<RenovaModel> Renova { get; set; }
         public DbSet<UsuarioModel> Usuarios { get; set; }
+        public DbSet<LiberacaoUsuarioModel> LiberacoesUsuarios { get; set; }
         public DbSet<LojaModel> Lojas { get; set; }
         public DbSet<FuncionarioModel> Funcionarios { get; set; }
         public DbSet<CargoModel> Cargos { get; set; }
@@ -52,6 +53,21 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Email).HasMaxLength(200).IsRequired();
                 _ = entity.Property(p => p.SenhaHash).HasMaxLength(500).IsRequired();
                 _ = entity.HasIndex(p => p.Email).IsUnique();
+            });
+
+            _ = modelBuilder.Entity<LiberacaoUsuarioModel>(entity =>
+            {
+                _ = entity.ToTable("LiberacaoUsuario");
+                _ = entity.HasKey(p => p.Id);
+                _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
+                _ = entity.Property(p => p.UsuarioId).IsRequired();
+                _ = entity.Property(p => p.LiberadoAte).IsRequired();
+                _ = entity.Property(p => p.Ativo).IsRequired().HasDefaultValue(true);
+                _ = entity.HasIndex(p => p.UsuarioId);
+                _ = entity.HasOne(p => p.Usuario)
+                    .WithMany(p => p.Liberacoes)
+                    .HasForeignKey(p => p.UsuarioId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             _ = modelBuilder.Entity<LojaModel>(entity =>

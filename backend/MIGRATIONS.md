@@ -25,3 +25,11 @@ dotnet ef migrations add NomeDaMigracao --project .\Renova.Persistence\Renova.Pe
 ```powershell
 dotnet ef database update --project .\Renova.Persistence\Renova.Persistence.csproj --startup-project .\Renova.API\Renova.API.csproj
 ```
+
+## Liberar user
+
+```INSERT INTO "LiberacaoUsuario" ("UsuarioId", "LiberadoAte", "Ativo")
+SELECT "Id", '2026-06-13T23:59:59Z'::timestamptz, true
+FROM "Usuario"
+WHERE "Email" = 'usuario@email.com';
+```

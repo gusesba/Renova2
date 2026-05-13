@@ -1,4 +1,4 @@
-import type { AuthMode, UsuarioTokenResponse } from "@/lib/auth";
+import type { AuthMode, LicenseStatusResponse, UsuarioTokenResponse } from "@/lib/auth";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:5268";
 
@@ -28,4 +28,26 @@ export async function authenticate<TPayload>(
 
 export function asUsuarioTokenResponse(body: unknown) {
   return body as UsuarioTokenResponse;
+}
+
+export async function getLicenseStatus(
+  token: string,
+): Promise<{ body: LicenseStatusResponse | null; ok: boolean; status: number }> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/liberacao`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = contentType.includes("application/json")
+    ? ((await response.json()) as LicenseStatusResponse)
+    : null;
+
+  return {
+    body,
+    ok: response.ok,
+    status: response.status,
+  };
 }

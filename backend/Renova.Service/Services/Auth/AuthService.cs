@@ -65,5 +65,35 @@ namespace Renova.Service.Services.Auth
                     Token = _jwtTokenService.GenerateToken(usuario)
                 };
         }
+
+        public async Task<LiberacaoUsuarioStatusDto> ObterLiberacaoAsync(int usuarioId, CancellationToken cancellationToken = default)
+        {
+            DateTime agora = DateTime.UtcNow;
+            LiberacaoUsuarioModel? liberacao = await _context.LiberacoesUsuarios
+                .AsNoTracking()
+                .Where(item => item.UsuarioId == usuarioId)
+                .OrderByDescending(item => item.LiberadoAte)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (liberacao is null)
+            {
+                return new LiberacaoUsuarioStatusDto { Status = "pendente" };
+            }
+
+            if (liberacao.Ativo && liberacao.LiberadoAte >= agora)
+            {
+                return new LiberacaoUsuarioStatusDto
+                {
+                    Status = "ativa",
+                    LiberadoAte = liberacao.LiberadoAte
+                };
+            }
+
+            return new LiberacaoUsuarioStatusDto
+            {
+                Status = "expirada",
+                LiberadoAte = liberacao.LiberadoAte
+            };
+        }
     }
 }

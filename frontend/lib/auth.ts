@@ -19,6 +19,13 @@ export type UsuarioTokenResponse = {
   token: string;
 };
 
+export type LicenseStatus = "ativa" | "pendente" | "expirada";
+
+export type LicenseStatusResponse = {
+  status: LicenseStatus;
+  liberadoAte?: string | null;
+};
+
 export type ApiErrorResponse = {
   mensagem?: unknown;
   title?: unknown;

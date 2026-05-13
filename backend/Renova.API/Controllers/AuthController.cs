@@ -1,3 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 using Renova.Domain.Model.Dto;
@@ -46,6 +50,25 @@ namespace Renova.API.Controllers
             {
                 return Unauthorized(new { mensagem = ex.Message });
             }
+        }
+
+        [Authorize]
+        [HttpGet("liberacao")]
+        [ProducesResponseType(typeof(LiberacaoUsuarioStatusDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetLiberacao(CancellationToken cancellationToken)
+        {
+            string? usuarioIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(usuarioIdClaim, out int usuarioId))
+            {
+                return Unauthorized(new { mensagem = "Usuario nao identificado." });
+            }
+
+            LiberacaoUsuarioStatusDto resultado = await _authService.ObterLiberacaoAsync(usuarioId, cancellationToken);
+
+            return Ok(resultado);
         }
     }
 }
