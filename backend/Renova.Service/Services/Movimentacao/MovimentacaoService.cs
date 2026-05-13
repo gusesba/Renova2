@@ -69,6 +69,7 @@ namespace Renova.Service.Services.Movimentacao
             await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.MovimentacoesVisualizar, cancellationToken);
 
             IQueryable<MovimentacaoModel> query = _context.Movimentacoes
+                .AsNoTracking()
                 .Where(movimentacao => movimentacao.LojaId == request.LojaId.Value);
 
             if (request.Id.HasValue)
@@ -173,6 +174,7 @@ namespace Renova.Service.Services.Movimentacao
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
 
@@ -276,6 +278,7 @@ namespace Renova.Service.Services.Movimentacao
 
                 decimal? creditoClienteAntesPagamento = request.Tipo == TipoMovimentacao.Venda
                     ? await _context.ClientesCreditos
+                        .AsNoTracking()
                         .Where(item => item.LojaId == request.LojaId && item.ClienteId == request.ClienteId)
                         .Select(item => (decimal?)item.Valor)
                         .SingleOrDefaultAsync(cancellationToken)
@@ -315,6 +318,7 @@ namespace Renova.Service.Services.Movimentacao
 
                 decimal? creditoPendenteCliente = request.Tipo == TipoMovimentacao.Venda
                     ? await _context.ClientesCreditos
+                        .AsNoTracking()
                         .Where(item => item.LojaId == request.LojaId && item.ClienteId == request.ClienteId)
                         .Select(item => (decimal?)item.Valor)
                         .SingleOrDefaultAsync(cancellationToken)
@@ -615,6 +619,7 @@ namespace Renova.Service.Services.Movimentacao
             CancellationToken cancellationToken)
         {
             return await _context.MovimentacoesProdutos
+                .AsNoTracking()
                 .Where(item => produtoIds.Contains(item.ProdutoId) && item.Movimentacao != null)
                 .Select(item => new
                 {
@@ -649,6 +654,7 @@ namespace Renova.Service.Services.Movimentacao
             CancellationToken cancellationToken)
         {
             return await _context.MovimentacoesProdutos
+                .AsNoTracking()
                 .Where(item =>
                     produtoIds.Contains(item.ProdutoId)
                     && item.Movimentacao != null

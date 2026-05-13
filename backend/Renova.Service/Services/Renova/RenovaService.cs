@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 using Renova.Domain.Model;
@@ -13,7 +14,9 @@ namespace Renova.Service.Services.Renova
 
         public async Task<RenovaModel?> GetAsync(RenovaQuery request, CancellationToken cancellationToken = default)
         {
-            return await _context.Renova.FindAsync([request.CampoQuery], cancellationToken);
+            return await _context.Renova
+                .AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Campo1 == request.CampoQuery, cancellationToken);
         }
 
         public async Task<RenovaModel> CreateAsync(RenovaCommand request, CancellationToken cancellationToken = default)

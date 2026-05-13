@@ -48,6 +48,7 @@ namespace Renova.Service.Services.Auth
         public async Task<UsuarioTokenDto> LoginAsync(LoginCommand request, CancellationToken cancellationToken = default)
         {
             UsuarioModel? usuario = await _context.Usuarios
+                .AsNoTracking()
                 .SingleOrDefaultAsync(usuario => usuario.Email == request.Email, cancellationToken) ?? throw new UnauthorizedAccessException("Credenciais invalidas.");
             bool senhaValida = BCrypt.Net.BCrypt.Verify(request.Senha, usuario.SenhaHash);
 

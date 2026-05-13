@@ -28,6 +28,7 @@ namespace Renova.API.Controllers
             return string.IsNullOrWhiteSpace(email)
                 ? null
                 : await _context.Usuarios
+                .AsNoTracking()
                 .Where(usuario => usuario.Email == email)
                 .Select(usuario => (int?)usuario.Id)
                 .SingleOrDefaultAsync(cancellationToken);

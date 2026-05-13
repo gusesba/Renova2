@@ -48,6 +48,7 @@ namespace Renova.Service.Services.Produto
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(cliente => cliente.Id == request.FornecedorId, cancellationToken)
                 ?? throw new ArgumentException("Fornecedor informado nao foi encontrado.", nameof(request));
 
@@ -57,18 +58,22 @@ namespace Renova.Service.Services.Produto
             }
 
             ProdutoReferenciaModel produtoReferencia = await _context.ProdutosReferencia
+                .AsNoTracking()
                 .SingleOrDefaultAsync(produto => produto.Id == request.ProdutoId, cancellationToken)
                 ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
 
             MarcaModel marca = await _context.Marcas
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.MarcaId, cancellationToken)
                 ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
 
             TamanhoModel tamanho = await _context.Tamanhos
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.TamanhoId, cancellationToken)
                 ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
 
             CorModel cor = await _context.Cores
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.CorId, cancellationToken)
                 ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
 
@@ -137,6 +142,7 @@ namespace Renova.Service.Services.Produto
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(produto.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel fornecedor = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(cliente => cliente.Id == request.FornecedorId, cancellationToken)
                 ?? throw new ArgumentException("Fornecedor informado nao foi encontrado.", nameof(request));
 
@@ -146,18 +152,22 @@ namespace Renova.Service.Services.Produto
             }
 
             ProdutoReferenciaModel produtoReferencia = await _context.ProdutosReferencia
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.ProdutoId, cancellationToken)
                 ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
 
             MarcaModel marca = await _context.Marcas
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.MarcaId, cancellationToken)
                 ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
 
             TamanhoModel tamanho = await _context.Tamanhos
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.TamanhoId, cancellationToken)
                 ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
 
             CorModel cor = await _context.Cores
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.CorId, cancellationToken)
                 ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
 
@@ -351,6 +361,7 @@ namespace Renova.Service.Services.Produto
             await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosVisualizar, cancellationToken);
 
             IQueryable<ProdutoEstoqueModel> query = _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(produto => produto.LojaId == loja.Id);
 
             if (request.Id.HasValue)
@@ -515,6 +526,7 @@ namespace Renova.Service.Services.Produto
             }
 
             ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .AsNoTracking()
                 .Include(item => item.Produto)
                 .Include(item => item.Marca)
                 .Include(item => item.Tamanho)
@@ -573,6 +585,7 @@ namespace Renova.Service.Services.Produto
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(parametros));
 
@@ -582,6 +595,7 @@ namespace Renova.Service.Services.Produto
             }
 
             return await _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(produto => produto.LojaId == parametros.LojaId && produto.Situacao == SituacaoProduto.Emprestado)
                 .Where(produto => produto.Movimentacoes
                     .Where(movimentacaoProduto => movimentacaoProduto.Movimentacao != null)
@@ -642,6 +656,7 @@ namespace Renova.Service.Services.Produto
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(parametros.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == parametros.ClienteId, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(parametros));
 
@@ -651,6 +666,7 @@ namespace Renova.Service.Services.Produto
             }
 
             return await _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(produto =>
                     produto.LojaId == parametros.LojaId
                     && produto.FornecedorId == parametros.ClienteId
@@ -683,6 +699,7 @@ namespace Renova.Service.Services.Produto
         private async Task<decimal?> ObterDescontoUltimaVendaAsync(int produtoId, CancellationToken cancellationToken)
         {
             return await _context.MovimentacoesProdutos
+                .AsNoTracking()
                 .Where(item =>
                     item.ProdutoId == produtoId
                     && item.Movimentacao != null
@@ -696,6 +713,7 @@ namespace Renova.Service.Services.Produto
         public async Task<IReadOnlyList<SolicitacaoCompativelDto>> GetSolicitacoesCompativeisAsync(int produtoId, CancellationToken cancellationToken = default)
         {
             ProdutoEstoqueModel produto = await _context.ProdutosEstoque
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == produtoId, cancellationToken)
                 ?? throw new KeyNotFoundException("Produto informado nao foi encontrado.");
 
@@ -753,7 +771,9 @@ namespace Renova.Service.Services.Produto
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
             await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ProdutosAuxiliaresVisualizar, cancellationToken);
 
-            IQueryable<TModel> query = dbSet.Where(entity => EF.Property<int>(entity, "LojaId") == loja.Id);
+            IQueryable<TModel> query = dbSet
+                .AsNoTracking()
+                .Where(entity => EF.Property<int>(entity, "LojaId") == loja.Id);
 
             if (!string.IsNullOrWhiteSpace(request.Valor))
             {
@@ -942,6 +962,7 @@ namespace Renova.Service.Services.Produto
         private Task<List<SolicitacaoCompativelDto>> ObterSolicitacoesCompativeisCoreAsync(ProdutoEstoqueModel produto, CancellationToken cancellationToken)
         {
             return _context.Solicitacoes
+                .AsNoTracking()
                 .Where(solicitacao =>
                     solicitacao.LojaId == produto.LojaId
                     && (!solicitacao.ProdutoId.HasValue || solicitacao.ProdutoId == produto.ProdutoId)

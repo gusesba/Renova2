@@ -22,6 +22,7 @@ namespace Renova.Service.Services.ConfigLoja
             await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ConfigLojaVisualizar, cancellationToken);
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .AsNoTracking()
                 .Include(item => item.DescontosPermanencia)
                 .Include(item => item.FormasPagamento)
                 .SingleOrDefaultAsync(item => item.LojaId == loja.Id, cancellationToken)
@@ -95,6 +96,7 @@ namespace Renova.Service.Services.ConfigLoja
             _ = await _context.SaveChangesAsync(cancellationToken);
 
             ConfigLojaModel configPersistida = await _context.ConfiguracoesLoja
+                .AsNoTracking()
                 .Include(item => item.DescontosPermanencia)
                 .Include(item => item.FormasPagamento)
                 .SingleAsync(item => item.Id == config.Id, cancellationToken);

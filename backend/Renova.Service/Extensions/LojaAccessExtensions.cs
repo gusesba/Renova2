@@ -10,6 +10,7 @@ namespace Renova.Service.Extensions
         public static IQueryable<LojaModel> ObterLojasAcessiveisAoUsuario(this RenovaDbContext context, int usuarioId)
         {
             return context.Lojas
+                .AsNoTracking()
                 .Where(loja =>
                     loja.UsuarioId == usuarioId
                     || context.Funcionarios.Any(funcionario =>

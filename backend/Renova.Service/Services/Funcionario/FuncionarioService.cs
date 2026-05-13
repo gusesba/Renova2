@@ -34,10 +34,12 @@ namespace Renova.Service.Services.Funcionario
                 lancarQuandoLojaNaoExistir: true);
 
             UsuarioModel usuario = await _context.Usuarios
+                .AsNoTracking()
                 .SingleOrDefaultAsync(usuarioAtual => usuarioAtual.Id == request.UsuarioId, cancellationToken)
                 ?? throw new KeyNotFoundException("Usuario informado nao foi encontrado.");
 
             CargoModel cargo = await _context.Cargos
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.CargoId && item.LojaId == loja.Id, cancellationToken)
                 ?? throw new ArgumentException("Cargo informado nao foi encontrado para a loja.");
 
@@ -76,6 +78,7 @@ namespace Renova.Service.Services.Funcionario
                 cancellationToken);
 
             List<FuncionarioModel> funcionarios = await _context.Funcionarios
+                .AsNoTracking()
                 .Include(funcionario => funcionario.Usuario)
                 .Where(funcionario => funcionario.LojaId == parametros.LojaId)
                 .OrderBy(funcionario => funcionario.Usuario!.Nome)

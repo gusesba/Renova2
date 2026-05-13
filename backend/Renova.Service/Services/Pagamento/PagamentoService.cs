@@ -50,6 +50,7 @@ namespace Renova.Service.Services.Pagamento
             await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosVisualizar, cancellationToken);
 
             IQueryable<PagamentoModel> query = _context.Pagamentos
+                .AsNoTracking()
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
 
             if (request.Id.HasValue)
@@ -159,6 +160,7 @@ namespace Renova.Service.Services.Pagamento
             DateTime fimHistoricoExclusivo = inicioMesReferencia.AddMonths(1);
 
             List<FechamentoMovimentacaoMensalItem> movimentacoes = await _context.Movimentacoes
+                .AsNoTracking()
                 .Where(movimentacao =>
                     movimentacao.LojaId == request.LojaId.Value
                     && movimentacao.Data >= inicioHistorico
@@ -175,6 +177,7 @@ namespace Renova.Service.Services.Pagamento
                 .ToListAsync(cancellationToken);
 
             List<FechamentoPagamentoMensalItem> pagamentosCredito = await _context.PagamentosCredito
+                .AsNoTracking()
                 .Where(pagamento =>
                     pagamento.LojaId == request.LojaId.Value
                     && pagamento.Data >= inicioHistorico
@@ -193,6 +196,7 @@ namespace Renova.Service.Services.Pagamento
                 .ToListAsync(cancellationToken);
 
             List<FechamentoPagamentoMensalItem> gastosLoja = await _context.GastosLoja
+                .AsNoTracking()
                 .Where(gasto =>
                     gasto.LojaId == request.LojaId.Value
                     && gasto.Data >= inicioHistorico
@@ -277,6 +281,7 @@ namespace Renova.Service.Services.Pagamento
             await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.PagamentosCreditoVisualizar, cancellationToken);
 
             IQueryable<PagamentoCreditoModel> query = _context.PagamentosCredito
+                .AsNoTracking()
                 .Include(pagamento => pagamento.ConfigLojaFormaPagamento)
                 .Where(pagamento => pagamento.LojaId == request.LojaId.Value);
 
@@ -342,6 +347,7 @@ namespace Renova.Service.Services.Pagamento
             await _authorizationService.EnsurePermissionAsync(lojaId, usuarioId, FuncionalidadeCatalogo.PagamentosPendenciasVisualizar, cancellationToken);
 
             return await _context.Clientes
+                .AsNoTracking()
                 .Where(cliente => cliente.LojaId == lojaId
                     && cliente.Credito != null
                     && cliente.Credito.Valor != 0)
@@ -370,6 +376,7 @@ namespace Renova.Service.Services.Pagamento
             }
 
             return await _context.ClientesCreditos
+                .AsNoTracking()
                 .Where(credito =>
                     credito.Cliente != null
                     && credito.Cliente.UserId == usuarioId
@@ -407,6 +414,7 @@ namespace Renova.Service.Services.Pagamento
             }
 
             List<ProdutoEstoqueModel> produtos = await _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(item => request.Produtos.Select(produto => produto.ProdutoId).Contains(item.Id))
                 .OrderBy(item => item.Id)
                 .ToListAsync(cancellationToken);
@@ -472,6 +480,7 @@ namespace Renova.Service.Services.Pagamento
             if (produtosConsignados.Count > 0)
             {
                 ConfigLojaModel config = await _context.ConfiguracoesLoja
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.LojaId == request.LojaId, cancellationToken)
                     ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
 
@@ -552,6 +561,7 @@ namespace Renova.Service.Services.Pagamento
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
 
@@ -629,6 +639,7 @@ namespace Renova.Service.Services.Pagamento
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
 
@@ -813,6 +824,7 @@ namespace Renova.Service.Services.Pagamento
             }
 
             ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.LojaId == lojaId, cancellationToken)
                 ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
 

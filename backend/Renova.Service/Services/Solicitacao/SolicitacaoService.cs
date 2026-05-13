@@ -50,6 +50,7 @@ namespace Renova.Service.Services.Solicitacao
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId, parametros.UsuarioId, cancellationToken);
 
             ClienteModel cliente = await _context.Clientes
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.ClienteId.Value, cancellationToken)
                 ?? throw new ArgumentException("Cliente informado nao foi encontrado.", nameof(request));
 
@@ -62,6 +63,7 @@ namespace Renova.Service.Services.Solicitacao
             if (request.ProdutoId.HasValue)
             {
                 produto = await _context.ProdutosReferencia
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == request.ProdutoId.Value, cancellationToken)
                     ?? throw new ArgumentException("Produto informado nao foi encontrado.", nameof(request));
 
@@ -75,6 +77,7 @@ namespace Renova.Service.Services.Solicitacao
             if (request.MarcaId.HasValue)
             {
                 marca = await _context.Marcas
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == request.MarcaId.Value, cancellationToken)
                     ?? throw new ArgumentException("Marca informada nao foi encontrada.", nameof(request));
 
@@ -88,6 +91,7 @@ namespace Renova.Service.Services.Solicitacao
             if (request.TamanhoId.HasValue)
             {
                 tamanho = await _context.Tamanhos
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == request.TamanhoId.Value, cancellationToken)
                     ?? throw new ArgumentException("Tamanho informado nao foi encontrado.", nameof(request));
 
@@ -101,6 +105,7 @@ namespace Renova.Service.Services.Solicitacao
             if (request.CorId.HasValue)
             {
                 cor = await _context.Cores
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == request.CorId.Value, cancellationToken)
                     ?? throw new ArgumentException("Cor informada nao foi encontrada.", nameof(request));
 
@@ -152,6 +157,7 @@ namespace Renova.Service.Services.Solicitacao
             await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.SolicitacoesVisualizar, cancellationToken);
 
             IQueryable<SolicitacaoModel> query = _context.Solicitacoes
+                .AsNoTracking()
                 .Where(solicitacao => solicitacao.LojaId == request.LojaId.Value);
 
             if (request.Id.HasValue)
@@ -294,6 +300,7 @@ namespace Renova.Service.Services.Solicitacao
             CancellationToken cancellationToken)
         {
             return _context.ProdutosEstoque
+                .AsNoTracking()
                 .Where(produto =>
                     produto.LojaId == lojaId
                     && (!produtoId.HasValue || produto.ProdutoId == produtoId.Value)

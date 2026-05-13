@@ -40,6 +40,7 @@ namespace Renova.Service.Services.GastoLoja
             await _authorizationService.EnsurePermissionAsync(request.LojaId.Value, parametros.UsuarioId, FuncionalidadeCatalogo.GastosLojaVisualizar, cancellationToken);
 
             IQueryable<GastoLojaModel> query = _context.GastosLoja
+                .AsNoTracking()
                 .Where(gasto => gasto.LojaId == request.LojaId.Value);
 
             if (request.DataInicial.HasValue)

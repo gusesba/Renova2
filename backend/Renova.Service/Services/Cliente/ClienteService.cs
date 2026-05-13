@@ -67,6 +67,7 @@ namespace Renova.Service.Services.Cliente
                 cancellationToken);
 
             List<ClienteModel> clientesElegiveis = await _context.Clientes
+                .AsNoTracking()
                 .Where(cliente =>
                     cliente.LojaId == request.LojaId!.Value
                     && !cliente.Doacao
@@ -85,6 +86,7 @@ namespace Renova.Service.Services.Cliente
             foreach (ClienteModel cliente in clientesElegiveis)
             {
                 List<FechamentoClienteProdutoItem> produtos = await _context.ProdutosEstoque
+                    .AsNoTracking()
                     .Where(produto =>
                         produto.LojaId == request.LojaId!.Value
                         && produto.FornecedorId == cliente.Id
@@ -152,6 +154,7 @@ namespace Renova.Service.Services.Cliente
                         && item.Movimentacao.Data <= dataFinalUtc));
 
             List<ClienteModel> clientesElegiveis = await _context.Clientes
+                .AsNoTracking()
                 .Include(cliente => cliente.Credito)
                 .Where(cliente =>
                     cliente.LojaId == request.LojaId!.Value
@@ -447,6 +450,7 @@ namespace Renova.Service.Services.Cliente
             await _authorizationService.EnsurePermissionAsync(loja.Id, parametros.UsuarioId, FuncionalidadeCatalogo.ClientesVisualizar, cancellationToken);
 
             IQueryable<ClienteModel> query = _context.Clientes
+                .AsNoTracking()
                 .Where(cliente => cliente.LojaId == loja.Id);
 
             if (request.Id.HasValue)
@@ -940,6 +944,7 @@ namespace Renova.Service.Services.Cliente
 
             LojaModel loja = await _context.ObterLojaAcessivelAoUsuarioAsync(request.LojaId.Value, parametros.UsuarioId, cancellationToken);
             ConfigLojaModel config = await _context.ConfiguracoesLoja
+                .AsNoTracking()
                 .SingleOrDefaultAsync(item => item.LojaId == request.LojaId.Value, cancellationToken)
                 ?? throw new InvalidOperationException("Loja nao possui configuracao de repasse ao fornecedor.");
 
@@ -958,6 +963,7 @@ namespace Renova.Service.Services.Cliente
             }
 
             List<SaldoClienteItem> saldosPagamentos = await _context.Pagamentos
+                .AsNoTracking()
                 .Where(item =>
                     item.LojaId == lojaId
                     && clienteIds.Contains(item.ClienteId)
@@ -971,6 +977,7 @@ namespace Renova.Service.Services.Cliente
                 .ToListAsync(cancellationToken);
 
             List<SaldoClienteItem> saldosCredito = await _context.PagamentosCredito
+                .AsNoTracking()
                 .Where(item =>
                     item.LojaId == lojaId
                     && clienteIds.Contains(item.ClienteId)

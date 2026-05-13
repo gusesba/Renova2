@@ -36,11 +36,12 @@ namespace Renova.Service.Services.Usuario
                 throw new UnauthorizedAccessException("Usuario autenticado nao encontrado.");
             }
 
-            IQueryable<UsuarioModel> query = _context.Usuarios.AsQueryable();
+            IQueryable<UsuarioModel> query = _context.Usuarios.AsNoTracking();
 
             if (request.LojaId.HasValue)
             {
                 LojaModel loja = await _context.Lojas
+                    .AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == request.LojaId.Value, cancellationToken)
                     ?? throw new KeyNotFoundException("Loja informada nao foi encontrada.");
 
