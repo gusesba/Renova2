@@ -9,9 +9,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Renova | Gestao comercial com operacao conectada",
+  title: "Renova | Gestao para brechos consignados",
   description:
-    "Landing page da Renova com demonstracao da plataforma, fluxo operacional e experiencias mobile para funcionarios e clientes.",
+    "Sistema para brechos consignados com controle de pecas, clientes, movimentacoes, etiquetas, repasses e fechamento financeiro.",
 };
 
 export default function RootLayout({

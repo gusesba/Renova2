@@ -1,49 +1,117 @@
 export default function Home() {
-  const metrics = [
-    { label: "Lojas conectadas", value: "24+" },
-    { label: "Rotinas automatizadas", value: "126" },
-    { label: "Visao em tempo real", value: "100%" },
-  ];
-
-  const features = [
+  const proofPoints = [
     {
-      title: "Operacao centralizada",
+      title: "Feita na rotina real",
       description:
-        "Controle loja, estoque, movimentacoes, pagamentos e fechamento em uma unica interface limpa e rapida.",
+        "Construida acompanhando um brecho que trabalha todos os dias com consignacao.",
     },
     {
-      title: "Fluxos por permissao",
+      title: "Especializada no nicho",
       description:
-        "Cada perfil acessa apenas o que precisa, reduzindo ruído operacional e melhorando a seguranca da rotina.",
+        "Fluxos pensados para pecas, fornecedores, repasses, emprestimos e devolucoes.",
     },
     {
-      title: "Desktop e mobile",
+      title: "Clareza operacional",
       description:
-        "Equipe e clientes acompanham a operacao com o mesmo idioma visual no desktop e no mobile.",
+        "Telas organizadas para encontrar informacoes, registrar movimentos e fechar o mes.",
     },
   ];
 
-  const employeeSteps = [
-    "Acesso aos mesmos modulos do sistema web com navegacao adaptada ao celular.",
-    "Consulta de clientes, produtos, movimentacoes e solicitacoes em qualquer momento.",
-    "Registro e acompanhamento das rotinas da loja com a mesma clareza do desktop.",
-  ];
-
-  const clientSteps = [
-    "Visualizacao das informacoes essenciais da conta em uma interface simples e direta.",
-    "Acompanhamento das mesmas consultas e historicos ja disponiveis no sistema.",
-    "Experiencia consistente entre web e mobile, sem mudar a logica de uso da plataforma.",
+  const painPoints = [
+    {
+      title: "Evite perder pecas no estoque",
+      description:
+        "Controle por etiqueta, fornecedor, situacao da peca e historico de movimentacoes.",
+    },
+    {
+      title: "Saiba o que deve ser repassado",
+      description:
+        "Pagamentos, creditos, pendencias e fechamento ficam conectados ao cliente-fornecedor.",
+    },
+    {
+      title: "Controle devolucoes e emprestimos",
+      description:
+        "Movimentacoes mudam a situacao da peca e deixam a loja com rastreabilidade.",
+    },
   ];
 
   const modules = [
-    "Controle de acesso",
-    "Clientes",
+    "Consignacao",
     "Produtos",
-    "Pagamentos",
+    "Clientes",
     "Movimentacoes",
-    "Solicitacoes",
+    "Pagamentos",
     "Fechamento",
-    "Gestao da loja",
+    "Etiquetas",
+    "Area do cliente",
+    "Permissoes",
+  ];
+
+  const consignmentItems = [
+    "controle de pecas por fornecedor",
+    "repasses, creditos e pendencias",
+    "emprestimos, devolucoes e doacoes",
+    "situacao da peca atualizada por movimentacao",
+    "fechamento mensal da loja",
+    "consulta rapida por etiqueta",
+  ];
+
+  const controlAreas = [
+    {
+      title: "Produtos e estoque",
+      items: [
+        "cadastro de pecas",
+        "busca por etiqueta",
+        "filtros e paginacao",
+        "situacao e historico",
+      ],
+    },
+    {
+      title: "Clientes e fornecedores",
+      items: ["historico", "pendencias", "creditos", "exportacoes"],
+    },
+    {
+      title: "Movimentacoes",
+      items: ["venda", "emprestimo", "devolucao", "doacao"],
+    },
+    {
+      title: "Financeiro",
+      items: ["pagamentos", "fechamento", "gastos da loja", "resumo mensal"],
+    },
+    {
+      title: "Operacao da loja",
+      items: ["funcionarios", "permissoes", "impressoras", "configuracoes"],
+    },
+  ];
+
+  const printFeatures = [
+    "etiquetas",
+    "recibos",
+    "impressoras termicas",
+    "pre-visualizacao",
+    "impressao direta",
+  ];
+
+  const clientAreaItems = [
+    "pecas cadastradas",
+    "vendas e movimentacoes",
+    "pendencias",
+    "creditos",
+    "historico de compras",
+  ];
+
+  const mobileSteps = [
+    "Consulte clientes, produtos, pagamentos e movimentacoes tambem pelo celular.",
+    "Veja informacoes importantes da loja em telas organizadas para leitura rapida.",
+    "Acompanhe a rotina do brecho mesmo longe do computador.",
+  ];
+
+  const targetProfiles = [
+    "brechos consignados",
+    "lojas com alto volume de pecas",
+    "operacoes com repasse para fornecedores",
+    "lojas que trabalham com emprestimos ou reservas",
+    "equipes com mais de um atendente",
   ];
 
   return (
@@ -54,9 +122,9 @@ export default function Home() {
       <div className="absolute top-[36rem] -left-20 h-72 w-72 rounded-full bg-[rgba(47,201,143,0.12)] blur-3xl hero-orb-delay" />
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 pb-20 pt-8 lg:px-10 lg:pb-28 lg:pt-10">
-        <header className="reveal-up flex items-center justify-between rounded-full border border-white/55 bg-white/70 px-4 py-3 shadow-[0_18px_40px_rgba(62,63,140,0.10)] backdrop-blur md:px-6">
+        <header className="reveal-up flex items-center justify-between gap-4 rounded-full border border-white/55 bg-white/70 px-4 py-3 shadow-[0_18px_40px_rgba(62,63,140,0.10)] backdrop-blur md:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,_#6a5cff_0%,_#8d84ff_100%)] text-base font-semibold text-white shadow-[0_14px_30px_rgba(106,92,255,0.35)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,_#6a5cff_0%,_#8d84ff_100%)] text-base font-semibold text-white shadow-[0_14px_30px_rgba(106,92,255,0.35)]">
               R
             </div>
             <div>
@@ -64,36 +132,27 @@ export default function Home() {
                 Renova
               </p>
               <p className="text-xs text-[var(--secondary)]">
-                Plataforma operacional conectada
+                Gestao para brechos consignados
               </p>
             </div>
           </div>
 
           <nav className="hidden items-center gap-8 text-sm font-medium text-[var(--secondary)] xl:flex">
-            <a
-              href="#sistema"
-              className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
-            >
-              Sistema
-            </a>
-            <a
-              href="#mobile"
-              className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
-            >
-              Mobile
-            </a>
-            <a
-              href="#fluxo"
-              className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
-            >
-              Fluxo
-            </a>
-            <a
-              href="#contato"
-              className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
-            >
-              Orçamento
-            </a>
+            {[
+              ["Sistema", "#sistema"],
+              ["Consignacao", "#consignacao"],
+              ["Etiquetas", "#etiquetas"],
+              ["Area do cliente", "#area-cliente"],
+              ["Contato", "#contato"],
+            ].map(([label, href]) => (
+              <a
+                key={label}
+                href={href}
+                className="rounded-full px-3 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white/80 hover:text-[var(--foreground)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]"
+              >
+                {label}
+              </a>
+            ))}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -101,15 +160,15 @@ export default function Home() {
               href="https://app.renovacuritiba.com.br"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/82 px-5 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:translate-y-[-1px] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+              className="hidden items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/82 px-5 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:translate-y-[-1px] hover:border-[var(--primary)] hover:text-[var(--primary)] sm:inline-flex"
             >
               Acessar portal
             </a>
             <a
-              href="#demo"
+              href="#contato"
               className="inline-flex items-center justify-center rounded-full bg-[var(--foreground)] px-5 py-3 text-sm font-semibold !text-white transition hover:translate-y-[-1px] hover:bg-[#18233b] hover:!text-white"
             >
-              Ver demonstracao
+              Conversar
             </a>
           </div>
         </header>
@@ -119,46 +178,45 @@ export default function Home() {
             <p className="reveal-up-delay mt-8 text-sm font-semibold tracking-[0.34em] text-[var(--primary)] uppercase">
               Renova
             </p>
-            <h1 className="reveal-up-delay mt-4 text-5xl font-semibold leading-[1.02] tracking-[-0.05em] text-[var(--foreground)] sm:text-6xl lg:text-7xl">
+            <h1 className="reveal-up-delay mt-4 text-4xl font-semibold leading-[1.05] text-[var(--foreground)] sm:text-5xl lg:text-6xl">
+              Gestao operacional para brechos que trabalham com{" "}
               <span className="bg-[linear-gradient(135deg,_#6a5cff_0%,_#5a52eb_100%)] bg-clip-text text-transparent">
-                Renova
-              </span>{" "}
-              e o sistema completo para brechos que trabalham com venda
-              consignada.
+                consignacao.
+              </span>
             </h1>
 
             <p className="reveal-up-delay-2 mx-auto mt-6 max-w-xl text-lg leading-8 text-[var(--secondary)] sm:text-xl xl:mx-0">
-              A Renova organiza cadastro, entrada de pecas, comissoes,
-              pagamentos, clientes e rotina da loja em uma plataforma clara e
-              feita para o dia a dia do brecho.
+              Cadastro de pecas, controle de movimentacoes, repasses,
+              emprestimos e fechamento financeiro em uma plataforma feita para
+              o dia a dia do brecho.
             </p>
 
             <div className="reveal-up-delay-2 mt-8 flex flex-col justify-center gap-4 sm:flex-row xl:justify-start">
               <a
-                href="#demo"
+                href="#contato"
                 className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#6a5cff_0%,_#5a52eb_100%)] px-6 py-4 text-sm font-semibold !text-white shadow-[0_22px_40px_rgba(90,82,235,0.34)] transition hover:translate-y-[-2px] hover:!text-white"
               >
-                Explorar experiencia completa
+                Conversar sobre sua operacao
               </a>
               <a
-                href="#mobile"
+                href="#sistema"
                 className="inline-flex items-center justify-center rounded-full border border-[var(--border-strong)] bg-white/82 px-6 py-4 text-sm font-semibold text-[var(--foreground)] shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
               >
-                Ver experiencia mobile
+                Ver o que a Renova controla
               </a>
             </div>
 
             <div className="reveal-up-delay-2 mt-10 grid gap-4 sm:grid-cols-3">
-              {metrics.map((item) => (
+              {proofPoints.map((item) => (
                 <div
-                  key={item.label}
-                  className="rounded-[28px] border border-white/65 bg-white/75 p-5 shadow-[0_20px_45px_rgba(33,38,89,0.08)] backdrop-blur"
+                  key={item.title}
+                  className="rounded-[28px] border border-white/65 bg-white/75 p-5 text-left shadow-[0_20px_45px_rgba(33,38,89,0.08)] backdrop-blur"
                 >
-                  <p className="text-3xl font-semibold tracking-[-0.04em] text-[var(--foreground)]">
-                    {item.value}
+                  <p className="text-base font-semibold text-[var(--foreground)]">
+                    {item.title}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-[var(--secondary)]">
-                    {item.label}
+                    {item.description}
                   </p>
                 </div>
               ))}
@@ -169,19 +227,19 @@ export default function Home() {
             <div className="absolute inset-x-[10%] top-[10%] h-[68%] rounded-full bg-[radial-gradient(circle,_rgba(106,92,255,0.22)_0%,_rgba(106,92,255,0)_72%)] blur-3xl" />
             <div className="float-card relative w-full max-w-2xl rounded-[36px] border border-white/65 bg-[linear-gradient(180deg,_rgba(255,255,255,0.92)_0%,_rgba(247,249,255,0.96)_100%)] p-4 shadow-[var(--shadow-hero)] backdrop-blur">
               <div className="rounded-[30px] border border-[var(--border)] bg-[var(--surface)] p-4">
-                <div className="flex items-center justify-between rounded-[24px] bg-[var(--surface-muted)] px-4 py-3">
+                <div className="flex flex-col gap-4 rounded-[24px] bg-[var(--surface-muted)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-xs font-semibold tracking-[0.18em] text-[var(--primary)] uppercase">
-                      Dashboard Renova
+                      Painel Renova
                     </p>
                     <p className="mt-1 text-lg font-semibold text-[var(--foreground)]">
-                      Visao unificada da operacao
+                      Rotina do brecho em uma tela
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-white px-3 py-2 text-right shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
-                    <p className="text-xs text-[var(--secondary)]">Hoje</p>
+                  <div className="rounded-2xl bg-white px-3 py-2 text-left shadow-[0_10px_28px_rgba(15,23,42,0.08)] sm:text-right">
+                    <p className="text-xs text-[var(--secondary)]">Base</p>
                     <p className="text-sm font-semibold text-[var(--foreground)]">
-                      18 metas acompanhadas
+                      Consignacao real
                     </p>
                   </div>
                 </div>
@@ -192,7 +250,7 @@ export default function Home() {
                       Modulos
                     </p>
                     <div className="mt-4 space-y-2">
-                      {modules.map((module) => (
+                      {modules.slice(0, 8).map((module) => (
                         <div
                           key={module}
                           className="rounded-2xl border border-white/12 bg-white/8 px-3 py-2 text-sm font-medium backdrop-blur"
@@ -206,9 +264,9 @@ export default function Home() {
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-3">
                       {[
-                        ["Receita do dia", "R$ 32.480", "+14%"],
-                        ["Pendencias", "06", "-2 hoje"],
-                        ["Atendimentos", "184", "Fluxo estavel"],
+                        ["Etiqueta", "08421", "Busca rapida"],
+                        ["Fornecedor", "Cliente ativo", "Pecas vinculadas"],
+                        ["Repasse", "Pendente", "No fechamento"],
                       ].map(([label, value, note]) => (
                         <div
                           key={label}
@@ -217,7 +275,7 @@ export default function Home() {
                           <p className="text-sm text-[var(--secondary)]">
                             {label}
                           </p>
-                          <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--foreground)]">
+                          <p className="mt-3 text-xl font-semibold text-[var(--foreground)]">
                             {value}
                           </p>
                           <p className="mt-2 text-xs font-semibold text-[var(--primary)]">
@@ -229,36 +287,38 @@ export default function Home() {
 
                     <div className="grid gap-4 lg:grid-cols-[1.35fr_0.9fr]">
                       <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-muted)] p-5">
-                        <div className="flex items-end justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                           <div>
                             <p className="text-sm font-medium text-[var(--secondary)]">
-                              Performance por loja
+                              Produtos em acompanhamento
                             </p>
                             <p className="mt-1 text-xl font-semibold text-[var(--foreground)]">
-                              Evolucao dos resultados nos ultimos meses
+                              Situacao clara por peca
                             </p>
                           </div>
-                          <div className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[var(--primary)]">
-                            Atualizado agora
+                          <div className="w-fit rounded-full bg-white px-3 py-2 text-xs font-semibold text-[var(--primary)]">
+                            Estoque vivo
                           </div>
                         </div>
 
-                        <div className="mt-6 flex h-52 items-end gap-3">
-                          {[58, 86, 68, 112, 96, 142].map((height, index) => (
+                        <div className="mt-6 space-y-3">
+                          {[
+                            ["Casaco linho", "Consignado", "A repassar"],
+                            ["Vestido floral", "Emprestado", "Pendente dev."],
+                            ["Bolsa couro", "Vendido", "Fechamento"],
+                          ].map(([product, status, note]) => (
                             <div
-                              key={height}
-                              className="flex flex-1 flex-col items-center gap-3"
+                              key={product}
+                              className="grid gap-3 rounded-[20px] border border-[var(--border)] bg-white px-4 py-3 text-sm shadow-[0_10px_24px_rgba(15,23,42,0.04)] sm:grid-cols-[1fr_auto_auto] sm:items-center"
                             >
-                              <div
-                                className="w-full rounded-t-[22px] bg-[linear-gradient(180deg,_#8d84ff_0%,_#5a52eb_100%)] shadow-[0_16px_24px_rgba(90,82,235,0.22)]"
-                                style={{ height }}
-                              />
+                              <span className="font-semibold text-[var(--foreground)]">
+                                {product}
+                              </span>
+                              <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--primary)]">
+                                {status}
+                              </span>
                               <span className="text-xs font-medium text-[var(--secondary)]">
-                                {
-                                  ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"][
-                                    index
-                                  ]
-                                }
+                                {note}
                               </span>
                             </div>
                           ))}
@@ -267,40 +327,22 @@ export default function Home() {
 
                       <div className="rounded-[28px] border border-[var(--border)] bg-white p-5 shadow-[0_16px_32px_rgba(15,23,42,0.05)]">
                         <p className="text-sm font-medium text-[var(--secondary)]">
-                          Prioridades do turno
+                          Fluxo da operacao
                         </p>
                         <div className="mt-5 space-y-3">
                           {[
-                            [
-                              "Conferir pagamentos externos",
-                              "Agora",
-                              "bg-[#e9f8f2] text-[#1b9a68]",
-                            ],
-                            [
-                              "Liberar solicitacoes aprovadas",
-                              "11:30",
-                              "bg-[var(--primary-soft)] text-[var(--primary)]",
-                            ],
-                            [
-                              "Fechamento da loja central",
-                              "18:00",
-                              "bg-[#fff4e5] text-[#d68b1f]",
-                            ],
-                          ].map(([task, time, tone]) => (
+                            "Entrada da peca",
+                            "Etiqueta e conferencia",
+                            "Venda ou devolucao",
+                            "Repasse ao fornecedor",
+                          ].map((task) => (
                             <div
                               key={task}
                               className="rounded-[22px] border border-[var(--border)] bg-[var(--surface-muted)] p-4"
                             >
-                              <div className="flex items-start justify-between gap-4">
-                                <p className="text-sm font-semibold text-[var(--foreground)]">
-                                  {task}
-                                </p>
-                                <span
-                                  className={`rounded-full px-3 py-1 text-[11px] font-semibold ${tone}`}
-                                >
-                                  {time}
-                                </span>
-                              </div>
+                              <p className="text-sm font-semibold text-[var(--foreground)]">
+                                {task}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -312,25 +354,25 @@ export default function Home() {
 
               <div className="float-card-delay absolute -bottom-10 -left-6 hidden w-56 rounded-[28px] border border-white/60 bg-white/88 p-4 shadow-[0_24px_55px_rgba(15,23,42,0.12)] backdrop-blur md:block">
                 <p className="text-xs font-semibold tracking-[0.18em] text-[var(--primary)] uppercase">
-                  Acesso seguro
+                  Etiqueta
                 </p>
                 <p className="mt-2 text-lg font-semibold text-[var(--foreground)]">
-                  Perfis e permissoes organizados
+                  Consulta rapida por peca
                 </p>
                 <p className="mt-3 text-sm leading-6 text-[var(--secondary)]">
-                  Controle granular para operacao, administracao e consulta.
+                  Encontre dono, status e historico sem depender de planilhas.
                 </p>
               </div>
 
               <div className="float-card absolute -right-5 top-10 hidden w-52 rounded-[28px] bg-[linear-gradient(180deg,_#1f2a44_0%,_#101726_100%)] p-4 text-white shadow-[0_24px_55px_rgba(10,17,30,0.25)] 2xl:block">
                 <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/60">
-                  Tempo real
+                  Repasse
                 </p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.04em]">
-                  03s
+                <p className="mt-3 text-2xl font-semibold">
+                  Creditos e pendencias
                 </p>
                 <p className="mt-2 text-sm leading-6 text-white/72">
-                  para enxergar os principais movimentos da operacao.
+                  Controle financeiro conectado ao cliente-fornecedor.
                 </p>
               </div>
             </div>
@@ -360,20 +402,20 @@ export default function Home() {
         <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
           <div className="rounded-[36px] border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] transition duration-300 hover:scale-[1.03] hover:shadow-[0_30px_70px_rgba(15,23,42,0.12)]">
             <p className="text-sm font-semibold tracking-[0.2em] text-[var(--primary)] uppercase">
-              Por que a Renova funciona
+              Dores resolvidas
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-[var(--foreground)]">
-              Uma experiencia premium sem perder clareza operacional.
+            <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+              Controle de consignacao sem depender de memoria, papel ou
+              planilha.
             </h2>
             <p className="mt-5 text-base leading-8 text-[var(--secondary)]">
-              A interface combina dados criticos, acessos rapidos e uma
-              linguagem visual consistente para reduzir friccao no trabalho
-              diario.
+              A Renova coloca estoque, clientes-fornecedores, movimentacoes e
+              financeiro na mesma rotina operacional.
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {features.map((feature) => (
+            {painPoints.map((feature) => (
               <article
                 key={feature.title}
                 className="rounded-[32px] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.95)_0%,_rgba(248,250,255,0.95)_100%)] p-7 shadow-[0_20px_40px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.03] hover:shadow-[0_30px_70px_rgba(15,23,42,0.12)]"
@@ -394,50 +436,206 @@ export default function Home() {
       </section>
 
       <section
+        id="consignacao"
+        className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10"
+      >
+        <div className="grid gap-8 rounded-[38px] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(241,244,255,0.98)_100%)] p-8 shadow-[0_36px_80px_rgba(15,23,42,0.10)] lg:p-10 xl:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+              Feito para consignacao
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+              Criado junto de um brecho que vive essa operacao.
+            </h2>
+            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--secondary)]">
+              A Renova foi pensada para quem recebe pecas, vende, devolve,
+              empresta e precisa repassar valores com clareza no fim do mes.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {consignmentItems.map((item) => (
+              <div
+                key={item}
+                className="rounded-[24px] border border-[var(--border)] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.05)]"
+              >
+                <p className="text-sm font-semibold text-[var(--foreground)]">
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+            O que a Renova controla
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+            Modulos conectados para a rotina inteira da loja.
+          </h2>
+          <p className="mt-5 text-base leading-8 text-[var(--secondary)]">
+            Da entrada da peca ao fechamento mensal, cada modulo ajuda a
+            manter rastreabilidade e menos retrabalho.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+          {controlAreas.map((area) => (
+            <article
+              key={area.title}
+              className="rounded-[30px] border border-[var(--border)] bg-white p-6 shadow-[0_20px_45px_rgba(15,23,42,0.06)]"
+            >
+              <h3 className="text-lg font-semibold text-[var(--foreground)]">
+                {area.title}
+              </h3>
+              <div className="mt-5 space-y-3">
+                {area.items.map((item) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--primary)]" />
+                    <span className="text-sm leading-6 text-[var(--secondary)]">
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="etiquetas"
+        className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10"
+      >
+        <div className="grid gap-8 xl:grid-cols-[1fr_0.95fr]">
+          <div className="rounded-[38px] border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] lg:p-10">
+            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+              Impressao integrada
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+              Etiquetas e recibos saem direto do fluxo da loja.
+            </h2>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--secondary)]">
+              A impressao e parte central da operacao de brecho consignado. A
+              Renova ajuda a imprimir etiquetas e recibos, fazer conferencias e
+              manter a peca identificada desde a entrada ate a venda.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              {printFeatures.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-[rgba(106,92,255,0.12)] bg-[var(--primary-soft)] px-4 py-2 text-sm font-semibold text-[var(--primary)]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[38px] border border-white/70 bg-[linear-gradient(160deg,_#6a5cff_0%,_#8d84ff_100%)] p-8 text-white shadow-[0_30px_70px_rgba(90,82,235,0.24)] lg:p-10">
+            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-white/70">
+              Etiqueta da peca
+            </p>
+            <div className="mt-6 rounded-[28px] bg-white p-6 text-[var(--foreground)] shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.16em] text-[var(--primary)] uppercase">
+                    Renova
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold">08421</p>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] px-3 py-2 text-right">
+                  <p className="text-xs text-[var(--secondary)]">Status</p>
+                  <p className="text-sm font-semibold">Estoque</p>
+                </div>
+              </div>
+              <div className="mt-6 space-y-3">
+                {[
+                  ["Peca", "Blazer feminino"],
+                  ["Fornecedor", "Cliente-fornecedor"],
+                  ["Destino", "Venda consignada"],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between gap-4 rounded-[18px] bg-[var(--surface-muted)] px-4 py-3"
+                  >
+                    <span className="text-sm text-[var(--secondary)]">
+                      {label}
+                    </span>
+                    <span className="text-sm font-semibold">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="area-cliente"
+        className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10"
+      >
+        <div className="grid items-center gap-8 xl:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+              Area do cliente
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+              Clientes acompanham informacoes sem depender de atendimento
+              manual.
+            </h2>
+            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--secondary)]">
+              A area do cliente reforca maturidade do produto e reduz perguntas
+              repetidas sobre pecas, vendas, pendencias e creditos.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            {clientAreaItems.map((item) => (
+              <div
+                key={item}
+                className="rounded-[26px] border border-[var(--border)] bg-white p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+              >
+                <p className="text-base font-semibold text-[var(--foreground)]">
+                  {item}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
         id="mobile"
         className="relative mx-auto max-w-7xl px-6 py-8 pb-24 lg:px-10"
       >
         <div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[38px] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96)_0%,_rgba(241,244,255,0.98)_100%)] p-8 text-[var(--foreground)] shadow-[0_36px_80px_rgba(15,23,42,0.10)]">
             <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
-              Mobile Renova
+              Mobile
             </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em]">
-              O mesmo sistema da web, agora organizado para o celular.
+            <h2 className="mt-4 text-3xl font-semibold sm:text-4xl">
+              Acompanhe informacoes da loja tambem pelo celular.
             </h2>
             <p className="mt-5 max-w-xl text-base leading-8 text-[var(--secondary)]">
-              A proposta do mobile e levar a experiencia da Renova para uma tela
-              menor, preservando os mesmos modulos, a mesma logica de uso e o
-              mesmo cuidado visual da versao web.
+              A experiencia em telas menores facilita consultas rapidas de
+              produtos, clientes, pagamentos e movimentacoes durante a rotina da
+              loja.
             </p>
 
             <div id="fluxo" className="mt-10 grid gap-5">
               <div className="rounded-[28px] border border-[var(--border)] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
                 <p className="text-sm font-semibold tracking-[0.16em] text-[var(--primary)] uppercase">
-                  Jornada do funcionario
+                  Uso no celular
                 </p>
                 <div className="mt-4 space-y-3">
-                  {employeeSteps.map((step, index) => (
+                  {mobileSteps.map((step, index) => (
                     <div key={step} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
-                        {index + 1}
-                      </span>
-                      <p className="text-sm leading-7 text-[var(--secondary)]">
-                        {step}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-[var(--border)] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
-                <p className="text-sm font-semibold tracking-[0.16em] text-[var(--primary)] uppercase">
-                  Experiencia consistente
-                </p>
-                <div className="mt-4 space-y-3">
-                  {clientSteps.map((step, index) => (
-                    <div key={step} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary-soft)] text-sm font-semibold text-[var(--primary)]">
                         {index + 1}
                       </span>
                       <p className="text-sm leading-7 text-[var(--secondary)]">
@@ -456,27 +654,24 @@ export default function Home() {
                 <div className="mx-auto h-1.5 w-20 rounded-full bg-[var(--border)]" />
                 <div className="mt-5 rounded-[28px] bg-[linear-gradient(160deg,_#6a5cff_0%,_#8d84ff_100%)] p-5 text-white">
                   <p className="text-xs font-semibold tracking-[0.18em] uppercase text-white/72">
-                    App funcionario
+                    Operacao
                   </p>
                   <p className="mt-3 text-2xl font-semibold leading-tight">
-                    A operacao da loja no mesmo ritmo do sistema web.
+                    Produtos, clientes e movimentos com leitura rapida.
                   </p>
                   <div className="mt-5 rounded-[22px] bg-white/12 p-4 backdrop-blur">
-                    <p className="text-xs text-white/66">Visao rapida</p>
+                    <p className="text-xs text-white/66">Consulta</p>
                     <p className="mt-1 text-sm font-semibold">
-                      Clientes, produtos e movimentacoes em uma unica navegação
+                      Etiqueta, status e fornecedor no mesmo fluxo
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 space-y-3">
                   {[
-                    [
-                      "Clientes",
-                      "Consulta e acompanhamento da base cadastrada",
-                    ],
-                    ["Produtos", "Visualizacao de pecas, valores e status"],
-                    ["Movimentacoes", "Rotinas da loja acessiveis no celular"],
+                    ["Clientes", "Historico e pendencias"],
+                    ["Produtos", "Pecas, valores e status"],
+                    ["Movimentos", "Vendas, devolucoes e emprestimos"],
                   ].map(([title, detail]) => (
                     <div
                       key={title}
@@ -499,53 +694,46 @@ export default function Home() {
                 <div className="mx-auto h-1.5 w-20 rounded-full bg-[var(--border)]" />
                 <div className="mt-5 rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,_rgba(241,239,255,0.9)_0%,_rgba(255,255,255,1)_100%)] p-5">
                   <p className="text-xs font-semibold tracking-[0.18em] uppercase text-[var(--primary)]">
-                    App mobile
+                    Cliente
                   </p>
                   <p className="mt-3 text-2xl font-semibold leading-tight text-[var(--foreground)]">
-                    A mesma estrutura da Renova em uma interface leve e
-                    objetiva.
+                    Acompanhamento simples de pecas, vendas e creditos.
                   </p>
-                  <div className="mt-5 flex items-center justify-between rounded-[22px] border border-[var(--border)] bg-white px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+                  <div className="mt-5 flex items-center justify-between gap-4 rounded-[22px] border border-[var(--border)] bg-white px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                     <div>
                       <p className="text-xs text-[var(--secondary)]">
-                        Base visual
+                        Pendencias
                       </p>
                       <p className="mt-1 text-sm font-semibold text-[var(--foreground)]">
-                        Mesmo idioma de cards, modulos e consultas
+                        Centralizadas por cliente
                       </p>
                     </div>
-                    <div className="h-3 w-3 rounded-full bg-[#2fc98f]" />
+                    <div className="h-3 w-3 shrink-0 rounded-full bg-[#2fc98f]" />
                   </div>
                 </div>
 
                 <div className="mt-5 rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
                   <p className="text-sm font-semibold text-[var(--foreground)]">
-                    Elementos da versao mobile
+                    Consultas no celular
                   </p>
                   <div className="mt-4 space-y-4">
                     {[
-                      [
-                        "Consulta de modulos",
-                        "Produtos, clientes e pagamentos",
-                      ],
-                      ["Leitura clara", "Cards e informacoes bem organizados"],
-                      [
-                        "Uso continuo",
-                        "Mesma experiencia entre desktop e celular",
-                      ],
-                    ].map(([label, hour]) => (
+                      ["Minhas pecas", "Como fornecedor"],
+                      ["Minhas compras", "Como cliente"],
+                      ["Creditos", "Pendencias e resgates"],
+                    ].map(([label, detail]) => (
                       <div
                         key={label}
                         className="flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="h-3 w-3 rounded-full bg-[var(--primary)]" />
+                          <span className="h-3 w-3 shrink-0 rounded-full bg-[var(--primary)]" />
                           <span className="text-sm text-[var(--foreground)]">
                             {label}
                           </span>
                         </div>
                         <span className="text-xs font-medium text-[var(--secondary)]">
-                          {hour}
+                          {detail}
                         </span>
                       </div>
                     ))}
@@ -553,6 +741,31 @@ export default function Home() {
                 </div>
               </div>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative mx-auto max-w-7xl px-6 pb-24 lg:px-10">
+        <div className="grid gap-8 rounded-[38px] border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] lg:p-10 xl:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-sm font-semibold tracking-[0.2em] uppercase text-[var(--primary)]">
+              Para quem e
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold text-[var(--foreground)] sm:text-4xl">
+              Feita para lojas que precisam de controle operacional real.
+            </h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {targetProfiles.map((profile) => (
+              <div
+                key={profile}
+                className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)] p-5"
+              >
+                <p className="text-sm font-semibold text-[var(--foreground)]">
+                  {profile}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -570,27 +783,27 @@ export default function Home() {
               <p className="text-sm font-semibold tracking-[0.22em] text-white/70 uppercase">
                 Entre em contato
               </p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-                Solicite um orçamento para levar a Renova ao seu brechó.
+              <h2 className="mt-4 text-3xl font-semibold sm:text-5xl">
+                Vamos conversar sobre a rotina do seu brecho.
               </h2>
               <p className="mt-5 max-w-xl text-base leading-8 text-white/78">
-                Fale com a nossa equipe para entender como a Renova pode apoiar
-                a gestão do seu brechó com venda consignada, organização da
-                rotina e mais clareza no dia a dia da operação.
+                No momento inicial da Renova, a melhor demonstracao e entender
+                sua operacao: volume de pecas, repasses, devolucoes, etiquetas,
+                fechamento e atendimento aos clientes.
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <a
-                  href="mailto:contato@renova.com.br?subject=Pedido%20de%20orcamento%20-%20Renova"
+                  href="mailto:contato@renova.com.br?subject=Conversar%20sobre%20operacao%20-%20Renova"
                   className="inline-flex items-center justify-center rounded-full bg-white px-6 py-4 text-sm font-semibold !text-[var(--primary-strong)] shadow-[0_18px_36px_rgba(255,255,255,0.18)] transition hover:translate-y-[-2px] hover:!text-[var(--primary-strong)]"
                 >
-                  Solicitar orçamento
+                  Conversar sobre sua operacao
                 </a>
                 <a
                   href="#demo"
                   className="inline-flex items-center justify-center rounded-full border border-white/24 bg-white/8 px-6 py-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12"
                 >
-                  Rever demonstração
+                  Ver demonstracao
                 </a>
               </div>
             </div>
@@ -601,9 +814,9 @@ export default function Home() {
               </p>
               <div className="mt-5 space-y-3">
                 {[
-                  "Quantidade de lojas ou unidades que deseja organizar.",
-                  "Principais rotinas do brechó que hoje precisam de mais controle.",
-                  "Se a operação trabalha com venda consignada, repasse e gestão de clientes.",
+                  "Como sua loja controla pecas consignadas hoje.",
+                  "Quais etapas mais geram retrabalho no fechamento.",
+                  "Se voce usa etiquetas, impressora termica ou planilhas.",
                 ].map((item) => (
                   <div
                     key={item}
