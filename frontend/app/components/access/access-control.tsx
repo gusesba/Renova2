@@ -95,13 +95,18 @@ function collectDependentIds(
   return dependentKeys.flatMap((dependentKey) => {
     const dependentId = functionalityIdByKey.get(dependentKey);
     if (!dependentId) return [];
-    return [dependentId, ...collectDependentIds(dependentKey, reverseDependencyKeys, functionalityIdByKey, visited)];
+    return [
+      dependentId,
+      ...collectDependentIds(dependentKey, reverseDependencyKeys, functionalityIdByKey, visited),
+    ];
   });
 }
 
 export function AccessControl() {
   const { selectedStore } = useStoreContext();
-  return <AccessControlContent key={selectedStore?.id ?? "no-store"} selectedStore={selectedStore} />;
+  return (
+    <AccessControlContent key={selectedStore?.id ?? "no-store"} selectedStore={selectedStore} />
+  );
 }
 
 function AccessControlContent({
@@ -136,7 +141,10 @@ function AccessControlContent({
     queryKey: ["employees", selectedStore?.id, token],
     queryFn: async () => {
       const response = await getEmployees(selectedStore!.id, token!);
-      if (!response.ok) throw new Error(extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar os funcionarios.");
+      if (!response.ok)
+        throw new Error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar os funcionarios.",
+        );
       return asEmployeeListResponse(response.body);
     },
     enabled: Boolean(selectedStore && token && canViewEmployees),
@@ -146,17 +154,25 @@ function AccessControlContent({
     queryKey: ["roles", selectedStore?.id, token],
     queryFn: async () => {
       const response = await getRoles(selectedStore!.id, token!);
-      if (!response.ok) throw new Error(extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar os cargos.");
+      if (!response.ok)
+        throw new Error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar os cargos.",
+        );
       return asRoleListResponse(response.body);
     },
-    enabled: Boolean(selectedStore && token && (canViewRoles || canAddEmployees || canEditEmployees)),
+    enabled: Boolean(
+      selectedStore && token && (canViewRoles || canAddEmployees || canEditEmployees),
+    ),
   });
 
   const functionalitiesQuery = useQuery({
     queryKey: ["role-functionalities", selectedStore?.id, token],
     queryFn: async () => {
       const response = await getRoleFunctionalities(selectedStore!.id, token!);
-      if (!response.ok) throw new Error(extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar as funcionalidades.");
+      if (!response.ok)
+        throw new Error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel carregar as funcionalidades.",
+        );
       return asRoleFunctionalityList(response.body);
     },
     enabled: Boolean(selectedStore && token && (canViewRoles || canAddRoles || canEditRoles)),
@@ -173,36 +189,91 @@ function AccessControlContent({
   });
 
   const createEmployeeMutation = useMutation({
-    mutationFn: ({ storeId, userId, cargoId, tokenValue }: { storeId: number; userId: number; cargoId: number; tokenValue: string }) =>
-      createEmployee(storeId, { usuarioId: userId, cargoId }, tokenValue),
+    mutationFn: ({
+      storeId,
+      userId,
+      cargoId,
+      tokenValue,
+    }: {
+      storeId: number;
+      userId: number;
+      cargoId: number;
+      tokenValue: string;
+    }) => createEmployee(storeId, { usuarioId: userId, cargoId }, tokenValue),
   });
 
   const updateEmployeeRoleMutation = useMutation({
-    mutationFn: ({ storeId, userId, cargoId, tokenValue }: { storeId: number; userId: number; cargoId: number; tokenValue: string }) =>
-      updateEmployeeRole(storeId, userId, { cargoId }, tokenValue),
+    mutationFn: ({
+      storeId,
+      userId,
+      cargoId,
+      tokenValue,
+    }: {
+      storeId: number;
+      userId: number;
+      cargoId: number;
+      tokenValue: string;
+    }) => updateEmployeeRole(storeId, userId, { cargoId }, tokenValue),
   });
 
   const deleteEmployeeMutation = useMutation({
-    mutationFn: ({ storeId, userId, tokenValue }: { storeId: number; userId: number; tokenValue: string }) =>
-      deleteEmployee(storeId, userId, tokenValue),
+    mutationFn: ({
+      storeId,
+      userId,
+      tokenValue,
+    }: {
+      storeId: number;
+      userId: number;
+      tokenValue: string;
+    }) => deleteEmployee(storeId, userId, tokenValue),
   });
 
   const createRoleMutation = useMutation({
-    mutationFn: ({ storeId, nome, funcionalidadeIds, tokenValue }: { storeId: number; nome: string; funcionalidadeIds: number[]; tokenValue: string }) =>
-      createRole(storeId, { nome, funcionalidadeIds }, tokenValue),
+    mutationFn: ({
+      storeId,
+      nome,
+      funcionalidadeIds,
+      tokenValue,
+    }: {
+      storeId: number;
+      nome: string;
+      funcionalidadeIds: number[];
+      tokenValue: string;
+    }) => createRole(storeId, { nome, funcionalidadeIds }, tokenValue),
   });
 
   const updateRoleMutation = useMutation({
-    mutationFn: ({ storeId, roleId, nome, funcionalidadeIds, tokenValue }: { storeId: number; roleId: number; nome: string; funcionalidadeIds: number[]; tokenValue: string }) =>
-      updateRole(storeId, roleId, { nome, funcionalidadeIds }, tokenValue),
+    mutationFn: ({
+      storeId,
+      roleId,
+      nome,
+      funcionalidadeIds,
+      tokenValue,
+    }: {
+      storeId: number;
+      roleId: number;
+      nome: string;
+      funcionalidadeIds: number[];
+      tokenValue: string;
+    }) => updateRole(storeId, roleId, { nome, funcionalidadeIds }, tokenValue),
   });
 
   const deleteRoleMutation = useMutation({
-    mutationFn: ({ storeId, roleId, tokenValue }: { storeId: number; roleId: number; tokenValue: string }) =>
-      deleteRole(storeId, roleId, tokenValue),
+    mutationFn: ({
+      storeId,
+      roleId,
+      tokenValue,
+    }: {
+      storeId: number;
+      roleId: number;
+      tokenValue: string;
+    }) => deleteRole(storeId, roleId, tokenValue),
   });
 
-  const employeeIds = useMemo(() => new Set((employeesQuery.data ?? []).map((item) => item.usuarioId)), [employeesQuery.data]);
+  const employeeIds = useMemo(
+    () => new Set((employeesQuery.data ?? []).map((item) => item.usuarioId)),
+    [employeesQuery.data],
+  );
   const availableUsers = useMemo(
     () =>
       (userOptionsQuery.data ?? [])
@@ -211,26 +282,30 @@ function AccessControlContent({
     [employeeIds, userOptionsQuery.data],
   );
   const roleOptions = useMemo(
-    () => (rolesQuery.data ?? []).map((role) => ({ label: `${role.nome} (${role.quantidadeFuncionarios})`, value: String(role.id) })),
+    () =>
+      (rolesQuery.data ?? []).map((role) => ({
+        label: `${role.nome} (${role.quantidadeFuncionarios})`,
+        value: String(role.id),
+      })),
     [rolesQuery.data],
   );
-  const groupedFunctionalities = useMemo(() => getGroupedFunctionalities(functionalitiesQuery.data ?? []), [functionalitiesQuery.data]);
+  const groupedFunctionalities = useMemo(
+    () => getGroupedFunctionalities(functionalitiesQuery.data ?? []),
+    [functionalitiesQuery.data],
+  );
   const functionalityIdByKey = useMemo(
-    () =>
-      new Map(
-        (functionalitiesQuery.data ?? []).map((item) => [item.chave, item.id] as const),
-      ),
+    () => new Map((functionalitiesQuery.data ?? []).map((item) => [item.chave, item.id] as const)),
     [functionalitiesQuery.data],
   );
   const functionalityKeyById = useMemo(
-    () =>
-      new Map(
-        (functionalitiesQuery.data ?? []).map((item) => [item.id, item.chave] as const),
-      ),
+    () => new Map((functionalitiesQuery.data ?? []).map((item) => [item.id, item.chave] as const)),
     [functionalitiesQuery.data],
   );
   const reverseDependencyKeys = useMemo(() => {
-    const entries = Object.entries(requiredPermissionDependencies) as [PermissionKey, PermissionKey[]][];
+    const entries = Object.entries(requiredPermissionDependencies) as [
+      PermissionKey,
+      PermissionKey[],
+    ][];
     const reverseMap = new Map<PermissionKey, PermissionKey[]>();
 
     entries.forEach(([functionalityKey, dependencyKeys]) => {
@@ -241,14 +316,25 @@ function AccessControlContent({
 
     return reverseMap;
   }, []);
-  const selectedFunctionalityIds = useMemo(() => new Set(roleDraft.funcionalidadeIds), [roleDraft.funcionalidadeIds]);
+  const selectedFunctionalityIds = useMemo(
+    () => new Set(roleDraft.funcionalidadeIds),
+    [roleDraft.funcionalidadeIds],
+  );
+  const allFunctionalityIds = useMemo(
+    () => (functionalitiesQuery.data ?? []).map((item) => item.id),
+    [functionalitiesQuery.data],
+  );
+  const allFunctionalitiesSelected =
+    allFunctionalityIds.length > 0 && allFunctionalityIds.every((id) => selectedFunctionalityIds.has(id));
 
   async function invalidateAccess() {
     if (!selectedStore || !token) return;
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["employees", selectedStore.id, token] }),
       queryClient.invalidateQueries({ queryKey: ["roles", selectedStore.id, token] }),
-      queryClient.invalidateQueries({ queryKey: ["store-access-profile", token, selectedStore.id] }),
+      queryClient.invalidateQueries({
+        queryKey: ["store-access-profile", token, selectedStore.id],
+      }),
     ]);
   }
 
@@ -259,7 +345,10 @@ function AccessControlContent({
 
   function startEditingRole(role: RoleItem) {
     setEditingRoleId(role.id);
-    setRoleDraft({ nome: role.nome, funcionalidadeIds: role.funcionalidades.map((item) => item.id) });
+    setRoleDraft({
+      nome: role.nome,
+      funcionalidadeIds: role.funcionalidades.map((item) => item.id),
+    });
   }
 
   function toggleFunctionality(id: number) {
@@ -271,9 +360,11 @@ function AccessControlContent({
 
       if (nextIds.has(id)) {
         nextIds.delete(id);
-        collectDependentIds(functionalityKey, reverseDependencyKeys, functionalityIdByKey).forEach((dependentId) => {
-          nextIds.delete(dependentId);
-        });
+        collectDependentIds(functionalityKey, reverseDependencyKeys, functionalityIdByKey).forEach(
+          (dependentId) => {
+            nextIds.delete(dependentId);
+          },
+        );
       } else {
         nextIds.add(id);
         collectDependencyIds(functionalityKey, functionalityIdByKey).forEach((dependencyId) => {
@@ -286,6 +377,13 @@ function AccessControlContent({
         funcionalidadeIds: [...nextIds],
       };
     });
+  }
+
+  function toggleAllFunctionalities() {
+    setRoleDraft((current) => ({
+      ...current,
+      funcionalidadeIds: allFunctionalitiesSelected ? [] : allFunctionalityIds,
+    }));
   }
 
   async function handleAddEmployee() {
@@ -302,7 +400,9 @@ function AccessControlContent({
         tokenValue: token,
       });
       if (!response.ok) {
-        toast.error(extractAccessApiMessage(response.body) ?? "Nao foi possivel adicionar o funcionario.");
+        toast.error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel adicionar o funcionario.",
+        );
         return;
       }
       setSelectedUser(null);
@@ -325,7 +425,9 @@ function AccessControlContent({
         tokenValue: token,
       });
       if (!response.ok) {
-        toast.error(extractAccessApiMessage(response.body) ?? "Nao foi possivel atualizar o cargo.");
+        toast.error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel atualizar o cargo.",
+        );
         return;
       }
       await invalidateAccess();
@@ -344,7 +446,9 @@ function AccessControlContent({
         tokenValue: token,
       });
       if (!response.ok) {
-        toast.error(extractAccessApiMessage(response.body) ?? "Nao foi possivel remover o funcionario.");
+        toast.error(
+          extractAccessApiMessage(response.body) ?? "Nao foi possivel remover o funcionario.",
+        );
         return;
       }
       await invalidateAccess();
@@ -366,20 +470,21 @@ function AccessControlContent({
     }
 
     try {
-      const response = editingRoleId === null
-        ? await createRoleMutation.mutateAsync({
-            storeId: selectedStore.id,
-            nome: roleDraft.nome.trim(),
-            funcionalidadeIds: roleDraft.funcionalidadeIds,
-            tokenValue: token,
-          })
-        : await updateRoleMutation.mutateAsync({
-            storeId: selectedStore.id,
-            roleId: editingRoleId,
-            nome: roleDraft.nome.trim(),
-            funcionalidadeIds: roleDraft.funcionalidadeIds,
-            tokenValue: token,
-          });
+      const response =
+        editingRoleId === null
+          ? await createRoleMutation.mutateAsync({
+              storeId: selectedStore.id,
+              nome: roleDraft.nome.trim(),
+              funcionalidadeIds: roleDraft.funcionalidadeIds,
+              tokenValue: token,
+            })
+          : await updateRoleMutation.mutateAsync({
+              storeId: selectedStore.id,
+              roleId: editingRoleId,
+              nome: roleDraft.nome.trim(),
+              funcionalidadeIds: roleDraft.funcionalidadeIds,
+              tokenValue: token,
+            });
 
       if (!response.ok) {
         toast.error(extractAccessApiMessage(response.body) ?? "Nao foi possivel salvar o cargo.");
@@ -388,7 +493,9 @@ function AccessControlContent({
 
       resetRoleDraft();
       await invalidateAccess();
-      toast.success(editingRoleId === null ? "Cargo criado com sucesso." : "Cargo atualizado com sucesso.");
+      toast.success(
+        editingRoleId === null ? "Cargo criado com sucesso." : "Cargo atualizado com sucesso.",
+      );
     } catch {
       toast.error("Nao foi possivel conectar ao backend.");
     }
@@ -414,30 +521,50 @@ function AccessControlContent({
     }
   }
 
-  if (!selectedStore) return <EmptyState message="Selecione uma loja no topo da pagina para gerenciar cargos e funcionarios." />;
-  if (!canOpenPage) return <EmptyState message="Seu usuario nao possui permissao para gerenciar controle de acesso nesta loja." />;
+  if (!selectedStore)
+    return (
+      <EmptyState message="Selecione uma loja no topo da pagina para gerenciar cargos e funcionarios." />
+    );
+  if (!canOpenPage)
+    return (
+      <EmptyState message="Seu usuario nao possui permissao para gerenciar controle de acesso nesta loja." />
+    );
 
   return (
     <section className="space-y-6">
       <div className="rounded-[30px] border border-[var(--border)] bg-[linear-gradient(135deg,_#fffef9,_#f4f7ff_50%,_#eef6f1)] p-4 sm:p-6">
         <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 space-y-2">
-            <span className="inline-flex rounded-full bg-[#eef4ea] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#52624d]">Loja ativa</span>
+            <span className="inline-flex rounded-full bg-[#eef4ea] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#52624d]">
+              Loja ativa
+            </span>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">Controle de acesso</h1>
+              <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
+                Controle de acesso
+              </h1>
               <p className="mt-2 max-w-3xl text-sm text-[var(--muted)] sm:block">
-                Configure cargos e funcionalidades para a loja <span className="font-semibold text-[var(--foreground)]">{selectedStore.nome}</span>.
+                Configure cargos e funcionalidades para a loja{" "}
+                <span className="font-semibold text-[var(--foreground)]">{selectedStore.nome}</span>
+                .
               </p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="rounded-3xl border border-white/70 bg-white/75 px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Funcionarios</p>
-              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">{employeesQuery.data?.length ?? 0}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+                Funcionarios
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">
+                {employeesQuery.data?.length ?? 0}
+              </p>
             </div>
             <div className="rounded-3xl border border-white/70 bg-white/75 px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">Cargos</p>
-              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">{rolesQuery.data?.length ?? 0}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
+                Cargos
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[var(--foreground)] sm:text-3xl">
+                {rolesQuery.data?.length ?? 0}
+              </p>
             </div>
           </div>
         </div>
@@ -448,15 +575,21 @@ function AccessControlContent({
           {canAddEmployees ? (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--foreground)]">Adicionar funcionario</h2>
-                <p className="text-sm text-[var(--muted)]">Selecione um usuario e vincule um cargo.</p>
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                  Adicionar funcionario
+                </h2>
+                <p className="text-sm text-[var(--muted)]">
+                  Selecione um usuario e vincule um cargo.
+                </p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--foreground)]">Usuario</label>
                 <SearchableSelect
                   ariaLabel="Selecionar usuario"
                   value={selectedUser ? String(selectedUser.id) : null}
-                  selectedLabel={selectedUser ? `${selectedUser.nome} - ${selectedUser.email}` : undefined}
+                  selectedLabel={
+                    selectedUser ? `${selectedUser.nome} - ${selectedUser.email}` : undefined
+                  }
                   searchValue={userSearch}
                   searchPlaceholder="Buscar por nome ou e-mail"
                   placeholder="Escolha um usuario"
@@ -469,7 +602,9 @@ function AccessControlContent({
                   options={trimmedUserSearch ? availableUsers : []}
                   onSearchChange={setUserSearch}
                   onChange={(option) => {
-                    const user = (userOptionsQuery.data ?? []).find((item) => item.id === Number(option.value));
+                    const user = (userOptionsQuery.data ?? []).find(
+                      (item) => item.id === Number(option.value),
+                    );
                     if (user) {
                       setSelectedUser(user);
                       setUserSearch("");
@@ -499,7 +634,10 @@ function AccessControlContent({
               </button>
             </div>
           ) : (
-            <SectionBlocked title="Adicionar funcionario" description="Seu usuario nao possui permissao para vincular novos funcionarios." />
+            <SectionBlocked
+              title="Adicionar funcionario"
+              description="Seu usuario nao possui permissao para vincular novos funcionarios."
+            />
           )}
         </section>
 
@@ -507,73 +645,111 @@ function AccessControlContent({
           {canViewEmployees ? (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--foreground)]">Funcionarios da loja</h2>
-                <p className="hidden text-sm text-[var(--muted)] sm:block">O acesso de cada funcionario e definido pelo cargo.</p>
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                  Funcionarios da loja
+                </h2>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">
+                  O acesso de cada funcionario e definido pelo cargo.
+                </p>
               </div>
               <div className="rounded-[24px] border border-[var(--border)]">
                 <div className="max-h-[70vh] overflow-y-auto rounded-[24px]">
                   <table className="min-w-full border-collapse">
-                  <thead className="bg-[var(--surface-muted)]">
-                    <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      <th className="px-3 py-4 font-semibold sm:px-4">Usuario</th>
-                      <th className="hidden px-4 py-4 font-semibold sm:table-cell">E-mail</th>
-                      <th className="px-3 py-4 font-semibold sm:px-4">Cargo</th>
-                      <th className="px-3 py-4 font-semibold text-right sm:px-4">Acoes</th>
-                    </tr>
-                  </thead>
-                    <tbody>
-                    {employeesQuery.isLoading ? (
-                      <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">Carregando funcionarios...</td></tr>
-                    ) : employeesQuery.isError ? (
-                      <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-red-500">{(employeesQuery.error as Error).message}</td></tr>
-                    ) : (employeesQuery.data?.length ?? 0) === 0 ? (
-                      <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-[var(--muted)]">Nenhum funcionario vinculado a esta loja.</td></tr>
-                    ) : employeesQuery.data?.map((employee) => (
-                      <tr key={`${employee.lojaId}-${employee.usuarioId}`} className="border-t border-[var(--border)]">
-                        <td className="px-3 py-4 text-sm font-medium text-[var(--foreground)] sm:px-4">
-                          <div className="min-w-0">
-                            <span className="block break-words">{employee.nome}</span>
-                            <span className="mt-1 block break-all text-xs font-normal text-[var(--muted)] sm:hidden">{employee.email}</span>
-                          </div>
-                        </td>
-                        <td className="hidden px-4 py-4 text-sm text-[var(--muted)] sm:table-cell">{employee.email}</td>
-                        <td className="px-3 py-4 align-top sm:px-4">
-                          {canEditEmployees ? (
-                            <div className="min-w-0 rounded-2xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--foreground)] sm:min-w-[180px]">
-                              <Select
-                                ariaLabel={`Selecionar cargo para ${employee.nome}`}
-                                value={String(employee.cargoId)}
-                                options={roleOptions}
-                                onChange={(value) => void handleChangeEmployeeRole(employee, value)}
-                              />
-                            </div>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--foreground)]">{employee.cargoNome}</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-4 text-right align-top sm:px-4">
-                          {canRemoveEmployees ? (
-                            <button
-                              type="button"
-                              onClick={() => void handleDeleteEmployee(employee)}
-                              disabled={deleteEmployeeMutation.isPending}
-                              className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] px-4 text-sm font-semibold text-[#b14a37] disabled:opacity-60"
-                            >
-                              Remover
-                            </button>
-                          ) : (
-                            <span className="text-sm text-[var(--muted)]">Sem acoes</span>
-                          )}
-                        </td>
+                    <thead className="bg-[var(--surface-muted)]">
+                      <tr className="text-left text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+                        <th className="px-3 py-4 font-semibold sm:px-4">Usuario</th>
+                        <th className="hidden px-4 py-4 font-semibold sm:table-cell">E-mail</th>
+                        <th className="px-3 py-4 font-semibold sm:px-4">Cargo</th>
+                        <th className="px-3 py-4 font-semibold text-right sm:px-4">Acoes</th>
                       </tr>
-                    ))}
+                    </thead>
+                    <tbody>
+                      {employeesQuery.isLoading ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-8 text-center text-sm text-[var(--muted)]"
+                          >
+                            Carregando funcionarios...
+                          </td>
+                        </tr>
+                      ) : employeesQuery.isError ? (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-8 text-center text-sm text-red-500">
+                            {(employeesQuery.error as Error).message}
+                          </td>
+                        </tr>
+                      ) : (employeesQuery.data?.length ?? 0) === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-8 text-center text-sm text-[var(--muted)]"
+                          >
+                            Nenhum funcionario vinculado a esta loja.
+                          </td>
+                        </tr>
+                      ) : (
+                        employeesQuery.data?.map((employee) => (
+                          <tr
+                            key={`${employee.lojaId}-${employee.usuarioId}`}
+                            className="border-t border-[var(--border)]"
+                          >
+                            <td className="px-3 py-4 text-sm font-medium text-[var(--foreground)] sm:px-4">
+                              <div className="min-w-0">
+                                <span className="block break-words">{employee.nome}</span>
+                                <span className="mt-1 block break-all text-xs font-normal text-[var(--muted)] sm:hidden">
+                                  {employee.email}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="hidden px-4 py-4 text-sm text-[var(--muted)] sm:table-cell">
+                              {employee.email}
+                            </td>
+                            <td className="px-3 py-4 align-top sm:px-4">
+                              {canEditEmployees ? (
+                                <div className="min-w-0 rounded-2xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--foreground)] sm:min-w-[180px]">
+                                  <Select
+                                    ariaLabel={`Selecionar cargo para ${employee.nome}`}
+                                    value={String(employee.cargoId)}
+                                    options={roleOptions}
+                                    onChange={(value) =>
+                                      void handleChangeEmployeeRole(employee, value)
+                                    }
+                                  />
+                                </div>
+                              ) : (
+                                <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--foreground)]">
+                                  {employee.cargoNome}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-4 text-right align-top sm:px-4">
+                              {canRemoveEmployees ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteEmployee(employee)}
+                                  disabled={deleteEmployeeMutation.isPending}
+                                  className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] px-4 text-sm font-semibold text-[#b14a37] disabled:opacity-60"
+                                >
+                                  Remover
+                                </button>
+                              ) : (
+                                <span className="text-sm text-[var(--muted)]">Sem acoes</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
           ) : (
-            <SectionBlocked title="Funcionarios da loja" description="Seu usuario nao possui permissao para visualizar funcionarios." />
+            <SectionBlocked
+              title="Funcionarios da loja"
+              description="Seu usuario nao possui permissao para visualizar funcionarios."
+            />
           )}
         </section>
       </div>
@@ -583,56 +759,98 @@ function AccessControlContent({
           {canViewRoles || canAddRoles || canEditRoles ? (
             <div className="space-y-5">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--foreground)]">{editingRoleId === null ? "Novo cargo" : "Editar cargo"}</h2>
-                <p className="hidden text-sm text-[var(--muted)] sm:block">Selecione as funcionalidades liberadas para este cargo.</p>
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                  {editingRoleId === null ? "Novo cargo" : "Editar cargo"}
+                </h2>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">
+                  Selecione as funcionalidades liberadas para este cargo.
+                </p>
               </div>
               <label className="space-y-2">
                 <span className="text-sm font-medium text-[var(--foreground)]">Nome do cargo</span>
                 <input
                   type="text"
                   value={roleDraft.nome}
-                  onChange={(event) => setRoleDraft((current) => ({ ...current, nome: event.target.value }))}
+                  onChange={(event) =>
+                    setRoleDraft((current) => ({ ...current, nome: event.target.value }))
+                  }
                   placeholder="Ex.: Atendente, Caixa, Gerente"
                   disabled={editingRoleId === null ? !canAddRoles : !canEditRoles}
                   className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none disabled:opacity-60"
                 />
               </label>
-              <div className="max-h-[520px] space-y-4 overflow-y-auto pr-1">
+              <div className="max-h-[520px] space-y-4 overflow-y-auto pr-1 mt-2">
                 {functionalitiesQuery.isLoading ? (
                   <p className="text-sm text-[var(--muted)]">Carregando funcionalidades...</p>
                 ) : functionalitiesQuery.isError ? (
-                  <p className="text-sm text-red-500">{(functionalitiesQuery.error as Error).message}</p>
-                ) : groupedFunctionalities.map(([groupName, items]) => (
-                  <div key={groupName} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)]/45 p-4">
-                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">{groupName}</p>
-                    <div className="space-y-3">
-                      {items.map((item) => (
-                        <label key={item.id} className="flex min-w-0 items-start gap-3 rounded-2xl bg-white px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedFunctionalityIds.has(item.id)}
-                            onChange={() => toggleFunctionality(item.id)}
-                            disabled={editingRoleId === null ? !canAddRoles : !canEditRoles}
-                            className="mt-1 h-4 w-4"
-                          />
-                          <div className="min-w-0">
-                            <p className="break-all text-sm font-semibold text-[var(--foreground)]">{item.chave}</p>
-                            <p className="break-words text-sm text-[var(--muted)]">{item.descricao}</p>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  <p className="text-sm text-red-500">
+                    {(functionalitiesQuery.error as Error).message}
+                  </p>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={toggleAllFunctionalities}
+                      disabled={allFunctionalityIds.length === 0 || (editingRoleId === null ? !canAddRoles : !canEditRoles)}
+                      className="inline-flex h-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] disabled:opacity-60"
+                    >
+                      {allFunctionalitiesSelected ? "Desmarcar todas" : "Marcar todas"}
+                    </button>
+                    {groupedFunctionalities.map(([groupName, items]) => (
+                      <div
+                        key={groupName}
+                        className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)]/45 p-4"
+                      >
+                        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">
+                          {groupName}
+                        </p>
+                        <div className="space-y-3">
+                          {items.map((item) => (
+                            <label
+                              key={item.id}
+                              className="flex min-w-0 items-start gap-3 rounded-2xl bg-white px-4 py-3"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedFunctionalityIds.has(item.id)}
+                                onChange={() => toggleFunctionality(item.id)}
+                                disabled={editingRoleId === null ? !canAddRoles : !canEditRoles}
+                                className="mt-1 h-4 w-4"
+                              />
+                              <div className="min-w-0">
+                                <p className="break-all text-sm font-semibold text-[var(--foreground)]">
+                                  {item.chave}
+                                </p>
+                                <p className="break-words text-sm text-[var(--muted)]">
+                                  {item.descricao}
+                                </p>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={handleSaveRole}
-                  disabled={createRoleMutation.isPending || updateRoleMutation.isPending || (editingRoleId === null ? !canAddRoles : !canEditRoles)}
+                  disabled={
+                    createRoleMutation.isPending ||
+                    updateRoleMutation.isPending ||
+                    (editingRoleId === null ? !canAddRoles : !canEditRoles)
+                  }
                   className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#294d44] px-5 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  {editingRoleId === null ? (createRoleMutation.isPending ? "Salvando..." : "Criar cargo") : (updateRoleMutation.isPending ? "Atualizando..." : "Atualizar cargo")}
+                  {editingRoleId === null
+                    ? createRoleMutation.isPending
+                      ? "Salvando..."
+                      : "Criar cargo"
+                    : updateRoleMutation.isPending
+                      ? "Atualizando..."
+                      : "Atualizar cargo"}
                 </button>
                 <button
                   type="button"
@@ -644,7 +862,10 @@ function AccessControlContent({
               </div>
             </div>
           ) : (
-            <SectionBlocked title="Cadastro de cargos" description="Seu usuario nao possui permissao para criar ou editar cargos." />
+            <SectionBlocked
+              title="Cadastro de cargos"
+              description="Seu usuario nao possui permissao para criar ou editar cargos."
+            />
           )}
         </div>
 
@@ -652,38 +873,82 @@ function AccessControlContent({
           {canViewRoles ? (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-[var(--foreground)]">Cargos cadastrados</h2>
-                <p className="hidden text-sm text-[var(--muted)] sm:block">Revise e ajuste rapidamente as permissoes de cada cargo.</p>
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                  Cargos cadastrados
+                </h2>
+                <p className="hidden text-sm text-[var(--muted)] sm:block">
+                  Revise e ajuste rapidamente as permissoes de cada cargo.
+                </p>
               </div>
               {rolesQuery.isLoading ? (
                 <p className="text-sm text-[var(--muted)]">Carregando cargos...</p>
               ) : rolesQuery.isError ? (
                 <p className="text-sm text-red-500">{(rolesQuery.error as Error).message}</p>
               ) : (rolesQuery.data?.length ?? 0) === 0 ? (
-                <p className="text-sm text-[var(--muted)]">Nenhum cargo cadastrado para esta loja.</p>
-              ) : rolesQuery.data?.map((role) => (
-                <div key={role.id} className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)]/45 p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="break-words text-lg font-semibold text-[var(--foreground)]">{role.nome}</h3>
-                        <span className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">{role.quantidadeFuncionarios} funcionario(s)</span>
+                <p className="text-sm text-[var(--muted)]">
+                  Nenhum cargo cadastrado para esta loja.
+                </p>
+              ) : (
+                rolesQuery.data?.map((role) => (
+                  <div
+                    key={role.id}
+                    className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)]/45 p-5"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="break-words text-lg font-semibold text-[var(--foreground)]">
+                            {role.nome}
+                          </h3>
+                          <span className="inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                            {role.quantidadeFuncionarios} funcionario(s)
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-[var(--muted)]">
+                          {role.funcionalidades.length} funcionalidade(s) liberada(s).
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm text-[var(--muted)]">{role.funcionalidades.length} funcionalidade(s) liberada(s).</p>
+                      <div className="flex flex-wrap gap-3">
+                        {canEditRoles ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditingRole(role)}
+                            className="inline-flex h-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)]"
+                          >
+                            Editar
+                          </button>
+                        ) : null}
+                        {canDeleteRoles ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteRole(role)}
+                            disabled={deleteRoleMutation.isPending}
+                            className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] px-4 text-sm font-semibold text-[#b14a37] disabled:opacity-60"
+                          >
+                            Excluir
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                      {canEditRoles ? <button type="button" onClick={() => startEditingRole(role)} className="inline-flex h-10 items-center justify-center rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)]">Editar</button> : null}
-                      {canDeleteRoles ? <button type="button" onClick={() => void handleDeleteRole(role)} disabled={deleteRoleMutation.isPending} className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#efdfdb] bg-[#fff7f5] px-4 text-sm font-semibold text-[#b14a37] disabled:opacity-60">Excluir</button> : null}
+                    <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
+                      {role.funcionalidades.map((item) => (
+                        <span
+                          key={`${role.id}-${item.id}`}
+                          className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--foreground)]"
+                        >
+                          {item.chave}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <div className="mt-4 hidden flex-wrap gap-2 sm:flex">
-                    {role.funcionalidades.map((item) => <span key={`${role.id}-${item.id}`} className="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[var(--foreground)]">{item.chave}</span>)}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           ) : (
-            <SectionBlocked title="Cargos cadastrados" description="Seu usuario nao possui permissao para visualizar cargos." />
+            <SectionBlocked
+              title="Cargos cadastrados"
+              description="Seu usuario nao possui permissao para visualizar cargos."
+            />
           )}
         </div>
       </section>
