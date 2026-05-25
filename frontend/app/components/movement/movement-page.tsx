@@ -33,9 +33,9 @@ import {
   asMovementResponse,
   buildMovementSuggestion,
   formatMovementType,
+  getInitialMovementDraftFormValues,
   getMovementApiMessage,
   isMissingStorePaymentConfigMessage,
-  initialMovementDraftFormValues,
   isProductSituationCompatible,
   movementTypeOptions,
   type MovementDraftProduct,
@@ -82,6 +82,7 @@ type MovementDraft = {
   clienteLabel: string;
   clienteSearch: string;
   data: string;
+  dateTouched: boolean;
   descontoTotal: string;
   errors: MovementFieldErrors;
   id: string;
@@ -106,19 +107,22 @@ type PendingReturnPrompt = {
 };
 
 function createDraft(id: string): MovementDraft {
+  const initialValues = getInitialMovementDraftFormValues();
+
   return {
     id,
-    ...initialMovementDraftFormValues,
+    ...initialValues,
     autoLinkedBorrowedProductIds: [],
     clienteContato: "",
     clienteLabel: "",
     clienteSearch: "",
-    data: initialMovementDraftFormValues.data,
+    data: initialValues.data,
+    dateTouched: false,
     errors: {},
     productIdInput: "",
     products: [],
     suggestion: null,
-    tipo: initialMovementDraftFormValues.tipo,
+    tipo: initialValues.tipo,
   };
 }
 
@@ -144,16 +148,35 @@ function parsePrefilledProductIds(value: string | null) {
 }
 
 function isDraftPending(draft: MovementDraft) {
+  const initialValues = getInitialMovementDraftFormValues();
+
   return (
-    draft.tipo !== initialMovementDraftFormValues.tipo ||
-    draft.data !== initialMovementDraftFormValues.data ||
+    draft.tipo !== initialValues.tipo ||
+    draft.data !== initialValues.data ||
     draft.clienteId.trim().length > 0 ||
     draft.clienteLabel.trim().length > 0 ||
     draft.clienteSearch.trim().length > 0 ||
-    draft.descontoTotal !== initialMovementDraftFormValues.descontoTotal ||
+    draft.descontoTotal !== initialValues.descontoTotal ||
     draft.productIdInput.trim().length > 0 ||
     draft.products.length > 0 ||
     draft.suggestion !== null
+  );
+}
+
+function canRefreshDraftDate(draft: MovementDraft) {
+  const initialValues = getInitialMovementDraftFormValues();
+
+  return (
+    draft.tipo === initialValues.tipo &&
+    !draft.dateTouched &&
+    draft.clienteId.trim().length === 0 &&
+    draft.clienteLabel.trim().length === 0 &&
+    draft.clienteSearch.trim().length === 0 &&
+    draft.descontoTotal === initialValues.descontoTotal &&
+    draft.productIdInput.trim().length === 0 &&
+    draft.products.length === 0 &&
+    draft.suggestion === null &&
+    draft.autoLinkedBorrowedProductIds.length === 0
   );
 }
 
@@ -387,6 +410,28 @@ export function MovementPage() {
     });
     prefillAppliedRef.current = false;
   }, [selectedStoreId]);
+
+  useEffect(() => {
+    function refreshDefaultDraftDates() {
+      const today = getInitialMovementDraftFormValues().data;
+
+      setDrafts((current) =>
+        current.map((draft) =>
+          canRefreshDraftDate(draft) && draft.data !== today ? { ...draft, data: today } : draft,
+        ),
+      );
+    }
+
+    const intervalId = window.setInterval(refreshDefaultDraftDates, 60_000);
+    window.addEventListener("focus", refreshDefaultDraftDates);
+    document.addEventListener("visibilitychange", refreshDefaultDraftDates);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshDefaultDraftDates);
+      document.removeEventListener("visibilitychange", refreshDefaultDraftDates);
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasPendingMovements) {
@@ -718,7 +763,9 @@ export function MovementPage() {
     }
 
     const normalizedType =
-      type && ["1", "2", "3", "4", "5", "6", "7"].includes(type) ? type : initialMovementDraftFormValues.tipo;
+      type && ["1", "2", "3", "4", "5", "6", "7"].includes(type)
+        ? type
+        : getInitialMovementDraftFormValues().tipo;
 
     prefillAppliedRef.current = true;
 
@@ -863,7 +910,7 @@ export function MovementPage() {
       clienteContato: client.contato,
       clienteId: String(client.id),
       clienteNome: client.nome,
-      draftDate: drafts.find((draft) => draft.id === draftId)?.data ?? initialMovementDraftFormValues.data,
+      draftDate: drafts.find((draft) => draft.id === draftId)?.data ?? getInitialMovementDraftFormValues().data,
       products: pendingProducts,
     });
   }
@@ -1494,6 +1541,7 @@ export function MovementPage() {
                           updateDraft(activeDraft.id, (draft) => ({
                             ...draft,
                             data: value,
+                            dateTouched: true,
                             errors: { ...draft.errors, data: undefined },
                           }))
                         }

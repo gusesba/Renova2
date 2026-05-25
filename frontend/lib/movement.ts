@@ -1,3 +1,4 @@
+import { getTodayDateInputValue } from "@/lib/date";
 import { formatSituacaoValue, type ProductListItem } from "@/lib/product";
 
 type ApiErrorResponse = {
@@ -94,12 +95,17 @@ export const movementTypeOptions: Array<{ label: string; value: MovementTypeValu
   { value: 7, label: "Separar devolucao" },
 ];
 
-export const initialMovementDraftFormValues: MovementDraftFormValues = {
-  tipo: "1",
-  data: new Date().toISOString().slice(0, 10),
-  clienteId: "",
-  descontoTotal: "0",
-};
+export function getInitialMovementDraftFormValues(): MovementDraftFormValues {
+  return {
+    tipo: "1",
+    data: getTodayDateInputValue(),
+    clienteId: "",
+    descontoTotal: "0",
+  };
+}
+
+export const initialMovementDraftFormValues: MovementDraftFormValues =
+  getInitialMovementDraftFormValues();
 
 export const initialMovementFilters: MovementFilters = {
   id: "",

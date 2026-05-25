@@ -1,3 +1,5 @@
+import { getTodayDateInputValue } from "@/lib/date";
+
 export type ProductListItem = {
   id: number;
   etiqueta: number;
@@ -183,25 +185,29 @@ export const initialProductFilters: ProductFilters = {
   tamanhoPagina: 10,
 };
 
-export const initialProductFormValues: ProductFormValues = {
-  etiqueta: "",
-  descricao: "",
-  preco: "",
-  quantidade: "1",
-  entrada: new Date().toISOString().slice(0, 10),
-  situacao: "1",
-  consignado: true,
-  produtoId: "",
-  produtoLabel: "",
-  marcaId: "",
-  marcaLabel: "",
-  tamanhoId: "",
-  tamanhoLabel: "",
-  corId: "",
-  corLabel: "",
-  fornecedorId: "",
-  fornecedorLabel: "",
-};
+export function getInitialProductFormValues(): ProductFormValues {
+  return {
+    etiqueta: "",
+    descricao: "",
+    preco: "",
+    quantidade: "1",
+    entrada: getTodayDateInputValue(),
+    situacao: "1",
+    consignado: true,
+    produtoId: "",
+    produtoLabel: "",
+    marcaId: "",
+    marcaLabel: "",
+    tamanhoId: "",
+    tamanhoLabel: "",
+    corId: "",
+    corLabel: "",
+    fornecedorId: "",
+    fornecedorLabel: "",
+  };
+}
+
+export const initialProductFormValues: ProductFormValues = getInitialProductFormValues();
 
 export const defaultProductTableSettings: ProductTableSettings = {
   tamanhoPagina: 10,

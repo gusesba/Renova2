@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ClientCreateModal } from "@/app/components/client/client-create-modal";
@@ -22,8 +22,8 @@ import {
 import {
   asProductResponse,
   extractProductFieldErrors,
+  getInitialProductFormValues,
   getProductApiMessage,
-  initialProductFormValues,
   normalizeDecimalValue,
   type ProductCreateResponse,
   type ProductFieldErrors,
@@ -213,7 +213,7 @@ export function ProductCreateModal({
   const queryClient = useQueryClient();
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
-  const [values, setValues] = useState<ProductFormValues>(initialProductFormValues);
+  const [values, setValues] = useState<ProductFormValues>(() => getInitialProductFormValues());
   const [errors, setErrors] = useState<ProductFieldErrors>({});
   const [lookupSearch, setLookupSearch] = useState<LookupSearchState>({
     produto: "",
@@ -336,9 +336,9 @@ export function ProductCreateModal({
     },
   });
 
-  function resetForm(preserveSupplier = false) {
+  const resetForm = useCallback((preserveSupplier = false) => {
     setValues((current) => ({
-      ...initialProductFormValues,
+      ...getInitialProductFormValues(),
       fornecedorId: preserveSupplier ? current.fornecedorId : "",
       fornecedorLabel: preserveSupplier ? current.fornecedorLabel : "",
     }));
@@ -371,7 +371,7 @@ export function ProductCreateModal({
     setSupplierModalOpen(false);
     setSupplierFormValues(initialClientFormValues);
     setSupplierFormErrors({});
-  }
+  }, []);
 
   function handleClose() {
     if (createProductMutation.isPending) {
@@ -391,6 +391,20 @@ export function ProductCreateModal({
       window.clearTimeout(timeoutId);
     };
   }, [lookupSearch]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      resetForm();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [isOpen, resetForm, storeId]);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -442,6 +456,7 @@ export function ProductCreateModal({
     onClose,
     shouldRender,
     createProductMutation.isPending,
+    resetForm,
     supplierModalOpen,
   ]);
 

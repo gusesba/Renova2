@@ -1,12 +1,13 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { StoreConfigModal } from "@/app/components/layout/store-config-modal";
 import { Select } from "@/app/components/ui/select";
 import { useStoreContext } from "@/app/dashboard/store-context";
+import { getTodayDateInputValue } from "@/lib/date";
 import {
   asMovementBatchResponse,
   formatMovementType,
@@ -60,11 +61,30 @@ export function MovementDestinationPage() {
   const queryClient = useQueryClient();
   const { selectedStore, selectedStoreId } = useStoreContext();
   const [isStoreConfigOpen, setIsStoreConfigOpen] = useState(false);
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => getTodayDateInputValue());
+  const dateTouchedRef = useRef(false);
   const [manualProductEtiqueta, setManualProductEtiqueta] = useState("");
   const [items, setItems] = useState<DestinationItem[]>([]);
   const [manualError, setManualError] = useState<string | null>(null);
   const token = useMemo(() => (typeof window === "undefined" ? null : getAuthToken()), []);
+
+  useEffect(() => {
+    function refreshDefaultDate() {
+      if (!dateTouchedRef.current && items.length === 0) {
+        setDate(getTodayDateInputValue());
+      }
+    }
+
+    const intervalId = window.setInterval(refreshDefaultDate, 60_000);
+    window.addEventListener("focus", refreshDefaultDate);
+    document.addEventListener("visibilitychange", refreshDefaultDate);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshDefaultDate);
+      document.removeEventListener("visibilitychange", refreshDefaultDate);
+    };
+  }, [items.length]);
 
   const fetchProductMutation = useMutation({
     mutationFn: async (etiqueta: string) => {
@@ -312,7 +332,10 @@ export function MovementDestinationPage() {
                     <input
                       type="date"
                       value={date}
-                      onChange={(event) => setDate(event.target.value)}
+                      onChange={(event) => {
+                        dateTouchedRef.current = true;
+                        setDate(event.target.value);
+                      }}
                       className="h-12 w-full rounded-2xl border border-[var(--border)] bg-white px-4 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
                     />
                   </FieldShell>
