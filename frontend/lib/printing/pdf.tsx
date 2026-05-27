@@ -172,10 +172,7 @@ async function createReceiptPdfBlob(receipt: ReceiptPrintData) {
   return pdf(
     <Document title={`Nota Renova ${receipt.movementId}`}>
       <Page size={[226.77, Math.max(360, 230 + receipt.products.length * 24)]} style={receiptStyles.page}>
-        <Text style={receiptStyles.title}>RENOVA</Text>
-        <Text style={[receiptStyles.text, receiptStyles.center, receiptStyles.sectionGap]}>
-          @renova_sustentavel_curitiba
-        </Text>
+        <Text style={receiptStyles.title}>{receipt.storeName}</Text>
         <Text style={[receiptStyles.text, receiptStyles.center, receiptStyles.sectionGap]}>
           {receipt.buyer}
         </Text>

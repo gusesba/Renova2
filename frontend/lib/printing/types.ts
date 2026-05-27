@@ -25,4 +25,5 @@ export type ReceiptPrintData = {
   products: ReceiptProduct[];
   printedAt: Date;
   sellType: MovementTypeValue;
+  storeName: string;
 };

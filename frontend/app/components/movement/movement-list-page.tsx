@@ -32,7 +32,7 @@ import { MovementSettingsModal } from "./movement-settings-modal";
 import { MovementsTable } from "./movements-table";
 
 export function MovementListPage() {
-  const { isLoadingStores, selectedStoreId } = useStoreContext();
+  const { isLoadingStores, selectedStore, selectedStoreId } = useStoreContext();
   const router = useRouter();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isPrintingReceipt, setIsPrintingReceipt] = useState(false);
@@ -131,6 +131,7 @@ export function MovementListPage() {
         desconto: String(product.descontoMovimentacao ?? 0),
       })),
       sellType: movement.tipo as MovementTypeValue,
+      storeName: selectedStore?.nome ?? "",
     };
   }
 

@@ -105,9 +105,7 @@ export function buildEscPosReceipt(receipt: ReceiptPrintData) {
   return [
     "\x1B\x40",
     "\x1B\x61\x31",
-    "RENOVA\x0A",
-    "\x0A",
-    "@renova_sustentavel_curitiba\x0A",
+    `${sanitizeRawText(receipt.storeName)}\x0A`,
     "\x0A",
     receipt.buyer,
     "\x0A",

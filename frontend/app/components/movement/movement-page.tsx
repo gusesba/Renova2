@@ -1263,6 +1263,7 @@ export function MovementPage() {
         desconto: String(getEffectiveProductDiscount(draft, product)),
       })),
       sellType: Number(draft.tipo) as ReceiptPrintData["sellType"],
+      storeName: selectedStore?.nome ?? "",
     };
   }
 
