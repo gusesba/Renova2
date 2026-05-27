@@ -312,6 +312,7 @@ namespace Renova.Persistence
                 _ = entity.Property(p => p.Id).ValueGeneratedOnAdd();
                 _ = entity.Property(p => p.Etiqueta).IsRequired();
                 _ = entity.Property(p => p.Preco).HasPrecision(18, 2).IsRequired();
+                _ = entity.Property(p => p.Custo).HasPrecision(18, 2).IsRequired(false);
                 _ = entity.Property(p => p.ProdutoId).IsRequired();
                 _ = entity.Property(p => p.MarcaId).IsRequired();
                 _ = entity.Property(p => p.TamanhoId).IsRequired();

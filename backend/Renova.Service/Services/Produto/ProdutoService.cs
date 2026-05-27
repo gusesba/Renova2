@@ -37,6 +37,11 @@ namespace Renova.Service.Services.Produto
                 throw new ArgumentException("Preco deve ser maior que zero.", nameof(request));
             }
 
+            if (request.Custo is < 0)
+            {
+                throw new ArgumentException("Custo deve ser maior ou igual a zero.", nameof(request));
+            }
+
             if (request.Quantidade <= 0)
             {
                 throw new ArgumentException("Quantidade deve ser maior que zero.", nameof(request));
@@ -95,6 +100,7 @@ namespace Renova.Service.Services.Produto
                 {
                     Etiqueta = etiquetaInicial + index,
                     Preco = request.Preco,
+                    Custo = request.Consignado ? null : request.Custo,
                     ProdutoId = request.ProdutoId,
                     MarcaId = request.MarcaId,
                     TamanhoId = request.TamanhoId,
@@ -122,6 +128,11 @@ namespace Renova.Service.Services.Produto
             if (request.Preco <= 0)
             {
                 throw new ArgumentException("Preco deve ser maior que zero.", nameof(request));
+            }
+
+            if (request.Custo is < 0)
+            {
+                throw new ArgumentException("Custo deve ser maior ou igual a zero.", nameof(request));
             }
 
             string descricaoNormalizada = request.Descricao.Trim();
@@ -187,6 +198,7 @@ namespace Renova.Service.Services.Produto
             }
 
             produto.Preco = request.Preco;
+            produto.Custo = request.Consignado ? null : request.Custo;
             produto.ProdutoId = request.ProdutoId;
             produto.MarcaId = request.MarcaId;
             produto.TamanhoId = request.TamanhoId;
@@ -474,6 +486,7 @@ namespace Renova.Service.Services.Produto
                 Id = produto.Id,
                 Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
+                Custo = produto.Custo,
                 ProdutoId = produto.ProdutoId,
                 Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                 MarcaId = produto.MarcaId,
@@ -545,6 +558,7 @@ namespace Renova.Service.Services.Produto
                 Id = produto.Id,
                 Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
+                Custo = produto.Custo,
                 ProdutoId = produto.ProdutoId,
                 Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                 MarcaId = produto.MarcaId,
@@ -611,6 +625,7 @@ namespace Renova.Service.Services.Produto
                     Id = produto.Id,
                     Etiqueta = produto.Etiqueta,
                     Preco = produto.Preco,
+                    Custo = produto.Custo,
                     ProdutoId = produto.ProdutoId,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                     MarcaId = produto.MarcaId,
@@ -677,6 +692,7 @@ namespace Renova.Service.Services.Produto
                     Id = produto.Id,
                     Etiqueta = produto.Etiqueta,
                     Preco = produto.Preco,
+                    Custo = produto.Custo,
                     ProdutoId = produto.ProdutoId,
                     Produto = produto.Produto != null ? produto.Produto.Valor : string.Empty,
                     MarcaId = produto.MarcaId,
@@ -906,6 +922,7 @@ namespace Renova.Service.Services.Produto
                 Id = produto.Id,
                 Etiqueta = produto.Etiqueta,
                 Preco = produto.Preco,
+                Custo = produto.Custo,
                 ProdutoId = produto.ProdutoId,
                 MarcaId = produto.MarcaId,
                 TamanhoId = produto.TamanhoId,

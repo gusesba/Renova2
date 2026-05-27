@@ -214,6 +214,22 @@ namespace Renova.Service.Services.Pagamento
                 })
                 .ToListAsync(cancellationToken);
 
+            List<FechamentoPagamentoMensalItem> custosProdutos = await _context.ProdutosEstoque
+                .AsNoTracking()
+                .Where(produto =>
+                    produto.LojaId == request.LojaId.Value
+                    && produto.Entrada >= inicioHistorico
+                    && produto.Entrada < fimHistoricoExclusivo
+                    && produto.Custo.HasValue)
+                .Select(produto => new FechamentoPagamentoMensalItem
+                {
+                    Ano = produto.Entrada.Year,
+                    Mes = produto.Entrada.Month,
+                    ValorRecebidoClientes = 0m,
+                    ValorPagoFornecedores = produto.Custo!.Value
+                })
+                .ToListAsync(cancellationToken);
+
             Dictionary<(int Ano, int Mes), int> pecasVendidasPorMes = movimentacoes
                 .GroupBy(item => (item.Ano, item.Mes))
                 .ToDictionary(
@@ -222,6 +238,7 @@ namespace Renova.Service.Services.Pagamento
 
             Dictionary<(int Ano, int Mes), (decimal Recebido, decimal Pago)> valoresPorMes = pagamentosCredito
                 .Concat(gastosLoja)
+                .Concat(custosProdutos)
                 .GroupBy(item => (item.Ano, item.Mes))
                 .ToDictionary(
                     group => group.Key,

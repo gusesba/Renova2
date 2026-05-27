@@ -4,6 +4,7 @@ export type ProductListItem = {
   id: number;
   etiqueta: number;
   preco: number;
+  custo: number | null;
   produtoId: number;
   produto: string;
   marcaId: number;
@@ -43,6 +44,7 @@ export type ProductCreateResponse = {
   id: number;
   etiqueta: number;
   preco: number;
+  custo: number | null;
   produtoId: number;
   marcaId: number;
   tamanhoId: number;
@@ -60,6 +62,7 @@ export type ProductFormValues = {
   etiqueta: string;
   descricao: string;
   preco: string;
+  custo: string;
   quantidade: string;
   entrada: string;
   situacao: string;
@@ -81,6 +84,7 @@ export type ProductFieldErrors = Partial<
     | "descricao"
     | "etiqueta"
     | "preco"
+    | "custo"
     | "quantidade"
     | "entrada"
     | "situacao"
@@ -147,6 +151,7 @@ export type ProductVisibleField =
   | "fornecedor"
   | "comprador"
   | "preco"
+  | "custo"
   | "entrada"
   | "situacao"
   | "consignado"
@@ -190,6 +195,7 @@ export function getInitialProductFormValues(): ProductFormValues {
     etiqueta: "",
     descricao: "",
     preco: "",
+    custo: "",
     quantidade: "1",
     entrada: getTodayDateInputValue(),
     situacao: "1",
@@ -218,6 +224,7 @@ export const defaultProductTableSettings: ProductTableSettings = {
     "marca",
     "fornecedor",
     "preco",
+    "custo",
     "entrada",
     "situacao",
     "comprador",
@@ -228,7 +235,7 @@ export const defaultProductTableSettings: ProductTableSettings = {
 };
 
 const productTableSettingsStorageKey = "renova.productTableSettings";
-const productTableSettingsSchemaVersion = 3;
+const productTableSettingsSchemaVersion = 4;
 
 export function asProductListResponse(body: unknown) {
   return body as ProductListResponse;
@@ -407,6 +414,10 @@ export function extractProductFieldErrors(body: unknown): ProductFieldErrors {
       accumulator.preco = error;
     }
 
+    if (normalizedKey === "custo" && !accumulator.custo) {
+      accumulator.custo = error;
+    }
+
     if (normalizedKey === "quantidade" && !accumulator.quantidade) {
       accumulator.quantidade = error;
     }
@@ -478,6 +489,7 @@ export function getStoredProductTableSettings(): ProductTableSettings {
             "fornecedor",
             "comprador",
             "preco",
+            "custo",
             "entrada",
             "situacao",
             "consignado",
@@ -496,6 +508,11 @@ export function getStoredProductTableSettings(): ProductTableSettings {
 
     const situacaoIndex = migratedVisibleFields.indexOf("situacao");
     migratedVisibleFields.splice(situacaoIndex >= 0 ? situacaoIndex + 1 : migratedVisibleFields.length, 0, "comprador");
+
+    if (parsed.schemaVersion !== productTableSettingsSchemaVersion && !migratedVisibleFields.includes("custo")) {
+      const precoIndex = migratedVisibleFields.indexOf("preco");
+      migratedVisibleFields.splice(precoIndex >= 0 ? precoIndex + 1 : migratedVisibleFields.length, 0, "custo");
+    }
 
     if (parsed.schemaVersion !== productTableSettingsSchemaVersion && !migratedVisibleFields.includes("acoes")) {
       migratedVisibleFields.push("acoes");

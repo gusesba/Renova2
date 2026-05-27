@@ -8,6 +8,8 @@ namespace Renova.Service.Commands.Produto
     {
         public decimal Preco { get; set; }
 
+        public decimal? Custo { get; set; }
+
         [RegularExpression(@"^\d+$", ErrorMessage = "Etiqueta deve conter apenas numeros.")]
         public string? Etiqueta { get; set; }
 

@@ -20,6 +20,7 @@ const fieldOptions: Array<{ description: string; label: string; value: ProductVi
   { label: "Cor", value: "cor", description: "Cor vinculada" },
   { label: "Fornecedor", value: "fornecedor", description: "Cliente fornecedor" },
   { label: "Preco", value: "preco", description: "Preco de cadastro" },
+  { label: "Custo", value: "custo", description: "Custo interno da peca" },
   { label: "Entrada", value: "entrada", description: "Data de entrada" },
   { label: "Situacao", value: "situacao", description: "Estado atual do item" },
   { label: "Comprador", value: "comprador", description: "Cliente da ultima movimentacao" },

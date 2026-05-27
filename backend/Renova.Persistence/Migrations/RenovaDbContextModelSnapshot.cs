@@ -893,6 +893,10 @@ namespace Renova.Persistence.Migrations
                     b.Property<int>("CorId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("Custo")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("Descricao")
                         .IsRequired()
                         .HasMaxLength(1000)

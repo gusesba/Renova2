@@ -125,6 +125,7 @@ namespace Renova.Service.Services.Movimentacao
                         Id = item.ProdutoId,
                         Etiqueta = item.Produto != null ? item.Produto.Etiqueta : 0,
                         Preco = item.Produto != null ? item.Produto.Preco : 0,
+                        Custo = item.Produto != null ? item.Produto.Custo : null,
                         ProdutoId = item.Produto != null ? item.Produto.ProdutoId : 0,
                         Produto = item.Produto != null && item.Produto.Produto != null ? item.Produto.Produto.Valor : string.Empty,
                         MarcaId = item.Produto != null ? item.Produto.MarcaId : 0,

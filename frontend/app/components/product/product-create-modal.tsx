@@ -101,6 +101,7 @@ function FormField({
   inputMode,
   step,
   min,
+  disabled,
   onChange,
 }: {
   label: string;
@@ -111,6 +112,7 @@ function FormField({
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   step?: string;
   min?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -123,11 +125,12 @@ function FormField({
         inputMode={inputMode}
         step={step}
         min={min}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-12 w-full rounded-2xl border bg-white px-4 text-sm text-[var(--foreground)] outline-none transition ${
+        className={`h-12 w-full rounded-2xl border px-4 text-sm text-[var(--foreground)] outline-none transition disabled:cursor-not-allowed disabled:bg-[var(--surface-muted)] disabled:text-[var(--muted)] ${
           error
-            ? "border-red-300 shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
-            : "border-[var(--border)] focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
+            ? "border-red-300 bg-white shadow-[0_0_0_4px_rgba(248,113,113,0.12)]"
+            : "border-[var(--border)] bg-white focus:border-[var(--primary)] focus:shadow-[0_0_0_4px_rgba(106,92,255,0.12)]"
         }`}
       />
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
@@ -250,6 +253,7 @@ export function ProductCreateModal({
   const createProductMutation = useMutation({
     mutationFn: async (payload: {
       preco: number;
+      custo: number | null;
       etiqueta?: string;
       quantidade: number;
       produtoId: number;
@@ -897,6 +901,10 @@ export function ProductCreateModal({
     try {
       const payload = {
         preco: Number(normalizeDecimalValue(validation.data.preco)),
+        custo:
+          values.consignado || !validation.data.custo.trim()
+            ? null
+            : Number(normalizeDecimalValue(validation.data.custo)),
         ...(validation.data.etiqueta.trim() ? { etiqueta: validation.data.etiqueta.trim() } : {}),
         quantidade: Number(validation.data.quantidade),
         produtoId: Number(validation.data.produtoId),
@@ -1136,6 +1144,21 @@ export function ProductCreateModal({
               }}
             />
             <FormField
+              label="Custo"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              placeholder="0,00"
+              value={values.custo}
+              error={errors.custo}
+              disabled={values.consignado}
+              onChange={(value) => {
+                updateField("custo", value);
+                setErrors((current) => ({ ...current, custo: undefined }));
+              }}
+            />
+            <FormField
               label="Quantidade"
               type="number"
               inputMode="numeric"
@@ -1165,7 +1188,14 @@ export function ProductCreateModal({
             checked={values.consignado}
             disabled={!storeId}
             label="Produto consignado"
-            onChange={(checked) => updateField("consignado", checked)}
+            onChange={(checked) => {
+              updateField("consignado", checked);
+
+              if (checked) {
+                updateField("custo", "");
+                setErrors((current) => ({ ...current, custo: undefined }));
+              }
+            }}
           />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

@@ -120,6 +120,7 @@ export async function getPendingReturnProductsByClient(
 export async function createProduct(
   payload: {
     preco: number;
+    custo: number | null;
     etiqueta?: string;
     quantidade: number;
     produtoId: number;
@@ -160,6 +161,7 @@ export async function updateProduct(
   productId: number,
   payload: {
     preco: number;
+    custo: number | null;
     etiqueta?: string;
     produtoId: number;
     marcaId: number;

@@ -104,6 +104,7 @@ export function ProductsTable({
   const showCor = visibleFields.includes("cor");
   const showFornecedor = visibleFields.includes("fornecedor");
   const showPreco = visibleFields.includes("preco");
+  const showCusto = visibleFields.includes("custo");
   const showEntrada = visibleFields.includes("entrada");
   const showSituacao = visibleFields.includes("situacao");
   const showComprador = visibleFields.includes("comprador");
@@ -167,6 +168,11 @@ export function ProductsTable({
               {showPreco ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Preco
+                </th>
+              ) : null}
+              {showCusto ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Custo
                 </th>
               ) : null}
               {showEntrada ? (
@@ -245,6 +251,11 @@ export function ProductsTable({
                 {showFornecedor ? <ProductTableCell>{product.fornecedor}</ProductTableCell> : null}
                 {showPreco ? (
                   <ProductTableCell>{formatCurrencyValue(product.preco)}</ProductTableCell>
+                ) : null}
+                {showCusto ? (
+                  <ProductTableCell>
+                    {product.custo == null ? "-" : formatCurrencyValue(product.custo)}
+                  </ProductTableCell>
                 ) : null}
                 {showEntrada ? (
                   <ProductTableCell subtle>{formatDateValue(product.entrada)}</ProductTableCell>

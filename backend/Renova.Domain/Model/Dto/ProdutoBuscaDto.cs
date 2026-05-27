@@ -5,6 +5,7 @@ namespace Renova.Domain.Model.Dto
         public int Id { get; set; }
         public int Etiqueta { get; set; }
         public decimal Preco { get; set; }
+        public decimal? Custo { get; set; }
         public int ProdutoId { get; set; }
         public required string Produto { get; set; }
         public int MarcaId { get; set; }
