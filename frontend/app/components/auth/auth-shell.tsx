@@ -41,7 +41,7 @@ export function AuthShell() {
       payload,
     }: {
       currentMode: AuthMode;
-      payload: { email: string; senha: string } | FormValues;
+      payload: { email: string; senha: string } | { nome: string; email: string; senha: string };
     }) => authenticate(currentMode, payload),
   });
 
@@ -52,6 +52,7 @@ export function AuthShell() {
       ...current,
       nome: nextMode === "login" ? "" : current.nome,
       senha: "",
+      confirmarSenha: "",
     }));
   }
 
@@ -84,6 +85,7 @@ export function AuthShell() {
             nome: values.nome.trim(),
             email: values.email.trim(),
             senha: values.senha,
+            confirmarSenha: values.confirmarSenha,
           };
 
     const validation = getSchema(mode).safeParse(payload);
@@ -98,9 +100,18 @@ export function AuthShell() {
     setErrors({});
 
     try {
+      const requestPayload =
+        mode === "login"
+          ? validation.data
+          : {
+              nome: payload.nome,
+              email: payload.email,
+              senha: payload.senha,
+            };
+
       const response = await authMutation.mutateAsync({
         currentMode: mode,
-        payload: validation.data,
+        payload: requestPayload,
       });
 
       if (!response.ok) {

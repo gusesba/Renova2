@@ -104,6 +104,17 @@ export function CadastroForm({
           autoComplete="new-password"
         />
 
+        <AuthField
+          label="Repetir senha"
+          name="confirmarSenha"
+          placeholder="••••••••"
+          type="password"
+          value={values.confirmarSenha}
+          onChange={onFieldChange}
+          error={errors.confirmarSenha}
+          autoComplete="new-password"
+        />
+
         <button
           type="submit"
           disabled={isSubmitting}

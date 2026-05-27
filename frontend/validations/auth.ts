@@ -11,6 +11,10 @@ export const cadastroSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome."),
   email: z.email("Informe um e-mail valido."),
   senha: z.string().min(1, "Informe a senha.").min(6, "A senha deve ter pelo menos 6 caracteres."),
+  confirmarSenha: z.string().min(1, "Repita a senha."),
+}).refine((values) => values.senha === values.confirmarSenha, {
+  message: "As senhas devem ser iguais.",
+  path: ["confirmarSenha"],
 });
 
 export function getSchema(mode: AuthMode) {

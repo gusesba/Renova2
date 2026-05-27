@@ -4,6 +4,7 @@ export type FormValues = {
   nome: string;
   email: string;
   senha: string;
+  confirmarSenha: string;
 };
 
 export type FieldErrors = Partial<Record<keyof FormValues, string>>;
@@ -36,12 +37,14 @@ export const fieldLabel: Record<keyof FormValues, string> = {
   nome: "Nome",
   email: "E-mail",
   senha: "Senha",
+  confirmarSenha: "Repetir senha",
 };
 
 export const initialValues: FormValues = {
   nome: "",
   email: "",
   senha: "",
+  confirmarSenha: "",
 };
 
 function decodeBase64Url(value: string) {
