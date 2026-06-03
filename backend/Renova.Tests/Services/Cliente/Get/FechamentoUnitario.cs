@@ -149,17 +149,18 @@ namespace Renova.Tests.Services.Cliente.Get
             IXLWorksheet worksheet = workbook.Worksheet("Ana Fornecedora");
             Assert.Equal("Vendas dos itens do cliente", worksheet.Cell("A10").GetString());
             Assert.Equal("Data de Saida", worksheet.Cell("K11").GetString());
-            Assert.Equal(string.Empty, worksheet.Cell("L11").GetString());
+            Assert.Equal("Comprador", worksheet.Cell("L11").GetString());
+            Assert.Equal("Beatriz Compradora", worksheet.Cell("L12").GetString());
             Assert.Equal("Compras realizadas pelo cliente", worksheet.Cell("A15").GetString());
             Assert.Equal("Data de Saida", worksheet.Cell("K16").GetString());
+            Assert.Equal("Fornecedor", worksheet.Cell("L16").GetString());
+            Assert.Equal("Carla Fornecedora", worksheet.Cell("L17").GetString());
             Assert.Contains("R$ -15,00", worksheet.Cell("A20").GetString(), StringComparison.Ordinal);
             Assert.Contains("R$ -44,00", worksheet.Cell("E20").GetString(), StringComparison.Ordinal);
             Assert.Contains("R$ -59,00", worksheet.Cell("I20").GetString(), StringComparison.Ordinal);
             Assert.Equal(string.Empty, worksheet.Cell("K20").GetString());
             Assert.Contains("Vestido", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
             Assert.Contains("Blusa", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
-            Assert.DoesNotContain("Beatriz Compradora", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
-            Assert.DoesNotContain("Carla Fornecedora", worksheet.CellsUsed().Select(cell => cell.GetString()).Where(value => !string.IsNullOrWhiteSpace(value)));
         }
 
         [Fact]

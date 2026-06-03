@@ -200,7 +200,10 @@ namespace Renova.Service.Services.Cliente
                         Cor = item.Produto != null && item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
                         Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
                         DataEntrada = item.Produto != null ? item.Produto.Entrada : default,
-                        DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default
+                        DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default,
+                        Comprador = item.Movimentacao != null && item.Movimentacao.Cliente != null
+                            ? item.Movimentacao.Cliente.Nome
+                            : string.Empty
                     })
                     .ToListAsync(cancellationToken);
 
@@ -227,7 +230,10 @@ namespace Renova.Service.Services.Cliente
                         Cor = item.Produto != null && item.Produto.Cor != null ? item.Produto.Cor.Valor : string.Empty,
                         Descricao = item.Produto != null ? item.Produto.Descricao : string.Empty,
                         DataEntrada = item.Produto != null ? item.Produto.Entrada : default,
-                        DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default
+                        DataSaida = item.Movimentacao != null ? item.Movimentacao.Data : default,
+                        Fornecedor = item.Produto != null && item.Produto.Fornecedor != null
+                            ? item.Produto.Fornecedor.Nome
+                            : string.Empty
                     })
                     .ToListAsync(cancellationToken);
 
@@ -1243,7 +1249,7 @@ namespace Renova.Service.Services.Cliente
             AplicarTituloSecao(worksheet.Range(linhaVendas, 1, linhaVendas, 13), corTitulo);
 
             int cabecalhoVendas = linhaVendas + 1;
-            string[] colunasVenda = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida"];
+            string[] colunasVenda = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida", "Comprador"];
 
             for (int indice = 0; indice < colunasVenda.Length; indice++)
             {
@@ -1264,15 +1270,16 @@ namespace Renova.Service.Services.Cliente
                 worksheet.Cell(linhaAtual, 9).Value = venda.Descricao;
                 worksheet.Cell(linhaAtual, 10).Value = venda.DataEntrada;
                 worksheet.Cell(linhaAtual, 11).Value = venda.DataSaida;
-                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 11), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
+                worksheet.Cell(linhaAtual, 12).Value = venda.Comprador;
+                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 12), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
                 linhaAtual++;
             }
 
             if (vendas.Count == 0)
             {
-                worksheet.Range(linhaAtual, 1, linhaAtual, 11).Merge();
+                worksheet.Range(linhaAtual, 1, linhaAtual, 12).Merge();
                 worksheet.Cell(linhaAtual, 1).Value = "Nenhuma venda de item do cliente no periodo.";
-                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 11), corLinhaVazia, corTexto, corBorda);
+                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 12), corLinhaVazia, corTexto, corBorda);
                 linhaAtual++;
             }
             else
@@ -1287,7 +1294,7 @@ namespace Renova.Service.Services.Cliente
             AplicarTituloSecao(worksheet.Range(linhaAtual, 1, linhaAtual, 13), corTitulo);
 
             int cabecalhoCompras = linhaAtual + 1;
-            string[] colunasCompra = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida"];
+            string[] colunasCompra = ["ID", "ID da Venda", "Preco", "Preco de Venda", "Produto", "Marca", "Tamanho", "Cor", "Descricao", "Data de Entrada", "Data de Saida", "Fornecedor"];
 
             for (int indice = 0; indice < colunasCompra.Length; indice++)
             {
@@ -1308,15 +1315,16 @@ namespace Renova.Service.Services.Cliente
                 worksheet.Cell(linhaAtual, 9).Value = compra.Descricao;
                 worksheet.Cell(linhaAtual, 10).Value = compra.DataEntrada;
                 worksheet.Cell(linhaAtual, 11).Value = compra.DataSaida;
-                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 11), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
+                worksheet.Cell(linhaAtual, 12).Value = compra.Fornecedor;
+                AplicarLinhaTabela(worksheet.Range(linhaAtual, 1, linhaAtual, 12), linhaAtual % 2 == 0 ? corLinhaAlternada : XLColor.White, corBorda);
                 linhaAtual++;
             }
 
             if (compras.Count == 0)
             {
-                worksheet.Range(linhaAtual, 1, linhaAtual, 11).Merge();
+                worksheet.Range(linhaAtual, 1, linhaAtual, 12).Merge();
                 worksheet.Cell(linhaAtual, 1).Value = "Nenhuma compra realizada pelo cliente no periodo.";
-                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 11), corLinhaVazia, corTexto, corBorda);
+                AplicarLinhaVazia(worksheet.Range(linhaAtual, 1, linhaAtual, 12), corLinhaVazia, corTexto, corBorda);
                 linhaAtual++;
             }
             else
@@ -1349,7 +1357,8 @@ namespace Renova.Service.Services.Cliente
             worksheet.Column("I").Width = Math.Max(26, worksheet.Column("I").Width);
             worksheet.Column("J").Width = Math.Max(17, worksheet.Column("J").Width);
             worksheet.Column("K").Width = Math.Max(17, worksheet.Column("K").Width);
-            worksheet.Columns("L:M").Width = 4;
+            worksheet.Column("L").Width = Math.Max(18, worksheet.Column("L").Width);
+            worksheet.Column("M").Width = 4;
             worksheet.Rows().AdjustToContents();
         }
 
@@ -1553,6 +1562,8 @@ namespace Renova.Service.Services.Cliente
             public DateTime DataEntrada { get; set; }
 
             public DateTime DataSaida { get; set; }
+
+            public required string Comprador { get; set; }
         }
 
         private sealed class FechamentoClienteCompraMovimentoItem
@@ -1578,6 +1589,8 @@ namespace Renova.Service.Services.Cliente
             public DateTime DataEntrada { get; set; }
 
             public DateTime DataSaida { get; set; }
+
+            public required string Fornecedor { get; set; }
         }
 
         private static System.Linq.Expressions.Expression<Func<ProdutoEstoqueModel, ProdutoBuscaDto>> MapearProdutoBuscaDto()
