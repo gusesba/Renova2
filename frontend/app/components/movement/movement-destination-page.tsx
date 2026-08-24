@@ -126,6 +126,7 @@ export function MovementDestinationPage() {
   });
 
   const groupedItems = useMemo(() => {
+    const latestItem = items.at(-1);
     const groups = new Map<
       number,
       {
@@ -151,9 +152,29 @@ export function MovementDestinationPage() {
       .map(([fornecedorId, group]) => ({
         fornecedorId,
         fornecedor: group.fornecedor,
-        items: group.items.sort((left, right) => left.product.id - right.product.id),
+        items: group.items.sort((left, right) => {
+          if (left.product.id === latestItem?.product.id) {
+            return -1;
+          }
+
+          if (right.product.id === latestItem?.product.id) {
+            return 1;
+          }
+
+          return left.product.id - right.product.id;
+        }),
       }))
-      .sort((left, right) => left.fornecedor.localeCompare(right.fornecedor));
+      .sort((left, right) => {
+        if (left.fornecedorId === latestItem?.product.fornecedorId) {
+          return -1;
+        }
+
+        if (right.fornecedorId === latestItem?.product.fornecedorId) {
+          return 1;
+        }
+
+        return left.fornecedor.localeCompare(right.fornecedor);
+      });
   }, [items]);
 
   const summary = useMemo(() => {

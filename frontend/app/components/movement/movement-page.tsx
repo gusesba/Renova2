@@ -186,10 +186,14 @@ function parseDiscountValue(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function supportsTotalDiscount(movementType: number) {
+  return movementType === 1 || movementType === 2;
+}
+
 function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraftProduct) {
   return parseDiscountValue(product.desconto) > 0
     ? parseDiscountValue(product.desconto)
-    : Number(draft.tipo) === 1
+    : supportsTotalDiscount(Number(draft.tipo))
       ? parseDiscountValue(draft.descontoTotal)
       : 0;
 }
@@ -231,7 +235,7 @@ function getAutomaticDiscountForProduct(
   product: ProductListItem,
   storeConfig: ConfigLojaResponse | null,
 ) {
-  if (!storeConfig || !product.consignado || product.situacao !== 1) {
+  if (!storeConfig || !product.consignado) {
     return null;
   }
 
@@ -450,6 +454,50 @@ export function MovementPage() {
     };
   }, [hasPendingMovements]);
 
+  const storeConfigQuery = useQuery({
+    queryKey: ["store-config", token, selectedStoreId],
+    queryFn: async () => {
+      if (!token || !selectedStoreId) {
+        return null;
+      }
+
+      const response = await getStoreConfig(selectedStoreId, token);
+
+      if (response.status === 404) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          extractStoreConfigApiMessage(response.body) ??
+            "Nao foi possivel carregar a configuracao da loja.",
+        );
+      }
+
+      return asStoreConfigResponse(response.body);
+    },
+    enabled: Boolean(token && selectedStoreId),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    const storeConfig = storeConfigQuery.data;
+
+    if (!storeConfig) {
+      return;
+    }
+
+    setDrafts((current) =>
+      current.map((draft) => ({
+        ...draft,
+        products: draft.products.map((product) => ({
+          ...product,
+          desconto: getProductDiscountForDraft(draft, product, storeConfig),
+        })),
+      })),
+    );
+  }, [storeConfigQuery.data]);
+
   useEffect(() => {
     if (!hasPendingMovements) {
       return;
@@ -557,7 +605,14 @@ export function MovementPage() {
               ...borrowedProducts.filter(
                 (product) =>
                   !manualProducts.some((manualProduct) => manualProduct.id === product.id),
-              ).map((product) => ({ ...product, desconto: "0" })),
+              ).map((product) => ({
+                ...product,
+                desconto: getProductDiscountForDraft(
+                  draft,
+                  product,
+                  storeConfigQuery.data ?? null,
+                ),
+              })),
             ],
             autoLinkedBorrowedProductIds: borrowedProducts.map((product) => product.id),
             errors: { ...draft.errors, produtos: undefined },
@@ -581,7 +636,14 @@ export function MovementPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeDraft?.clienteId, activeDraft?.id, activeDraft?.tipo, selectedStoreId, token]);
+  }, [
+    activeDraft?.clienteId,
+    activeDraft?.id,
+    activeDraft?.tipo,
+    selectedStoreId,
+    storeConfigQuery.data,
+    token,
+  ]);
   const trimmedClientSearch = debouncedClientSearch.trim();
 
   const clientOptionsQuery = useQuery({
@@ -606,32 +668,6 @@ export function MovementPage() {
       return asClientListResponse(response.body).itens;
     },
     enabled: Boolean(token && selectedStoreId && activeDraft && trimmedClientSearch),
-  });
-
-  const storeConfigQuery = useQuery({
-    queryKey: ["store-config", token, selectedStoreId],
-    queryFn: async () => {
-      if (!token || !selectedStoreId) {
-        return null;
-      }
-
-      const response = await getStoreConfig(selectedStoreId, token);
-
-      if (response.status === 404) {
-        return null;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          extractStoreConfigApiMessage(response.body) ??
-            "Nao foi possivel carregar a configuracao da loja.",
-        );
-      }
-
-      return asStoreConfigResponse(response.body);
-    },
-    enabled: Boolean(token && selectedStoreId),
-    staleTime: 60_000,
   });
 
   const fetchProductMutation = useMutation({
@@ -683,11 +719,12 @@ export function MovementPage() {
           clienteId: Number(draft.clienteId),
           lojaId: selectedStoreId,
           descontoTotal:
-            Number(draft.tipo) === 1 ? Number(draft.descontoTotal.replace(",", ".")) || 0 : 0,
+            supportsTotalDiscount(Number(draft.tipo))
+              ? Number(draft.descontoTotal.replace(",", ".")) || 0
+              : 0,
           produtos: draft.products.map((product) => ({
             produtoId: product.id,
-            desconto:
-              Number(draft.tipo) === 1 ? Number(product.desconto.replace(",", ".")) || 0 : 0,
+            desconto: Number(product.desconto.replace(",", ".")) || 0,
           })),
         },
         token,
@@ -854,22 +891,27 @@ export function MovementPage() {
   }
 
   function handleTypeChange(draftId: string, tipo: string) {
-    updateDraft(draftId, (draft) => ({
-      ...draft,
-      tipo,
-      suggestion: null,
-      descontoTotal: tipo === "1" ? draft.descontoTotal : "0",
-      products: draft.products.map((product) => ({
-        ...product,
-        desconto:
-          tipo === "1"
-            ? product.desconto
-            : tipo === "5"
-              ? String(product.descontoUltimaVenda ?? 0)
-              : "0",
-      })),
-      errors: { ...draft.errors, tipo: undefined, descontoTotal: undefined, produtos: undefined },
-    }));
+    updateDraft(draftId, (draft) => {
+      const nextDraft = {
+        ...draft,
+        tipo,
+        suggestion: null,
+        descontoTotal: supportsTotalDiscount(Number(tipo)) ? draft.descontoTotal : "0",
+      };
+
+      return {
+        ...nextDraft,
+        products: draft.products.map((product) => ({
+          ...product,
+          desconto: getProductDiscountForDraft(
+            nextDraft,
+            product,
+            storeConfigQuery.data ?? null,
+          ),
+        })),
+        errors: { ...draft.errors, tipo: undefined, descontoTotal: undefined, produtos: undefined },
+      };
+    });
   }
 
   function handleClientSelect(draftId: string, client: ClientListItem) {
@@ -920,15 +962,28 @@ export function MovementPage() {
       return;
     }
 
-    addDraft({
+    const returnDraft = {
+      ...createDraft("pending-return"),
       tipo: "4",
       data: pendingReturnPrompt.draftDate,
+    };
+
+    addDraft({
+      tipo: returnDraft.tipo,
+      data: returnDraft.data,
       descontoTotal: "0",
       clienteId: pendingReturnPrompt.clienteId,
       clienteContato: pendingReturnPrompt.clienteContato,
       clienteLabel: pendingReturnPrompt.clienteNome,
       clienteSearch: pendingReturnPrompt.clienteNome,
-      products: pendingReturnPrompt.products.map((product) => ({ ...product, desconto: "0" })),
+      products: pendingReturnPrompt.products.map((product) => ({
+        ...product,
+        desconto: getProductDiscountForDraft(
+          returnDraft,
+          product,
+          storeConfigQuery.data ?? null,
+        ),
+      })),
     });
     setPendingReturnPrompt(null);
   }
@@ -1213,19 +1268,20 @@ export function MovementPage() {
       return;
     }
 
+    const suggestedType = String(draft.suggestion.suggestedType);
     const automaticDiscount = getAutomaticDiscountForProduct(
       {
         ...draft,
-        tipo: String(draft.suggestion.suggestedType),
+        tipo: suggestedType,
       },
       draft.suggestion.product,
       storeConfigQuery.data ?? null,
     );
 
     addDraft({
-      tipo: String(draft.suggestion.suggestedType),
+      tipo: suggestedType,
       data: draft.data,
-      descontoTotal: draft.descontoTotal,
+      descontoTotal: supportsTotalDiscount(Number(suggestedType)) ? draft.descontoTotal : "0",
       clienteId: draft.clienteId,
       clienteLabel: draft.clienteLabel,
       clienteSearch: draft.clienteLabel || draft.clienteSearch,
@@ -1233,7 +1289,7 @@ export function MovementPage() {
         {
           ...draft.suggestion.product,
           desconto: getProductDiscountForDraft(
-            { ...draft, tipo: String(draft.suggestion.suggestedType) },
+            { ...draft, tipo: suggestedType },
             draft.suggestion.product,
             storeConfigQuery.data ?? null,
           ),
@@ -1314,7 +1370,7 @@ export function MovementPage() {
       tipo: draft.tipo,
       data: draft.data,
       clienteId: draft.clienteId,
-      descontoTotal: Number(draft.tipo) === 1 ? draft.descontoTotal : "0",
+      descontoTotal: supportsTotalDiscount(Number(draft.tipo)) ? draft.descontoTotal : "0",
     });
 
     const nextErrors = validation.success ? {} : mapMovementZodErrors(validation.error);
@@ -1539,12 +1595,26 @@ export function MovementPage() {
                         value={activeDraft.data}
                         error={activeDraft.errors.data}
                         onChange={(value) =>
-                          updateDraft(activeDraft.id, (draft) => ({
-                            ...draft,
-                            data: value,
-                            dateTouched: true,
-                            errors: { ...draft.errors, data: undefined },
-                          }))
+                          updateDraft(activeDraft.id, (draft) => {
+                            const nextDraft = {
+                              ...draft,
+                              data: value,
+                              dateTouched: true,
+                            };
+
+                            return {
+                              ...nextDraft,
+                              products: draft.products.map((product) => ({
+                                ...product,
+                                desconto: getProductDiscountForDraft(
+                                  nextDraft,
+                                  product,
+                                  storeConfigQuery.data ?? null,
+                                ),
+                              })),
+                              errors: { ...draft.errors, data: undefined },
+                            };
+                          })
                         }
                       />
 
@@ -1686,7 +1756,7 @@ export function MovementPage() {
                           label="Desconto total da movimentacao (%)"
                           value={activeDraft.descontoTotal}
                           error={activeDraft.errors.descontoTotal}
-                          disabled={Number(activeDraft.tipo) === 5}
+                          disabled={!supportsTotalDiscount(Number(activeDraft.tipo))}
                           onChange={(value) =>
                             updateDraft(activeDraft.id, (draft) => ({
                               ...draft,
@@ -1741,11 +1811,11 @@ export function MovementPage() {
                         {formatCurrencyValue(activeDraftTotalPrice)}
                       </p>
                       <p className="mt-2 text-sm text-[var(--muted)]">
-                        {Number(activeDraft.tipo) === 1
+                        {supportsTotalDiscount(Number(activeDraft.tipo))
                           ? "Preview com o desconto total como padrao por peca, sobrescrito quando a peca tiver desconto proprio."
                           : Number(activeDraft.tipo) === 5
                             ? "Preview com desconto da venda original da peca."
-                            : "Preview com desconto unitario quando a peca tiver valor configurado. No envio, movimentacoes sem venda continuam sendo salvas com desconto zerado."}
+                            : "Preview com desconto unitario quando a peca tiver valor configurado."}
                       </p>
                     </div>
 

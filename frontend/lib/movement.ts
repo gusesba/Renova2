@@ -70,6 +70,7 @@ export type MovementVisibleField =
   | "data"
   | "cliente"
   | "quantidadeProdutos"
+  | "valorTotal"
   | "tipo"
   | "detalhes"
   | "acoes";
@@ -121,11 +122,20 @@ export const initialMovementFilters: MovementFilters = {
 
 export const defaultMovementTableSettings: MovementTableSettings = {
   tamanhoPagina: 10,
-  visibleFields: ["id", "data", "cliente", "quantidadeProdutos", "tipo", "detalhes", "acoes"],
+  visibleFields: [
+    "id",
+    "data",
+    "cliente",
+    "quantidadeProdutos",
+    "valorTotal",
+    "tipo",
+    "detalhes",
+    "acoes",
+  ],
 };
 
 const movementTableSettingsStorageKey = "renova.movementTableSettings";
-const movementTableSettingsSchemaVersion = 2;
+const movementTableSettingsSchemaVersion = 3;
 
 export function asMovementResponse(body: unknown) {
   return body as MovementCreateResponse;
@@ -236,6 +246,22 @@ export function formatMovementDate(value: string) {
   }).format(parsed);
 }
 
+export function getMovementProductSaleValue(product: ProductListItem) {
+  const discount = Number(product.descontoMovimentacao ?? 0);
+  const value = product.preco * Math.max(0, 1 - discount / 100);
+
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+export function getMovementTotalValue(products: ProductListItem[]) {
+  const total = products.reduce(
+    (accumulator, product) => accumulator + getMovementProductSaleValue(product),
+    0,
+  );
+
+  return Math.round((total + Number.EPSILON) * 100) / 100;
+}
+
 export function getStoredMovementTableSettings(): MovementTableSettings {
   if (typeof window === "undefined") {
     return defaultMovementTableSettings;
@@ -261,9 +287,16 @@ export function getStoredMovementTableSettings(): MovementTableSettings {
 
     const visibleFields = Array.isArray(parsed.visibleFields)
       ? parsed.visibleFields.filter((field): field is MovementVisibleField =>
-          ["id", "data", "cliente", "quantidadeProdutos", "tipo", "detalhes", "acoes"].includes(
-            String(field),
-          ),
+          [
+            "id",
+            "data",
+            "cliente",
+            "quantidadeProdutos",
+            "valorTotal",
+            "tipo",
+            "detalhes",
+            "acoes",
+          ].includes(String(field)),
         )
       : defaultMovementTableSettings.visibleFields;
 
@@ -272,7 +305,9 @@ export function getStoredMovementTableSettings(): MovementTableSettings {
         ? visibleFields
         : [
             ...visibleFields,
-            ...(["detalhes", "acoes"] as const).filter((field) => !visibleFields.includes(field)),
+            ...(["valorTotal", "detalhes", "acoes"] as const).filter(
+              (field) => !visibleFields.includes(field),
+            ),
           ];
 
     return {

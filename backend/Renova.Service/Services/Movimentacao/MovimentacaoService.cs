@@ -361,14 +361,11 @@ namespace Renova.Service.Services.Movimentacao
             decimal descontoTotal,
             decimal descontoProduto)
         {
-            if (tipoMovimentacao != TipoMovimentacao.Venda)
-            {
-                if (descontoTotal != 0 || descontoProduto != 0)
-                {
-                    throw new ArgumentException("Descontos so podem ser informados em movimentacoes de venda.");
-                }
+            bool permiteDescontoTotal = tipoMovimentacao is TipoMovimentacao.Venda or TipoMovimentacao.Emprestimo;
 
-                return 0m;
+            if (!permiteDescontoTotal && descontoTotal != 0)
+            {
+                throw new ArgumentException("Desconto total so pode ser informado em movimentacoes de venda ou emprestimo.");
             }
 
             if (descontoTotal is < 0 or > 100)
@@ -382,7 +379,7 @@ namespace Renova.Service.Services.Movimentacao
             }
 
             return decimal.Round(
-                descontoProduto > 0 ? descontoProduto : descontoTotal,
+                descontoProduto > 0 || !permiteDescontoTotal ? descontoProduto : descontoTotal,
                 2,
                 MidpointRounding.AwayFromZero);
         }

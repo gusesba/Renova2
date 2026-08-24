@@ -1,4 +1,12 @@
-import { formatMovementDate, formatMovementType, type MovementListItem, type MovementVisibleField } from "@/lib/movement";
+import {
+  formatMovementDate,
+  formatMovementType,
+  getMovementProductSaleValue,
+  getMovementTotalValue,
+  type MovementListItem,
+  type MovementVisibleField,
+} from "@/lib/movement";
+import { formatCurrencyValue } from "@/lib/product";
 
 type MovementsTableProps = {
   expandedIds: number[];
@@ -71,6 +79,7 @@ export function MovementsTable({
   const showData = visibleFields.includes("data");
   const showCliente = visibleFields.includes("cliente");
   const showQuantidade = visibleFields.includes("quantidadeProdutos");
+  const showValorTotal = visibleFields.includes("valorTotal");
   const showTipo = visibleFields.includes("tipo");
   const showDetalhes = visibleFields.includes("detalhes");
   const showAcoes = visibleFields.includes("acoes");
@@ -80,6 +89,7 @@ export function MovementsTable({
     showData,
     showCliente,
     showQuantidade,
+    showValorTotal,
     showTipo,
     showAcoes,
   ].filter(Boolean).length;
@@ -113,6 +123,11 @@ export function MovementsTable({
               {showQuantidade ? (
                 <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                   Quantidade
+                </th>
+              ) : null}
+              {showValorTotal ? (
+                <th className="px-4 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                  Valor total
                 </th>
               ) : null}
               {showTipo ? (
@@ -163,6 +178,9 @@ export function MovementsTable({
                         </span>
                       </TableCell>
                     ) : null}
+                    {showValorTotal ? (
+                      <TableCell>{formatCurrencyValue(getMovementTotalValue(movement.produtos))}</TableCell>
+                    ) : null}
                     {showTipo ? <TableCell>{formatMovementType(movement.tipo)}</TableCell> : null}
                     {showAcoes ? (
                       <TableCell>
@@ -206,7 +224,13 @@ export function MovementsTable({
                                       Fornecedor
                                     </th>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                      Valor registrado
+                                    </th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                                       Desconto
+                                    </th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+                                      Valor de venda
                                     </th>
                                   </tr>
                                 </thead>
@@ -225,8 +249,12 @@ export function MovementsTable({
                                       <TableCell>{product.descricao}</TableCell>
                                       <TableCell subtle>{product.marca}</TableCell>
                                       <TableCell subtle>{product.fornecedor}</TableCell>
+                                      <TableCell>{formatCurrencyValue(product.preco)}</TableCell>
                                       <TableCell subtle>
                                         {Number(product.descontoMovimentacao ?? 0).toFixed(2)}%
+                                      </TableCell>
+                                      <TableCell>
+                                        {formatCurrencyValue(getMovementProductSaleValue(product))}
                                       </TableCell>
                                     </tr>
                                   ))}

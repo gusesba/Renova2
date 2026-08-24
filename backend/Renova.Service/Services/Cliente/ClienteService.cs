@@ -70,7 +70,6 @@ namespace Renova.Service.Services.Cliente
                 .AsNoTracking()
                 .Where(cliente =>
                     cliente.LojaId == request.LojaId!.Value
-                    && !cliente.Doacao
                     && _context.ProdutosEstoque.Any(produto =>
                         produto.LojaId == request.LojaId.Value
                         && produto.FornecedorId == cliente.Id
@@ -158,7 +157,6 @@ namespace Renova.Service.Services.Cliente
                 .Include(cliente => cliente.Credito)
                 .Where(cliente =>
                     cliente.LojaId == request.LojaId!.Value
-                    && !cliente.Doacao
                     && (
                         vendasUltimasNoPeriodo.Any(item => item.Produto != null && item.Produto.FornecedorId == cliente.Id)
                         || vendasUltimasNoPeriodo.Any(item => item.Movimentacao != null && item.Movimentacao.ClienteId == cliente.Id)))

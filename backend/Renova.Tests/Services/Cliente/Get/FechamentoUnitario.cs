@@ -270,7 +270,7 @@ namespace Renova.Tests.Services.Cliente.Get
         }
 
         [Fact]
-        public async Task ExportProductClosingAsyncNaoDeveIncluirClienteMarcadoComoDoacao()
+        public async Task ExportProductClosingAsyncDeveIncluirClienteMarcadoComoDoacao()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();
 
@@ -312,8 +312,56 @@ namespace Renova.Tests.Services.Cliente.Get
             using XLWorkbook workbook = new(stream);
 
             IXLWorksheet worksheet = Assert.Single(workbook.Worksheets);
-            Assert.Equal("Resumo", worksheet.Name);
-            Assert.Contains("Nenhum cliente elegivel", worksheet.Cell("A1").GetString(), StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("Cliente Doacao", worksheet.Name);
+            Assert.Contains("Cliente Doacao", worksheet.Cell("A7").GetString(), StringComparison.Ordinal);
+            Assert.Equal("Blusa", worksheet.Cell("C14").GetString());
+        }
+
+        [Fact]
+        public async Task ExportMovementClosingAsyncDeveIncluirClienteMarcadoComoDoacao()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            UsuarioModel usuario = await CriarUsuarioAsync(context, "maria-movimento-doacao@renova.com");
+            LojaModel loja = await CriarLojaAsync(context, usuario.Id, "Loja Centro");
+            ClienteModel clienteDoacao = await CriarClienteAsync(context, loja.Id, "Cliente Doacao", "44999990001", true);
+
+            _ = await CriarConfigLojaAsync(context, loja.Id, 40m, 60m);
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(
+                context,
+                loja.Id,
+                clienteDoacao.Id,
+                "Blusa",
+                80m,
+                new DateTime(2026, 3, 4, 10, 0, 0, DateTimeKind.Utc));
+
+            _ = await CriarVendaAsync(
+                context,
+                loja.Id,
+                clienteDoacao.Id,
+                produto,
+                new DateTime(2026, 3, 6, 14, 0, 0, DateTimeKind.Utc),
+                0m);
+
+            ClienteService service = new(context);
+            byte[] arquivo = await service.ExportMovementClosingAsync(
+                new ExportarFechamentoClientesQuery
+                {
+                    LojaId = loja.Id,
+                    DataInicial = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+                    DataFinal = new DateTime(2026, 3, 31, 23, 59, 59, DateTimeKind.Utc)
+                },
+                new ObterClientesParametros
+                {
+                    UsuarioId = usuario.Id
+                });
+
+            using MemoryStream stream = new(arquivo);
+            using XLWorkbook workbook = new(stream);
+
+            IXLWorksheet worksheet = Assert.Single(workbook.Worksheets);
+            Assert.Equal("Cliente Doacao", worksheet.Name);
+            Assert.Contains("Blusa", worksheet.CellsUsed().Select(cell => cell.GetString()));
         }
 
         private static async Task<UsuarioModel> CriarUsuarioAsync(RenovaDbContext context, string email)
