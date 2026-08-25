@@ -190,6 +190,10 @@ function supportsTotalDiscount(movementType: number) {
   return movementType === 1 || movementType === 2;
 }
 
+function supportsReceiptPrinting(movementType: number) {
+  return movementType === 1 || movementType === 2;
+}
+
 function getEffectiveProductDiscount(draft: MovementDraft, product: MovementDraftProduct) {
   return parseDiscountValue(product.desconto) > 0
     ? parseDiscountValue(product.desconto)
@@ -1328,8 +1332,8 @@ export function MovementPage() {
       return;
     }
 
-    if (Number(activeDraft.tipo) !== 1) {
-      toast.error("A nota esta disponivel apenas para movimentacoes de venda.");
+    if (!supportsReceiptPrinting(Number(activeDraft.tipo))) {
+      toast.error("A nota esta disponivel apenas para movimentacoes de venda ou emprestimo.");
       return;
     }
 
@@ -1422,7 +1426,7 @@ export function MovementPage() {
       const createdMovement = asMovementResponse(response.body);
       await queryClient.invalidateQueries({ queryKey: ["products"] });
 
-      if (createdMovement.tipo === 1) {
+      if (supportsReceiptPrinting(createdMovement.tipo)) {
         setPrintSettings(getStoredPrintSettings());
         setReceiptPreview(buildReceiptFromDraft(draft, createdMovement.id));
       }

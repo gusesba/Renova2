@@ -338,6 +338,136 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         }
 
         [Fact]
+        public async Task CreateAsyncDeveAplicarDescontoTotalEIndividualNoEmprestimo()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria-emprestimo-desconto@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produtoComDescontoTotal = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
+            ProdutoEstoqueModel produtoComDescontoIndividual = await CriarProdutoAsync(context, loja.Id, "Produto B", "44999990002");
+
+            MovimentacaoService service = new(context);
+            MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Emprestimo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                DescontoTotal = 5m,
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoComDescontoTotal.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoComDescontoIndividual.Id, Desconto = 10m }
+                ]
+            }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
+
+            List<MovimentacaoProdutoModel> itens = await context.MovimentacoesProdutos
+                .Where(item => item.MovimentacaoId == resultado.Id)
+                .OrderBy(item => item.ProdutoId)
+                .ToListAsync();
+
+            Assert.Collection(
+                itens,
+                item => Assert.Equal(5m, item.Desconto),
+                item => Assert.Equal(10m, item.Desconto));
+        }
+
+        [Fact]
+        public async Task CreateAsyncDevePersistirDescontoIndividualNaDevolucaoEmprestimo()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria-devolucao-desconto@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(
+                context,
+                loja.Id,
+                "Produto A",
+                "44999990001",
+                SituacaoProduto.Emprestado);
+            _ = await CriarMovimentacaoExistenteAsync(context, loja.Id, cliente.Id, TipoMovimentacao.Emprestimo, produto.Id);
+
+            MovimentacaoService service = new(context);
+            MovimentacaoDto resultado = await service.CreateAsync(new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.DevolucaoEmprestimo,
+                Data = new DateTime(2026, 4, 9, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id, Desconto = 12m }]
+            }, new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId });
+
+            MovimentacaoProdutoModel item = await context.MovimentacoesProdutos
+                .SingleAsync(item => item.MovimentacaoId == resultado.Id && item.ProdutoId == produto.Id);
+
+            Assert.Equal(12m, item.Desconto);
+        }
+
+        [Fact]
+        public async Task CreateAsyncDeveRejeitarDescontoTotalForaDeVendaOuEmprestimo()
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria-doacao-desconto@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
+
+            MovimentacaoService service = new(context);
+            ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(
+                new CriarMovimentacaoCommand
+                {
+                    Tipo = TipoMovimentacao.Doacao,
+                    Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                    ClienteId = cliente.Id,
+                    LojaId = loja.Id,
+                    DescontoTotal = 5m,
+                    Produtos = [new CriarMovimentacaoProdutoCommand { ProdutoId = produto.Id }]
+                },
+                new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
+
+            Assert.Contains("venda ou emprestimo", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData(-1, 0)]
+        [InlineData(101, 0)]
+        [InlineData(0, -1)]
+        [InlineData(0, 101)]
+        public async Task CreateAsyncDeveRejeitarDescontosForaDoIntervaloPermitido(
+            decimal descontoTotal,
+            decimal descontoProduto)
+        {
+            await using RenovaDbContext context = CriarContextoEmMemoria();
+
+            LojaModel loja = await CriarLojaAsync(context, "Loja Centro", "maria-desconto-invalido@renova.com");
+            ClienteModel cliente = await CriarClienteAsync(context, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produto = await CriarProdutoAsync(context, loja.Id, "Produto A", "44999990001");
+
+            MovimentacaoService service = new(context);
+            ArgumentException exception = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(
+                new CriarMovimentacaoCommand
+                {
+                    Tipo = TipoMovimentacao.Emprestimo,
+                    Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                    ClienteId = cliente.Id,
+                    LojaId = loja.Id,
+                    DescontoTotal = descontoTotal,
+                    Produtos =
+                    [
+                        new CriarMovimentacaoProdutoCommand
+                        {
+                            ProdutoId = produto.Id,
+                            Desconto = descontoProduto
+                        }
+                    ]
+                },
+                new CriarMovimentacaoParametros { UsuarioId = loja.UsuarioId }));
+
+            Assert.Contains("desconto", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public async Task CreateAsyncDeveAcionarPagamentoServiceQuandoMovimentacaoForDevolucaoVenda()
         {
             await using RenovaDbContext context = CriarContextoEmMemoria();

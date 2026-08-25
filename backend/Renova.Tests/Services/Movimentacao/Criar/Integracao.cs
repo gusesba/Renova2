@@ -143,6 +143,48 @@ namespace Renova.Tests.Services.Movimentacao.Criar
         }
 
         [Fact]
+        public async Task PostMovimentacaoDeveAceitarDescontosNoEmprestimo()
+        {
+            await using RenovaApiFactory factory = new();
+            HttpClient client = factory.CreateClient();
+
+            UsuarioTokenDto autenticacao = await CriarUsuarioAutenticadoAsync(client, "maria-emprestimo-desconto@renova.com");
+            LojaModel loja = await CriarLojaAsync(factory, autenticacao.Usuario.Id, "Loja Centro");
+            ClienteModel cliente = await CriarClienteAsync(factory, loja.Id, "Cliente A", "44999990000");
+            ProdutoEstoqueModel produtoComDescontoTotal = await CriarProdutoAsync(factory, loja.Id, "Produto A", "44999990001");
+            ProdutoEstoqueModel produtoComDescontoIndividual = await CriarProdutoAsync(factory, loja.Id, "Produto B", "44999990002");
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
+
+            HttpResponseMessage response = await client.PostAsJsonAsync("/api/movimentacao", new CriarMovimentacaoCommand
+            {
+                Tipo = TipoMovimentacao.Emprestimo,
+                Data = new DateTime(2026, 4, 8, 12, 0, 0, DateTimeKind.Utc),
+                ClienteId = cliente.Id,
+                LojaId = loja.Id,
+                DescontoTotal = 5m,
+                Produtos =
+                [
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoComDescontoTotal.Id },
+                    new CriarMovimentacaoProdutoCommand { ProdutoId = produtoComDescontoIndividual.Id, Desconto = 10m }
+                ]
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            using IServiceScope scope = factory.Services.CreateScope();
+            RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+            List<MovimentacaoProdutoModel> itens = await context.MovimentacoesProdutos
+                .OrderBy(item => item.ProdutoId)
+                .ToListAsync();
+
+            Assert.Collection(
+                itens,
+                item => Assert.Equal(5m, item.Desconto),
+                item => Assert.Equal(10m, item.Desconto));
+        }
+
+        [Fact]
         public async Task PostMovimentacaoDeveRetornarUnauthorizedQuandoUsuarioNaoEstiverAutenticado()
         {
             await using RenovaApiFactory factory = new();
