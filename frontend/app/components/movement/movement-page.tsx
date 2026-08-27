@@ -207,6 +207,10 @@ function getProductDiscountForDraft(
   product: ProductListItem,
   storeConfig: ConfigLojaResponse | null,
 ) {
+  if (draft.autoLinkedBorrowedProductIds.includes(product.id)) {
+    return String(product.descontoMovimentacao ?? 0);
+  }
+
   if (Number(draft.tipo) === 5) {
     return String(product.descontoUltimaVenda ?? 0);
   }
@@ -601,24 +605,20 @@ export function MovementPage() {
           const manualProducts = draft.products.filter(
             (product) => !draft.autoLinkedBorrowedProductIds.includes(product.id),
           );
+          const autoLinkedProducts = borrowedProducts.filter(
+            (product) => !manualProducts.some((manualProduct) => manualProduct.id === product.id),
+          );
 
           return {
             ...draft,
             products: [
               ...manualProducts,
-              ...borrowedProducts.filter(
-                (product) =>
-                  !manualProducts.some((manualProduct) => manualProduct.id === product.id),
-              ).map((product) => ({
+              ...autoLinkedProducts.map((product) => ({
                 ...product,
-                desconto: getProductDiscountForDraft(
-                  draft,
-                  product,
-                  storeConfigQuery.data ?? null,
-                ),
+                desconto: String(product.descontoMovimentacao ?? 0),
               })),
             ],
-            autoLinkedBorrowedProductIds: borrowedProducts.map((product) => product.id),
+            autoLinkedBorrowedProductIds: autoLinkedProducts.map((product) => product.id),
             errors: { ...draft.errors, produtos: undefined },
           };
         });

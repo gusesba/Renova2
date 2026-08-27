@@ -648,6 +648,15 @@ namespace Renova.Service.Services.Produto
                                 : string.Empty)
                             .FirstOrDefault()
                         : null,
+                    DescontoMovimentacao = produto.Movimentacoes
+                        .Where(movimentacaoProduto =>
+                            movimentacaoProduto.Movimentacao != null
+                            && movimentacaoProduto.Movimentacao.Tipo == TipoMovimentacao.Emprestimo
+                            && movimentacaoProduto.Movimentacao.ClienteId == parametros.ClienteId)
+                        .OrderByDescending(movimentacaoProduto => movimentacaoProduto.Movimentacao!.Data)
+                        .ThenByDescending(movimentacaoProduto => movimentacaoProduto.MovimentacaoId)
+                        .Select(movimentacaoProduto => (decimal?)movimentacaoProduto.Desconto)
+                        .FirstOrDefault(),
                     DescontoUltimaVenda = produto.Movimentacoes
                         .Where(movimentacaoProduto =>
                             movimentacaoProduto.Movimentacao != null

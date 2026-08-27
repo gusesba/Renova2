@@ -489,7 +489,9 @@ namespace Renova.Tests.Services.Produto.Get
             produtoGustavo.Situacao = SituacaoProduto.Emprestado;
             _ = await context.SaveChangesAsync();
 
-            _ = await CriarMovimentacaoAsync(context, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
+            MovimentacaoModel emprestimoElaine = await CriarMovimentacaoAsync(context, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
+            emprestimoElaine.Produtos.Single().Desconto = 12m;
+            _ = await context.SaveChangesAsync();
             _ = await CriarMovimentacaoAsync(context, loja.Id, gustavo.Id, TipoMovimentacao.Emprestimo, produtoGustavo.Id);
 
             ProdutoService service = new(context);
@@ -503,6 +505,7 @@ namespace Renova.Tests.Services.Produto.Get
 
             ProdutoBuscaDto item = Assert.Single(resultado);
             Assert.Equal(produtoElaine.Id, item.Id);
+            Assert.Equal(12m, item.DescontoMovimentacao);
         }
 
         [Fact]

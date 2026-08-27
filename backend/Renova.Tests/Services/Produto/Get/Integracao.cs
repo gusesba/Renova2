@@ -362,8 +362,17 @@ namespace Renova.Tests.Services.Produto.Get
             ProdutoEstoqueModel produtoGustavo = await CriarProdutoCompletoAsync(factory, loja.Id, "Blazer", "Animale", "G", "Preto", "Fornecedor Beta", "Blazer Gustavo");
             await AtualizarSituacaoProdutoAsync(factory, produtoElaine.Id, SituacaoProduto.Emprestado);
             await AtualizarSituacaoProdutoAsync(factory, produtoGustavo.Id, SituacaoProduto.Emprestado);
-            _ = await CriarMovimentacaoAsync(factory, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
+            MovimentacaoModel emprestimoElaine = await CriarMovimentacaoAsync(factory, loja.Id, elaine.Id, TipoMovimentacao.Emprestimo, produtoElaine.Id);
             _ = await CriarMovimentacaoAsync(factory, loja.Id, gustavo.Id, TipoMovimentacao.Emprestimo, produtoGustavo.Id);
+
+            using (IServiceScope scope = factory.Services.CreateScope())
+            {
+                RenovaDbContext context = scope.ServiceProvider.GetRequiredService<RenovaDbContext>();
+                MovimentacaoProdutoModel itemEmprestado = await context.MovimentacoesProdutos
+                    .SingleAsync(item => item.MovimentacaoId == emprestimoElaine.Id && item.ProdutoId == produtoElaine.Id);
+                itemEmprestado.Desconto = 12m;
+                _ = await context.SaveChangesAsync();
+            }
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", autenticacao.Token);
 
@@ -374,6 +383,7 @@ namespace Renova.Tests.Services.Produto.Get
             IReadOnlyList<ProdutoBuscaDto>? body = await response.Content.ReadFromJsonAsync<IReadOnlyList<ProdutoBuscaDto>>();
             ProdutoBuscaDto item = Assert.Single(body!);
             Assert.Equal(produtoElaine.Id, item.Id);
+            Assert.Equal(12m, item.DescontoMovimentacao);
         }
 
         [Fact]
